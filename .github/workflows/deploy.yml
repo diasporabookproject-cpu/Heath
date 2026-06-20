@@ -27,8 +27,8 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          # project pages : l'app est servie sous /heath/
-          BASE_PATH: /heath/
+          # project pages : l'app est servie sous /Heath/ (nom exact du dépôt)
+          BASE_PATH: /Heath/
       - uses: actions/configure-pages@v5
         with:
           # active automatiquement GitHub Pages (source = Actions) si pas déjà fait
