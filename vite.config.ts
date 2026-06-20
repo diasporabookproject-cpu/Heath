@@ -4,7 +4,11 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 // PWA minimale dès le P0 pour pouvoir tester l'installation sur le téléphone.
 // Le travail offline/icônes soigné (cache fin, écran de démarrage) sera approfondi en P1.
+// `base` : '/' en local, '/heath/' sur GitHub Pages (project pages) via BASE_PATH.
+const base = process.env.BASE_PATH || '/';
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -18,7 +22,9 @@ export default defineConfig({
         background_color: '#f8fafc',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        // relatif : fonctionne à la racine (Vercel) comme sous /heath/ (GitHub Pages)
+        start_url: '.',
+        scope: '.',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
