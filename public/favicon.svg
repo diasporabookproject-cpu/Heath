@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0f766e"/>
+  <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <!-- fourchette -->
+    <path d="M150 120 V250 a40 40 0 0 0 80 0 V120"/>
+    <path d="M190 120 V250"/>
+    <path d="M190 290 V400"/>
+    <!-- couteau -->
+    <path d="M330 120 c40 20 40 120 0 150"/>
+    <path d="M335 270 V400"/>
+  </g>
+  <circle cx="256" cy="430" r="20" fill="#5eead4"/>
+</svg>

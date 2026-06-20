@@ -1,0 +1,345 @@
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --brand: #0f766e;
+  --brand-ink: #ffffff;
+  --vert: #16a34a;
+  --vert-bg: #dcfce7;
+  --orange: #d97706;
+  --orange-bg: #fef3c7;
+  --rouge: #dc2626;
+  --rouge-bg: #fee2e2;
+  --radius: 14px;
+  --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+/* ----- Layout général ----- */
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app__main {
+  flex: 1;
+  padding: 12px 12px calc(84px + var(--safe-bottom));
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--brand);
+  color: var(--brand-ink);
+  padding: 14px 16px;
+  font-weight: 700;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ----- Barre d'onglets ----- */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  background: var(--card);
+  border-top: 1px solid var(--line);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
+}
+.tabbar__item {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 10px 4px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tabbar__item--active { color: var(--brand); }
+.tabbar__icon { font-size: 20px; line-height: 1; }
+
+/* ----- Cartes ----- */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.daycard__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.daycard__name { font-weight: 700; font-size: 17px; }
+.daycard__type {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* ----- Slots repas ----- */
+.slot {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+}
+.slot__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  width: 64px;
+  flex-shrink: 0;
+}
+.slot__value { flex: 1; font-weight: 600; }
+.slot__value--empty { color: var(--muted); font-weight: 500; }
+.slot__meta { font-size: 12px; color: var(--muted); margin-top: 2px; font-weight: 500; }
+.slot__chev { color: var(--muted); }
+
+.extras { margin-top: 4px; }
+.extra-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--vert-bg);
+  color: #14532d;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 6px 6px 0;
+}
+.extra-chip__x { font-weight: 800; opacity: 0.6; }
+.btn-add-extra {
+  border: 1px dashed var(--line);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ----- Feux / totaux ----- */
+.totals {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.stat {
+  flex: 1;
+  border-radius: 10px;
+  padding: 8px;
+  text-align: center;
+}
+.stat--vert { background: var(--vert-bg); color: #14532d; }
+.stat--orange { background: var(--orange-bg); color: #7c2d12; }
+.stat--rouge { background: var(--rouge-bg); color: #7f1d1d; }
+.stat__val { font-weight: 800; font-size: 16px; }
+.stat__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; opacity: 0.8; }
+.stat__sub { font-size: 11px; opacity: 0.75; }
+.stat--calcium { outline: 2px solid currentColor; outline-offset: -2px; }
+
+/* ----- Bandeau moyenne semaine ----- */
+.weekbar { background: var(--card); }
+.weekbar__title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+/* ----- Bottom sheet ----- */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sheet {
+  background: var(--card);
+  width: 100%;
+  max-width: 640px;
+  max-height: 88vh;
+  border-radius: 18px 18px 0 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--safe-bottom);
+  animation: slideUp 0.18s ease-out;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.sheet__head {
+  padding: 14px 16px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.sheet__title { font-weight: 700; font-size: 17px; display: flex; justify-content: space-between; align-items: center; }
+.sheet__close { border: 0; background: transparent; font-size: 22px; color: var(--muted); }
+.sheet__search {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 16px;
+}
+.sheet__list { overflow-y: auto; padding: 8px; }
+
+.reci {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.reci--selected { border-color: var(--brand); background: #f0fdfa; }
+.reci__name { font-weight: 700; }
+.reci__macros { display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.reci__macros b { color: var(--ink); }
+
+.flag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.flag--Champion { background: var(--vert-bg); color: #14532d; }
+.flag--Moyen { background: var(--orange-bg); color: #7c2d12; }
+.flag--Faible { background: #f1f5f9; color: var(--muted); }
+
+.sheet__clear {
+  margin: 0 8px 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--rouge);
+  border-radius: 10px;
+  padding: 11px;
+  font-weight: 600;
+}
+
+/* ----- Vue cuisinière ----- */
+.cook-day__title { font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.cook-meal { margin: 10px 0; }
+.cook-meal__label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--brand); letter-spacing: 0.04em; }
+.cook-meal__name { font-weight: 700; }
+.cook-meal__ing { font-size: 14px; color: #334155; margin-top: 2px; white-space: pre-wrap; }
+.btn {
+  border: 0;
+  background: var(--brand);
+  color: #fff;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-weight: 700;
+  width: 100%;
+  margin-top: 8px;
+}
+.btn--ghost { background: #fff; color: var(--brand); border: 1px solid var(--brand); }
+.btn--small { width: auto; padding: 8px 12px; font-size: 14px; }
+.btn:active { opacity: 0.85; }
+.btn:disabled { opacity: 0.4; }
+
+/* ----- Bibliothèque ----- */
+.lib-section__title {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 16px 4px 8px;
+}
+.lib-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.lib-item:last-child { border-bottom: 0; }
+.lib-item__main { flex: 1; min-width: 0; }
+.lib-item__name { font-weight: 600; }
+.lib-item--ecarte .lib-item__name { color: var(--muted); text-decoration: line-through; }
+.lib-item__sub { font-size: 12px; color: var(--muted); }
+.lib-toggle {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* ----- Formulaire ----- */
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: inherit;
+}
+.field-row { display: flex; gap: 8px; }
+.field-row .field { flex: 1; }
+
+.empty-note { color: var(--muted); text-align: center; padding: 24px 12px; }
+.hint { font-size: 13px; color: var(--muted); margin: 4px 0 12px; }
+.spinner { text-align: center; padding: 48px; color: var(--muted); }

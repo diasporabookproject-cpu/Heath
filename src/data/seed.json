@@ -1,0 +1,419 @@
+{
+  "config": {
+    "jours": [
+      {
+        "key": "lun",
+        "nom": "Lundi",
+        "type": "Repos",
+        "cible_kcal": 1720
+      },
+      {
+        "key": "mar",
+        "nom": "Mardi",
+        "type": "Muscu",
+        "cible_kcal": 1950
+      },
+      {
+        "key": "mer",
+        "nom": "Mercredi",
+        "type": "Repos",
+        "cible_kcal": 1720
+      },
+      {
+        "key": "jeu",
+        "nom": "Jeudi",
+        "type": "Cardio",
+        "cible_kcal": 1880
+      },
+      {
+        "key": "ven",
+        "nom": "Vendredi",
+        "type": "Repos",
+        "cible_kcal": 1720
+      },
+      {
+        "key": "sam",
+        "nom": "Samedi",
+        "type": "Muscu",
+        "cible_kcal": 1950
+      },
+      {
+        "key": "dim",
+        "nom": "Dimanche",
+        "type": "Repos",
+        "cible_kcal": 1720
+      }
+    ],
+    "elements_fixes": {
+      "collation": {
+        "kcal": 195,
+        "prot": 14,
+        "gluc": 3,
+        "lip": 14,
+        "calcium": 275
+      },
+      "kefir_coucher": {
+        "kcal": 135,
+        "prot": 5,
+        "gluc": 6,
+        "lip": 0,
+        "calcium": 325
+      }
+    },
+    "cibles": {
+      "kcal_par_type": {
+        "Repos": 1720,
+        "Cardio": 1880,
+        "Muscu": 1950
+      },
+      "kcal_seuils_pct": {
+        "vert": 0.1,
+        "orange": 0.2
+      },
+      "proteines": {
+        "vert": 150,
+        "orange": 130
+      },
+      "calcium": {
+        "vert": 1000,
+        "orange": 850
+      }
+    },
+    "repas_verrouilles_suggeres": {
+      "lun_dej": "DEJ-02",
+      "sam_dej": "DEJ-06"
+    }
+  },
+  "recettes": [
+    {
+      "id": "DEJ-01",
+      "nom": "Bowl poulet-riz-pois chiches-feta",
+      "type": "Déjeuner",
+      "statut": "Validé",
+      "jour": "Tous",
+      "kcal": 790,
+      "prot": 80,
+      "gluc": 57,
+      "lip": 24,
+      "calcium": 240,
+      "flag_calcium": "Moyen",
+      "ingredients": "Poulet cuit 200g · riz cuit 110g (repos)/130-150g (sport) · pois chiches 80g · tomates cerises 60g + concombre 80g + poivron 60g + oignon rouge 30g + coriandre · feta 40g (séparé) · sauce 1 càc huile+citron+cumin+ail",
+      "notes": "Protéine ajustable : thon SG 180g ou crevettes 150g."
+    },
+    {
+      "id": "DEJ-02",
+      "nom": "Kefta de bœuf froide, riz et légumes rôtis",
+      "type": "Déjeuner",
+      "statut": "Validé",
+      "jour": "Tous",
+      "kcal": 710,
+      "prot": 60,
+      "gluc": 62,
+      "lip": 24,
+      "calcium": 80,
+      "flag_calcium": "Faible",
+      "ingredients": "Kefta bœuf 5% 180g cuite · riz cuit 110g (repos)/130g (sport) · légumes rôtis 250g (aubergine+courgette+poivron) · pois chiches 70g · sauce tahini-citron-ail (séparé) · olives noires 15g (option)",
+      "notes": "Plat voyage robuste : tient 3-4 j sous vide. Verrouillé lundi déjeuner (répétable)."
+    },
+    {
+      "id": "DEJ-03",
+      "nom": "Salade de riz, lentilles, thon et œufs",
+      "type": "Déjeuner",
+      "statut": "Validé",
+      "jour": "Repos",
+      "kcal": 910,
+      "prot": 82,
+      "gluc": 51,
+      "lip": 39,
+      "calcium": 290,
+      "flag_calcium": "Moyen",
+      "ingredients": "Riz cuit 80g · lentilles cuites 100g · thon huile SG égoutté 180g · 2 œufs durs · tomates cerises 100g + oignon rouge 30g + persil · feta 40g · vinaigrette moutarde-citron (séparé)",
+      "notes": "Le plus riche en lipides. Œufs durs : max 2-3 j sous vide. Portions réductibles (riz 60g/thon 150g)."
+    },
+    {
+      "id": "DEJ-04",
+      "nom": "Salade de riz aux crevettes et avocat",
+      "type": "Déjeuner",
+      "statut": "Validé",
+      "jour": "Sport",
+      "kcal": 600,
+      "prot": 53,
+      "gluc": 53,
+      "lip": 19,
+      "calcium": 110,
+      "flag_calcium": "Faible",
+      "ingredients": "Crevettes cuites 180g · riz cuit 150g · avocat 40g (coupé minute) · 1 œuf dur · crudités 200g (tomates, concombre, oignon rouge, coriandre) · sauce 1 càc huile+citron+ail",
+      "notes": "Avocat oxyde vite : apporter entier, couper au moment."
+    },
+    {
+      "id": "DEJ-05",
+      "nom": "Salade de riz au saumon saisi froid",
+      "type": "Déjeuner",
+      "statut": "Écarté",
+      "jour": "Repos",
+      "kcal": 630,
+      "prot": 52,
+      "gluc": 47,
+      "lip": 26,
+      "calcium": 90,
+      "flag_calcium": "Faible",
+      "ingredients": "Saumon saisi 180g · riz cuit 110g · haricots verts vapeur 120g · tomates cerises 100g + oignon rouge 30g + persil + câpres · vinaigrette moutarde-citron",
+      "notes": "ÉCARTÉ : non apprécié. Conservé pour historique."
+    },
+    {
+      "id": "DEJ-06",
+      "nom": "Sandwich batbout GF, dinde grillée chermoula",
+      "type": "Déjeuner",
+      "statut": "Validé",
+      "jour": "Tous",
+      "kcal": 900,
+      "prot": 75,
+      "gluc": 85,
+      "lip": 30,
+      "calcium": 300,
+      "flag_calcium": "Moyen",
+      "ingredients": "1 batbout GF (~100g) · dinde 180g cuite chermoula tranchée · laitue 50g + tomate 30g + concombre 50g + oignon rouge 20g + coriandre · sauce yaourt-tahini-citron · comté 30g · avocat 40g (option) · 1 fruit",
+      "notes": "Verrouillé samedi déjeuner. Si voyage : composants séparés, montage au moment."
+    },
+    {
+      "id": "DEJ-07",
+      "nom": "Bowl poulet épinards · pois chiches · comté",
+      "type": "Déjeuner",
+      "statut": "Validé",
+      "jour": "Tous",
+      "kcal": 750,
+      "prot": 77,
+      "gluc": 51,
+      "lip": 23,
+      "calcium": 480,
+      "flag_calcium": "Champion",
+      "ingredients": "Poulet cuit 180g · épinards vapeur 150g (bien pressés) · pois chiches 70g · riz cuit 110g (repos)/130g (sport) · comté 25g en dés · tomates cerises 60g + oignon rouge 30g + coriandre · vinaigrette 1 càc huile+citron+cumin+ail",
+      "notes": "Champion calcium déjeuners (480mg). Bien presser les épinards."
+    },
+    {
+      "id": "DEJ-08",
+      "nom": "Salade riz dorade grillée · haricots verts · feta",
+      "type": "Déjeuner",
+      "statut": "Validé",
+      "jour": "Repos",
+      "kcal": 630,
+      "prot": 63,
+      "gluc": 44,
+      "lip": 21,
+      "calcium": 275,
+      "flag_calcium": "Moyen",
+      "ingredients": "Dorade grillée 220g chair · 1 œuf dur · haricots verts vapeur 150g · riz cuit 100g · tomates cerises 80g + oignon rouge 30g + persil + câpres · feta 40g · vinaigrette moutarde-citron",
+      "notes": "Si dorade indispo : merlan, loup de mer. Acheter la veille max."
+    },
+    {
+      "id": "DIN-01",
+      "nom": "Saumon rôti au four, brocolis, patate douce",
+      "type": "Dîner",
+      "statut": "Validé",
+      "jour": "Repos",
+      "kcal": 700,
+      "prot": 68,
+      "gluc": 40,
+      "lip": 27,
+      "calcium": 275,
+      "flag_calcium": "Moyen",
+      "ingredients": "Saumon 200g · brocolis vapeur 250g · patate douce rôtie 120g (repos)/150g (sport) · 1 càc huile · sel+poivre+citron · yaourt 0% 100g",
+      "notes": "Oméga-3 + calcium brocolis."
+    },
+    {
+      "id": "DIN-02",
+      "nom": "Tagine de lotte aux légumes",
+      "type": "Dîner",
+      "statut": "Validé",
+      "jour": "Repos",
+      "kcal": 770,
+      "prot": 77,
+      "gluc": 71,
+      "lip": 20,
+      "calcium": 190,
+      "flag_calcium": "Faible",
+      "ingredients": "Lotte 250g cuit · pois chiches 70g · légumes mijotés 350g (carotte+courgette+oignon) · tomate concassée 100g · riz cuit 110g (séparé) · 1 càs huile · ail+épices (cumin, safran, gingembre) · yaourt 0% 100g",
+      "notes": "Poisson blanc très maigre. Excellent profil pré-diabète."
+    },
+    {
+      "id": "DIN-03",
+      "nom": "Sardines fraîches grillées en chermoula",
+      "type": "Dîner",
+      "statut": "Validé",
+      "jour": "Sport",
+      "kcal": 785,
+      "prot": 71,
+      "gluc": 60,
+      "lip": 29,
+      "calcium": 955,
+      "flag_calcium": "Champion",
+      "ingredients": "Sardines fraîches chair 200g (avec arêtes) · chermoula 1 càs · riz cuit 150g · salade tomates-concombre-oignon 250g + 1 càc huile · yaourt 0% 150g",
+      "notes": "RECORD calcium (955mg, arêtes). Dispo marché variable. Pas de substitut conserve."
+    },
+    {
+      "id": "DIN-04",
+      "nom": "Tagine kefta-œuf de bœuf",
+      "type": "Dîner",
+      "statut": "Validé",
+      "jour": "Repos",
+      "kcal": 900,
+      "prot": 78,
+      "gluc": 57,
+      "lip": 39,
+      "calcium": 215,
+      "flag_calcium": "Moyen",
+      "ingredients": "Kefta bœuf 5% 180g (boulettes) · 2 œufs · sauce tomate-oignon-ail 200g · légumes mijotés 250g (courgette+carotte) · riz cuit 100g (repos)/130-150g (sport, séparé) · 1 càs huile · cumin+paprika+coriandre · yaourt 0% 100g",
+      "notes": "Excellent au congélateur. Remplace les sardines les semaines sans dispo."
+    },
+    {
+      "id": "DIN-05",
+      "nom": "Brochettes de poulet marinées grillées",
+      "type": "Dîner",
+      "statut": "Validé",
+      "jour": "Sport",
+      "kcal": 780,
+      "prot": 84,
+      "gluc": 63,
+      "lip": 18,
+      "calcium": 195,
+      "flag_calcium": "Faible",
+      "ingredients": "Poulet cru 250g en cubes · marinade 1 càc huile+ail+paprika+cumin+coriandre+citron+sel · riz cuit 150g · légumes grillés 300g (courgette+poivron+oignon) + 1 càc huile · yaourt 0% 150g",
+      "notes": "Post-workout (84g P). Si congelé : cuire à 90%."
+    },
+    {
+      "id": "DIN-06",
+      "nom": "Rôti de bœuf festif aux herbes",
+      "type": "Dîner",
+      "statut": "Validé",
+      "jour": "Sport",
+      "kcal": 910,
+      "prot": 82,
+      "gluc": 57,
+      "lip": 37,
+      "calcium": 140,
+      "flag_calcium": "Faible",
+      "ingredients": "Rumsteck 200g cuit (~260g cru) · marinade 1 càc huile+ail+thym+romarin+moutarde SG · légumes rôtis 300g + 1 càs huile · riz cuit 130g · salade verte 80g · yaourt 0% 100g",
+      "notes": "Repas famille dimanche. Calcium modeste, compenser ailleurs."
+    },
+    {
+      "id": "DIN-07",
+      "nom": "Frittata courgettes-oignons-comté (épinards)",
+      "type": "Dîner",
+      "statut": "Validé",
+      "jour": "Repos",
+      "kcal": 720,
+      "prot": 53,
+      "gluc": 38,
+      "lip": 37,
+      "calcium": 745,
+      "flag_calcium": "Champion",
+      "ingredients": "4 œufs · comté 25g râpé · courgette 150g · oignon 80g · épinards frais 200g · 1 càc huile · patate douce rôtie 100g (séparé) · salade verte 60g · yaourt 0% 100g",
+      "notes": "Calcium 745mg avec épinards (excellent ostéopénie). Se congèle bien."
+    },
+    {
+      "id": "DIN-08",
+      "nom": "Tagine de poulet citron confit · olives vertes",
+      "type": "Dîner",
+      "statut": "Validé",
+      "jour": "Repos",
+      "kcal": 790,
+      "prot": 79,
+      "gluc": 58,
+      "lip": 25,
+      "calcium": 150,
+      "flag_calcium": "Faible",
+      "ingredients": "Poulet cuit 200g · olives vertes 20g · ¼ citron confit (écorce rincée) · oignon 100g · tomate concassée 100g · ail · légumes mijotés 200g (carotte+courgette) · riz cuit 110g (séparé) · 1 càs huile · cumin+gingembre+curcuma+paprika+coriandre · yaourt 0% 100g",
+      "notes": "Citron confit = SODIUM élevé. Écorce SEULEMENT, bien rincée. Jour repos."
+    },
+    {
+      "id": "DIN-09",
+      "nom": "Dorade rôtie au four · légumes méditerranéens",
+      "type": "Dîner",
+      "statut": "Validé",
+      "jour": "Repos",
+      "kcal": 665,
+      "prot": 71,
+      "gluc": 55,
+      "lip": 17,
+      "calcium": 205,
+      "flag_calcium": "Faible",
+      "ingredients": "Dorade rôtie 250g chair · légumes méditerranéens rôtis 300g (poivron+aubergine+tomate cerise+courgette+ail) · riz cuit 120g · 1 càs huile répartie · citron+thym+romarin+ail · yaourt 0% 150g",
+      "notes": "Le plus léger en lipides (17g). Idéal jour repos. Substituts : loup, merlan."
+    },
+    {
+      "id": "CF-01",
+      "nom": "Boat de concombre (batch 2 jours)",
+      "type": "Coupe-faim",
+      "statut": "Validé",
+      "jour": "Tous",
+      "kcal": 200,
+      "prot": 26,
+      "gluc": 14,
+      "lip": 2,
+      "calcium": 150,
+      "flag_calcium": "Faible",
+      "ingredients": "BASE (2 portions) : yaourt 0% 200g · 6-8 blancs d œuf cuits émiettés · tamari SG 2 càs · vinaigre cidre · ail+gingembre+coriandre. MINUTE : 1 concombre évidé + oignon rouge 20-30g + jalapeño + citron vert",
+      "notes": "Concombre/oignon/jalapeño JAMAIS dans le batch. Coupe-faim protéiné post-effort."
+    },
+    {
+      "id": "CF-02",
+      "nom": "Dip yaourt-ail + crudités",
+      "type": "Coupe-faim",
+      "statut": "Validé",
+      "jour": "Tous",
+      "kcal": 85,
+      "prot": 12,
+      "gluc": 9,
+      "lip": 1,
+      "calcium": 140,
+      "flag_calcium": "Faible",
+      "ingredients": "BASE : yaourt 0% 100g · ail pressé · citron · sel léger · herbes. CRUDITÉS : concombre, poivron, céleri, radis, chou-fleur cru",
+      "notes": "5 variantes : tzatziki, ail-herbes, épicé, citron vert-coriandre, ranch allégé."
+    },
+    {
+      "id": "CF-03",
+      "nom": "Creami chocolat récup (whey)",
+      "type": "Coupe-faim",
+      "statut": "Validé",
+      "jour": "Sport",
+      "kcal": 225,
+      "prot": 30,
+      "gluc": 16,
+      "lip": 5,
+      "calcium": 360,
+      "flag_calcium": "Champion",
+      "ingredients": "Kéfir 160g · whey chocolat SG 30g · ¼ banane (~30g) · Estéviol/érythritol · pincée sel · gomme guar ~⅙ càc",
+      "notes": "Soir de workout. Glucides banane = récup. Calcium ~30% cible."
+    },
+    {
+      "id": "CF-04",
+      "nom": "Creami vanille (whey)",
+      "type": "Coupe-faim",
+      "statut": "Validé",
+      "jour": "Tous",
+      "kcal": 195,
+      "prot": 30,
+      "gluc": 9,
+      "lip": 5,
+      "calcium": 360,
+      "flag_calcium": "Champion",
+      "ingredients": "Kéfir 160g · whey vanille SG 30g · Estéviol/érythritol · vanille · pincée sel · gomme guar ~⅙ càc",
+      "notes": "Soir sans workout ou vraie faim. Cacao maigre 1 càs = +19 kcal (option chocolat)."
+    },
+    {
+      "id": "CF-05",
+      "nom": "Creami fruits rouges (whey)",
+      "type": "Coupe-faim",
+      "statut": "Validé",
+      "jour": "Sport",
+      "kcal": 215,
+      "prot": 30,
+      "gluc": 13,
+      "lip": 5,
+      "calcium": 360,
+      "flag_calcium": "Champion",
+      "ingredients": "Kéfir 160g · whey vanille SG 30g · fruits rouges surgelés 40g · Estéviol/érythritol · filet citron · gomme guar ~⅙ càc",
+      "notes": "Fruits rouges = plus bas sucre/IG. Bon pré-diabète."
+    }
+  ]
+}
