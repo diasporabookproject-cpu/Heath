@@ -12,3 +12,6 @@ dev-dist
 
 # TS incremental build info
 *.tsbuildinfo
+
+# captures de test
+scripts/shot-*.png
