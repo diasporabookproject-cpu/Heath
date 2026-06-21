@@ -93,6 +93,8 @@ function AddRecipeSheet({ onClose }: { onClose: () => void }) {
   const [flag, setFlag] = useState<CalciumFlag>('Moyen');
   const [ingredients, setIngredients] = useState('');
   const [notes, setNotes] = useState('');
+  const [nomAr, setNomAr] = useState('');
+  const [ingredientsAr, setIngredientsAr] = useState('');
 
   const num = (v: string) => Math.max(0, Math.round(Number(v) || 0));
   const canSave = nom.trim().length > 0;
@@ -113,6 +115,8 @@ function AddRecipeSheet({ onClose }: { onClose: () => void }) {
       flag_calcium: flag,
       ingredients: ingredients.trim(),
       notes: notes.trim() || undefined,
+      nom_ar: nomAr.trim() || undefined,
+      ingredients_ar: ingredientsAr.trim() || undefined,
     };
     upsertRecipe(recipe);
     onClose();
@@ -202,6 +206,19 @@ function AddRecipeSheet({ onClose }: { onClose: () => void }) {
           <div className="field">
             <label>Notes (optionnel)</label>
             <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>الاسم بالدارجة (اختياري)</label>
+            <input dir="rtl" value={nomAr} onChange={(e) => setNomAr(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>المكونات بالدارجة (اختياري)</label>
+            <textarea
+              dir="rtl"
+              rows={4}
+              value={ingredientsAr}
+              onChange={(e) => setIngredientsAr(e.target.value)}
+            />
           </div>
           <button className="btn" onClick={save} disabled={!canSave}>
             Enregistrer

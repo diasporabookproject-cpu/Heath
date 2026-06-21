@@ -20,6 +20,10 @@ export interface Recipe {
   flag_calcium: CalciumFlag;
   ingredients: string;
   notes?: string;
+  /** Nom en darija marocaine (lettres arabes), pour la vue Cuisinière. */
+  nom_ar?: string;
+  /** Ingrédients en darija marocaine (lettres arabes). */
+  ingredients_ar?: string;
 }
 
 export interface DayConfig {

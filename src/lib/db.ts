@@ -36,18 +36,52 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
 }
 
 const SEEDED_KEY = 'seeded';
+const SEED_VERSION_KEY = 'seedVersion';
+// 1 = jeu initial · 2 = ajout des traductions darija (nom_ar / ingredients_ar)
+const SEED_VERSION = 2;
 
-/** Au premier lancement, on importe le jeu de données de départ. */
+/**
+ * Au premier lancement : importe le jeu de données de départ.
+ * Aux lancements suivants : applique les migrations (ex. backfill darija)
+ * sans écraser les recettes ajoutées/modifiées par l'utilisateur.
+ */
 export async function ensureSeeded(): Promise<void> {
   const db = await getDB();
-  const already = await db.get('meta', SEEDED_KEY);
-  if (already) return;
-  const tx = db.transaction('recipes', 'readwrite');
-  for (const r of SEED_RECIPES) {
-    await tx.store.put(r);
+
+  let version = (await db.get('meta', SEED_VERSION_KEY)) as number | undefined;
+  if (version === undefined) {
+    // Compat : les anciennes installations n'avaient que le flag booléen.
+    version = (await db.get('meta', SEEDED_KEY)) ? 1 : 0;
   }
-  await tx.done;
-  await db.put('meta', true, SEEDED_KEY);
+
+  if (version === 0) {
+    // Installation neuve : on importe tout.
+    const tx = db.transaction('recipes', 'readwrite');
+    for (const r of SEED_RECIPES) await tx.store.put(r);
+    await tx.done;
+  } else if (version < SEED_VERSION) {
+    // Migration v1 -> v2 : on complète les champs darija manquants,
+    // sans toucher au statut ni aux champs déjà personnalisés.
+    const tx = db.transaction('recipes', 'readwrite');
+    for (const seed of SEED_RECIPES) {
+      const existing = await tx.store.get(seed.id);
+      if (!existing) {
+        await tx.store.put(seed); // recette du seed absente : on l'ajoute
+      } else if (!existing.nom_ar && (seed.nom_ar || seed.ingredients_ar)) {
+        await tx.store.put({
+          ...existing,
+          nom_ar: seed.nom_ar,
+          ingredients_ar: seed.ingredients_ar,
+        });
+      }
+    }
+    await tx.done;
+  }
+
+  if (version < SEED_VERSION) {
+    await db.put('meta', true, SEEDED_KEY);
+    await db.put('meta', SEED_VERSION, SEED_VERSION_KEY);
+  }
 }
 
 export async function loadRecipes(): Promise<Recipe[]> {

@@ -98,7 +98,9 @@
       "calcium": 240,
       "flag_calcium": "Moyen",
       "ingredients": "Poulet cuit 200g · riz cuit 110g (repos)/130-150g (sport) · pois chiches 80g · tomates cerises 60g + concombre 80g + poivron 60g + oignon rouge 30g + coriandre · feta 40g (séparé) · sauce 1 càc huile+citron+cumin+ail",
-      "notes": "Protéine ajustable : thon SG 180g ou crevettes 150g."
+      "notes": "Protéine ajustable : thon SG 180g ou crevettes 150g.",
+      "nom_ar": "بول دجاج مع روز، حمّص وفيتا",
+      "ingredients_ar": "دجاج مطيّب 200g · روز مطيّب 110g (راحة)/130-150g (رياضة) · حمّص 80g · طماطم صغيرة 60g + خيار 80g + فلفلة حلوة 60g + بصلة حمرا 30g + قزبر · فيتا 40g (بوحدها) · صلصة: ملعقة صغيرة زيت + حامض + كمّون + ثوم"
     },
     {
       "id": "DEJ-02",
@@ -113,7 +115,9 @@
       "calcium": 80,
       "flag_calcium": "Faible",
       "ingredients": "Kefta bœuf 5% 180g cuite · riz cuit 110g (repos)/130g (sport) · légumes rôtis 250g (aubergine+courgette+poivron) · pois chiches 70g · sauce tahini-citron-ail (séparé) · olives noires 15g (option)",
-      "notes": "Plat voyage robuste : tient 3-4 j sous vide. Verrouillé lundi déjeuner (répétable)."
+      "notes": "Plat voyage robuste : tient 3-4 j sous vide. Verrouillé lundi déjeuner (répétable).",
+      "nom_ar": "كفتة البڭري بّاردة مع روز وخضرة مشوية",
+      "ingredients_ar": "كفتة لحم البڭري 5% 180g مطيّبة · روز مطيّب 110g (راحة)/130g (رياضة) · خضرة مشوية فالفور 250g (دنجال + قرعة خضرا + فلفلة) · حمّص 70g · صلصة طحينة بالحامض والثوم (بوحدها) · زيتون كحل 15g (اختياري)"
     },
     {
       "id": "DEJ-03",
@@ -128,7 +132,9 @@
       "calcium": 290,
       "flag_calcium": "Moyen",
       "ingredients": "Riz cuit 80g · lentilles cuites 100g · thon huile SG égoutté 180g · 2 œufs durs · tomates cerises 100g + oignon rouge 30g + persil · feta 40g · vinaigrette moutarde-citron (séparé)",
-      "notes": "Le plus riche en lipides. Œufs durs : max 2-3 j sous vide. Portions réductibles (riz 60g/thon 150g)."
+      "notes": "Le plus riche en lipides. Œufs durs : max 2-3 j sous vide. Portions réductibles (riz 60g/thon 150g).",
+      "nom_ar": "سلطة الروز بالعدس، التن والبيض",
+      "ingredients_ar": "روز مطيّب 80g · عدس مطيّب 100g · تن فالزيت بلا غلوتين مصفّى 180g · 2 بيضات مسلوقين · طماطم صغيرة 100g + بصلة حمرا 30g + معدنوس · فيتا 40g · صلصة موطارد بالحامض (بوحدها)"
     },
     {
       "id": "DEJ-04",
@@ -143,7 +149,9 @@
       "calcium": 110,
       "flag_calcium": "Faible",
       "ingredients": "Crevettes cuites 180g · riz cuit 150g · avocat 40g (coupé minute) · 1 œuf dur · crudités 200g (tomates, concombre, oignon rouge, coriandre) · sauce 1 càc huile+citron+ail",
-      "notes": "Avocat oxyde vite : apporter entier, couper au moment."
+      "notes": "Avocat oxyde vite : apporter entier, couper au moment.",
+      "nom_ar": "سلطة الروز بالقمرون والأفوكا",
+      "ingredients_ar": "قمرون مطيّب 180g · روز مطيّب 150g · أفوكا 40g (تقطّع فاللحظة) · بيضة مسلوقة · خضرة نية 200g (طماطم، خيار، بصلة حمرا، قزبر) · صلصة: ملعقة صغيرة زيت + حامض + ثوم"
     },
     {
       "id": "DEJ-05",
@@ -158,7 +166,9 @@
       "calcium": 90,
       "flag_calcium": "Faible",
       "ingredients": "Saumon saisi 180g · riz cuit 110g · haricots verts vapeur 120g · tomates cerises 100g + oignon rouge 30g + persil + câpres · vinaigrette moutarde-citron",
-      "notes": "ÉCARTÉ : non apprécié. Conservé pour historique."
+      "notes": "ÉCARTÉ : non apprécié. Conservé pour historique.",
+      "nom_ar": "سلطة الروز بالسلمون",
+      "ingredients_ar": "سلمون مشوي خفيف 180g · روز مطيّب 110g · لوبيا خضرا فالبخار 120g · طماطم صغيرة 100g + بصلة حمرا 30g + معدنوس + كابر · صلصة موطارد بالحامض"
     },
     {
       "id": "DEJ-06",
@@ -173,7 +183,9 @@
       "calcium": 300,
       "flag_calcium": "Moyen",
       "ingredients": "1 batbout GF (~100g) · dinde 180g cuite chermoula tranchée · laitue 50g + tomate 30g + concombre 50g + oignon rouge 20g + coriandre · sauce yaourt-tahini-citron · comté 30g · avocat 40g (option) · 1 fruit",
-      "notes": "Verrouillé samedi déjeuner. Si voyage : composants séparés, montage au moment."
+      "notes": "Verrouillé samedi déjeuner. Si voyage : composants séparés, montage au moment.",
+      "nom_ar": "سندويتش بطبوط بلا غلوتين بالديك الرومي بالشرمولة",
+      "ingredients_ar": "1 بطبوط بلا غلوتين (~100g) · ديك رومي 180g مطيّب بالشرمولة مقطّع · خس 50g + طماطم 30g + خيار 50g + بصلة حمرا 20g + قزبر · صلصة ياغورت بالطحينة والحامض · جبن كومتي 30g · أفوكا 40g (اختياري) · فاكهة واحدة"
     },
     {
       "id": "DEJ-07",
@@ -188,7 +200,9 @@
       "calcium": 480,
       "flag_calcium": "Champion",
       "ingredients": "Poulet cuit 180g · épinards vapeur 150g (bien pressés) · pois chiches 70g · riz cuit 110g (repos)/130g (sport) · comté 25g en dés · tomates cerises 60g + oignon rouge 30g + coriandre · vinaigrette 1 càc huile+citron+cumin+ail",
-      "notes": "Champion calcium déjeuners (480mg). Bien presser les épinards."
+      "notes": "Champion calcium déjeuners (480mg). Bien presser les épinards.",
+      "nom_ar": "بول دجاج بالسبانخ، الحمّص والجبن",
+      "ingredients_ar": "دجاج مطيّب 180g · سبانخ فالبخار 150g (معصورة مزيان) · حمّص 70g · روز مطيّب 110g (راحة)/130g (رياضة) · جبن كومتي 25g مقطّع · طماطم صغيرة 60g + بصلة حمرا 30g + قزبر · صلصة: ملعقة صغيرة زيت + حامض + كمّون + ثوم"
     },
     {
       "id": "DEJ-08",
@@ -203,7 +217,9 @@
       "calcium": 275,
       "flag_calcium": "Moyen",
       "ingredients": "Dorade grillée 220g chair · 1 œuf dur · haricots verts vapeur 150g · riz cuit 100g · tomates cerises 80g + oignon rouge 30g + persil + câpres · feta 40g · vinaigrette moutarde-citron",
-      "notes": "Si dorade indispo : merlan, loup de mer. Acheter la veille max."
+      "notes": "Si dorade indispo : merlan, loup de mer. Acheter la veille max.",
+      "nom_ar": "سلطة الروز بالدوراد المشوي، اللوبيا والفيتا",
+      "ingredients_ar": "دوراد مشوي 220g (اللحم) · بيضة مسلوقة · لوبيا خضرا فالبخار 150g · روز مطيّب 100g · طماطم صغيرة 80g + بصلة حمرا 30g + معدنوس + كابر · فيتا 40g · صلصة موطارد بالحامض"
     },
     {
       "id": "DIN-01",
@@ -218,7 +234,9 @@
       "calcium": 275,
       "flag_calcium": "Moyen",
       "ingredients": "Saumon 200g · brocolis vapeur 250g · patate douce rôtie 120g (repos)/150g (sport) · 1 càc huile · sel+poivre+citron · yaourt 0% 100g",
-      "notes": "Oméga-3 + calcium brocolis."
+      "notes": "Oméga-3 + calcium brocolis.",
+      "nom_ar": "سلمون مشوي فالفور، بروكلي وبطاطا حلوة",
+      "ingredients_ar": "سلمون 200g · بروكلي فالبخار 250g · بطاطا حلوة مشوية فالفور 120g (راحة)/150g (رياضة) · ملعقة صغيرة زيت · ملح + إبزار + حامض · ياغورت 0% 100g"
     },
     {
       "id": "DIN-02",
@@ -233,7 +251,9 @@
       "calcium": 190,
       "flag_calcium": "Faible",
       "ingredients": "Lotte 250g cuit · pois chiches 70g · légumes mijotés 350g (carotte+courgette+oignon) · tomate concassée 100g · riz cuit 110g (séparé) · 1 càs huile · ail+épices (cumin, safran, gingembre) · yaourt 0% 100g",
-      "notes": "Poisson blanc très maigre. Excellent profil pré-diabète."
+      "notes": "Poisson blanc très maigre. Excellent profil pré-diabète.",
+      "nom_ar": "طاجين الحوت (لوت) بالخضرة",
+      "ingredients_ar": "حوت لوت 250g مطيّب · حمّص 70g · خضرة مطيّبة 350g (خيزو + قرعة خضرا + بصلة) · طماطم مهروسة 100g · روز مطيّب 110g (بوحدو) · ملعقة كبيرة زيت · ثوم + توابل (كمّون، زعفران، سكنجبير) · ياغورت 0% 100g"
     },
     {
       "id": "DIN-03",
@@ -248,7 +268,9 @@
       "calcium": 955,
       "flag_calcium": "Champion",
       "ingredients": "Sardines fraîches chair 200g (avec arêtes) · chermoula 1 càs · riz cuit 150g · salade tomates-concombre-oignon 250g + 1 càc huile · yaourt 0% 150g",
-      "notes": "RECORD calcium (955mg, arêtes). Dispo marché variable. Pas de substitut conserve."
+      "notes": "RECORD calcium (955mg, arêtes). Dispo marché variable. Pas de substitut conserve.",
+      "nom_ar": "سردين طازج مشوي بالشرمولة",
+      "ingredients_ar": "سردين طازج 200g (اللحم، بالعظم) · شرمولة ملعقة كبيرة · روز مطيّب 150g · سلطة طماطم وخيار وبصلة 250g + ملعقة صغيرة زيت · ياغورت 0% 150g"
     },
     {
       "id": "DIN-04",
@@ -263,7 +285,9 @@
       "calcium": 215,
       "flag_calcium": "Moyen",
       "ingredients": "Kefta bœuf 5% 180g (boulettes) · 2 œufs · sauce tomate-oignon-ail 200g · légumes mijotés 250g (courgette+carotte) · riz cuit 100g (repos)/130-150g (sport, séparé) · 1 càs huile · cumin+paprika+coriandre · yaourt 0% 100g",
-      "notes": "Excellent au congélateur. Remplace les sardines les semaines sans dispo."
+      "notes": "Excellent au congélateur. Remplace les sardines les semaines sans dispo.",
+      "nom_ar": "طاجين الكفتة بالبيض ديال البڭري",
+      "ingredients_ar": "كفتة لحم البڭري 5% 180g (كرات) · 2 بيضات · صلصة طماطم بالبصلة والثوم 200g · خضرة مطيّبة 250g (قرعة خضرا + خيزو) · روز مطيّب 100g (راحة)/130-150g (رياضة، بوحدو) · ملعقة كبيرة زيت · كمّون + بابريكا + قزبر · ياغورت 0% 100g"
     },
     {
       "id": "DIN-05",
@@ -278,7 +302,9 @@
       "calcium": 195,
       "flag_calcium": "Faible",
       "ingredients": "Poulet cru 250g en cubes · marinade 1 càc huile+ail+paprika+cumin+coriandre+citron+sel · riz cuit 150g · légumes grillés 300g (courgette+poivron+oignon) + 1 càc huile · yaourt 0% 150g",
-      "notes": "Post-workout (84g P). Si congelé : cuire à 90%."
+      "notes": "Post-workout (84g P). Si congelé : cuire à 90%.",
+      "nom_ar": "بروشيت الدجاج المتبّل مشوي",
+      "ingredients_ar": "دجاج ني 250g مقطّع كرات · تتبيلة: ملعقة صغيرة زيت + ثوم + بابريكا + كمّون + قزبر + حامض + ملح · روز مطيّب 150g · خضرة مشوية 300g (قرعة خضرا + فلفلة + بصلة) + ملعقة صغيرة زيت · ياغورت 0% 150g"
     },
     {
       "id": "DIN-06",
@@ -293,7 +319,9 @@
       "calcium": 140,
       "flag_calcium": "Faible",
       "ingredients": "Rumsteck 200g cuit (~260g cru) · marinade 1 càc huile+ail+thym+romarin+moutarde SG · légumes rôtis 300g + 1 càs huile · riz cuit 130g · salade verte 80g · yaourt 0% 100g",
-      "notes": "Repas famille dimanche. Calcium modeste, compenser ailleurs."
+      "notes": "Repas famille dimanche. Calcium modeste, compenser ailleurs.",
+      "nom_ar": "روزبيف ديال البڭري بالأعشاب",
+      "ingredients_ar": "لحم البڭري (روزبيف) 200g مطيّب (~260g ني) · تتبيلة: ملعقة صغيرة زيت + ثوم + زعتر + إكليل الجبل + موطارد بلا غلوتين · خضرة مشوية فالفور 300g + ملعقة كبيرة زيت · روز مطيّب 130g · سلطة خضرا 80g · ياغورت 0% 100g"
     },
     {
       "id": "DIN-07",
@@ -308,7 +336,9 @@
       "calcium": 745,
       "flag_calcium": "Champion",
       "ingredients": "4 œufs · comté 25g râpé · courgette 150g · oignon 80g · épinards frais 200g · 1 càc huile · patate douce rôtie 100g (séparé) · salade verte 60g · yaourt 0% 100g",
-      "notes": "Calcium 745mg avec épinards (excellent ostéopénie). Se congèle bien."
+      "notes": "Calcium 745mg avec épinards (excellent ostéopénie). Se congèle bien.",
+      "nom_ar": "عجة بالقرعة الخضرا، البصلة، الجبن والسبانخ",
+      "ingredients_ar": "4 بيضات · جبن كومتي 25g مبروش · قرعة خضرا 150g · بصلة 80g · سبانخ طازجة 200g · ملعقة صغيرة زيت · بطاطا حلوة مشوية فالفور 100g (بوحدها) · سلطة خضرا 60g · ياغورت 0% 100g"
     },
     {
       "id": "DIN-08",
@@ -323,7 +353,9 @@
       "calcium": 150,
       "flag_calcium": "Faible",
       "ingredients": "Poulet cuit 200g · olives vertes 20g · ¼ citron confit (écorce rincée) · oignon 100g · tomate concassée 100g · ail · légumes mijotés 200g (carotte+courgette) · riz cuit 110g (séparé) · 1 càs huile · cumin+gingembre+curcuma+paprika+coriandre · yaourt 0% 100g",
-      "notes": "Citron confit = SODIUM élevé. Écorce SEULEMENT, bien rincée. Jour repos."
+      "notes": "Citron confit = SODIUM élevé. Écorce SEULEMENT, bien rincée. Jour repos.",
+      "nom_ar": "طاجين الدجاج بالحامض المصيّر والزيتون الأخضر",
+      "ingredients_ar": "دجاج مطيّب 200g · زيتون أخضر 20g · ربع حامض مصيّر (القشرة فقط، مغسولة) · بصلة 100g · طماطم مهروسة 100g · ثوم · خضرة مطيّبة 200g (خيزو + قرعة خضرا) · روز مطيّب 110g (بوحدو) · ملعقة كبيرة زيت · كمّون + سكنجبير + خرقوم + بابريكا + قزبر · ياغورت 0% 100g"
     },
     {
       "id": "DIN-09",
@@ -338,7 +370,9 @@
       "calcium": 205,
       "flag_calcium": "Faible",
       "ingredients": "Dorade rôtie 250g chair · légumes méditerranéens rôtis 300g (poivron+aubergine+tomate cerise+courgette+ail) · riz cuit 120g · 1 càs huile répartie · citron+thym+romarin+ail · yaourt 0% 150g",
-      "notes": "Le plus léger en lipides (17g). Idéal jour repos. Substituts : loup, merlan."
+      "notes": "Le plus léger en lipides (17g). Idéal jour repos. Substituts : loup, merlan.",
+      "nom_ar": "دوراد مشوي فالفور بالخضرة المتوسطية",
+      "ingredients_ar": "دوراد مشوي فالفور 250g (اللحم) · خضرة متوسطية مشوية 300g (فلفلة + دنجال + طماطم صغيرة + قرعة خضرا + ثوم) · روز مطيّب 120g · ملعقة كبيرة زيت مقسّمة · حامض + زعتر + إكليل الجبل + ثوم · ياغورت 0% 150g"
     },
     {
       "id": "CF-01",
@@ -353,7 +387,9 @@
       "calcium": 150,
       "flag_calcium": "Faible",
       "ingredients": "BASE (2 portions) : yaourt 0% 200g · 6-8 blancs d œuf cuits émiettés · tamari SG 2 càs · vinaigre cidre · ail+gingembre+coriandre. MINUTE : 1 concombre évidé + oignon rouge 20-30g + jalapeño + citron vert",
-      "notes": "Concombre/oignon/jalapeño JAMAIS dans le batch. Coupe-faim protéiné post-effort."
+      "notes": "Concombre/oignon/jalapeño JAMAIS dans le batch. Coupe-faim protéiné post-effort.",
+      "nom_ar": "قوارب الخيار (محضّرة ليومين)",
+      "ingredients_ar": "الأساس (حصتين): ياغورت 0% 200g · 6-8 ديال بياض البيض مطيّب ومفتّت · طماري بلا غلوتين 2 ملاعق كبار · خل التفاح · ثوم + سكنجبير + قزبر. فاللحظة: 1 خيار مفرّغ + بصلة حمرا 20-30g + فلفل حار + حامض أخضر"
     },
     {
       "id": "CF-02",
@@ -368,7 +404,9 @@
       "calcium": 140,
       "flag_calcium": "Faible",
       "ingredients": "BASE : yaourt 0% 100g · ail pressé · citron · sel léger · herbes. CRUDITÉS : concombre, poivron, céleri, radis, chou-fleur cru",
-      "notes": "5 variantes : tzatziki, ail-herbes, épicé, citron vert-coriandre, ranch allégé."
+      "notes": "5 variantes : tzatziki, ail-herbes, épicé, citron vert-coriandre, ranch allégé.",
+      "nom_ar": "غموس الياغورت بالثوم مع خضرة نية",
+      "ingredients_ar": "الأساس: ياغورت 0% 100g · ثوم مهروس · حامض · شوية ملح · أعشاب. الخضرة النية: خيار، فلفلة، كرفس، فجل، شيفلور ني"
     },
     {
       "id": "CF-03",
@@ -383,7 +421,9 @@
       "calcium": 360,
       "flag_calcium": "Champion",
       "ingredients": "Kéfir 160g · whey chocolat SG 30g · ¼ banane (~30g) · Estéviol/érythritol · pincée sel · gomme guar ~⅙ càc",
-      "notes": "Soir de workout. Glucides banane = récup. Calcium ~30% cible."
+      "notes": "Soir de workout. Glucides banane = récup. Calcium ~30% cible.",
+      "nom_ar": "كريمي بالشوكلاطة (واي بروتين)",
+      "ingredients_ar": "كفير 160g · واي بروتين بطعم الشوكلاطة بلا غلوتين 30g · ربع بنانة (~30g) · سكر دايت (إريثريتول/ستيفيا) · شوية ملح · علكة الغوار ~سُدس ملعقة صغيرة"
     },
     {
       "id": "CF-04",
@@ -398,7 +438,9 @@
       "calcium": 360,
       "flag_calcium": "Champion",
       "ingredients": "Kéfir 160g · whey vanille SG 30g · Estéviol/érythritol · vanille · pincée sel · gomme guar ~⅙ càc",
-      "notes": "Soir sans workout ou vraie faim. Cacao maigre 1 càs = +19 kcal (option chocolat)."
+      "notes": "Soir sans workout ou vraie faim. Cacao maigre 1 càs = +19 kcal (option chocolat).",
+      "nom_ar": "كريمي بالفانيلا (واي بروتين)",
+      "ingredients_ar": "كفير 160g · واي بروتين بطعم الفانيلا بلا غلوتين 30g · سكر دايت (إريثريتول/ستيفيا) · فانيلا · شوية ملح · علكة الغوار ~سُدس ملعقة صغيرة"
     },
     {
       "id": "CF-05",
@@ -413,7 +455,9 @@
       "calcium": 360,
       "flag_calcium": "Champion",
       "ingredients": "Kéfir 160g · whey vanille SG 30g · fruits rouges surgelés 40g · Estéviol/érythritol · filet citron · gomme guar ~⅙ càc",
-      "notes": "Fruits rouges = plus bas sucre/IG. Bon pré-diabète."
+      "notes": "Fruits rouges = plus bas sucre/IG. Bon pré-diabète.",
+      "nom_ar": "كريمي بالفواكه الحمرا (واي بروتين)",
+      "ingredients_ar": "كفير 160g · واي بروتين بطعم الفانيلا بلا غلوتين 30g · فواكه حمرا مجمّدة 40g · سكر دايت (إريثريتول/ستيفيا) · شوية حامض · علكة الغوار ~سُدس ملعقة صغيرة"
     }
   ]
 }

@@ -53,6 +53,15 @@ const clip = await page.evaluate(() => navigator.clipboard.readText());
 if (!/Lundi/.test(clip)) throw new Error('Le presse-papier ne contient pas le menu');
 await page.screenshot({ path: 'scripts/shot-cuisiniere.png', fullPage: false });
 
+// Bascule darija (lettres arabes) : rendu RTL + copie en arabe.
+await page.getByRole('button', { name: 'الدارجة' }).click();
+await page.locator(".cook-meal[dir='rtl']").first().waitFor({ timeout: 5000 });
+await page.screenshot({ path: 'scripts/shot-cuisiniere-ar.png', fullPage: false });
+await page.getByRole('button', { name: /نسخ الأسبوع/ }).click();
+const clipAr = await page.evaluate(() => navigator.clipboard.readText());
+if (!/الإثنين/.test(clipAr)) throw new Error('La copie darija ne contient pas le jour en arabe');
+console.log('Copie darija (extrait):', clipAr.slice(0, 40).replace(/\n/g, ' ⏎ '));
+
 // 4) Onglet Courses : liste de courses auto-générée.
 await page.getByRole('button', { name: /Courses/ }).click();
 await page.locator('.course-item').first().waitFor({ timeout: 5000 });

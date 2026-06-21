@@ -3,20 +3,52 @@ import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import type { DayConfig, DayMenu, Recipe } from '../types';
 
-function mealLines(r: Recipe | undefined): string {
-  if (!r) return '';
-  return `• ${r.nom}\n${r.ingredients}`;
+type Lang = 'fr' | 'ar';
+
+// Libellés darija (lettres arabes) pour la vue cuisinière.
+const DAY_AR: Record<string, string> = {
+  lun: 'الإثنين',
+  mar: 'الثلاثاء',
+  mer: 'الأربعاء',
+  jeu: 'الخميس',
+  ven: 'الجمعة',
+  sam: 'السبت',
+  dim: 'الأحد',
+};
+const TYPE_AR: Record<string, string> = {
+  Repos: 'راحة',
+  Muscu: 'تمرين القوة',
+  Cardio: 'كارديو',
+};
+const LABELS = {
+  fr: { dej: 'Déjeuner', din: 'Dîner', extra: 'Extra' },
+  ar: { dej: 'الغدا', din: 'العشا', extra: 'زيادة' },
+};
+
+function recipeName(r: Recipe, lang: Lang): string {
+  return lang === 'ar' ? r.nom_ar || r.nom : r.nom;
+}
+function recipeIngredients(r: Recipe, lang: Lang): string {
+  return lang === 'ar' ? r.ingredients_ar || r.ingredients : r.ingredients;
 }
 
-function dayText(jour: DayConfig, day: DayMenu, byId: Map<string, Recipe>): string {
-  const parts: string[] = [`*${jour.nom}* (${jour.type})`];
+function mealLines(r: Recipe | undefined, lang: Lang): string {
+  if (!r) return '';
+  return `• ${recipeName(r, lang)}\n${recipeIngredients(r, lang)}`;
+}
+
+function dayText(jour: DayConfig, day: DayMenu, byId: Map<string, Recipe>, lang: Lang): string {
+  const L = LABELS[lang];
+  const title =
+    lang === 'ar' ? `*${DAY_AR[jour.key] ?? jour.nom}*` : `*${jour.nom}* (${jour.type})`;
+  const parts: string[] = [title];
   const dej = day.dejId ? byId.get(day.dejId) : undefined;
   const din = day.dinId ? byId.get(day.dinId) : undefined;
-  if (dej) parts.push(`\nDÉJEUNER\n${mealLines(dej)}`);
-  if (din) parts.push(`\nDÎNER\n${mealLines(din)}`);
+  if (dej) parts.push(`\n${L.dej.toUpperCase()}\n${mealLines(dej, lang)}`);
+  if (din) parts.push(`\n${L.din.toUpperCase()}\n${mealLines(din, lang)}`);
   for (const id of day.extras) {
     const r = byId.get(id);
-    if (r) parts.push(`\nEXTRA\n${mealLines(r)}`);
+    if (r) parts.push(`\n${L.extra.toUpperCase()}\n${mealLines(r, lang)}`);
   }
   return parts.join('\n');
 }
@@ -25,7 +57,6 @@ async function copy(text: string, onDone: () => void) {
   try {
     await navigator.clipboard.writeText(text);
   } catch {
-    // Repli si l'API Clipboard est indisponible (anciens navigateurs).
     const ta = document.createElement('textarea');
     ta.value = text;
     document.body.appendChild(ta);
@@ -41,6 +72,7 @@ export default function CuisinierView() {
   const week = useStore((s) => s.week);
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
   const [copied, setCopied] = useState<string | null>(null);
+  const [lang, setLang] = useState<Lang>('fr');
 
   const flash = (key: string) => {
     setCopied(key);
@@ -52,18 +84,42 @@ export default function CuisinierView() {
     return d.dejId || d.dinId || d.extras.length;
   });
 
-  const weekText = SEED_CONFIG.jours
-    .filter((j) => {
-      const d = week.days[j.key];
-      return d.dejId || d.dinId || d.extras.length;
-    })
-    .map((j) => dayText(j, week.days[j.key], byId))
-    .join('\n\n────────\n\n');
+  const weekText = days.map((j) => dayText(j, week.days[j.key], byId, lang)).join('\n\n────────\n\n');
+  const ar = lang === 'ar';
+  const L = LABELS[lang];
+
+  const Meal = ({ labelKey, recipe }: { labelKey: keyof typeof L; recipe: Recipe }) => (
+    <div className="cook-meal" dir={ar ? 'rtl' : 'ltr'} lang={ar ? 'ar' : 'fr'}>
+      <div className="cook-meal__label">{L[labelKey]}</div>
+      <div className="cook-meal__name">{recipeName(recipe, lang)}</div>
+      <div className="cook-meal__ing">{recipeIngredients(recipe, lang)}</div>
+      {ar && !recipe.ingredients_ar && (
+        <div className="cook-meal__note">⚠︎ الترجمة غير متوفرة — النص بالفرنسية</div>
+      )}
+    </div>
+  );
 
   return (
     <div>
+      <div className="lang-switch" role="group" aria-label="Langue">
+        <button
+          className={'lang-btn' + (lang === 'fr' ? ' lang-btn--active' : '')}
+          onClick={() => setLang('fr')}
+        >
+          Français
+        </button>
+        <button
+          className={'lang-btn' + (lang === 'ar' ? ' lang-btn--active' : '')}
+          onClick={() => setLang('ar')}
+        >
+          الدارجة
+        </button>
+      </div>
+
       <p className="hint">
-        Ingrédients pesés (1 portion). Les mesures à la cuillère (càc/càs) sont volontaires.
+        {ar
+          ? 'المقادير لكل حصة وحدة. ملاعق القياس (صغيرة/كبيرة) مقصودة.'
+          : 'Ingrédients pesés (1 portion). Les mesures à la cuillère (càc/càs) sont volontaires.'}
       </p>
 
       {days.length === 0 && (
@@ -71,11 +127,8 @@ export default function CuisinierView() {
       )}
 
       {days.length > 0 && (
-        <button
-          className="btn"
-          onClick={() => copy(weekText, () => flash('week'))}
-        >
-          {copied === 'week' ? '✓ Copié !' : '📋 Copier toute la semaine'}
+        <button className="btn" onClick={() => copy(weekText, () => flash('week'))}>
+          {copied === 'week' ? '✓ Copié !' : ar ? '📋 نسخ الأسبوع كامل' : '📋 Copier toute la semaine'}
         </button>
       )}
 
@@ -85,41 +138,27 @@ export default function CuisinierView() {
         const din = day.dinId ? byId.get(day.dinId) : undefined;
         return (
           <div className="card" key={jour.key}>
-            <div className="cook-day__title">
-              {jour.nom} <span className="daycard__type">· {jour.type}</span>
+            <div className="cook-day__title" dir={ar ? 'rtl' : 'ltr'}>
+              {ar ? DAY_AR[jour.key] ?? jour.nom : jour.nom}{' '}
+              <span className="daycard__type">· {ar ? TYPE_AR[jour.type] ?? jour.type : jour.type}</span>
             </div>
 
-            {dej && (
-              <div className="cook-meal">
-                <div className="cook-meal__label">Déjeuner</div>
-                <div className="cook-meal__name">{dej.nom}</div>
-                <div className="cook-meal__ing">{dej.ingredients}</div>
-              </div>
-            )}
-            {din && (
-              <div className="cook-meal">
-                <div className="cook-meal__label">Dîner</div>
-                <div className="cook-meal__name">{din.nom}</div>
-                <div className="cook-meal__ing">{din.ingredients}</div>
-              </div>
-            )}
+            {dej && <Meal labelKey="dej" recipe={dej} />}
+            {din && <Meal labelKey="din" recipe={din} />}
             {day.extras.map((id) => {
               const r = byId.get(id);
-              if (!r) return null;
-              return (
-                <div className="cook-meal" key={id}>
-                  <div className="cook-meal__label">Extra</div>
-                  <div className="cook-meal__name">{r.nom}</div>
-                  <div className="cook-meal__ing">{r.ingredients}</div>
-                </div>
-              );
+              return r ? <Meal key={id} labelKey="extra" recipe={r} /> : null;
             })}
 
             <button
               className="btn btn--ghost"
-              onClick={() => copy(dayText(jour, day, byId), () => flash(jour.key))}
+              onClick={() => copy(dayText(jour, day, byId, lang), () => flash(jour.key))}
             >
-              {copied === jour.key ? '✓ Copié !' : `📋 Copier ${jour.nom}`}
+              {copied === jour.key
+                ? '✓ Copié !'
+                : ar
+                  ? `📋 نسخ ${DAY_AR[jour.key] ?? jour.nom}`
+                  : `📋 Copier ${jour.nom}`}
             </button>
           </div>
         );
