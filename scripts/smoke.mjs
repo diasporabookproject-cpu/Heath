@@ -53,9 +53,17 @@ const clip = await page.evaluate(() => navigator.clipboard.readText());
 if (!/Lundi/.test(clip)) throw new Error('Le presse-papier ne contient pas le menu');
 await page.screenshot({ path: 'scripts/shot-cuisiniere.png', fullPage: false });
 
-// 4) Onglet Recettes : écarter puis vérifier le retrait des choix.
+// 4) Onglet Courses : liste de courses auto-générée.
+await page.getByRole('button', { name: /Courses/ }).click();
+await page.locator('.course-item').first().waitFor({ timeout: 5000 });
+const nbCourses = await page.locator('.course-item').count();
+if (nbCourses === 0) throw new Error('La liste de courses est vide');
+await page.screenshot({ path: 'scripts/shot-courses.png', fullPage: true });
+
+// 5) Onglet Recettes.
 await page.getByRole('button', { name: /Recettes/ }).click();
 await page.screenshot({ path: 'scripts/shot-biblio.png', fullPage: false });
+console.log('Articles liste de courses:', nbCourses);
 
 console.log('Avant choix, totaux Lundi:', kcalAvant?.replace(/\s+/g, ' ').trim());
 console.log('Presse-papier (extrait):', clip.slice(0, 60).replace(/\n/g, ' ⏎ '));

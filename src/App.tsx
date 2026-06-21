@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react';
 import { useStore } from './store/useStore';
 import ComposerView from './views/ComposerView';
 import CuisinierView from './views/CuisinierView';
+import CoursesView from './views/CoursesView';
 import BibliothequeView from './views/BibliothequeView';
 
-type Tab = 'composer' | 'cuisinier' | 'biblio';
+type Tab = 'composer' | 'cuisinier' | 'courses' | 'biblio';
 
 const TABS: { id: Tab; label: string; icon: string; title: string }[] = [
   { id: 'composer', label: 'Composer', icon: '🗓️', title: 'Menu de la semaine' },
   { id: 'cuisinier', label: 'Cuisinière', icon: '👩‍🍳', title: 'Vue cuisinière' },
+  { id: 'courses', label: 'Courses', icon: '🛒', title: 'Liste de courses' },
   { id: 'biblio', label: 'Recettes', icon: '📖', title: 'Bibliothèque' },
 ];
 
@@ -33,6 +35,8 @@ export default function App() {
           <ComposerView />
         ) : tab === 'cuisinier' ? (
           <CuisinierView />
+        ) : tab === 'courses' ? (
+          <CoursesView />
         ) : (
           <BibliothequeView />
         )}

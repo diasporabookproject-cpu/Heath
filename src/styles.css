@@ -340,6 +340,21 @@ button {
 .field-row { display: flex; gap: 8px; }
 .field-row .field { flex: 1; }
 
+/* ----- Liste de courses ----- */
+.course-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+.course-item:last-child { border-bottom: 0; }
+.course-item input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--brand); }
+.course-item__name { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.course-item__qty { color: var(--muted); font-weight: 600; font-size: 14px; flex-shrink: 0; white-space: nowrap; }
+.course-item--done .course-item__name,
+.course-item--done .course-item__qty { text-decoration: line-through; color: var(--muted); opacity: 0.6; }
+
 .empty-note { color: var(--muted); text-align: center; padding: 24px 12px; }
 .hint { font-size: 13px; color: var(--muted); margin: 4px 0 12px; }
 .spinner { text-align: center; padding: 48px; color: var(--muted); }
