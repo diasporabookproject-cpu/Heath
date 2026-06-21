@@ -93,6 +93,16 @@ button {
 .tabbar__item--active { color: var(--brand); }
 .tabbar__icon { font-size: 20px; line-height: 1; }
 
+.account-btn {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 /* ----- Cartes ----- */
 .card {
   background: var(--card);

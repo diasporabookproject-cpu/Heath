@@ -29,6 +29,9 @@ jobs:
         env:
           # project pages : l'app est servie sous /Heath/ (nom exact du dépôt)
           BASE_PATH: /Heath/
+          # Clés Supabase côté client (la publishable key est publique par design).
+          VITE_SUPABASE_URL: https://pqeilsuqglmrvijndrwa.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Gvhm9PdeleoilZGoeFiAtg_mGATsr1v
       - uses: actions/configure-pages@v5
         with:
           # active automatiquement GitHub Pages (source = Actions) si pas déjà fait

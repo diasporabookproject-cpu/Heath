@@ -5,7 +5,10 @@ import CuisinierView from './views/CuisinierView';
 import CoursesView from './views/CoursesView';
 import BibliothequeView from './views/BibliothequeView';
 import SharedMenuView from './views/SharedMenuView';
+import AccountSheet from './components/AccountSheet';
 import { readSharedFromLocation } from './lib/share';
+import { supabaseEnabled } from './lib/supabase';
+import { useSession } from './lib/useSession';
 
 type Tab = 'composer' | 'cuisinier' | 'courses' | 'biblio';
 
@@ -20,6 +23,8 @@ export default function App() {
   const ready = useStore((s) => s.ready);
   const init = useStore((s) => s.init);
   const [tab, setTab] = useState<Tab>('composer');
+  const [accountOpen, setAccountOpen] = useState(false);
+  const { session } = useSession();
 
   // Lien partagé : si l'URL contient un menu encodé, on affiche la page
   // cuisinière en lecture seule (pas besoin des données locales).
@@ -35,7 +40,19 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="topbar">{current.title}</header>
+      <header className="topbar">
+        <span>{current.title}</span>
+        {supabaseEnabled && (
+          <button
+            className="account-btn"
+            onClick={() => setAccountOpen(true)}
+            aria-label="Compte et synchro"
+            title={session ? `Connecté : ${session.user.email}` : 'Se connecter'}
+          >
+            {session ? '☁︎' : '☁︎ Connexion'}
+          </button>
+        )}
+      </header>
       <main className="app__main">
         {!ready ? (
           <div className="spinner">Chargement…</div>
@@ -61,6 +78,7 @@ export default function App() {
           </button>
         ))}
       </nav>
+      {accountOpen && <AccountSheet session={session} onClose={() => setAccountOpen(false)} />}
     </div>
   );
 }

@@ -9,6 +9,15 @@ const base = process.env.BASE_PATH || '/';
 
 export default defineConfig({
   base,
+  // Vite n'expose pas les variables d'environnement du shell à import.meta.env
+  // (uniquement les fichiers .env). On injecte donc explicitement les clés
+  // Supabase fournies par le workflow CI.
+  define: {
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || ''),
+    'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(
+      process.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
+    ),
+  },
   plugins: [
     react(),
     VitePWA({
