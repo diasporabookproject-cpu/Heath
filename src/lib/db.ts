@@ -37,8 +37,8 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
 
 const SEEDED_KEY = 'seeded';
 const SEED_VERSION_KEY = 'seedVersion';
-// 1 = jeu initial · 2 = ajout des traductions darija (nom_ar / ingredients_ar)
-const SEED_VERSION = 2;
+// 1 = jeu initial · 2 = traductions darija · 3 = +2 recettes (DEJ-09, DIN-10)
+const SEED_VERSION = 3;
 
 /**
  * Au premier lancement : importe le jeu de données de départ.

@@ -458,6 +458,38 @@
       "notes": "Fruits rouges = plus bas sucre/IG. Bon pré-diabète.",
       "nom_ar": "كريمي بالفواكه الحمرا (واي بروتين)",
       "ingredients_ar": "كفير 160g · واي بروتين بطعم الفانيلا بلا غلوتين 30g · فواكه حمرا مجمّدة 40g · سكر دايت (إريثريتول/ستيفيا) · شوية حامض · علكة الغوار ~سُدس ملعقة صغيرة"
+    },
+    {
+      "id": "DEJ-09",
+      "nom": "Assiette mezze, houmous maison, poulet chermoula",
+      "type": "Déjeuner",
+      "statut": "Validé",
+      "jour": "Tous",
+      "kcal": 725,
+      "prot": 70,
+      "gluc": 50,
+      "lip": 34,
+      "calcium": 390,
+      "flag_calcium": "Moyen",
+      "ingredients": "Houmous maison : pois chiches cuits 70g + tahini 12g + 1 càc huile+citron+ail+cumin+sel · poulet chermoula grillé froid tranché 150g · 1 œuf dur · légumes grillés à sec froids 150g (courgette+poivron+aubergine) · concombre + tomates cerises 80g · sésame torréfié 1 càc · feta 20g",
+      "nom_ar": "طبق مزة، حمص بلدي، دجاج بالشرمولة",
+      "ingredients_ar": "الحمص : حمص مطيّب 70g + طحينة 12g + 1 معلقة صغيرة زيت+حامض+ثوم+كمون+ملحة · دجاج بالشرمولة مشوي بارد مقطّع 150g · 1 بيضة مسلوقة · خضرة مشوية بلا زيت بايدة 150g (كورجيط+فلفلة+باذنجان) · خيار + طماطم شيري 80g · زنجلان محمّص 1 معلقة صغيرة · فيتا 20g"
+    },
+    {
+      "id": "DIN-10",
+      "nom": "Chakchouka à la kefta et feta",
+      "type": "Dîner",
+      "statut": "Validé",
+      "jour": "Repos",
+      "kcal": 750,
+      "prot": 62,
+      "gluc": 44,
+      "lip": 34,
+      "calcium": 310,
+      "flag_calcium": "Moyen",
+      "ingredients": "Kefta bœuf 5% 150g émiettée · 2 œufs · sauce tomate-poivron-oignon 350g · feta 30g · 1 càc huile+ail+cumin+paprika+coriandre · riz basmati cuit 80g · yaourt grec 0% 100g (dessert, option calcium)",
+      "nom_ar": "شكشوكة بالكفتة والفيتا",
+      "ingredients_ar": "كفتة بقري 5% 150g مفتّتة · 2 بيضات · مرقة طماطم+فلفلة+بصلة 350g · فيتا 30g · 1 معلقة صغيرة زيت+ثوم+كمون+فلفلة حمرة+قزبر · رز بسمتي مطيّب 80g · ياغورت يوناني 0% 100g (ديسير، اختياري للكالسيوم)"
     }
   ]
 }
