@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
+import { parseRecipesJson } from '../lib/importRecipes';
 import type { CalciumFlag, Recipe, RecipeType } from '../types';
 
 const TYPES: RecipeType[] = ['Déjeuner', 'Dîner', 'Coupe-faim'];
@@ -23,6 +24,7 @@ export default function BibliothequeView() {
   const recipes = useStore((s) => s.recipes);
   const setStatut = useStore((s) => s.setStatut);
   const [adding, setAdding] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const grouped = useMemo(() => {
     return TYPES.map((type) => ({
@@ -41,6 +43,9 @@ export default function BibliothequeView() {
     <div>
       <button className="btn" onClick={() => setAdding(true)}>
         + Ajouter une recette
+      </button>
+      <button className="btn btn--ghost" onClick={() => setImporting(true)}>
+        ⇪ Importer (JSON)
       </button>
 
       {grouped.map((g) => (
@@ -74,6 +79,66 @@ export default function BibliothequeView() {
       ))}
 
       {adding && <AddRecipeSheet onClose={() => setAdding(false)} />}
+      {importing && <ImportRecipesSheet onClose={() => setImporting(false)} />}
+    </div>
+  );
+}
+
+function ImportRecipesSheet({ onClose }: { onClose: () => void }) {
+  const recipes = useStore((s) => s.recipes);
+  const upsertRecipe = useStore((s) => s.upsertRecipe);
+  const [text, setText] = useState('');
+  const [report, setReport] = useState<{ ok: number; errors: string[] } | null>(null);
+
+  const doImport = () => {
+    const { recipes: parsed, errors } = parseRecipesJson(text, recipes);
+    for (const r of parsed) upsertRecipe(r);
+    setReport({ ok: parsed.length, errors });
+    if (parsed.length > 0 && errors.length === 0) setTimeout(onClose, 900);
+  };
+
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet__head">
+          <div className="sheet__title">
+            <span>Importer des recettes (JSON)</span>
+            <button className="sheet__close" onClick={onClose} aria-label="Fermer">
+              ×
+            </button>
+          </div>
+        </div>
+        <div className="sheet__list">
+          <p className="hint">
+            Colle un tableau JSON de recettes (ou une seule). Les identifiants manquants sont
+            générés ; le flag calcium est déduit s'il est absent.
+          </p>
+          <div className="field">
+            <textarea
+              rows={10}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder='[ { "nom": "...", "type": "Déjeuner", "kcal": 750, ... } ]'
+              style={{ fontFamily: 'monospace', fontSize: '13px' }}
+            />
+          </div>
+          {report && (
+            <div className={'import-report' + (report.errors.length ? ' import-report--warn' : '')}>
+              ✓ {report.ok} recette(s) importée(s).
+              {report.errors.length > 0 && (
+                <ul>
+                  {report.errors.map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          <button className="btn" onClick={doImport} disabled={!text.trim()}>
+            Importer
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

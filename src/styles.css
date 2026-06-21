@@ -380,4 +380,14 @@ button {
 
 .empty-note { color: var(--muted); text-align: center; padding: 24px 12px; }
 .hint { font-size: 13px; color: var(--muted); margin: 4px 0 12px; }
+.import-report {
+  background: var(--vert-bg);
+  color: #14532d;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.import-report--warn { background: var(--orange-bg); color: #7c2d12; }
+.import-report ul { margin: 6px 0 0; padding-left: 18px; }
 .spinner { text-align: center; padding: 48px; color: var(--muted); }
