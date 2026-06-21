@@ -19,6 +19,7 @@ const browser = await chromium.launch({
 const ctx = await browser.newContext({
   viewport: { width: 390, height: 844 }, // iPhone-ish
   deviceScaleFactor: 2,
+  ignoreHTTPSErrors: true,
 });
 const page = await ctx.newPage();
 page.on('console', (m) => {

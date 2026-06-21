@@ -33,6 +33,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // Applique tout de suite la nouvelle version (évite de rester bloqué
+        // sur un ancien cache après un déploiement).
+        clientsClaim: true,
+        skipWaiting: true,
       },
     }),
   ],
