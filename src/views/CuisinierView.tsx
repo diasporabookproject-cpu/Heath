@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import type { DayConfig, DayMenu, Recipe } from '../types';
+import VoiceNote from '../components/VoiceNote';
 
 type Lang = 'fr' | 'ar';
 
@@ -96,6 +97,7 @@ export default function CuisinierView() {
       {ar && !recipe.ingredients_ar && (
         <div className="cook-meal__note">⚠︎ الترجمة غير متوفرة — النص بالفرنسية</div>
       )}
+      <VoiceNote recipeId={recipe.id} recipeName={recipeName(recipe, lang)} lang={lang} />
     </div>
   );
 

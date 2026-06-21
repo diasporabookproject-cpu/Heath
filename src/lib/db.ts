@@ -5,14 +5,22 @@ import { SEED_RECIPES } from '../data';
 // IndexedDB = source de vérité locale (offline-first). La synchro Supabase
 // (étape suivante) viendra se réconcilier par-dessus ce store.
 
+interface AudioNote {
+  recipeId: string;
+  blob: Blob;
+  mime: string;
+  updatedAt: number;
+}
+
 interface MenuDB extends DBSchema {
   recipes: { key: string; value: Recipe };
   weeks: { key: string; value: WeekMenu };
   meta: { key: string; value: unknown };
+  audio: { key: string; value: AudioNote };
 }
 
 const DB_NAME = 'menu-semaine';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<MenuDB>> | null = null;
 
@@ -28,6 +36,10 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
         }
         if (!db.objectStoreNames.contains('meta')) {
           db.createObjectStore('meta');
+        }
+        // v2 : notes vocales par recette (clé = id de recette).
+        if (!db.objectStoreNames.contains('audio')) {
+          db.createObjectStore('audio', { keyPath: 'recipeId' });
         }
       },
     });
@@ -102,4 +114,28 @@ export async function loadWeek(id: string): Promise<WeekMenu | undefined> {
 export async function saveWeek(week: WeekMenu): Promise<void> {
   const db = await getDB();
   await db.put('weeks', week);
+}
+
+// ── Notes vocales (locales pour l'instant ; synchro Supabase à venir) ────────
+
+export async function saveAudio(recipeId: string, blob: Blob, mime: string): Promise<void> {
+  const db = await getDB();
+  await db.put('audio', { recipeId, blob, mime, updatedAt: Date.now() });
+}
+
+export async function loadAudio(recipeId: string): Promise<Blob | undefined> {
+  const db = await getDB();
+  const rec = await db.get('audio', recipeId);
+  return rec?.blob;
+}
+
+export async function deleteAudio(recipeId: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('audio', recipeId);
+}
+
+/** Ids des recettes qui ont une note vocale (pour afficher un indicateur). */
+export async function loadAudioKeys(): Promise<string[]> {
+  const db = await getDB();
+  return (await db.getAllKeys('audio')) as string[];
 }

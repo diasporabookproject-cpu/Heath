@@ -13,7 +13,9 @@ const chromium = await loadChromium();
 const BASE = process.env.BASE_URL || 'http://localhost:4173';
 const errors = [];
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({
+  args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+});
 const ctx = await browser.newContext({
   viewport: { width: 390, height: 844 }, // iPhone-ish
   deviceScaleFactor: 2,
@@ -46,12 +48,21 @@ if (!/Bowl poulet épinards/.test(dejText)) throw new Error('Le déjeuner choisi
 await page.screenshot({ path: 'scripts/shot-composer.png', fullPage: false });
 
 // 3) Onglet Cuisinière + test du bouton Copier.
-await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+await ctx.grantPermissions(['clipboard-read', 'clipboard-write', 'microphone']);
 await page.getByRole('button', { name: /Cuisinière/ }).click();
 await page.getByRole('button', { name: /Copier toute la semaine/ }).click();
 const clip = await page.evaluate(() => navigator.clipboard.readText());
 if (!/Lundi/.test(clip)) throw new Error('Le presse-papier ne contient pas le menu');
 await page.screenshot({ path: 'scripts/shot-cuisiniere.png', fullPage: false });
+
+// Note vocale : enregistrer (micro simulé) puis vérifier la lecture.
+const vn = page.locator('.voice-note').first();
+await vn.getByRole('button', { name: /Enregistrer/ }).click();
+await page.getByRole('button', { name: /Arrêter/ }).first().waitFor({ timeout: 5000 });
+await page.waitForTimeout(1200);
+await page.getByRole('button', { name: /Arrêter/ }).first().click();
+await vn.locator('audio.voice-note__audio').waitFor({ timeout: 10000 });
+console.log('Note vocale enregistrée + lecture OK');
 
 // Bascule darija (lettres arabes) : rendu RTL + copie en arabe.
 await page.getByRole('button', { name: 'الدارجة' }).click();
