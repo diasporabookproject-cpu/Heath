@@ -336,6 +336,15 @@ button {
 }
 .lib-item:last-child { border-bottom: 0; }
 .lib-item__main { flex: 1; min-width: 0; }
+.lib-item__edit {
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 4px 0;
+  font: inherit;
+  color: inherit;
+}
+.lib-item__edit:active { opacity: 0.6; }
 .lib-item__name { font-weight: 600; }
 .lib-item--ecarte .lib-item__name { color: var(--muted); text-decoration: line-through; }
 .lib-item__sub { font-size: 12px; color: var(--muted); }

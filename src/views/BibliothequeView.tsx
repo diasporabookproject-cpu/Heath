@@ -25,6 +25,7 @@ export default function BibliothequeView() {
   const setStatut = useStore((s) => s.setStatut);
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [editing, setEditing] = useState<Recipe | null>(null);
 
   const grouped = useMemo(() => {
     return TYPES.map((type) => ({
@@ -58,14 +59,14 @@ export default function BibliothequeView() {
                 key={r.id}
                 className={'lib-item' + (r.statut === 'Écarté' ? ' lib-item--ecarte' : '')}
               >
-                <div className="lib-item__main">
+                <button className="lib-item__main lib-item__edit" onClick={() => setEditing(r)}>
                   <div className="lib-item__name">{r.nom}</div>
                   <div className="lib-item__sub">
-                    {r.kcal} kcal · P {r.prot} · Ca {r.calcium} mg{' '}
+                    {r.type} · {r.kcal} kcal · P {r.prot} · Ca {r.calcium} mg{' '}
                     <span className={'flag flag--' + r.flag_calcium}>{r.flag_calcium}</span>
                     {r.statut === 'Test' && ' · Test'}
                   </div>
-                </div>
+                </button>
                 <button
                   className="lib-toggle"
                   onClick={() => setStatut(r.id, r.statut === 'Écarté' ? 'Validé' : 'Écarté')}
@@ -78,7 +79,8 @@ export default function BibliothequeView() {
         </div>
       ))}
 
-      {adding && <AddRecipeSheet onClose={() => setAdding(false)} />}
+      {adding && <RecipeFormSheet onClose={() => setAdding(false)} />}
+      {editing && <RecipeFormSheet recipe={editing} onClose={() => setEditing(null)} />}
       {importing && <ImportRecipesSheet onClose={() => setImporting(false)} />}
     </div>
   );
@@ -143,34 +145,36 @@ function ImportRecipesSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-function AddRecipeSheet({ onClose }: { onClose: () => void }) {
+function RecipeFormSheet({ recipe, onClose }: { recipe?: Recipe; onClose: () => void }) {
   const recipes = useStore((s) => s.recipes);
   const upsertRecipe = useStore((s) => s.upsertRecipe);
+  const isEdit = !!recipe;
+  const numStr = (n: number | undefined) => (n != null ? String(n) : '');
 
-  const [nom, setNom] = useState('');
-  const [type, setType] = useState<RecipeType>('Déjeuner');
-  const [jour, setJour] = useState('Tous');
-  const [kcal, setKcal] = useState('');
-  const [prot, setProt] = useState('');
-  const [gluc, setGluc] = useState('');
-  const [lip, setLip] = useState('');
-  const [calcium, setCalcium] = useState('');
-  const [flag, setFlag] = useState<CalciumFlag>('Moyen');
-  const [ingredients, setIngredients] = useState('');
-  const [notes, setNotes] = useState('');
-  const [nomAr, setNomAr] = useState('');
-  const [ingredientsAr, setIngredientsAr] = useState('');
+  const [nom, setNom] = useState(recipe?.nom ?? '');
+  const [type, setType] = useState<RecipeType>(recipe?.type ?? 'Déjeuner');
+  const [jour, setJour] = useState(recipe?.jour ?? 'Tous');
+  const [kcal, setKcal] = useState(numStr(recipe?.kcal));
+  const [prot, setProt] = useState(numStr(recipe?.prot));
+  const [gluc, setGluc] = useState(numStr(recipe?.gluc));
+  const [lip, setLip] = useState(numStr(recipe?.lip));
+  const [calcium, setCalcium] = useState(numStr(recipe?.calcium));
+  const [flag, setFlag] = useState<CalciumFlag>(recipe?.flag_calcium ?? 'Moyen');
+  const [ingredients, setIngredients] = useState(recipe?.ingredients ?? '');
+  const [notes, setNotes] = useState(recipe?.notes ?? '');
+  const [nomAr, setNomAr] = useState(recipe?.nom_ar ?? '');
+  const [ingredientsAr, setIngredientsAr] = useState(recipe?.ingredients_ar ?? '');
 
   const num = (v: string) => Math.max(0, Math.round(Number(v) || 0));
   const canSave = nom.trim().length > 0;
 
   const save = () => {
     if (!canSave) return;
-    const recipe: Recipe = {
-      id: nextId(recipes, type),
+    const next: Recipe = {
+      id: recipe ? recipe.id : nextId(recipes, type),
       nom: nom.trim(),
       type,
-      statut: 'Validé',
+      statut: recipe ? recipe.statut : 'Validé',
       jour,
       kcal: num(kcal),
       prot: num(prot),
@@ -183,7 +187,7 @@ function AddRecipeSheet({ onClose }: { onClose: () => void }) {
       nom_ar: nomAr.trim() || undefined,
       ingredients_ar: ingredientsAr.trim() || undefined,
     };
-    upsertRecipe(recipe);
+    upsertRecipe(next);
     onClose();
   };
 
@@ -192,7 +196,7 @@ function AddRecipeSheet({ onClose }: { onClose: () => void }) {
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sheet__head">
           <div className="sheet__title">
-            <span>Nouvelle recette</span>
+            <span>{isEdit ? 'Modifier la recette' : 'Nouvelle recette'}</span>
             <button className="sheet__close" onClick={onClose} aria-label="Fermer">
               ×
             </button>
@@ -286,7 +290,7 @@ function AddRecipeSheet({ onClose }: { onClose: () => void }) {
             />
           </div>
           <button className="btn" onClick={save} disabled={!canSave}>
-            Enregistrer
+            {isEdit ? 'Enregistrer les modifications' : 'Enregistrer'}
           </button>
         </div>
       </div>

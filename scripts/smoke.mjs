@@ -74,6 +74,19 @@ await page.getByRole('button', { name: /Recettes/ }).click();
 await page.screenshot({ path: 'scripts/shot-biblio.png', fullPage: false });
 console.log('Articles liste de courses:', nbCourses);
 
+// 6) Édition : changer le type du Rôti de bœuf (Dîner -> Déjeuner).
+const roti = page.locator('.lib-item', { hasText: 'Rôti de bœuf' });
+await roti.locator('.lib-item__edit').click();
+await page.getByText('Modifier la recette').waitFor({ timeout: 5000 });
+await page.locator('.sheet select').first().selectOption('Déjeuner');
+await page.getByRole('button', { name: /Enregistrer les modifications/ }).click();
+const sub = await page
+  .locator('.lib-item', { hasText: 'Rôti de bœuf' })
+  .locator('.lib-item__sub')
+  .innerText();
+if (!/Déjeuner/.test(sub)) throw new Error("Le changement de type n'a pas été appliqué");
+console.log('Édition type OK →', sub.split('·')[0].trim());
+
 console.log('Avant choix, totaux Lundi:', kcalAvant?.replace(/\s+/g, ' ').trim());
 console.log('Presse-papier (extrait):', clip.slice(0, 60).replace(/\n/g, ' ⏎ '));
 console.log(errors.length ? 'ERREURS:\n' + errors.join('\n') : 'Aucune erreur console/page ✅');
