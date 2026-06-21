@@ -3,28 +3,9 @@ import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import type { DayConfig, DayMenu, Recipe } from '../types';
 import VoiceNote from '../components/VoiceNote';
-
-type Lang = 'fr' | 'ar';
-
-// Libellés darija (lettres arabes) pour la vue cuisinière.
-const DAY_AR: Record<string, string> = {
-  lun: 'الإثنين',
-  mar: 'الثلاثاء',
-  mer: 'الأربعاء',
-  jeu: 'الخميس',
-  ven: 'الجمعة',
-  sam: 'السبت',
-  dim: 'الأحد',
-};
-const TYPE_AR: Record<string, string> = {
-  Repos: 'راحة',
-  Muscu: 'تمرين القوة',
-  Cardio: 'كارديو',
-};
-const LABELS = {
-  fr: { dej: 'Déjeuner', din: 'Dîner', extra: 'Extra' },
-  ar: { dej: 'الغدا', din: 'العشا', extra: 'زيادة' },
-};
+import { DAY_AR, LABELS, TYPE_AR, type Lang } from '../lib/cuisineLabels';
+import { loadAudioKeys } from '../lib/db';
+import { buildSharePayload, buildShareUrl } from '../lib/share';
 
 function recipeName(r: Recipe, lang: Lang): string {
   return lang === 'ar' ? r.nom_ar || r.nom : r.nom;
@@ -74,10 +55,34 @@ export default function CuisinierView() {
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
   const [copied, setCopied] = useState<string | null>(null);
   const [lang, setLang] = useState<Lang>('fr');
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
 
   const flash = (key: string) => {
     setCopied(key);
     setTimeout(() => setCopied((c) => (c === key ? null : c)), 1500);
+  };
+
+  const shareLink = async () => {
+    // On relit les notes vocales à l'instant (placeholder à jour sur le lien).
+    const audioIds = new Set(await loadAudioKeys());
+    const payload = buildSharePayload(SEED_CONFIG, week, byId, audioIds);
+    const url = buildShareUrl(payload);
+    const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+    try {
+      if (nav.share) {
+        await nav.share({ title: 'Menu de la semaine', text: 'Menu de la semaine 👇', url });
+        return;
+      }
+    } catch {
+      return; // partage annulé
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareMsg('Lien copié !');
+    } catch {
+      setShareMsg(url);
+    }
+    setTimeout(() => setShareMsg(null), 2500);
   };
 
   const days = SEED_CONFIG.jours.filter((j) => {
@@ -129,9 +134,15 @@ export default function CuisinierView() {
       )}
 
       {days.length > 0 && (
-        <button className="btn" onClick={() => copy(weekText, () => flash('week'))}>
-          {copied === 'week' ? '✓ Copié !' : ar ? '📋 نسخ الأسبوع كامل' : '📋 Copier toute la semaine'}
-        </button>
+        <>
+          <button className="btn" onClick={shareLink}>
+            {ar ? '🔗 شارك المنيو (رابط)' : '🔗 Partager le menu (lien)'}
+          </button>
+          {shareMsg && <div className="import-report">{shareMsg}</div>}
+          <button className="btn btn--ghost" onClick={() => copy(weekText, () => flash('week'))}>
+            {copied === 'week' ? '✓ Copié !' : ar ? '📋 نسخ الأسبوع كامل' : '📋 Copier toute la semaine'}
+          </button>
+        </>
       )}
 
       {days.map((jour) => {

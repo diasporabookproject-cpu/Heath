@@ -4,6 +4,8 @@ import ComposerView from './views/ComposerView';
 import CuisinierView from './views/CuisinierView';
 import CoursesView from './views/CoursesView';
 import BibliothequeView from './views/BibliothequeView';
+import SharedMenuView from './views/SharedMenuView';
+import { readSharedFromLocation } from './lib/share';
 
 type Tab = 'composer' | 'cuisinier' | 'courses' | 'biblio';
 
@@ -19,9 +21,15 @@ export default function App() {
   const init = useStore((s) => s.init);
   const [tab, setTab] = useState<Tab>('composer');
 
+  // Lien partagé : si l'URL contient un menu encodé, on affiche la page
+  // cuisinière en lecture seule (pas besoin des données locales).
+  const shared = readSharedFromLocation();
+
   useEffect(() => {
-    void init();
-  }, [init]);
+    if (!shared) void init();
+  }, [init, shared]);
+
+  if (shared) return <SharedMenuView menu={shared} />;
 
   const current = TABS.find((t) => t.id === tab)!;
 

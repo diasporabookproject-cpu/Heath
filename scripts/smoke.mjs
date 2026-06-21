@@ -64,6 +64,28 @@ await page.getByRole('button', { name: /Arrêter/ }).first().click();
 await vn.locator('audio.voice-note__audio').waitFor({ timeout: 10000 });
 console.log('Note vocale enregistrée + lecture OK');
 
+// Partage par lien (sans backend) : on capture le lien puis on ouvre la page partagée.
+await page.evaluate(() => {
+  window.__shared = null;
+  navigator.share = (d) => {
+    window.__shared = d;
+    return Promise.resolve();
+  };
+});
+await page.getByRole('button', { name: /Partager le menu/ }).click();
+await page.waitForFunction(() => window.__shared && window.__shared.url, { timeout: 5000 });
+const shareUrl = await page.evaluate(() => window.__shared.url);
+if (!shareUrl || !shareUrl.includes('#m=')) throw new Error('Lien de partage non généré');
+const shared = await ctx.newPage();
+await shared.goto(shareUrl, { waitUntil: 'networkidle' });
+await shared.getByText('Menu de la semaine').first().waitFor({ timeout: 5000 });
+const sharedBody = await shared.locator('.app__main').innerText();
+if (!/Bowl poulet épinards/.test(sharedBody)) throw new Error('La page partagée ne montre pas le menu');
+if (!/Note vocale — bientôt/.test(sharedBody)) throw new Error('Placeholder note vocale manquant');
+await shared.screenshot({ path: 'scripts/shot-partage.png', fullPage: true });
+await shared.close();
+console.log('Partage lien OK (longueur du lien:', shareUrl.length, 'car.)');
+
 // Bascule darija (lettres arabes) : rendu RTL + copie en arabe.
 await page.getByRole('button', { name: 'الدارجة' }).click();
 await page.locator(".cook-meal[dir='rtl']").first().waitFor({ timeout: 5000 });
