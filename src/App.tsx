@@ -6,7 +6,8 @@ import CoursesView from './views/CoursesView';
 import BibliothequeView from './views/BibliothequeView';
 import SharedMenuView from './views/SharedMenuView';
 import AccountSheet from './components/AccountSheet';
-import { readSharedFromLocation } from './lib/share';
+import { readPublishId, readSharedFromLocation, type SharedMenu } from './lib/share';
+import { fetchPublishedMenu } from './lib/publish';
 import { supabaseEnabled } from './lib/supabase';
 import { useSession } from './lib/useSession';
 
@@ -26,15 +27,16 @@ export default function App() {
   const [accountOpen, setAccountOpen] = useState(false);
   const { session } = useSession();
 
-  // Lien partagé : si l'URL contient un menu encodé, on affiche la page
-  // cuisinière en lecture seule (pas besoin des données locales).
+  // Lien partagé : menu encodé dans l'URL (#m=) ou menu publié (#p=, avec audio).
   const shared = readSharedFromLocation();
+  const publishId = readPublishId();
 
   useEffect(() => {
-    if (!shared) void init();
-  }, [init, shared]);
+    if (!shared && !publishId) void init();
+  }, [init, shared, publishId]);
 
   if (shared) return <SharedMenuView menu={shared} />;
+  if (publishId) return <PublishedMenu id={publishId} />;
 
   const current = TABS.find((t) => t.id === tab)!;
 
@@ -81,4 +83,38 @@ export default function App() {
       {accountOpen && <AccountSheet session={session} onClose={() => setAccountOpen(false)} />}
     </div>
   );
+}
+
+/** Page cuisinière d'un menu publié (lien #p=), chargé depuis Supabase. */
+function PublishedMenu({ id }: { id: string }) {
+  const [menu, setMenu] = useState<SharedMenu | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPublishedMenu(id)
+      .then(setMenu)
+      .catch((e) => setError(e.message));
+  }, [id]);
+
+  if (error) {
+    return (
+      <div className="app">
+        <header className="topbar">Menu de la semaine</header>
+        <main className="app__main">
+          <p className="empty-note">{error}</p>
+        </main>
+      </div>
+    );
+  }
+  if (!menu) {
+    return (
+      <div className="app">
+        <header className="topbar">Menu de la semaine</header>
+        <main className="app__main">
+          <div className="spinner">Chargement…</div>
+        </main>
+      </div>
+    );
+  }
+  return <SharedMenuView menu={menu} />;
 }

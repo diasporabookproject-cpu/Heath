@@ -37,6 +37,15 @@ describe('partage par lien', () => {
     expect(decodeMenu('nimporte-quoi')).toBeNull();
   });
 
+  it('intègre les URLs audio (menu publié) sinon un placeholder', () => {
+    const urls = new Map([['DEJ-07', 'https://x.supabase.co/storage/v1/object/public/shared/a/DEJ-07.webm']]);
+    const payload = buildSharePayload(SEED_CONFIG, week, byId, new Set(['DEJ-07']), urls);
+    expect(payload.days[0].dej?.a).toContain('DEJ-07.webm');
+    expect(payload.days[0].dej?.v).toBeUndefined(); // a remplace v
+    // round-trip conserve l'URL
+    expect(decodeMenu(encodeMenu(payload))?.days[0].dej?.a).toBe(payload.days[0].dej?.a);
+  });
+
   it('garde le lien raisonnablement court (semaine complète)', () => {
     const full: WeekMenu = { id: 'c', days: {} };
     const ids = ['DEJ-01', 'DEJ-02', 'DEJ-03', 'DEJ-07', 'DEJ-08', 'DEJ-06', 'DEJ-09'];

@@ -20,8 +20,17 @@ export default function SharedMenuView({ menu }: { menu: SharedMenu }) {
       <div className="cook-meal__name">{name(m)}</div>
       <div className="cook-meal__ing">{ing(m)}</div>
       {ar && !m.ia && <div className="cook-meal__note">⚠︎ الترجمة غير متوفرة — النص بالفرنسية</div>}
-      {m.v && (
-        <div className="voice-placeholder">🔊 {ar ? 'ملاحظة صوتية — قريباً' : 'Note vocale — bientôt'}</div>
+      {m.a ? (
+        <div className="voice-note__row" style={{ marginTop: 8 }}>
+          <span className="voice-note__title">🔊 {ar ? 'ملاحظة صوتية' : 'Note vocale'}</span>
+          <audio src={m.a} controls className="voice-note__audio" />
+        </div>
+      ) : (
+        m.v && (
+          <div className="voice-placeholder">
+            🔊 {ar ? 'ملاحظة صوتية — قريباً' : 'Note vocale — bientôt'}
+          </div>
+        )
       )}
     </div>
   );

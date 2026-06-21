@@ -7,13 +7,15 @@ import type { AppConfig, Recipe, WeekMenu } from '../types';
 // (placeholder pour l'instant) — il viendra avec le backend.
 
 export const SHARE_PREFIX = '#m=';
+export const PUBLISH_PREFIX = '#p=';
 
 export interface SharedMeal {
   n: string; // nom FR
   i: string; // ingrédients FR
   na?: string; // nom darija
   ia?: string; // ingrédients darija
-  v?: 1; // une note vocale existe (placeholder côté page partagée)
+  v?: 1; // une note vocale existe (placeholder, lien sans backend)
+  a?: string; // URL publique d'une note vocale (lien publié avec audio)
 }
 
 export interface SharedDay {
@@ -30,21 +32,33 @@ export interface SharedMenu {
   days: SharedDay[];
 }
 
-function meal(r: Recipe | undefined, hasVoice: boolean): SharedMeal | undefined {
+function meal(
+  r: Recipe | undefined,
+  id: string | null,
+  audioIds: Set<string>,
+  audioUrls?: Map<string, string>,
+): SharedMeal | undefined {
   if (!r) return undefined;
   const m: SharedMeal = { n: r.nom, i: r.ingredients };
   if (r.nom_ar) m.na = r.nom_ar;
   if (r.ingredients_ar) m.ia = r.ingredients_ar;
-  if (hasVoice) m.v = 1;
+  const url = id ? audioUrls?.get(id) : undefined;
+  if (url) m.a = url; // lien publié : audio jouable
+  else if (id && audioIds.has(id)) m.v = 1; // lien simple : placeholder
   return m;
 }
 
-/** Construit la charge utile à partir de la semaine (jours non vides). */
+/**
+ * Construit la charge utile à partir de la semaine (jours non vides).
+ * `audioIds` : recettes ayant une note vocale (→ placeholder).
+ * `audioUrls` : URLs publiques des notes (→ audio jouable, lien publié).
+ */
 export function buildSharePayload(
   config: AppConfig,
   week: WeekMenu,
   byId: Map<string, Recipe>,
   audioIds: Set<string>,
+  audioUrls?: Map<string, string>,
 ): SharedMenu {
   const days: SharedDay[] = [];
   for (const j of config.jours) {
@@ -53,12 +67,12 @@ export function buildSharePayload(
     const dej = day.dejId ? byId.get(day.dejId) : undefined;
     const din = day.dinId ? byId.get(day.dinId) : undefined;
     const sd: SharedDay = { k: j.key, nom: j.nom, t: j.type };
-    const mdej = meal(dej, !!day.dejId && audioIds.has(day.dejId));
-    const mdin = meal(din, !!day.dinId && audioIds.has(day.dinId));
+    const mdej = meal(dej, day.dejId, audioIds, audioUrls);
+    const mdin = meal(din, day.dinId, audioIds, audioUrls);
     if (mdej) sd.dej = mdej;
     if (mdin) sd.din = mdin;
     const ex = day.extras
-      .map((id) => meal(byId.get(id), audioIds.has(id)))
+      .map((id) => meal(byId.get(id), id, audioIds, audioUrls))
       .filter((m): m is SharedMeal => !!m);
     if (ex.length) sd.ex = ex;
     days.push(sd);
@@ -88,9 +102,17 @@ export function buildShareUrl(payload: SharedMenu): string {
   return base + SHARE_PREFIX + encodeMenu(payload);
 }
 
-/** Lit le menu partagé depuis l'URL courante, s'il y en a un. */
+/** Lit le menu partagé (encodé dans l'URL) s'il y en a un. */
 export function readSharedFromLocation(): SharedMenu | null {
   const h = window.location.hash;
   if (!h.startsWith(SHARE_PREFIX)) return null;
   return decodeMenu(h.slice(SHARE_PREFIX.length));
+}
+
+/** Lit l'identifiant d'un menu publié (#p=...) s'il y en a un. */
+export function readPublishId(): string | null {
+  const h = window.location.hash;
+  if (!h.startsWith(PUBLISH_PREFIX)) return null;
+  const id = h.slice(PUBLISH_PREFIX.length).trim();
+  return /^[A-Za-z0-9_-]+$/.test(id) ? id : null;
 }

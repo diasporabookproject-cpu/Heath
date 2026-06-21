@@ -6,6 +6,9 @@ import VoiceNote from '../components/VoiceNote';
 import { DAY_AR, LABELS, TYPE_AR, type Lang } from '../lib/cuisineLabels';
 import { loadAudioKeys } from '../lib/db';
 import { buildSharePayload, buildShareUrl } from '../lib/share';
+import { publishMenu } from '../lib/publish';
+import { supabaseEnabled } from '../lib/supabase';
+import { useSession } from '../lib/useSession';
 
 function recipeName(r: Recipe, lang: Lang): string {
   return lang === 'ar' ? r.nom_ar || r.nom : r.nom;
@@ -56,6 +59,8 @@ export default function CuisinierView() {
   const [copied, setCopied] = useState<string | null>(null);
   const [lang, setLang] = useState<Lang>('fr');
   const [shareMsg, setShareMsg] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const { session } = useSession();
 
   const flash = (key: string) => {
     setCopied(key);
@@ -83,6 +88,31 @@ export default function CuisinierView() {
       setShareMsg(url);
     }
     setTimeout(() => setShareMsg(null), 2500);
+  };
+
+  const shareWithAudio = async () => {
+    if (!session) {
+      setShareMsg('Connecte-toi (☁︎ en haut) pour inclure les notes vocales.');
+      setTimeout(() => setShareMsg(null), 3500);
+      return;
+    }
+    setPublishing(true);
+    try {
+      const { url, audioCount } = await publishMenu(SEED_CONFIG, week, byId);
+      const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+      if (nav.share) {
+        await nav.share({ title: 'Menu de la semaine', text: 'Menu de la semaine 👇', url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShareMsg('Lien copié ! (' + audioCount + ' note(s) vocale(s))');
+        setTimeout(() => setShareMsg(null), 3000);
+      }
+    } catch (e) {
+      setShareMsg((e as Error).message);
+      setTimeout(() => setShareMsg(null), 4000);
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const days = SEED_CONFIG.jours.filter((j) => {
@@ -135,8 +165,20 @@ export default function CuisinierView() {
 
       {days.length > 0 && (
         <>
-          <button className="btn" onClick={shareLink}>
-            {ar ? '🔗 شارك المنيو (رابط)' : '🔗 Partager le menu (lien)'}
+          {supabaseEnabled && (
+            <button className="btn" onClick={shareWithAudio} disabled={publishing}>
+              {publishing
+                ? 'Préparation du lien…'
+                : ar
+                  ? '☁️ شارك المنيو مع الملاحظات الصوتية'
+                  : '☁️ Partager avec les notes vocales'}
+            </button>
+          )}
+          <button
+            className={supabaseEnabled ? 'btn btn--ghost' : 'btn'}
+            onClick={shareLink}
+          >
+            {ar ? '🔗 شارك المنيو (رابط)' : '🔗 Partager le menu (lien, sans audio)'}
           </button>
           {shareMsg && <div className="import-report">{shareMsg}</div>}
           <button className="btn btn--ghost" onClick={() => copy(weekText, () => flash('week'))}>
