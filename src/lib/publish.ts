@@ -1,12 +1,11 @@
-import { SUPABASE_KEY, SUPABASE_URL } from './supabase';
+import { getSupabase, SUPABASE_KEY, SUPABASE_URL } from './supabase';
 import { buildSharePayload, PUBLISH_PREFIX, type SharedMenu } from './share';
 import { loadAudio } from './db';
 import type { AppConfig, Recipe, WeekMenu } from '../types';
 
 // Publication d'un menu AVEC ses notes vocales : on téléverse les audios et un
 // JSON du menu dans le bucket public `shared`, puis on renvoie un lien court.
-// On utilise des requêtes REST directes avec la clé publishable (accès anonyme),
-// ce qui est déterministe et ne dépend pas de l'état de session.
+// L'écriture se fait en tant qu'utilisateur connecté (jeton de session).
 
 const BUCKET = 'shared';
 
@@ -39,15 +38,23 @@ function publicUrl(path: string): string {
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
 }
 
-async function uploadObject(path: string, body: Blob): Promise<void> {
+/** Jeton de la session courante (upload réservé aux utilisateurs connectés). */
+async function getAccessToken(): Promise<string> {
+  const supa = getSupabase();
+  if (!supa) throw new Error('Synchro non configurée.');
+  const { data } = await supa.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error('Connecte-toi (☁︎ en haut) pour partager avec les notes vocales.');
+  return token;
+}
+
+async function uploadObject(path: string, body: Blob, token: string): Promise<void> {
   const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodeURI(path)}`, {
     method: 'POST',
     headers: {
       apikey: SUPABASE_KEY!,
-      Authorization: `Bearer ${SUPABASE_KEY!}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': body.type || 'application/octet-stream',
-      // pas de x-upsert : chaque publication a un id unique (insert simple) ;
-      // l'upsert déclenche un refus RLS pour un accès anonyme.
     },
     body,
   });
@@ -73,6 +80,7 @@ export async function publishMenu(
   byId: Map<string, Recipe>,
 ): Promise<PublishResult> {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Synchro non configurée.');
+  const token = await getAccessToken();
 
   const id = newId();
   const audioUrls = new Map<string, string>();
@@ -81,12 +89,12 @@ export async function publishMenu(
     const blob = await loadAudio(rid);
     if (!blob) continue;
     const path = `${id}/${rid}.${extFor(blob.type)}`;
-    await uploadObject(path, blob);
+    await uploadObject(path, blob, token);
     audioUrls.set(rid, publicUrl(path));
   }
 
   const payload = buildSharePayload(config, week, byId, new Set(audioUrls.keys()), audioUrls);
-  await uploadObject(`${id}.json`, new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+  await uploadObject(`${id}.json`, new Blob([JSON.stringify(payload)], { type: 'application/json' }), token);
 
   const base = window.location.origin + window.location.pathname;
   return { url: base + PUBLISH_PREFIX + id, audioCount: audioUrls.size };
