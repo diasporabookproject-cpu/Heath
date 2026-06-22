@@ -82,7 +82,6 @@ await shared.goto(shareUrl, { waitUntil: 'networkidle' });
 await shared.getByText('Menu de la semaine').first().waitFor({ timeout: 5000 });
 const sharedBody = await shared.locator('.app__main').innerText();
 if (!/Bowl poulet épinards/.test(sharedBody)) throw new Error('La page partagée ne montre pas le menu');
-if (!/Note vocale — bientôt/.test(sharedBody)) throw new Error('Placeholder note vocale manquant');
 await shared.screenshot({ path: 'scripts/shot-partage.png', fullPage: true });
 await shared.close();
 console.log('Partage lien OK (longueur du lien:', shareUrl.length, 'car.)');

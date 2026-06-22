@@ -4,11 +4,9 @@ import { SEED_CONFIG } from '../data';
 import type { DayConfig, DayMenu, Recipe } from '../types';
 import VoiceNote from '../components/VoiceNote';
 import { DAY_AR, LABELS, TYPE_AR, type Lang } from '../lib/cuisineLabels';
-import { loadAudioKeys } from '../lib/db';
 import { buildSharePayload, buildShareUrl } from '../lib/share';
 import { publishMenu } from '../lib/publish';
 import { supabaseEnabled } from '../lib/supabase';
-import { useSession } from '../lib/useSession';
 
 function recipeName(r: Recipe, lang: Lang): string {
   return lang === 'ar' ? r.nom_ar || r.nom : r.nom;
@@ -60,7 +58,6 @@ export default function CuisinierView() {
   const [lang, setLang] = useState<Lang>('fr');
   const [shareMsg, setShareMsg] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
-  const { session } = useSession();
 
   const flash = (key: string) => {
     setCopied(key);
@@ -68,9 +65,7 @@ export default function CuisinierView() {
   };
 
   const shareLink = async () => {
-    // On relit les notes vocales à l'instant (placeholder à jour sur le lien).
-    const audioIds = new Set(await loadAudioKeys());
-    const payload = buildSharePayload(SEED_CONFIG, week, byId, audioIds);
+    const payload = buildSharePayload(SEED_CONFIG, week, byId, new Set());
     const url = buildShareUrl(payload);
     const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
     try {
@@ -91,11 +86,6 @@ export default function CuisinierView() {
   };
 
   const shareWithAudio = async () => {
-    if (!session) {
-      setShareMsg('Connecte-toi (☁︎ en haut) pour inclure les notes vocales.');
-      setTimeout(() => setShareMsg(null), 3500);
-      return;
-    }
     setPublishing(true);
     try {
       const { url, audioCount } = await publishMenu(SEED_CONFIG, week, byId);
@@ -165,21 +155,19 @@ export default function CuisinierView() {
 
       {days.length > 0 && (
         <>
-          {supabaseEnabled && (
+          {supabaseEnabled ? (
             <button className="btn" onClick={shareWithAudio} disabled={publishing}>
               {publishing
                 ? 'Préparation du lien…'
                 : ar
-                  ? '☁️ شارك المنيو مع الملاحظات الصوتية'
-                  : '☁️ Partager avec les notes vocales'}
+                  ? '🔗 شارك المنيو (مع الصوت)'
+                  : '🔗 Partager le menu (lien court)'}
+            </button>
+          ) : (
+            <button className="btn" onClick={shareLink}>
+              {ar ? '🔗 شارك المنيو (رابط)' : '🔗 Partager le menu (lien)'}
             </button>
           )}
-          <button
-            className={supabaseEnabled ? 'btn btn--ghost' : 'btn'}
-            onClick={shareLink}
-          >
-            {ar ? '🔗 شارك المنيو (رابط)' : '🔗 Partager le menu (lien, sans audio)'}
-          </button>
           {shareMsg && <div className="import-report">{shareMsg}</div>}
           <button className="btn btn--ghost" onClick={() => copy(weekText, () => flash('week'))}>
             {copied === 'week' ? '✓ Copié !' : ar ? '📋 نسخ الأسبوع كامل' : '📋 Copier toute la semaine'}

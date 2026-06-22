@@ -1,11 +1,12 @@
-import { getSupabase, SUPABASE_URL } from './supabase';
+import { SUPABASE_KEY, SUPABASE_URL } from './supabase';
 import { buildSharePayload, PUBLISH_PREFIX, type SharedMenu } from './share';
 import { loadAudio } from './db';
 import type { AppConfig, Recipe, WeekMenu } from '../types';
 
 // Publication d'un menu AVEC ses notes vocales : on téléverse les audios et un
-// JSON du menu dans le bucket public `shared`, et on renvoie un lien unique.
-// La cuisinière ouvre ce lien : la page lit le JSON public et joue les audios.
+// JSON du menu dans le bucket public `shared`, puis on renvoie un lien court.
+// On utilise des requêtes REST directes avec la clé publishable (accès anonyme),
+// ce qui est déterministe et ne dépend pas de l'état de session.
 
 const BUCKET = 'shared';
 
@@ -22,7 +23,6 @@ function newId(): string {
   return rnd.slice(0, 12);
 }
 
-/** Recettes (ids uniques) réellement utilisées dans la semaine. */
 function usedRecipeIds(config: AppConfig, week: WeekMenu): string[] {
   const ids = new Set<string>();
   for (const j of config.jours) {
@@ -35,6 +35,33 @@ function usedRecipeIds(config: AppConfig, week: WeekMenu): string[] {
   return [...ids];
 }
 
+function publicUrl(path: string): string {
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+}
+
+async function uploadObject(path: string, body: Blob): Promise<void> {
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodeURI(path)}`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY!,
+      Authorization: `Bearer ${SUPABASE_KEY!}`,
+      'Content-Type': body.type || 'application/octet-stream',
+      // pas de x-upsert : chaque publication a un id unique (insert simple) ;
+      // l'upsert déclenche un refus RLS pour un accès anonyme.
+    },
+    body,
+  });
+  if (!res.ok) {
+    let detail = '';
+    try {
+      detail = (await res.json())?.message ?? '';
+    } catch {
+      detail = await res.text().catch(() => '');
+    }
+    throw new Error(`${res.status} ${detail}`.trim());
+  }
+}
+
 export interface PublishResult {
   url: string;
   audioCount: number;
@@ -45,10 +72,7 @@ export async function publishMenu(
   week: WeekMenu,
   byId: Map<string, Recipe>,
 ): Promise<PublishResult> {
-  const supa = getSupabase();
-  if (!supa) throw new Error('Synchro non configurée.');
-  const { data: sess } = await supa.auth.getSession();
-  if (!sess.session) throw new Error('Connecte-toi pour partager avec les notes vocales.');
+  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Synchro non configurée.');
 
   const id = newId();
   const audioUrls = new Map<string, string>();
@@ -57,21 +81,12 @@ export async function publishMenu(
     const blob = await loadAudio(rid);
     if (!blob) continue;
     const path = `${id}/${rid}.${extFor(blob.type)}`;
-    const up = await supa.storage.from(BUCKET).upload(path, blob, {
-      contentType: blob.type || 'audio/webm',
-      upsert: true,
-    });
-    if (up.error) throw new Error('Upload audio : ' + up.error.message);
-    audioUrls.set(rid, supa.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
+    await uploadObject(path, blob);
+    audioUrls.set(rid, publicUrl(path));
   }
 
   const payload = buildSharePayload(config, week, byId, new Set(audioUrls.keys()), audioUrls);
-  const json = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-  const upJson = await supa.storage.from(BUCKET).upload(`${id}.json`, json, {
-    contentType: 'application/json',
-    upsert: true,
-  });
-  if (upJson.error) throw new Error('Upload menu : ' + upJson.error.message);
+  await uploadObject(`${id}.json`, new Blob([JSON.stringify(payload)], { type: 'application/json' }));
 
   const base = window.location.origin + window.location.pathname;
   return { url: base + PUBLISH_PREFIX + id, audioCount: audioUrls.size };
@@ -80,8 +95,7 @@ export async function publishMenu(
 /** Récupère un menu publié (côté cuisinière, lecture publique, sans connexion). */
 export async function fetchPublishedMenu(id: string): Promise<SharedMenu> {
   if (!SUPABASE_URL) throw new Error('Lien non disponible.');
-  const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${id}.json`;
-  const res = await fetch(url);
+  const res = await fetch(publicUrl(`${id}.json`));
   if (!res.ok) throw new Error('Menu introuvable (lien expiré ?).');
   return (await res.json()) as SharedMenu;
 }
