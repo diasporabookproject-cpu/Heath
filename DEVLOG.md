@@ -61,7 +61,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 11. **Audios publiés dans un bucket public `shared`** (lecture publique pour la cuisinière sans compte) ; **écriture via REST** côté app. ✅
 12. **Bug clé : l'en-tête `x-upsert` provoquait un refus RLS** (403 « new row violates row-level security policy »). Retiré — chemins de publication uniques, insert simple. ✅ (cause racine de la longue série de blocages).
 13. **PWA : `skipWaiting`/`clientsClaim`** — éviter qu'une app installée reste sur un ancien cache après déploiement. ✅
-14. **Écriture du bucket réservée aux utilisateurs connectés** (jeton de session dans l'upload). 🟡 En cours de resserrement (voir « À faire »).
+14. **Écriture du bucket réservée aux utilisateurs connectés** (jeton de session dans l'upload + policy `authenticated`-only). ✅ Vérifié : upload anonyme refusé (403), lecture publique intacte.
 
 ---
 
@@ -85,7 +85,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## À faire / en cours
 
-- 🟡 **Resserrer la sécurité du bucket** : retirer la policy d'écriture `anon` (garder `authenticated`) une fois l'upload connecté confirmé. Nettoyer les fichiers de test (`diagnostic-*`, `t*`, `flow*`) via Storage UI.
+- 🧹 **Nettoyage mineur** : supprimer les fichiers de test du bucket (`diagnostic-*`, `t*`, `flow*`, `testflow*`) via Storage UI (sans impact).
 - ⏳ **Étape 3 — Synchro multi-appareils** (menus/recettes/notes entre téléphone et ordinateur). Gros morceau : stratégie de fusion (last-write-wins ?), schéma de tables + RLS par `user_id`.
 - ⏳ **P1 — Fiches recette détaillées** (techniques de cuisson, dressage), imprimables.
 - ⏳ **P2** — repas verrouillés, export PDF, détection répétitions, récap calcium hebdo.
@@ -97,7 +97,8 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 ### Session 3 — 2026-06-22
 - `b292492` Corrige l'upload des notes vocales (**retrait de `x-upsert`**) — cause racine du blocage RLS, identifiée par test REST direct contre Supabase.
 - `06a0206` Sécurité : publication en tant qu'utilisateur **connecté** (jeton de session). Étape 1/2 du resserrement.
-- *(ce commit)* Ajout de `DEVLOG.md` + `CLAUDE.md` (convention de tenue du journal).
+- `55bfedc` Ajout de `DEVLOG.md` + `CLAUDE.md` (convention de tenue du journal).
+- **Sécurité (changement DB, hors git)** : bucket `shared` verrouillé en écriture → policy `shared write authenticated` (insert, rôle `authenticated`) ; policies `anon`/`upsert` supprimées. Vérifié : upload anonyme refusé (403).
 
 ### Session 2 — 2026-06-21
 - `01f420f` Onglet **Courses** : liste de courses auto-générée (P1 #10), parseur d'ingrédients + tests.
