@@ -59,10 +59,11 @@ await page.screenshot({ path: 'scripts/shot-cuisiniere.png', fullPage: false });
 // Note vocale : enregistrer (micro simulé) puis vérifier la lecture.
 const vn = page.locator('.voice-note').first();
 await vn.getByRole('button', { name: /Enregistrer/ }).click();
-await page.getByRole('button', { name: /Arrêter/ }).first().waitFor({ timeout: 5000 });
-await page.waitForTimeout(1200);
+await page.getByRole('button', { name: /Arrêter/ }).first().waitFor({ timeout: 8000 });
+await page.waitForTimeout(2000);
 await page.getByRole('button', { name: /Arrêter/ }).first().click();
-await vn.locator('audio.voice-note__audio').waitFor({ timeout: 10000 });
+// l'audio apparaît après la réparation de durée (garde-fou ≤ 4 s)
+await vn.locator('audio.voice-note__audio').waitFor({ timeout: 15000 });
 console.log('Note vocale enregistrée + lecture OK');
 
 // Partage par lien (sans backend) : on capture le lien puis on ouvre la page partagée.

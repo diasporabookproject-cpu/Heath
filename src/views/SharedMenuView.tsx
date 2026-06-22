@@ -14,6 +14,20 @@ export default function SharedMenuView({ menu }: { menu: SharedMenu }) {
   const name = (m: SharedMeal) => (ar ? m.na || m.n : m.n);
   const ing = (m: SharedMeal) => (ar ? m.ia || m.i : m.i);
 
+  // Repli : certains fichiers WebM (anciens) n'ont pas de durée → on force le
+  // navigateur à la calculer, sinon la lecture se coupe au bout d'1-2 s.
+  const fixDuration = (e: React.SyntheticEvent<HTMLAudioElement>) => {
+    const a = e.currentTarget;
+    if (a.duration === Infinity || Number.isNaN(a.duration)) {
+      const onUpdate = () => {
+        a.removeEventListener('timeupdate', onUpdate);
+        a.currentTime = 0;
+      };
+      a.addEventListener('timeupdate', onUpdate);
+      a.currentTime = 1e7;
+    }
+  };
+
   const Meal = ({ labelKey, m }: { labelKey: keyof typeof L; m: SharedMeal }) => (
     <div className="cook-meal" dir={ar ? 'rtl' : 'ltr'}>
       <div className="cook-meal__label">{L[labelKey]}</div>
@@ -23,7 +37,7 @@ export default function SharedMenuView({ menu }: { menu: SharedMenu }) {
       {m.a ? (
         <div className="voice-note__row" style={{ marginTop: 8 }}>
           <span className="voice-note__title">🔊 {ar ? 'ملاحظة صوتية' : 'Note vocale'}</span>
-          <audio src={m.a} controls className="voice-note__audio" />
+          <audio src={m.a} controls className="voice-note__audio" onLoadedMetadata={fixDuration} preload="metadata" />
         </div>
       ) : (
         m.v && (

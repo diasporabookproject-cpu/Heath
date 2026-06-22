@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import fixWebmDuration from 'fix-webm-duration';
 import { deleteAudio, loadAudio, saveAudio } from '../lib/db';
 
 // Note vocale par recette : enregistrement micro (offline, IndexedDB),
@@ -59,6 +60,7 @@ export default function VoiceNote({ recipeId, recipeName, lang }: { recipeId: st
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimeRef = useRef(0);
 
   const supported = typeof window !== 'undefined' && 'MediaRecorder' in window;
 
@@ -91,14 +93,25 @@ export default function VoiceNote({ recipeId, recipeName, lang }: { recipeId: st
       };
       rec.onstop = async () => {
         const type = rec.mimeType || mime || 'audio/webm';
-        const blob = new Blob(chunksRef.current, { type });
+        let blob = new Blob(chunksRef.current, { type });
+        // MediaRecorder n'écrit pas la durée dans l'en-tête WebM → lecture
+        // coupée/vide quand le fichier est servi. On la répare avant sauvegarde,
+        // avec un garde-fou (timeout) pour ne jamais bloquer l'enregistrement.
+        if (type.includes('webm')) {
+          const durationMs = Date.now() - startTimeRef.current;
+          blob = await Promise.race([
+            fixWebmDuration(blob, durationMs).catch(() => blob),
+            new Promise<Blob>((resolve) => setTimeout(() => resolve(blob), 4000)),
+          ]);
+        }
         blobRef.current = blob;
-        await saveAudio(recipeId, blob, type);
+        await saveAudio(recipeId, blob, blob.type || type);
         if (url) URL.revokeObjectURL(url);
         setUrl(URL.createObjectURL(blob));
         stream.getTracks().forEach((tr) => tr.stop());
       };
       recorderRef.current = rec;
+      startTimeRef.current = Date.now();
       rec.start();
       setRecording(true);
       setElapsed(0);

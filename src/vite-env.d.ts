@@ -8,3 +8,12 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+declare module 'fix-webm-duration' {
+  /** Injecte la durée (ms) dans l'en-tête d'un WebM produit par MediaRecorder. */
+  export default function fixWebmDuration(
+    blob: Blob,
+    durationMs: number,
+    options?: { logger?: boolean },
+  ): Promise<Blob>;
+}
