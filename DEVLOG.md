@@ -99,6 +99,8 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 - `06a0206` Sécurité : publication en tant qu'utilisateur **connecté** (jeton de session). Étape 1/2 du resserrement.
 - `55bfedc` Ajout de `DEVLOG.md` + `CLAUDE.md` (convention de tenue du journal).
 - **Sécurité (changement DB, hors git)** : bucket `shared` verrouillé en écriture → policy `shared write authenticated` (insert, rôle `authenticated`) ; policies `anon`/`upsert` supprimées. Vérifié : upload anonyme refusé (403).
+- `e345977` Corrige les notes vocales coupées à la lecture (durée WebM : `fix-webm-duration` + repli côté lecture).
+- *(doc)* Ajout de `PRODUCT_CONTEXT.md` : pack de passation pour un chat produit dédié (vision, état réel, archi, faisabilité, backlog, protocole de boucle). Source de vérité produit.
 
 ### Session 2 — 2026-06-21
 - `01f420f` Onglet **Courses** : liste de courses auto-générée (P1 #10), parseur d'ingrédients + tests.
