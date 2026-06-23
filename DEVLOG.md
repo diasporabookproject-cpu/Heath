@@ -101,6 +101,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 - **Sécurité (changement DB, hors git)** : bucket `shared` verrouillé en écriture → policy `shared write authenticated` (insert, rôle `authenticated`) ; policies `anon`/`upsert` supprimées. Vérifié : upload anonyme refusé (403).
 - `e345977` Corrige les notes vocales coupées à la lecture (durée WebM : `fix-webm-duration` + repli côté lecture).
 - *(doc)* Ajout de `PRODUCT_CONTEXT.md` : pack de passation pour un chat produit dédié (vision, état réel, archi, faisabilité, backlog, protocole de boucle). Source de vérité produit.
+- *(produit)* **Élargissement de la vision** : de « app perso de menus » → **« app de gestion de maison + briefing du personnel »**. La cuisine devient le **module 1** ; 2 modules visés en plus (Entretien maison, Enfants/Sécurité). Motif commun identifié : *référentiel → composer → transmettre (texte/voix/lien/darija/offline)* → viser un **socle générique réutilisable**. Détail dans `PRODUCT_CONTEXT.md`.
 
 ### Session 2 — 2026-06-21
 - `01f420f` Onglet **Courses** : liste de courses auto-générée (P1 #10), parseur d'ingrédients + tests.

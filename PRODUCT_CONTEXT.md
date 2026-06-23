@@ -1,160 +1,166 @@
-# Contexte produit & passation — « Menu de la semaine »
+# Contexte produit & passation — « Maison OS » (nom de travail)
 
 > **À quoi sert ce document.** Le copier-coller (en entier) dans un **chat Claude
-> dédié à la réflexion produit**. Il décrit la vision, l'utilisateur, l'état réel
-> de l'application (un POC fonctionnel et déployé), l'architecture, et surtout
-> **ce qui est faisable rapidement vs coûteux**, pour que la réflexion reste
-> ancrée dans le réel.
+> dédié à la réflexion produit**. Il décrit la vision, les utilisateurs, les
+> contraintes, l'état réel de ce qui est déjà construit (un POC du module Cuisine,
+> déployé et fonctionnel), et **ce qui est faisable rapidement vs coûteux**.
 >
 > **Source de vérité.** Ce fichier vit dans le dépôt. Une idée discutée dans le
 > chat produit ne devient une **décision** que lorsqu'elle est écrite ici (section
-> « Décisions produit ») ou dans `DEVLOG.md`. Le texte collé dans le chat = une
-> copie de ce fichier.
+> « Décisions produit ») ou dans `DEVLOG.md`.
+>
+> **Historique.** Le projet a démarré comme une app **perso de menus de la semaine**
+> (voir `BRIEF_PRODUIT.md`, toujours valable pour le détail du module Cuisine). La
+> vision a été élargie : ce n'est plus une app de menus, mais une **app de gestion
+> de la maison et de briefing du personnel**, dont la cuisine est le **premier module**.
 
 ---
 
 ## 0. Comment travailler (la boucle)
 
-Deux interlocuteurs, deux rôles :
 - **Chat produit** (celui-ci) : vision, fonctionnalités, priorités, arbitrages. Ne voit pas le code ni l'app en direct.
-- **Claude Code** (l'autre fil) : a le code, les tests, le déploiement. Sait chiffrer (rapide/moyen/lourd) et implémente.
+- **Claude Code** (autre fil) : a le code, les tests, le déploiement. Sait chiffrer (🟢 rapide / 🟡 moyen / 🔴 lourd) et implémente.
 
-**Boucle recommandée :**
-1. Le chat produit propose/affine une fonctionnalité → produit une **fiche de décision** (format en §8).
-2. Tu colles cette fiche à Claude Code.
-3. Claude Code chiffre, implémente, déploie, et renvoie un **résultat réel** (lien de prod, capture, limites).
-4. Claude Code consigne dans `DEVLOG.md`.
-5. Retour au chat produit avec le résultat → on itère.
+**Boucle :** le chat produit produit une **fiche de décision** (format §8) → tu la colles à Claude Code → il chiffre, implémente, déploie, renvoie un **résultat réel** (lien, capture, limites) → il consigne dans `DEVLOG.md` → retour au chat produit.
 
 ---
 
-## 1. Le produit en une phrase
+## 1. La vision
 
-Une app web **mobile-first, installable, fonctionnant hors-ligne** qui permet à
-une personne suivant un programme nutritionnel strict de **composer ses menus de
-la semaine**, de **vérifier en un coup d'œil l'équilibre nutritionnel** de chaque
-journée, et de **transmettre des instructions claires à la personne qui cuisine**.
+**Centraliser le savoir d'un foyer, le mémoriser, et le transmettre aux bonnes
+personnes (le personnel de maison), de façon claire et actionnable.**
 
-Ce n'est **pas** une app grand public de comptage de calories : c'est un outil
-**personnel**, taillé pour un protocole précis, avec un recueil de recettes maîtrisé.
+Le propriétaire (l'« administrateur du foyer ») détient un savoir : comment on
+mange ici, comment on entretient la maison, comment on s'occupe des enfants et de
+la sécurité. Aujourd'hui ce savoir est dans sa tête, éparpillé (WhatsApp, oral,
+fichiers). L'app le **structure une fois**, le **garde en mémoire**, et le
+**transmet** au bon membre du personnel — y compris à des gens qui **n'utilisent
+pas l'app** et qui parlent **darija**.
 
-## 2. L'utilisateur et l'esprit
+Ce n'est **pas** une app grand public. C'est l'**« OS de la maison »** d'un foyer
+avec du personnel : un référentiel privé + un outil de briefing.
 
-- **Un seul utilisateur** (pas de comptes multiples au départ). Usage principal : **téléphone** ; appoint : ordinateur.
-- Une **cuisinière à domicile** prépare les repas → elle reçoit des instructions (elle **n'utilise pas l'app**).
-- Esprit : **simplicité** (composer un menu en 2-3 min au pouce), **feedback visuel immédiat**, **zéro friction de maintenance**, **orienté action** (produit quelque chose d'utile : instructions à envoyer / liens).
+## 2. Le motif commun à tous les modules (le cœur du produit)
 
-## 3. Contraintes dures (à ne jamais oublier)
+Chaque module suit **le même patron** — c'est ce qui fait l'unité de l'app et
+permet de réutiliser les briques :
 
-**Médicales / métier :**
-- **100 % sans gluten** (cœliaque) — ne jamais suggérer d'ingrédient gluten.
-- **Calcium = enjeu n°1** (ostéopénie) → visible partout, par recette et par jour.
-- **Glucides maîtrisés** (suspicion pré-diabète).
-- **Cibles caloriques modulées par type de jour** : Repos 1720 / Cardio 1880 / Muscu 1950.
-- Chaque jour compte **toujours** une **collation fixe** (195 kcal · 14P · 3G · 14L · 275Ca) + un **kéfir du coucher** (135 kcal · 5P · 6G · 0L · 325Ca), en plus du déjeuner et du dîner.
-- **Feux tricolores** : kcal (±10 % vert / ±20 % orange / au-delà rouge), protéines (≥150 vert / 130-150 orange / <130 rouge), calcium (≥1000 vert / 850-1000 orange / <850 rouge).
-- Ne **pas** « normaliser » les mesures à la cuillère (càc/càs).
-- Seules les recettes « Validé » apparaissent dans les choix ; « Écarté » = archivé.
+1. **Référentiel** — une bibliothèque de **fiches** structurées (une recette, une procédure de ménage, une consigne de sécurité…). Ajout manuel **ou génération assistée par IA**, édition, statut (validé / archivé), catégories.
+2. **Composer / Planifier** — assembler des fiches dans un **plan** (menu hebdo, planning de ménage, planning enfants).
+3. **Briefer / Transmettre** — produire une **consigne claire pour une personne** : texte + **note vocale** + **checklist** + **lien partagé** (page lecture seule, sans installer l'app) + **multilingue (français / darija en lettres arabes)** + imprimable.
+4. **Mémoire** — tout est sauvegardé, réutilisable, versionnable.
+5. **Destinataires / rôles** — « qui reçoit quoi » : cuisinière, femme de ménage, nounou… Chaque personne reçoit le brief qui la concerne.
 
-**Techniques (impactent fortement la faisabilité) :**
-- **Offline-first** : l'app doit marcher sans réseau. Les données vivent d'abord **sur l'appareil** (IndexedDB).
-- **Hébergement statique** (GitHub Pages) : pas de serveur applicatif maison. Le seul « backend » est **Supabase** (base de données, stockage de fichiers, authentification). Toute logique côté serveur lourde nécessiterait des *edge functions* (possible mais coûteux).
-- **La cuisinière n'a pas l'app** → toute sortie pour elle doit être **partageable** (lien web, copier-coller WhatsApp, ou impression).
-- **Données personnelles / médicales** : prudence sur ce qu'on héberge publiquement.
-- **UI en français** ; vue cuisinière disponible en **darija (lettres arabes)**.
+> Conséquence pour la construction : on investit dans **ces briques génériques**.
+> Le module Cuisine en est la 1re instance ; les modules 2 et 3 les réutilisent
+> (donc deviennent nettement moins coûteux une fois les briques posées).
 
-## 4. État réel du POC (ce qui existe et marche aujourd'hui)
+## 3. Utilisateurs & rôles
+
+- **L'administrateur du foyer** (utilisateur principal) : compose, mémorise, transmet. Usage téléphone surtout, ordinateur en appoint.
+- **Le personnel** (cuisinière, femme de ménage, nounou…) : **destinataires**. Ils **ne sont pas obligés d'utiliser l'app** → ils reçoivent des **liens / messages / notes vocales** (souvent en **darija**). Question ouverte : doivent-ils pouvoir **interagir** (confirmer « fait », signaler un manque) ?
+- Multi-foyers / plusieurs administrateurs : hors scope au départ, à garder en tête.
+
+## 4. Les 3 modules de départ
+
+### Module 1 — Cuisine 🍳 *(POC déjà construit)*
+Composer des menus à partir d'un référentiel de recettes, vérifier l'équilibre
+nutritionnel, transmettre les instructions à la cuisinière (texte + darija + notes
+vocales + lien). **C'est le module mûr** (voir §5). Évolutions possibles :
+génération de recettes par IA, fiches recette détaillées (techniques, dressage), etc.
+
+### Module 2 — Entretien maison 🧹 *(à concevoir)*
+Référentiel de **procédures / tutos de ménage et d'entretien** (ex. « nettoyer
+l'inox », « entretien des plantes », « lessive par type de textile »), **bonnes
+pratiques** à instaurer, et **planning d'entretien** (quoi, quand, par qui).
+Transmission au personnel sous forme de **briefs / checklists / tutos** (texte +
+note vocale + éventuellement photos/vidéos), en darija au besoin.
+
+### Module 3 — Enfants / Sécurité 👶🛡️ *(à concevoir)*
+**Règles et planning des enfants** (routines, horaires, autorisations) et
+**consignes de sécurité** (que faire en cas de…, numéros, gestes interdits/permis).
+À **transmettre à la nounou / au personnel** de façon non ambiguë, mémorisée et
+mise à jour. Sensibilité particulière (sécurité enfants) → clarté et fiabilité avant tout.
+
+> Ces 3 modules sont **un point de départ**. D'autres pourraient suivre (courses/stocks,
+> prestataires & contacts, budget du foyer, etc.) — à challenger dans le chat produit.
+
+## 5. État réel de l'existant (module Cuisine — déployé)
 
 🔗 **App en production** : https://diasporabookproject-cpu.github.io/Heath/
 
-Fonctionnalités opérationnelles :
-- **Composer** un menu 7 jours : déjeuner + dîner + extras optionnels (ex. dessert « Creami »), sélecteur filtré par type, recherche.
-- **Feedback nutritionnel** : totaux par jour avec **feux tricolores** + **moyenne de la semaine** ; calcium mis en avant ; éléments fixes (collation + kéfir) toujours comptés.
-- **Vue Cuisinière** : ingrédients pesés par repas, **bascule Français / الدارجة** (darija en lettres arabes, de droite à gauche), bouton **Copier** (texte WhatsApp).
-- **Liste de courses** (onglet Courses) : agrégée automatiquement depuis le menu, regroupée par rayon, cases à cocher, bouton Copier.
-- **Bibliothèque de recettes** : lister, **ajouter**, **éditer** (dont le type), **écarter/réactiver**, **importer en lot (JSON)** ; ~24 recettes traduites en darija.
-- **Notes vocales** par recette : enregistrement micro, réécoute, intégrées au partage.
-- **Partage du menu à la cuisinière** : **un lien court** ouvrant une **page web en lecture seule** (menu FR/darija + **lecture des notes vocales ▶️**). La cuisinière n'installe rien.
-- **Compte** (optionnel) : connexion par **lien magique e-mail** (Supabase). Sert à sécuriser l'hébergement des notes vocales (et, à terme, la synchro).
-- **PWA** installable, mises à jour automatiques.
+Opérationnel aujourd'hui :
+- **Composer** un menu 7 jours (déjeuner + dîner + extras), sélecteur filtré, recherche.
+- **Feedback nutritionnel** : feux tricolores par jour + moyenne semaine ; calcium mis en avant ; éléments fixes toujours comptés.
+- **Vue Cuisinière** : ingrédients pesés, **bascule Français / الدارجة** (RTL), **Copier** (WhatsApp).
+- **Liste de courses** auto-générée, regroupée par rayon.
+- **Bibliothèque** : lister / ajouter / éditer / écarter / **importer en lot (JSON)** ; ~24 recettes traduites en darija.
+- **Notes vocales** par recette (enregistrement, lecture, intégrées au partage).
+- **Partage à la cuisinière** : **lien court** → page lecture seule (menu FR/darija + **notes vocales ▶️**), sans installer l'app.
+- **Compte** optionnel (connexion par lien magique) ; **PWA** installable, offline.
 
-Pas encore fait : **synchro multi-appareils** (les menus/recettes sont pour l'instant **locaux à l'appareil**), **fiches recette détaillées** (techniques de cuisson/dressage), et les conforts P2 (voir backlog).
+Pas encore fait : synchro multi-appareils, fiches recette détaillées, et tout le reste des modules 2 et 3.
 
-## 5. Architecture (en clair, pour raisonner juste)
+**Briques déjà existantes réutilisables pour les autres modules :** le motif
+*référentiel → composer → transmettre (texte/voix/lien/darija/offline)* est **déjà
+implémenté** pour la cuisine. C'est le socle des modules 2 et 3.
 
-- **Local-first** : la base **IndexedDB** sur l'appareil est la **source de vérité**. L'app fonctionne entièrement hors-ligne.
-- **Stack** : React + Vite + TypeScript, PWA. Hébergée en statique sur GitHub Pages (déploiement automatique à chaque modification).
-- **Partage par lien** : le menu peut être (a) **encodé dans l'URL** (hors-ligne, sans audio) ou (b) **publié** sur Supabase (lien court, avec audios jouables). La page cuisinière est une vue **lecture seule** de l'app.
-- **Backend Supabase** : authentification (lien magique), **stockage des notes vocales** (lecture publique via lien, écriture réservée à l'utilisateur connecté).
-- **Tests** : logique métier (calculs, feux, liste de courses, partage) couverte par des tests ; un parcours bout-en-bout automatisé.
+## 6. Contraintes
 
-## 6. Faisabilité — barème indicatif
+**Transverses (tous modules) :**
+- **Offline-first** : marche sans réseau ; données d'abord **sur l'appareil**.
+- **Hébergement statique** (GitHub Pages) ; seul backend = **Supabase** (base, stockage fichiers, auth). Logique serveur lourde = *edge functions* (coûteux).
+- **Le personnel n'a pas l'app** → sorties **partageables** (lien web, WhatsApp, impression).
+- **Multilingue** : UI en français ; **darija (lettres arabes)** pour le personnel.
+- **Confidentialité** : données privées du foyer (et **sécurité enfants**) → prudence sur l'hébergement public.
 
-> Pour calibrer les idées. Ordres de grandeur, pas des engagements.
+**Spécifiques au module Cuisine (médical) :** 100 % sans gluten ; calcium = enjeu n°1 (visible partout) ; glucides maîtrisés ; cibles kcal par type de jour (Repos 1720 / Cardio 1880 / Muscu 1950) ; collation + kéfir du coucher toujours comptés ; feux tricolores (kcal ±10/20 %, protéines ≥150/130, calcium ≥1000/850) ; ne pas normaliser càc/càs.
 
-**🟢 Rapide (≈ ≤ 2 h)** — souvent « pur front », pas de nouvelle infra :
-- Nouveaux champs sur une recette, nouvelles règles d'affichage, ajustements de seuils/feux, textes, petites vues, nouveaux formats de copie/export texte, réglages d'ergonomie, filtres/tri.
+## 7. Faisabilité — barème indicatif
 
-**🟡 Moyen (≈ ½ à 1-2 j)** — logique métier + UI, sans dépendance externe lourde :
-- Multi-semaines / historique de menus, **fiches recette détaillées**, **repas verrouillés** (récurrents), **export PDF / impression**, récap calcium hebdo, détection de répétitions, améliorations du parseur de liste de courses, modèles de menus réutilisables.
+> Règle d'or : *rester sur l'appareil + afficher/transformer des données = 🟢 ;
+> synchroniser, partager en écriture, appeler un service externe (IA, etc.) = plus lourd.*
 
-**🔴 Lourd / à challenger (plusieurs jours, risque ou coût) :**
-- **Synchro bidirectionnelle multi-appareils** (fusion de données), **multi-utilisateurs / partage avec un coach**, **temps réel collaboratif**, **notifications push**, **intégration d'API nutritionnelle externe**, **scan/OCR d'étiquettes**, **suggestion de menus par IA**, calculs côté serveur (edge functions).
+- **🟢 Rapide (≤ ~2 h)** : nouvelle sorte de fiche, champs, règles d'affichage, vues simples, formats de partage texte, ergonomie, filtres/tri.
+- **🟡 Moyen (½ à 1-2 j)** : un **nouveau module** réutilisant les briques (référentiel + planning + brief) une fois le socle générique posé ; fiches détaillées ; checklists ; multi-semaines ; export PDF/impression ; planning par personne.
+- **🔴 Lourd / à challenger (plusieurs jours, risque/coût)** : **socle générique** transverse (refactor pour rendre les briques réutilisables — investissement qui paie ensuite) ; **synchro multi-appareils** ; **multi-utilisateurs / rôles avec comptes** ; **génération IA** (intégration d'un service, coût, qualité darija à valider) ; temps réel ; notifications push ; photos/vidéos hébergées à grande échelle.
 
-Règles d'or de faisabilité : *tout ce qui reste sur l'appareil et affiche/transforme des données existantes = rapide ; tout ce qui synchronise, partage en écriture, ou fait appel à un service externe = plus lourd.*
-
-## 7. Backlog ouvert (point de départ, à challenger)
-
-**P1 (importantes, déjà cadrées) :**
-- Synchro multi-appareils (téléphone ↔ ordinateur).
-- Fiches recette détaillées (techniques, dressage), imprimables.
-
-**P2 (confort) :**
-- Repas verrouillés (ex. « Lundi déj = Kefta froide »).
-- Export PDF / impression du menu + liste de courses.
-- Détection de répétitions dans la semaine.
-- Récap visuel du calcium hebdo.
-
-**Idées en suspens / à explorer (issues de nos échanges) :**
-- Notes vocales : aller plus loin (par jour ? par étape de recette ?).
-- Page cuisinière : retour de la cuisinière (cochage « fait » ?) — attention, elle n'a pas l'app.
-- Gestion des semaines passées / réutilisation de menus types.
-
-## 8. Format d'une « fiche de décision » (à me transmettre)
-
-Pour que Claude Code agisse sans ambiguïté, une décision devrait préciser :
+## 8. Format d'une « fiche de décision »
 
 ```
-TITRE : (ex. « Repas verrouillés »)
-OBJECTIF / POURQUOI : à quel besoin ça répond, pour qui.
+TITRE :
+MODULE : (Cuisine / Entretien / Enfants-Sécurité / Transverse)
+OBJECTIF / POURQUOI : besoin, pour qui (admin ? quel membre du personnel ?).
 COMPORTEMENT ATTENDU : ce que l'utilisateur fait et voit, étape par étape.
-OÙ : quel(s) onglet(s)/vue(s).
-RÈGLES MÉTIER : seuils, formats, cas particuliers, contraintes médicales concernées.
-CAS LIMITES : quoi faire si vide / conflit / hors-ligne / non connecté.
-CRITÈRE DE « FINI » : comment on saura que c'est réussi (test concret).
+OÙ : module / écran.
+RÈGLES MÉTIER : seuils, formats, cas particuliers, contraintes concernées.
+CAS LIMITES : vide / conflit / hors-ligne / non connecté / multilingue.
+CRITÈRE DE « FINI » : test concret de réussite.
 PRIORITÉ : maintenant / bientôt / plus tard.
 ```
 
 ## 9. Questions ouvertes à trancher en priorité (produit)
 
-Ces réponses orientent fortement l'effort technique :
-1. **Synchro multi-appareils : indispensable ou confort ?** (gros investissement) Ou un seul appareil suffit-il ?
-2. **Multi-utilisateurs un jour ?** (ex. partager avec un nutritionniste/coach) — ou rester strictement perso ?
-3. **La cuisinière doit-elle juste consulter, ou interagir** (confirmer, signaler un manque) ? (elle n'a pas l'app → impacte le mode de partage)
-4. **Ambition des fiches recette** : texte seul / photos / vidéos ?
-5. **Périmètre** : rester « composition de menus » ou élargir au **suivi** (poids, mesures, adhérence) ?
-6. **Multi-semaines / historique** : à quel point est-ce important au quotidien ?
+Le scope élargi en ajoute ; les plus structurantes d'abord :
+1. **Architecture du produit** : 3 modules **séparés** ou **un socle générique commun** (référentiel + planning + brief) décliné par domaine ? *(reco technique : socle commun — mais ça veut dire un investissement initial avant les modules 2/3).*
+2. **Rôles & destinataires** : comment modéliser le personnel (cuisinière, ménage, nounou) et « qui reçoit quoi » ?
+3. **Interaction du personnel** : consultation seule, ou retour possible (confirmer/au signaler) ? Impacte fortement la technique (le personnel n'a pas l'app).
+4. **Génération par IA** : pour quels contenus en priorité (recettes ? tutos ménage ? consignes) ? Quel niveau de confiance / relecture humaine, surtout en **darija** et pour la **sécurité enfants** ?
+5. **Synchro multi-appareils** : indispensable ou confort ?
+6. **Ordre de construction** : approfondir Cuisine, ou poser le **socle générique** puis dérouler les 3 modules en parallèle ?
+7. **Périmètre & sensibilité** : jusqu'où va « Sécurité enfants » (responsabilité, fiabilité) ?
+8. **Identité produit** : nom, positionnement (perso vs futur produit pour d'autres foyers ?).
 
 ## 10. Repères utiles
 
-- Brief produit d'origine : `BRIEF_PRODUIT.md` (dans le dépôt).
+- Brief d'origine (détail module Cuisine) : `BRIEF_PRODUIT.md`.
 - Journal technique & décisions d'archi : `DEVLOG.md`.
-- Modèle pour générer des recettes importables : `TEMPLATE_RECETTE.md`.
+- Modèle de recettes importables : `TEMPLATE_RECETTE.md`.
 - Lien de prod : https://diasporabookproject-cpu.github.io/Heath/
 
 ---
 
 ## Décisions produit (à remplir au fil de l'eau)
 
-> Chaque décision validée dans le chat produit est recopiée ici (date · décision · pourquoi).
+> Date · décision · pourquoi.
 > _(vide pour l'instant)_
