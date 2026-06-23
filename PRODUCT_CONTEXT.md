@@ -40,6 +40,27 @@ pas l'app** et qui parlent **darija**.
 Ce n'est **pas** une app grand public. C'est l'**« OS de la maison »** d'un foyer
 avec du personnel : un référentiel privé + un outil de briefing.
 
+## 1.b Nos décisions & principe d'évolutivité
+
+**On va prendre ensemble plusieurs types de décisions** (et chacune sera **testée
+avec Claude Code**, qui implémente et déploie un résultat réel) :
+- **Commerciales / stratégiques** : cible, positionnement, périmètre, perso vs futur
+  produit pour d'autres foyers, modèle économique éventuel, priorités.
+- **Fonctionnelles** : quelles fonctionnalités, pour quel module, pour qui.
+- **Techniques** : architecture, modèle de données, choix de briques, scalabilité.
+  Le chat produit peut **proposer** une direction technique ; on la **valide avec
+  Claude Code** (faisabilité, coût, implications).
+
+**Principe directeur — « POC léger, mais conçu pour devenir un vrai produit » :**
+- On démarre **léger et rapide** pour prototyper (l'existant est volontairement simple).
+- **Mais** l'app doit pouvoir devenir à terme un **vrai produit, scalable** (plus de
+  modules, plus de contenu, potentiellement plusieurs foyers/utilisateurs).
+- Donc les **choix initiaux ne doivent pas créer d'impasse** : privilégier de bonnes
+  séparations (le **socle générique** réutilisable, un modèle de données propre, des
+  rôles/destinataires pensés tôt, pas de dépendance bloquante) **sans** sur-ingénierie
+  prématurée. Quand un choix « rapide » risque de bloquer la montée en charge future,
+  **le signaler explicitement** et arbitrer en connaissance de cause.
+
 ## 2. Le motif commun à tous les modules (le cœur du produit)
 
 Chaque module suit **le même patron** — c'est ce qui fait l'unité de l'app et
@@ -129,6 +150,7 @@ implémenté** pour la cuisine. C'est le socle des modules 2 et 3.
 
 ```
 TITRE :
+TYPE : (Commerciale / Fonctionnalité / Technique)
 MODULE : (Cuisine / Entretien / Enfants-Sécurité / Transverse)
 OBJECTIF / POURQUOI : besoin, pour qui (admin ? quel membre du personnel ?).
 COMPORTEMENT ATTENDU : ce que l'utilisateur fait et voit, étape par étape.
