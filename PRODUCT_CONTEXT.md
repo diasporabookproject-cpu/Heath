@@ -106,25 +106,28 @@ mise à jour. Sensibilité particulière (sécurité enfants) → clarté et fia
 > Ces 3 modules sont **un point de départ**. D'autres pourraient suivre (courses/stocks,
 > prestataires & contacts, budget du foyer, etc.) — à challenger dans le chat produit.
 
-## 5. État réel de l'existant (module Cuisine — déployé)
+## 5. État réel de l'existant — **lot v1 livré (F1→F5)**
 
 🔗 **App en production** : https://diasporabookproject-cpu.github.io/Heath/
+📋 Détail des décisions & fiches : `PASSATION_CLAUDE_CODE.md` · journal technique : `DEVLOG.md`.
 
-Opérationnel aujourd'hui :
-- **Composer** un menu 7 jours (déjeuner + dîner + extras), sélecteur filtré, recherche.
-- **Feedback nutritionnel** : feux tricolores par jour + moyenne semaine ; calcium mis en avant ; éléments fixes toujours comptés.
-- **Vue Cuisinière** : ingrédients pesés, **bascule Français / الدارجة** (RTL), **Copier** (WhatsApp).
-- **Liste de courses** auto-générée, regroupée par rayon.
-- **Bibliothèque** : lister / ajouter / éditer / écarter / **importer en lot (JSON)** ; ~24 recettes traduites en darija.
-- **Notes vocales** par recette (enregistrement, lecture, intégrées au partage).
-- **Partage à la cuisinière** : **lien court** → page lecture seule (menu FR/darija + **notes vocales ▶️**), sans installer l'app.
-- **Compte** optionnel (connexion par lien magique) ; **PWA** installable, offline.
+**Socle transverse (réutilisable par tous les modules) :**
+- **Destinataires** (cuisinière, nounou…) avec **langue** ; **espace permanent par personne** via un **lien capability** (`#e=<jeton>`), en **lecture seule**, **hors-ligne** (cache), **dans sa langue** (RTL si darija), **mise à jour en place**, **révocable**.
+- **Connexion** par lien magique e-mail ; **PWA** installable.
 
-Pas encore fait : synchro multi-appareils, fiches recette détaillées, et tout le reste des modules 2 et 3.
+**Module Cuisine 🍳 :**
+- Composer un menu 7 jours ; feux tricolores + moyenne semaine ; éléments fixes comptés.
+- Vue Cuisinière FR/الدارجة (RTL), copier WhatsApp ; **liste de courses** par rayon.
+- Bibliothèque : ajouter / éditer / écarter / **importer (JSON)** / **générer un brouillon par IA** (Claude, sortie en Test, relecture humaine) ; ~26 recettes, darija.
+- **Notes vocales** par recette ; partage par lien (ponctuel ou via l'espace d'une personne).
 
-**Briques déjà existantes réutilisables pour les autres modules :** le motif
-*référentiel → composer → transmettre (texte/voix/lien/darija/offline)* est **déjà
-implémenté** pour la cuisine. C'est le socle des modules 2 et 3.
+**Module Sécurité 🛡️ :**
+- Référentiel (numéros d'urgence / procédures / gestes permis-interdits) + **pack de démarrage** ; statut Test/Validé ; **note vocale du parent** ; darija.
+- **Assignation par personne** → les fiches Validé apparaissent dans l'espace du destinataire (numéros en tête). **Aucune IA** sur la sécurité.
+
+**Backend :** Supabase (auth, table `espaces` = contenu par jeton, bucket `shared` = audios en écriture connectée, **edge function** `generate-recipe` = relais Claude clé serveur).
+
+**Dette / pas encore fait :** **synchro multi-appareils** (destinataires, recettes, fiches Sécurité sont encore **locaux à l'appareil**) ; contenu de l'espace pas encore composable par personne (le menu courant y est toujours inclus) ; QR + accusé de lecture (différés) ; modules Entretien et Enfants-planning ; fiches recette détaillées.
 
 ## 6. Contraintes
 
@@ -161,17 +164,23 @@ CRITÈRE DE « FINI » : test concret de réussite.
 PRIORITÉ : maintenant / bientôt / plus tard.
 ```
 
-## 9. Questions ouvertes à trancher en priorité (produit)
+## 9. Questions — tranchées en v1 & ouvertes pour le v2
 
-Le scope élargi en ajoute ; les plus structurantes d'abord :
-1. **Architecture du produit** : 3 modules **séparés** ou **un socle générique commun** (référentiel + planning + brief) décliné par domaine ? *(reco technique : socle commun — mais ça veut dire un investissement initial avant les modules 2/3).*
-2. **Rôles & destinataires** : comment modéliser le personnel (cuisinière, ménage, nounou) et « qui reçoit quoi » ?
-3. **Interaction du personnel** : consultation seule, ou retour possible (confirmer/au signaler) ? Impacte fortement la technique (le personnel n'a pas l'app).
-4. **Génération par IA** : pour quels contenus en priorité (recettes ? tutos ménage ? consignes) ? Quel niveau de confiance / relecture humaine, surtout en **darija** et pour la **sécurité enfants** ?
-5. **Synchro multi-appareils** : indispensable ou confort ?
-6. **Ordre de construction** : approfondir Cuisine, ou poser le **socle générique** puis dérouler les 3 modules en parallèle ?
-7. **Périmètre & sensibilité** : jusqu'où va « Sécurité enfants » (responsabilité, fiabilité) ?
-8. **Identité produit** : nom, positionnement (perso vs futur produit pour d'autres foyers ?).
+**Tranchées pendant le v1** (cf. décisions D1-D13 dans `PASSATION_CLAUDE_CODE.md`) :
+- ✅ Architecture = **socle générique commun** (Destinataire + Espace + référentiel/brief), décliné par module.
+- ✅ « Qui reçoit quoi » = **assignation par personne**.
+- ✅ Personnel en **lecture seule** en v1 (retour différé — D1).
+- ✅ IA = recettes seulement, **humain dans la boucle**, **exclue de la Sécurité** (D9).
+- ✅ Ordre : Cuisine → Sécurité → (Entretien, Enfants-planning).
+
+**Ouvertes pour le v2 (à prioriser) :**
+1. **Synchro multi-appareils** — la dette n°1 : destinataires/recettes/fiches sont locaux à l'appareil. Indispensable pour « vrai produit ». Stratégie de fusion + RLS par foyer.
+2. **Contenu de l'espace composable par personne** (ex. nounou sans menu ; cuisinière sans sécurité).
+3. **Compléter l'accès** (F1 différé) : QR imprimable + aide install iOS + accusé « lu/ouvert ».
+4. **Module Entretien maison** (réutilise le socle).
+5. **Retour du personnel** (« fait » / « manque ») — réactiver D1 ?
+6. **Identité & positionnement** : nom, perso vs produit multi-foyers, modèle économique.
+7. **Périmètre Sécurité/Enfants** : routines/planning enfants ; jusqu'où va la responsabilité.
 
 ## 10. Repères utiles
 
@@ -182,7 +191,7 @@ Le scope élargi en ajoute ; les plus structurantes d'abord :
 
 ---
 
-## Décisions produit (à remplir au fil de l'eau)
+## Décisions produit (au fil de l'eau)
 
-> Date · décision · pourquoi.
-> _(vide pour l'instant)_
+- **2026-06-23 — Lot v1 livré (F1→F5)** : socle Destinataire+Espace, Cuisine (+ IA recettes), Sécurité (assignation par personne). Décisions verrouillées D1-D13 dans `PASSATION_CLAUDE_CODE.md`. Dette assumée : pas de synchro multi-appareils (données locales).
+- *(suite à remplir au fil des décisions du chat produit)*

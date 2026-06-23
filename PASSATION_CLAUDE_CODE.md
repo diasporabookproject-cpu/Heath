@@ -14,6 +14,20 @@
 
 ---
 
+## STATUT D'EXÉCUTION (mis à jour 2026-06-23) — ✅ LOT v1 LIVRÉ
+
+| Fiche | Statut |
+|---|---|
+| **F1** Espace permanent + accès | ✅ Cœur livré (lien `#e=` capability, espace par personne, offline, révocation). Différé : QR imprimable, aide install iOS, accusé « lu ». |
+| **F2** Langue par destinataire | ✅ Livré (entité Destinataire + langue ; rendu dans sa langue, RTL). |
+| **F3** Module Sécurité-référentiel | ✅ Livré (numéros/procédures/gestes, statut, note vocale parent, darija, assignation par personne). |
+| **F4** Seed Sécurité | ✅ Livré (pack de démarrage importable, statut Test). |
+| **F5** Génération IA de recette | ✅ Livré (edge function Claude, clé serveur, sortie Test, relecture humaine). |
+
+**Dette / différé pour v2 :** synchro multi-appareils (destinataires/recettes/fiches **locaux à l'appareil**) ; contenu d'espace composable par personne (le menu courant y est toujours inclus) ; QR + accusé de lecture ; retour du personnel ; modules Entretien & Enfants-planning. Détail à jour : `PRODUCT_CONTEXT.md` §5 et §9, `DEVLOG.md`.
+
+---
+
 ## 0. Cadre — POC à finition conceptuelle avancée
 
 On teste vite le **concept**, à un niveau de finition **conceptuel** avancé. L'actif
