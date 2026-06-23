@@ -102,6 +102,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 - `e345977` Corrige les notes vocales coupées à la lecture (durée WebM : `fix-webm-duration` + repli côté lecture).
 - *(doc)* Ajout de `PRODUCT_CONTEXT.md` : pack de passation pour un chat produit dédié (vision, état réel, archi, faisabilité, backlog, protocole de boucle). Source de vérité produit.
 - *(produit)* **Élargissement de la vision** : de « app perso de menus » → **« app de gestion de maison + briefing du personnel »**. La cuisine devient le **module 1** ; 2 modules visés en plus (Entretien maison, Enfants/Sécurité). Motif commun identifié : *référentiel → composer → transmettre (texte/voix/lien/darija/offline)* → viser un **socle générique réutilisable**. Détail dans `PRODUCT_CONTEXT.md`.
+- *(produit)* **Passation v1 reçue du chat produit** (`PASSATION_CLAUDE_CODE.md`) : décisions verrouillées D1-D13, ordre de construction, fiches **F1** (espace permanent + accès tokenisé), **F2** (langue par destinataire), **F3** (module Sécurité-référentiel), **F4** (seed sécurité), **F5** (génération IA de recette via edge function). Keystone = F1+F2 ; wedge = Sécurité (F3+F4). _(MANIFESTE_PRODUIT.md référencé mais pas encore fourni.)_
 
 ### Session 2 — 2026-06-21
 - `01f420f` Onglet **Courses** : liste de courses auto-générée (P1 #10), parseur d'ingrédients + tests.
