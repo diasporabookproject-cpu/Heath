@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { parseRecipesJson } from '../lib/importRecipes';
+import { generateRecipeDraft, type RecipeDraft } from '../lib/ai';
+import { supabaseEnabled } from '../lib/supabase';
 import type { CalciumFlag, Recipe, RecipeType } from '../types';
 
 const TYPES: RecipeType[] = ['Déjeuner', 'Dîner', 'Coupe-faim'];
@@ -25,6 +27,7 @@ export default function BibliothequeView() {
   const setStatut = useStore((s) => s.setStatut);
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [editing, setEditing] = useState<Recipe | null>(null);
 
   const grouped = useMemo(() => {
@@ -48,6 +51,11 @@ export default function BibliothequeView() {
       <button className="btn btn--ghost" onClick={() => setImporting(true)}>
         ⇪ Importer (JSON)
       </button>
+      {supabaseEnabled && (
+        <button className="btn btn--ghost" onClick={() => setGenerating(true)}>
+          ✨ Générer un brouillon (IA)
+        </button>
+      )}
 
       {grouped.map((g) => (
         <div key={g.type}>
@@ -82,6 +90,7 @@ export default function BibliothequeView() {
       {adding && <RecipeFormSheet onClose={() => setAdding(false)} />}
       {editing && <RecipeFormSheet recipe={editing} onClose={() => setEditing(null)} />}
       {importing && <ImportRecipesSheet onClose={() => setImporting(false)} />}
+      {generating && <GenerateRecipeSheet onClose={() => setGenerating(false)} />}
     </div>
   );
 }
@@ -292,6 +301,98 @@ function RecipeFormSheet({ recipe, onClose }: { recipe?: Recipe; onClose: () => 
           <button className="btn" onClick={save} disabled={!canSave}>
             {isEdit ? 'Enregistrer les modifications' : 'Enregistrer'}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GenerateRecipeSheet({ onClose }: { onClose: () => void }) {
+  const recipes = useStore((s) => s.recipes);
+  const upsertRecipe = useStore((s) => s.upsertRecipe);
+  const [intention, setIntention] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [draft, setDraft] = useState<RecipeDraft | null>(null);
+  const [err, setErr] = useState('');
+
+  const generate = async () => {
+    if (!intention.trim()) return;
+    setStatus('loading');
+    setErr('');
+    try {
+      const d = await generateRecipeDraft(intention.trim());
+      setDraft(d);
+      setStatus('ready');
+    } catch (e) {
+      setErr((e as Error).message);
+      setStatus('error');
+    }
+  };
+
+  const add = () => {
+    if (!draft) return;
+    const json = JSON.stringify([
+      { ...draft, statut: 'Test', notes: 'Brouillon IA — vérifier les macros et càc/càs.' },
+    ]);
+    const { recipes: parsed } = parseRecipesJson(json, recipes);
+    parsed.forEach(upsertRecipe);
+    onClose();
+  };
+
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet__head">
+          <div className="sheet__title">
+            <span>Générer un brouillon (IA)</span>
+            <button className="sheet__close" onClick={onClose} aria-label="Fermer">
+              ×
+            </button>
+          </div>
+        </div>
+        <div className="sheet__list">
+          <p className="hint">
+            Décris ce que tu veux ; l'IA propose un brouillon (sans gluten, calcium valorisé). Il
+            arrive en statut <b>Test</b> : relis et corrige (surtout les macros) avant de valider.
+          </p>
+          <div className="field">
+            <textarea
+              rows={3}
+              value={intention}
+              onChange={(e) => setIntention(e.target.value)}
+              placeholder="Ex. dîner sans gluten riche en calcium, ~600 kcal, poisson"
+            />
+          </div>
+          {status !== 'ready' && (
+            <button className="btn" onClick={generate} disabled={status === 'loading' || !intention.trim()}>
+              {status === 'loading' ? 'Génération…' : '✨ Générer'}
+            </button>
+          )}
+          {status === 'error' && <div className="import-report import-report--warn">{err}</div>}
+
+          {status === 'ready' && draft && (
+            <>
+              <div className="card" style={{ marginTop: 10 }}>
+                <div className="lib-item__name">{draft.nom}</div>
+                <div className="lib-item__sub">
+                  {draft.type} · {draft.kcal} kcal · P {draft.prot} · Ca {draft.calcium} mg ·{' '}
+                  {draft.flag_calcium}
+                </div>
+                <div className="cook-meal__ing" style={{ marginTop: 6 }}>{draft.ingredients}</div>
+                {draft.ingredients_ar && (
+                  <div className="cook-meal__ing" dir="rtl" style={{ marginTop: 6 }}>
+                    {draft.ingredients_ar}
+                  </div>
+                )}
+              </div>
+              <button className="btn" onClick={add}>
+                Ajouter en « Test »
+              </button>
+              <button className="btn btn--ghost" onClick={() => setStatus('idle')}>
+                Régénérer
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
