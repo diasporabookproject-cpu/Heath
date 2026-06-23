@@ -77,3 +77,17 @@ export interface WeekMenu {
 }
 
 export type Feu = 'vert' | 'orange' | 'rouge';
+
+/** Destinataire d'un brief (personnel de maison). Concept transverse réutilisable. */
+export interface Destinataire {
+  id: string;
+  nom: string;
+  /** Rôle indicatif : Cuisinière / Femme de ménage / Nounou / Autre. */
+  role: string;
+  /** Langue de lecture préférée. */
+  langue: 'fr' | 'ar';
+  /** Jeton d'accès (capability) pour le lien permanent de son espace. */
+  token: string;
+  revoked?: boolean;
+  createdAt: number;
+}

@@ -62,6 +62,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 12. **Bug clé : l'en-tête `x-upsert` provoquait un refus RLS** (403 « new row violates row-level security policy »). Retiré — chemins de publication uniques, insert simple. ✅ (cause racine de la longue série de blocages).
 13. **PWA : `skipWaiting`/`clientsClaim`** — éviter qu'une app installée reste sur un ancien cache après déploiement. ✅
 14. **Écriture du bucket réservée aux utilisateurs connectés** (jeton de session dans l'upload + policy `authenticated`-only). ✅ Vérifié : upload anonyme refusé (403), lecture publique intacte.
+15. **Socle « Destinataire + Espace » (keystone F1/F2, slice 1)** : entité **Destinataire** locale (IndexedDB, v3) avec **langue** + jeton capability ; **Espace** par personne stocké dans une **table Supabase `espaces`** (upsert en place, lecture publique par jeton = capability), audios dans le bucket `shared`. Lien permanent `#e=<token>`, page lecture seule offline-cache. 1re brique générique réutilisable (Sécurité/Entretien). ✅ (table à créer côté Supabase).
 
 ---
 
@@ -93,6 +94,10 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 ---
 
 ## Journal des sessions
+
+### Session 4 — 2026-06-23
+- Passation produit v1 reçue (vision « Maison OS », fiches F1-F5).
+- **Slice 1 keystone (F1+F2)** : entité **Destinataire** (locale, langue, jeton) + écran de gestion ; **Espace permanent** par personne (lien `#e=<token>`) servant le menu courant dans la langue du destinataire, page lecture seule + cache offline ; contenu dans table Supabase `espaces` (upsert en place, lecture publique par jeton), audios dans `shared`. UI vérifiée (création destinataire, boutons partage). _Reste : créer la table `espaces` côté Supabase ; test live ; puis F3/F4 (Sécurité) dans le même espace._
 
 ### Session 3 — 2026-06-22
 - `b292492` Corrige l'upload des notes vocales (**retrait de `x-upsert`**) — cause racine du blocage RLS, identifiée par test REST direct contre Supabase.

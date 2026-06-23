@@ -7,6 +7,7 @@ import { DAY_AR, LABELS, TYPE_AR, type Lang } from '../lib/cuisineLabels';
 import { buildSharePayload, buildShareUrl } from '../lib/share';
 import { publishMenu } from '../lib/publish';
 import { supabaseEnabled } from '../lib/supabase';
+import DestinatairesSheet from '../components/DestinatairesSheet';
 
 function recipeName(r: Recipe, lang: Lang): string {
   return lang === 'ar' ? r.nom_ar || r.nom : r.nom;
@@ -58,6 +59,7 @@ export default function CuisinierView() {
   const [lang, setLang] = useState<Lang>('fr');
   const [shareMsg, setShareMsg] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [destOpen, setDestOpen] = useState(false);
 
   const flash = (key: string) => {
     setCopied(key);
@@ -155,13 +157,18 @@ export default function CuisinierView() {
 
       {days.length > 0 && (
         <>
+          {supabaseEnabled && (
+            <button className="btn" onClick={() => setDestOpen(true)}>
+              {ar ? '👤 شارك مع شخص' : '👤 Partager à une personne (espace permanent)'}
+            </button>
+          )}
           {supabaseEnabled ? (
-            <button className="btn" onClick={shareWithAudio} disabled={publishing}>
+            <button className="btn btn--ghost" onClick={shareWithAudio} disabled={publishing}>
               {publishing
                 ? 'Préparation du lien…'
                 : ar
                   ? '🔗 شارك المنيو (مع الصوت)'
-                  : '🔗 Partager le menu (lien court)'}
+                  : '🔗 Partager le menu (lien ponctuel)'}
             </button>
           ) : (
             <button className="btn" onClick={shareLink}>
@@ -206,6 +213,8 @@ export default function CuisinierView() {
           </div>
         );
       })}
+
+      {destOpen && <DestinatairesSheet onClose={() => setDestOpen(false)} />}
     </div>
   );
 }

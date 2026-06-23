@@ -6,8 +6,14 @@ import type { SharedDay, SharedMeal, SharedMenu } from '../lib/share';
 // Affiche le menu (FR / darija) ; les notes vocales sont en placeholder
 // (l'audio arrivera avec le backend).
 
-export default function SharedMenuView({ menu }: { menu: SharedMenu }) {
-  const [lang, setLang] = useState<Lang>('fr');
+export default function SharedMenuView({
+  menu,
+  initialLang = 'fr',
+}: {
+  menu: SharedMenu;
+  initialLang?: Lang;
+}) {
+  const [lang, setLang] = useState<Lang>(initialLang);
   const ar = lang === 'ar';
   const L = LABELS[lang];
 

@@ -58,8 +58,18 @@ await page.screenshot({ path: 'scripts/shot-cuisiniere.png', fullPage: false });
 
 // Note vocale : enregistrer (micro simulé) puis vérifier la lecture.
 const vn = page.locator('.voice-note').first();
-await vn.getByRole('button', { name: /Enregistrer/ }).click();
-await page.getByRole('button', { name: /Arrêter/ }).first().waitFor({ timeout: 8000 });
+// getUserMedia peut être lent à démarrer en headless → on réessaie le démarrage.
+let recStarted = false;
+for (let i = 0; i < 4 && !recStarted; i++) {
+  await vn.getByRole('button', { name: /Enregistrer/ }).click().catch(() => {});
+  recStarted = await page
+    .getByRole('button', { name: /Arrêter/ })
+    .first()
+    .waitFor({ timeout: 6000 })
+    .then(() => true)
+    .catch(() => false);
+}
+if (!recStarted) throw new Error("L'enregistrement n'a pas démarré (micro simulé)");
 await page.waitForTimeout(2000);
 await page.getByRole('button', { name: /Arrêter/ }).first().click();
 // l'audio apparaît après la réparation de durée (garde-fou ≤ 4 s)

@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Recipe, WeekMenu } from '../types';
+import type { Destinataire, Recipe, WeekMenu } from '../types';
 import { SEED_RECIPES } from '../data';
 
 // IndexedDB = source de vérité locale (offline-first). La synchro Supabase
@@ -17,10 +17,11 @@ interface MenuDB extends DBSchema {
   weeks: { key: string; value: WeekMenu };
   meta: { key: string; value: unknown };
   audio: { key: string; value: AudioNote };
+  destinataires: { key: string; value: Destinataire };
 }
 
 const DB_NAME = 'menu-semaine';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbPromise: Promise<IDBPDatabase<MenuDB>> | null = null;
 
@@ -40,6 +41,10 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
         // v2 : notes vocales par recette (clé = id de recette).
         if (!db.objectStoreNames.contains('audio')) {
           db.createObjectStore('audio', { keyPath: 'recipeId' });
+        }
+        // v3 : destinataires (personnel de maison) — concept transverse.
+        if (!db.objectStoreNames.contains('destinataires')) {
+          db.createObjectStore('destinataires', { keyPath: 'id' });
         }
       },
     });
@@ -138,4 +143,22 @@ export async function deleteAudio(recipeId: string): Promise<void> {
 export async function loadAudioKeys(): Promise<string[]> {
   const db = await getDB();
   return (await db.getAllKeys('audio')) as string[];
+}
+
+// ── Destinataires (personnel de maison) ─────────────────────────────────────
+
+export async function loadDestinataires(): Promise<Destinataire[]> {
+  const db = await getDB();
+  const all = await db.getAll('destinataires');
+  return all.sort((a, b) => a.createdAt - b.createdAt);
+}
+
+export async function saveDestinataire(d: Destinataire): Promise<void> {
+  const db = await getDB();
+  await db.put('destinataires', d);
+}
+
+export async function deleteDestinataire(id: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('destinataires', id);
 }

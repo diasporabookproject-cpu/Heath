@@ -5,8 +5,10 @@ import CuisinierView from './views/CuisinierView';
 import CoursesView from './views/CoursesView';
 import BibliothequeView from './views/BibliothequeView';
 import SharedMenuView from './views/SharedMenuView';
+import EspaceView from './views/EspaceView';
 import AccountSheet from './components/AccountSheet';
 import { readPublishId, readSharedFromLocation, type SharedMenu } from './lib/share';
+import { readEspaceToken } from './lib/espace';
 import { fetchPublishedMenu } from './lib/publish';
 import { supabaseEnabled } from './lib/supabase';
 import { useSession } from './lib/useSession';
@@ -27,16 +29,19 @@ export default function App() {
   const [accountOpen, setAccountOpen] = useState(false);
   const { session } = useSession();
 
-  // Lien partagé : menu encodé dans l'URL (#m=) ou menu publié (#p=, avec audio).
+  // Liens lecture seule : menu encodé (#m=), menu publié (#p=), ou espace
+  // permanent d'un destinataire (#e=). Aucun ne nécessite les données locales.
   const shared = readSharedFromLocation();
   const publishId = readPublishId();
+  const espaceToken = readEspaceToken();
 
   useEffect(() => {
-    if (!shared && !publishId) void init();
-  }, [init, shared, publishId]);
+    if (!shared && !publishId && !espaceToken) void init();
+  }, [init, shared, publishId, espaceToken]);
 
   if (shared) return <SharedMenuView menu={shared} />;
   if (publishId) return <PublishedMenu id={publishId} />;
+  if (espaceToken) return <EspaceView token={espaceToken} />;
 
   const current = TABS.find((t) => t.id === tab)!;
 

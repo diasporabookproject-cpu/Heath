@@ -39,7 +39,7 @@ function publicUrl(path: string): string {
 }
 
 /** Jeton de la session courante (upload réservé aux utilisateurs connectés). */
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   const supa = getSupabase();
   if (!supa) throw new Error('Synchro non configurée.');
   const { data } = await supa.auth.getSession();
@@ -69,6 +69,27 @@ async function uploadObject(path: string, body: Blob, token: string): Promise<vo
   }
 }
 
+/**
+ * Téléverse les notes vocales des recettes utilisées dans la semaine sous un
+ * préfixe unique, et renvoie une map recetteId -> URL publique.
+ */
+export async function uploadWeekAudios(
+  config: AppConfig,
+  week: WeekMenu,
+  prefix: string,
+  token: string,
+): Promise<Map<string, string>> {
+  const audioUrls = new Map<string, string>();
+  for (const rid of usedRecipeIds(config, week)) {
+    const blob = await loadAudio(rid);
+    if (!blob) continue;
+    const path = `${prefix}/${rid}.${extFor(blob.type)}`;
+    await uploadObject(path, blob, token);
+    audioUrls.set(rid, publicUrl(path));
+  }
+  return audioUrls;
+}
+
 export interface PublishResult {
   url: string;
   audioCount: number;
@@ -83,15 +104,7 @@ export async function publishMenu(
   const token = await getAccessToken();
 
   const id = newId();
-  const audioUrls = new Map<string, string>();
-
-  for (const rid of usedRecipeIds(config, week)) {
-    const blob = await loadAudio(rid);
-    if (!blob) continue;
-    const path = `${id}/${rid}.${extFor(blob.type)}`;
-    await uploadObject(path, blob, token);
-    audioUrls.set(rid, publicUrl(path));
-  }
+  const audioUrls = await uploadWeekAudios(config, week, id, token);
 
   const payload = buildSharePayload(config, week, byId, new Set(audioUrls.keys()), audioUrls);
   await uploadObject(`${id}.json`, new Blob([JSON.stringify(payload)], { type: 'application/json' }), token);
