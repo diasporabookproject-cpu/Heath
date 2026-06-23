@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Destinataire, Recipe, WeekMenu } from '../types';
+import type { Destinataire, Recipe, SecuriteFiche, WeekMenu } from '../types';
 import { SEED_RECIPES } from '../data';
 
 // IndexedDB = source de vérité locale (offline-first). La synchro Supabase
@@ -18,10 +18,11 @@ interface MenuDB extends DBSchema {
   meta: { key: string; value: unknown };
   audio: { key: string; value: AudioNote };
   destinataires: { key: string; value: Destinataire };
+  securite: { key: string; value: SecuriteFiche };
 }
 
 const DB_NAME = 'menu-semaine';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 let dbPromise: Promise<IDBPDatabase<MenuDB>> | null = null;
 
@@ -45,6 +46,10 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
         // v3 : destinataires (personnel de maison) — concept transverse.
         if (!db.objectStoreNames.contains('destinataires')) {
           db.createObjectStore('destinataires', { keyPath: 'id' });
+        }
+        // v4 : référentiel Sécurité (consignes du foyer).
+        if (!db.objectStoreNames.contains('securite')) {
+          db.createObjectStore('securite', { keyPath: 'id' });
         }
       },
     });
@@ -161,4 +166,22 @@ export async function saveDestinataire(d: Destinataire): Promise<void> {
 export async function deleteDestinataire(id: string): Promise<void> {
   const db = await getDB();
   await db.delete('destinataires', id);
+}
+
+// ── Référentiel Sécurité ─────────────────────────────────────────────────────
+
+export async function loadSecurite(): Promise<SecuriteFiche[]> {
+  const db = await getDB();
+  const all = await db.getAll('securite');
+  return all.sort((a, b) => a.createdAt - b.createdAt);
+}
+
+export async function saveSecurite(f: SecuriteFiche): Promise<void> {
+  const db = await getDB();
+  await db.put('securite', f);
+}
+
+export async function deleteSecurite(id: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('securite', id);
 }

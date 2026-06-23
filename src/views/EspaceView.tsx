@@ -77,7 +77,9 @@ export default function EspaceView({ token }: { token: string }) {
     );
   }
 
-  return <SharedMenuView menu={espace.menu} initialLang={espace.langue} />;
+  return (
+    <SharedMenuView menu={espace.menu} securite={espace.securite} initialLang={espace.langue} />
+  );
 }
 
 function readCache(token: string): Espace | null {

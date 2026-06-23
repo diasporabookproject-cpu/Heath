@@ -1,0 +1,30 @@
+[
+  {
+    "type": "numeros",
+    "titre": "Numéros d'urgence",
+    "titre_ar": "أرقام الطوارئ",
+    "contenu": "Police : 19\nProtection civile (pompiers/ambulance) : 15\nGendarmerie Royale : 177\nSAMU : 141\nCentre antipoison : (à remplir)\nMaman : (numéro)\nPapa : (numéro)\nPédiatre : (à remplir)\nVoisin de confiance : (à remplir)",
+    "contenu_ar": "البوليس : 19\nالوقاية المدنية (الحريقة/سيارة الإسعاف) : 15\nالدرك الملكي : 177\nالإسعاف SAMU : 141\nمركز السموم : (تُعمّر)\nماما : (الرقم)\nبابا : (الرقم)\nطبيب الأطفال : (تُعمّر)\nالجار ديال الثقة : (تُعمّر)"
+  },
+  {
+    "type": "procedure",
+    "titre": "Étouffement (enfant) — que faire",
+    "titre_ar": "الاختناق عند الطفل — أش تدير",
+    "contenu": "Rester calme et appeler à l'aide.\nPencher l'enfant en avant.\n5 tapes fermes entre les omoplates.\nSi ça ne passe pas : 5 compressions sous la poitrine.\nAppeler le 15 si l'objet ne sort pas.\nNe rien mettre dans la bouche à l'aveugle.",
+    "contenu_ar": "بقا هادي وعيّط للمعاونة.\nطيّح الطفل لقدّام.\n5 ضربات قوية بين الكتفين.\nإلا ما خرجش : 5 ضغطات تحت الصدر.\nعيّط 15 إلا ما خرجش الشي.\nما تدخّل والو فالفم بلا ما تشوف."
+  },
+  {
+    "type": "procedure",
+    "titre": "Fièvre — premiers gestes",
+    "titre_ar": "السخانة — أول الخطوات",
+    "contenu": "Prendre la température.\nDécouvrir l'enfant (pas trop de couvertures).\nFaire boire de l'eau souvent.\nDonner le médicament SEULEMENT selon la dose écrite par les parents.\nAppeler maman/papa si > 39°C ou si l'enfant est mou.",
+    "contenu_ar": "قيس السخانة.\nحيّد عليه الكثير ديال الأغطية.\nشرّبو الما بزّاف ديال المرات.\nعطيه الدوا غير حسب الجرعة اللي كتبو الوالدين.\nعيّط لماما/بابا إلا فات 39° أو الطفل مرخي."
+  },
+  {
+    "type": "gestes",
+    "titre": "Gestes permis / interdits",
+    "titre_ar": "الأمور المسموحة / الممنوعة",
+    "contenu": "- Ne jamais laisser l'enfant seul près de l'eau (bain, piscine).\n- Ne pas donner de petits objets (risque d'étouffement).\n- Ne pas ouvrir la porte aux inconnus.\n- Ne pas laisser de médicaments ou produits ménagers à portée.\n+ Toujours attacher l'enfant dans la chaise haute et en voiture.\n+ Se laver les mains avant de préparer le biberon/repas.\n+ Surveiller l'enfant en permanence dans l'escalier.",
+    "contenu_ar": "- عمرك ما تخلّي الطفل بوحدو حدا الما (الحمّام، البيسين).\n- ما تعطيه حوايج صغار (خطر الاختناق).\n- ما تحلّش الباب للناس اللي ما تعرفهمش.\n- ما تخلّيش الدوا ولا مواد التنظيف فمتناولو.\n+ ديما ربط الطفل فالكرسي العالي وفالطوموبيل.\n+ غسل يديك قبل ما تحضّر الرضّاعة/الماكلة.\n+ عسّ على الطفل ديما فالدروج."
+  }
+]

@@ -1,7 +1,8 @@
 import { getSupabase } from './supabase';
-import { getAccessToken, uploadWeekAudios } from './publish';
+import { getAccessToken, uploadAudios, uploadWeekAudios } from './publish';
 import { buildSharePayload, type SharedMenu } from './share';
-import type { AppConfig, Destinataire, Recipe, WeekMenu } from '../types';
+import { loadSecurite } from './db';
+import type { AppConfig, Destinataire, Recipe, SecuriteType, WeekMenu } from '../types';
 
 // Espace permanent par destinataire (keystone F1, cœur).
 // Contenu stocké dans la table Supabase `espaces` (upsert en place, lecture
@@ -10,12 +11,22 @@ import type { AppConfig, Destinataire, Recipe, WeekMenu } from '../types';
 
 export const ESPACE_PREFIX = '#e=';
 
+export interface SecuritePublic {
+  type: SecuriteType;
+  titre: string;
+  titre_ar?: string;
+  contenu: string;
+  contenu_ar?: string;
+  a?: string; // URL publique de la note vocale du parent
+}
+
 export interface Espace {
   v: 1;
   langue: 'fr' | 'ar';
   nom: string;
   role: string;
   menu: SharedMenu;
+  securite?: SecuritePublic[];
 }
 
 /** Jeton d'accès long et non devinable (capability). */
@@ -45,12 +56,33 @@ export async function publishEspace(
   const audioUrls = await uploadWeekAudios(config, week, prefix, token);
 
   const menu = buildSharePayload(config, week, byId, new Set(audioUrls.keys()), audioUrls);
+
+  // Fiches Sécurité assignées à cette personne (uniquement Validé).
+  const assigned = new Set(dest.securiteIds ?? []);
+  const fiches = (await loadSecurite()).filter(
+    (f) => f.statut === 'Validé' && assigned.has(f.id),
+  );
+  const secAudio = await uploadAudios(
+    fiches.map((f) => f.id),
+    `${prefix}/sec`,
+    token,
+  );
+  const securite: SecuritePublic[] = fiches.map((f) => ({
+    type: f.type,
+    titre: f.titre,
+    titre_ar: f.titre_ar,
+    contenu: f.contenu,
+    contenu_ar: f.contenu_ar,
+    a: secAudio.get(f.id),
+  }));
+
   const payload: Espace = {
     v: 1,
     langue: dest.langue,
     nom: dest.nom,
     role: dest.role,
     menu,
+    securite,
   };
 
   const { error } = await supa

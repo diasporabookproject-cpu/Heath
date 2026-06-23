@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
-import { deleteDestinataire, loadDestinataires, saveDestinataire } from '../lib/db';
+import { deleteDestinataire, loadDestinataires, loadSecurite, saveDestinataire } from '../lib/db';
 import { buildEspaceUrl, newToken, publishEspace, revokeEspace } from '../lib/espace';
-import type { Destinataire } from '../types';
+import type { Destinataire, SecuriteFiche } from '../types';
 
 const ROLES = ['Cuisinière', 'Femme de ménage', 'Nounou', 'Autre'];
 
@@ -13,6 +13,7 @@ export default function DestinatairesSheet({ onClose }: { onClose: () => void })
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
 
   const [list, setList] = useState<Destinataire[]>([]);
+  const [secFiches, setSecFiches] = useState<SecuriteFiche[]>([]);
   const [editing, setEditing] = useState<Destinataire | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -20,7 +21,16 @@ export default function DestinatairesSheet({ onClose }: { onClose: () => void })
   const refresh = () => loadDestinataires().then(setList);
   useEffect(() => {
     refresh();
+    loadSecurite().then((all) => setSecFiches(all.filter((f) => f.statut === 'Validé')));
   }, []);
+
+  const toggleSecurite = (id: string) => {
+    if (!editing) return;
+    const cur = new Set(editing.securiteIds ?? []);
+    if (cur.has(id)) cur.delete(id);
+    else cur.add(id);
+    setEditing({ ...editing, securiteIds: [...cur] });
+  };
 
   const flash = (m: string) => {
     setMsg(m);
@@ -125,6 +135,26 @@ export default function DestinatairesSheet({ onClose }: { onClose: () => void })
                     <option value="ar">الدارجة</option>
                   </select>
                 </div>
+              </div>
+              <div className="field">
+                <label>Fiches Sécurité assignées à cette personne</label>
+                {secFiches.length === 0 ? (
+                  <p className="hint" style={{ margin: 0 }}>
+                    Aucune fiche Sécurité validée. Crée-les dans l'onglet « Sécurité », puis
+                    valide-les pour pouvoir les assigner ici.
+                  </p>
+                ) : (
+                  secFiches.map((f) => (
+                    <label key={f.id} className="course-item">
+                      <input
+                        type="checkbox"
+                        checked={(editing.securiteIds ?? []).includes(f.id)}
+                        onChange={() => toggleSecurite(f.id)}
+                      />
+                      <span className="course-item__name">{f.titre}</span>
+                    </label>
+                  ))
+                )}
               </div>
               <button className="btn" onClick={save} disabled={!editing.nom.trim()}>
                 Enregistrer

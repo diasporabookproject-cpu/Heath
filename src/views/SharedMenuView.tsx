@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { DAY_AR, LABELS, TYPE_AR, type Lang } from '../lib/cuisineLabels';
 import type { SharedDay, SharedMeal, SharedMenu } from '../lib/share';
+import type { SecuritePublic } from '../lib/espace';
+import SecuriteSection from '../components/SecuriteSection';
 
-// Page en lecture seule ouverte par la cuisinière via le lien partagé.
-// Affiche le menu (FR / darija) ; les notes vocales sont en placeholder
-// (l'audio arrivera avec le backend).
+// Page en lecture seule ouverte par le destinataire (cuisinière, nounou…).
+// Affiche, dans sa langue, ses consignes Sécurité (si présentes) puis le menu.
 
 export default function SharedMenuView({
   menu,
+  securite,
   initialLang = 'fr',
 }: {
   menu: SharedMenu;
+  securite?: SecuritePublic[];
   initialLang?: Lang;
 }) {
   const [lang, setLang] = useState<Lang>(initialLang);
@@ -80,7 +83,13 @@ export default function SharedMenuView({
             : 'Ingrédients pesés (1 portion). Les mesures à la cuillère (càc/càs) sont volontaires.'}
         </p>
 
-        {menu.days.length === 0 && <p className="empty-note">Menu vide.</p>}
+        {securite && securite.length > 0 && <SecuriteSection fiches={securite} lang={lang} />}
+
+        {menu.days.length > 0 && (
+          <div className="lib-section__title" style={{ marginTop: 4 }}>
+            {ar ? 'المنيو' : 'Menu'}
+          </div>
+        )}
 
         {menu.days.map((d: SharedDay) => (
           <div className="card" key={d.k}>

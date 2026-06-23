@@ -73,21 +73,30 @@ async function uploadObject(path: string, body: Blob, token: string): Promise<vo
  * Téléverse les notes vocales des recettes utilisées dans la semaine sous un
  * préfixe unique, et renvoie une map recetteId -> URL publique.
  */
+/** Téléverse les notes vocales d'un ensemble d'ids → map id -> URL publique. */
+export async function uploadAudios(
+  ids: string[],
+  prefix: string,
+  token: string,
+): Promise<Map<string, string>> {
+  const urls = new Map<string, string>();
+  for (const id of ids) {
+    const blob = await loadAudio(id);
+    if (!blob) continue;
+    const path = `${prefix}/${id}.${extFor(blob.type)}`;
+    await uploadObject(path, blob, token);
+    urls.set(id, publicUrl(path));
+  }
+  return urls;
+}
+
 export async function uploadWeekAudios(
   config: AppConfig,
   week: WeekMenu,
   prefix: string,
   token: string,
 ): Promise<Map<string, string>> {
-  const audioUrls = new Map<string, string>();
-  for (const rid of usedRecipeIds(config, week)) {
-    const blob = await loadAudio(rid);
-    if (!blob) continue;
-    const path = `${prefix}/${rid}.${extFor(blob.type)}`;
-    await uploadObject(path, blob, token);
-    audioUrls.set(rid, publicUrl(path));
-  }
-  return audioUrls;
+  return uploadAudios(usedRecipeIds(config, week), prefix, token);
 }
 
 export interface PublishResult {

@@ -88,6 +88,28 @@ export interface Destinataire {
   langue: 'fr' | 'ar';
   /** Jeton d'accès (capability) pour le lien permanent de son espace. */
   token: string;
+  /** Ids des fiches Sécurité assignées à cette personne (« qui reçoit quoi »). */
+  securiteIds?: string[];
   revoked?: boolean;
+  createdAt: number;
+}
+
+export type SecuriteType = 'numeros' | 'procedure' | 'gestes';
+
+/**
+ * Fiche du référentiel Sécurité (consignes du foyer). Contenu = lignes
+ * (une par item), darija en parallèle. AUCUNE génération IA (D7).
+ * - numeros   : « Label : numéro » par ligne
+ * - procedure : une étape par ligne (ordre = ordre des lignes)
+ * - gestes    : un geste par ligne ; préfixe « - » = interdit, sinon permis
+ */
+export interface SecuriteFiche {
+  id: string;
+  type: SecuriteType;
+  titre: string;
+  titre_ar?: string;
+  contenu: string;
+  contenu_ar?: string;
+  statut: RecipeStatus; // Validé / Test / Écarté(=archivé)
   createdAt: number;
 }
