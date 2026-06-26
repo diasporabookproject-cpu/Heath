@@ -40,6 +40,34 @@ export async function generateRecipeDraft(intention: string): Promise<RecipeDraf
   return data.recipe as RecipeDraft;
 }
 
+export interface DarijaTranslation {
+  nom_ar?: string;
+  ingredients_ar?: string;
+  etapes_ar?: string;
+}
+
+/**
+ * Traduit nom/ingrédients/étapes vers la darija via l'edge function (figée au
+ * moment de l'envoi). Renvoie null si indisponible (jamais bloquant).
+ */
+export async function translateToDarija(input: {
+  nom?: string;
+  ingredients?: string;
+  etapes?: string;
+}): Promise<DarijaTranslation | null> {
+  try {
+    if (!(await aiAvailable())) return null;
+    const supa = getSupabase()!;
+    const { data, error } = await supa.functions.invoke('generate-recipe', {
+      body: { mode: 'translate', ...input },
+    });
+    if (error || !data || data.error || !data.translation) return null;
+    return data.translation as DarijaTranslation;
+  } catch {
+    return null;
+  }
+}
+
 /** Vrai si la génération/estimation IA est utilisable maintenant (connecté + en ligne). */
 export async function aiAvailable(): Promise<boolean> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;

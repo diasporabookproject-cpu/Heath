@@ -1,7 +1,8 @@
 import { getSupabase } from './supabase';
 import { getAccessToken, uploadAudios, uploadWeekAudios } from './publish';
 import { buildSharePayload, type SharedMenu } from './share';
-import { loadSecurite } from './db';
+import { loadAudio, loadSecurite } from './db';
+import { translateToDarija } from './ai';
 import type { AppConfig, Destinataire, Recipe, SecuriteType, WeekMenu } from '../types';
 
 // Espace permanent par destinataire (keystone F1, cœur).
@@ -10,6 +11,7 @@ import type { AppConfig, Destinataire, Recipe, SecuriteType, WeekMenu } from '..
 // public `shared`. Lien permanent : .../#e=<token>.
 
 export const ESPACE_PREFIX = '#e=';
+const TRANSLATE_CAP = 12; // plafond d'appels de traduction par envoi (coût)
 
 export interface SecuritePublic {
   type: SecuriteType;
@@ -25,6 +27,8 @@ export interface Espace {
   langue: 'fr' | 'ar';
   nom: string;
   role: string;
+  /** Nombre de personnes pour la mise à l'échelle des ingrédients (défaut 4). */
+  persons?: number;
   menu: SharedMenu;
   securite?: SecuritePublic[];
 }
@@ -38,6 +42,82 @@ export function newToken(): string {
 
 export function buildEspaceUrl(token: string): string {
   return window.location.origin + window.location.pathname + ESPACE_PREFIX + token;
+}
+
+function usedRecipeIds(config: AppConfig, week: WeekMenu): string[] {
+  const ids = new Set<string>();
+  for (const j of config.jours) {
+    const d = week.days[j.key];
+    if (!d) continue;
+    if (d.dejId) ids.add(d.dejId);
+    if (d.dinId) ids.add(d.dinId);
+    for (const e of d.extras) ids.add(e);
+  }
+  return [...ids];
+}
+
+/**
+ * Pour un envoi en darija : complète les champs darija manquants des recettes
+ * utilisées via l'edge function de traduction (figée dans l'espace). Best-effort,
+ * plafonné, jamais bloquant ; renvoie une map enrichie sans toucher la base.
+ */
+async function augmentDarija(
+  config: AppConfig,
+  week: WeekMenu,
+  byId: Map<string, Recipe>,
+): Promise<Map<string, Recipe>> {
+  const out = new Map(byId);
+  const toTranslate = usedRecipeIds(config, week)
+    .map((id) => byId.get(id))
+    .filter((r): r is Recipe => !!r)
+    .filter((r) => !r.nom_ar || !r.ingredients_ar || (r.etapes && !r.etapes_ar))
+    .slice(0, TRANSLATE_CAP);
+
+  await Promise.all(
+    toTranslate.map(async (r) => {
+      const tr = await translateToDarija({
+        nom: r.nom_ar ? undefined : r.nom,
+        ingredients: r.ingredients_ar ? undefined : r.ingredients,
+        etapes: r.etapes && !r.etapes_ar ? r.etapes : undefined,
+      });
+      if (!tr) return;
+      out.set(r.id, {
+        ...r,
+        nom_ar: r.nom_ar || tr.nom_ar,
+        ingredients_ar: r.ingredients_ar || tr.ingredients_ar,
+        etapes_ar: r.etapes_ar || tr.etapes_ar,
+      });
+    }),
+  );
+  return out;
+}
+
+async function buildSecurite(
+  dest: Destinataire,
+  prefix: string | null,
+  token: string | null,
+): Promise<SecuritePublic[]> {
+  const assigned = new Set(dest.securiteIds ?? []);
+  const fiches = (await loadSecurite()).filter((f) => f.statut === 'Validé' && assigned.has(f.id));
+  if (fiches.length === 0) return [];
+  let secAudio = new Map<string, string>();
+  if (prefix && token) {
+    secAudio = await uploadAudios(fiches.map((f) => f.id), `${prefix}/sec`, token);
+  } else {
+    // aperçu local : URLs d'objets locaux
+    for (const f of fiches) {
+      const blob = await loadAudio(f.id);
+      if (blob) secAudio.set(f.id, URL.createObjectURL(blob));
+    }
+  }
+  return fiches.map((f) => ({
+    type: f.type,
+    titre: f.titre,
+    titre_ar: f.titre_ar,
+    contenu: f.contenu,
+    contenu_ar: f.contenu_ar,
+    a: secAudio.get(f.id),
+  }));
 }
 
 /** Publie / met à jour l'espace d'un destinataire avec le menu courant. */
@@ -55,32 +135,17 @@ export async function publishEspace(
   const prefix = `${dest.token}/${newToken().slice(0, 8)}`;
   const audioUrls = await uploadWeekAudios(config, week, prefix, token);
 
-  const menu = buildSharePayload(config, week, byId, new Set(audioUrls.keys()), audioUrls);
-
-  // Fiches Sécurité assignées à cette personne (uniquement Validé).
-  const assigned = new Set(dest.securiteIds ?? []);
-  const fiches = (await loadSecurite()).filter(
-    (f) => f.statut === 'Validé' && assigned.has(f.id),
-  );
-  const secAudio = await uploadAudios(
-    fiches.map((f) => f.id),
-    `${prefix}/sec`,
-    token,
-  );
-  const securite: SecuritePublic[] = fiches.map((f) => ({
-    type: f.type,
-    titre: f.titre,
-    titre_ar: f.titre_ar,
-    contenu: f.contenu,
-    contenu_ar: f.contenu_ar,
-    a: secAudio.get(f.id),
-  }));
+  // Traduction darija figée (best-effort) si le destinataire lit en darija.
+  const recipes = dest.langue === 'ar' ? await augmentDarija(config, week, byId) : byId;
+  const menu = buildSharePayload(config, week, recipes, new Set(audioUrls.keys()), audioUrls);
+  const securite = await buildSecurite(dest, prefix, token);
 
   const payload: Espace = {
     v: 1,
     langue: dest.langue,
     nom: dest.nom,
     role: dest.role,
+    persons: dest.persons ?? 4,
     menu,
     securite,
   };
@@ -93,6 +158,32 @@ export async function publishEspace(
   return { url: buildEspaceUrl(dest.token), audioCount: audioUrls.size };
 }
 
+/** Aperçu local de l'espace (sans upload ni réseau) — pour « Voir l'aperçu » (FC9). */
+export async function previewEspace(
+  dest: Destinataire,
+  config: AppConfig,
+  week: WeekMenu,
+  byId: Map<string, Recipe>,
+): Promise<Espace> {
+  // audios locaux → object URLs jouables dans l'aperçu
+  const audioUrls = new Map<string, string>();
+  for (const id of usedRecipeIds(config, week)) {
+    const blob = await loadAudio(id);
+    if (blob) audioUrls.set(id, URL.createObjectURL(blob));
+  }
+  const menu = buildSharePayload(config, week, byId, new Set(audioUrls.keys()), audioUrls);
+  const securite = await buildSecurite(dest, null, null);
+  return {
+    v: 1,
+    langue: dest.langue,
+    nom: dest.nom,
+    role: dest.role,
+    persons: dest.persons ?? 4,
+    menu,
+    securite,
+  };
+}
+
 /** Lit l'espace d'un jeton (côté destinataire, lecture publique anonyme). */
 export async function readEspace(token: string): Promise<Espace | null> {
   const supa = getSupabase();
@@ -100,6 +191,39 @@ export async function readEspace(token: string): Promise<Espace | null> {
   const { data, error } = await supa.from('espaces').select('payload').eq('token', token).maybeSingle();
   if (error || !data) return null;
   return data.payload as Espace;
+}
+
+/**
+ * Journalise une ouverture de l'espace (accusé de lecture, FC9). Best-effort :
+ * nécessite la table publique `espace_opens` (sinon ignoré silencieusement).
+ */
+export async function logEspaceOpen(token: string): Promise<void> {
+  const supa = getSupabase();
+  if (!supa) return;
+  try {
+    await supa.from('espace_opens').insert({ token, opened_at: new Date().toISOString() });
+  } catch {
+    /* table absente / non autorisée : on n'empêche jamais la lecture */
+  }
+}
+
+/** Dernière ouverture connue d'un espace (ISO) ou null. */
+export async function lastEspaceOpen(token: string): Promise<string | null> {
+  const supa = getSupabase();
+  if (!supa) return null;
+  try {
+    const { data, error } = await supa
+      .from('espace_opens')
+      .select('opened_at')
+      .eq('token', token)
+      .order('opened_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error || !data) return null;
+    return (data as { opened_at: string }).opened_at;
+  } catch {
+    return null;
+  }
 }
 
 /** Révoque l'espace (supprime le contenu côté serveur → l'ancien lien ne donne plus rien). */

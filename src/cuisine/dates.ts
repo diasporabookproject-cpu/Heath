@@ -33,3 +33,16 @@ export function dayLabel(d: Date): string {
 export function weekLabel(ref: Date = new Date()): string {
   return `Semaine du ${dayLabel(mondayOf(ref))}`;
 }
+
+const KEYS = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+
+/** Clé du jour courant (lun…dim) pour repérer « aujourd'hui ». */
+export function todayKey(ref: Date = new Date()): string {
+  return KEYS[ref.getDay()];
+}
+
+/** « Mardi 24 juin » (jour + date, capitalisé). */
+export function todayLabel(ref: Date = new Date()): string {
+  const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  return `${jours[ref.getDay()]} ${dayLabel(ref)}`;
+}

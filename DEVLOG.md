@@ -75,6 +75,10 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 22. **Le module Cuisine remplace les vues v1** : suppression de `ComposerView`/`BibliothequeView`/`RecipePicker`/`Totals` (absorbés par `SemaineView`/`RecettesView`/`RecipeDetailSheet`). L'**import JSON** (D7) est préservé comme 3ᵉ option du sheet d'ajout (FC6). ✅
 23. **Générateur de semaine hybride (FC4)** : `GenerateWeekSheet`. Remplit les créneaux non verrouillés **d'abord depuis la bibliothèque Validé** (proche de la cible kcal + jitter pour varier, évite les répétitions), **puis complétion IA** (`generateRecipeDraft`) pour ~25 % des créneaux + le cold-start (type sans recette dispo). **Plafond `AI_CAP = 6` appels/génération** (coût/latence), parallèles ; surplus → bibliothèque (répétition tolérée). Recettes IA en **`Test` (à valider)**, macros estimées. Respecte 🔒 ; critères alimentaires injectés **côté prompt IA**. Si IA indisponible (hors-ligne/non connecté) → 100 % bibliothèque + toast. ✅
 24. **Changer un repas déjà placé** : action **⇄ « changer ce repas »** sur chaque créneau rempli → rouvre le sélecteur (FC3) pour choisir une recette **précise** (le ⤧ restant = remplacement aléatoire). Comble le manque signalé (« je ne peux pas changer une recette déjà entrée »). Nouvelle action store `setExtras` (utilisée aussi par le générateur pour le Coupe-faim). ✅
+25. **Espace cuisinière refondu (FC10)** : nouveau `EspaceCuisine` (classes `ck-`, tokens maquette-partage). **Projection cuisine** : aucune macro/calcium/feu ; en-tête pétrole « Cuisine / الكوزينة » + bascule FR/الدارجة (RTL) + indicateur hors-ligne ; accueil « Aujourd'hui » + cartes repas (déj/dîn) + reste de la semaine ; recette = **voix héros** (lecture de la note vocale, voix de l'employeur) + **ingrédients ×personnes** + étapes + mention « traduit automatiquement ». `EspaceView` rend `EspaceCuisine` (et **journalise l'ouverture**). `SharedMenuView` conservé pour les liens legacy `#m=`/`#p=`. ✅
+26. **Envoi en un geste (FC9)** : `PartageSheet` accessible depuis l'en-tête Cuisine (icône Partager). Sélection du destinataire, **résumé** (jours, ingrédients ×pers., étapes, notes vocales, langue), **« Voir l'aperçu »** (rendu local via `previewEspace`, sans upload), **accusé de lecture** (« Dernier accès »), et **UN bouton « Envoyer à … »** = `publishEspace` (maj en place de l'espace) **+ rappel WhatsApp** (`wa.me` pré-rempli). Lien secondaire « Copier le menu du jour en texte ». Champs `Destinataire.tel?`/`persons?`. ✅
+27. **Traduction darija à l'envoi** : edge function `generate-recipe` mode **`translate`** ; à la publication d'un espace en darija, les champs `*_ar` manquants des recettes utilisées sont complétés (best-effort, plafonné à 12, **figés dans le payload** → lisibles hors-ligne) ; repli FR + mention si indisponible. **⚠️ nécessite un redéploiement** de l'edge function. ✅ (code) / ⏳ (redéploiement)
+28. **Accusé de lecture via table `espace_opens`** : l'ouverture de l'espace insère `(token, opened_at)` (anon) ; l'admin lit le dernier accès. Best-effort : si la table n'existe pas, ignoré → « Dernier accès : — ». **⚠️ SQL à exécuter une fois** (voir journal session 5). `SharedMeal` étendu (`e`/`ea` étapes) ; util `src/lib/ingredients.ts` (découpe + mise à l'échelle ×personnes). ✅
 
 ## État actuel (au 2026-06-26)
 
@@ -102,7 +106,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 - ✅ **Lot 1** : FC1 (nav) · FC2 (Semaine) · FC3 (sélecteur).
 - ✅ **Lot 2** : FC5 (Recettes/statuts/filtres) · FC6 (ajout manuel + IA + auto-macros + import JSON) · FC7 (fiche + édition + validation + étapes + vocal).
 - ✅ **Lot 3** : FC4 (générateur hybride biblio + complétion IA) + correctif « changer un repas placé ».
-- ⏭️ **Lot 4** : FC9 (envoi un geste + traduction) · FC10 (espace cuisinière, projection cuisine, voix héros, RTL).
+- ✅ **Lot 4** : FC9 (envoi un geste + traduction) · FC10 (espace cuisinière, projection cuisine, voix héros, RTL).
 - ⏭️ **Lot 5** : FC8 (Courses par rayon + mise à l'échelle + partage).
 
 - ⏳ **Affiner « quel contenu pour quelle personne »** : aujourd'hui l'espace inclut toujours le menu courant + la sécurité assignée. Permettre de choisir les briques par personne (ex. nounou sans menu).
@@ -136,6 +140,28 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
   - **FC4 `GenerateWeekSheet`** : bottom-sheet (personnes, repas à planifier, cible Léger/Équilibré/Copieux, critères alimentaires, préférences libres, interrupteurs éviter-répétitions / compléter-IA / respecter-verrouillés). Génération **hybride** : bibliothèque Validé d'abord (proche cible + variété, anti-répétition), **IA en complétion** (~25 % des créneaux + cold-start), plafonnée à 6 appels parallèles, recettes IA « à valider ». Repli 100 % bibliothèque si IA indispo.
   - **Correctif** : bouton **⇄ « changer ce repas »** sur les créneaux remplis (rouvre le sélecteur pour une recette précise) — répond à « je ne peux pas changer une recette déjà entrée ». _NB : l'édition d'une recette de bibliothèque fonctionnait déjà (Recettes → fiche → Modifier) ; le manque était côté Semaine._
   - Store `setExtras`. typecheck + 38 tests + build OK.
+
+- **Lot 4 livré — FC9 (envoi) + FC10 (espace cuisinière)** :
+  - **FC10 `EspaceCuisine`** : projection cuisine (zéro nutrition), en-tête pétrole + bascule FR/الدارجة RTL + indicateur hors-ligne ; accueil « Aujourd'hui » + cartes repas + reste de la semaine ; recette = voix héros + ingrédients ×personnes + étapes + note « traduit automatiquement ». `EspaceView` l'utilise et journalise l'ouverture.
+  - **FC9 `PartageSheet`** (icône Partager dans l'en-tête) : destinataire + résumé + aperçu local + accusé de lecture + **un bouton Envoyer = espace + WhatsApp** + copier le menu du jour. Champs `tel`/`persons` sur Destinataire.
+  - Edge function : mode **`translate`** (darija figée à l'envoi). Util `ingredients.ts` (×personnes). `SharedMeal` porte les étapes. typecheck + 44 tests + build OK.
+  - **⚠️ 2 actions Supabase (1×)** :
+    1. **Redéployer** l'edge function `generate-recipe` (active la traduction darija à l'envoi ; sans ça → repli FR / darija existante).
+    2. **Créer la table d'accusé de lecture** (sinon « Dernier accès : — ») :
+       ```sql
+       create table if not exists public.espace_opens (
+         id bigint generated always as identity primary key,
+         token text not null,
+         opened_at timestamptz not null default now()
+       );
+       alter table public.espace_opens enable row level security;
+       create policy "espace_opens insert anon" on public.espace_opens
+         for insert to anon, authenticated with check (true);
+       create policy "espace_opens read auth" on public.espace_opens
+         for select to authenticated using (true);
+       create index if not exists espace_opens_token_idx on public.espace_opens (token, opened_at desc);
+       ```
+  - _Note dette_ : l'ancien `DestinatairesSheet` (onglet Cuisinière) coexiste avec `PartageSheet` (mêmes données locales) ; à fusionner plus tard. Filtrage fin « quelle brique pour qui » (nounou sans menu) toujours à faire.
 
 ### Session 4 — 2026-06-23
 - Passation produit v1 reçue (vision « Maison OS », fiches F1-F5).

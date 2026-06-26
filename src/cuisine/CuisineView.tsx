@@ -8,7 +8,8 @@ import RecettesView from './RecettesView';
 import RecipePickerSheet from './RecipePickerSheet';
 import RecipeDetailSheet from './RecipeDetailSheet';
 import AddRecipeSheet from './AddRecipeSheet';
-import { IconPlus, IconCheck } from './icons';
+import PartageSheet from './PartageSheet';
+import { IconPlus, IconCheck, IconShareUp } from './icons';
 import './cuisine.css';
 
 type Segment = 'semaine' | 'recettes' | 'courses';
@@ -39,6 +40,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
   const [pick, setPick] = useState<PickTarget>(null);
   const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [recFilters, setRecFilters] = useState<Set<string>>(new Set());
   const [voiceIds, setVoiceIds] = useState<Set<string>>(new Set());
 
@@ -72,16 +74,26 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
             <span className="cz-mark" />
             Cuisine
           </div>
-          {showAccount && (
+          <div className="cz-headicons">
             <button
               className="cz-headicon"
-              onClick={onOpenAccount}
-              aria-label="Compte et synchro"
-              title={connected ? 'Connecté' : 'Se connecter'}
+              onClick={() => setSharing(true)}
+              aria-label="Partager le menu"
+              title="Partager à la cuisinière"
             >
-              ☁︎
+              <IconShareUp size={18} />
             </button>
-          )}
+            {showAccount && (
+              <button
+                className="cz-headicon"
+                onClick={onOpenAccount}
+                aria-label="Compte et synchro"
+                title={connected ? 'Connecté' : 'Se connecter'}
+              >
+                ☁︎
+              </button>
+            )}
+          </div>
         </div>
         <div className="cz-segmented" role="tablist">
           {(['semaine', 'recettes', 'courses'] as Segment[]).map((s) => (
@@ -145,6 +157,8 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
           onClose={() => setPick(null)}
         />
       )}
+
+      {sharing && <PartageSheet onClose={() => setSharing(false)} toast={toast} />}
 
       {adding && (
         <AddRecipeSheet

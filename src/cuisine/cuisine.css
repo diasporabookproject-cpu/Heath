@@ -439,4 +439,112 @@
 .cz-gensource { display: flex; align-items: flex-start; gap: 9px; background: var(--draft-tint); border: 1px solid var(--draft-line); border-radius: 12px; padding: 12px; margin-top: 16px; font-size: 12.5px; color: #6a5a86; line-height: 1.4; }
 .cz-gensource svg { flex: none; margin-top: 1px; color: var(--draft); }
 
+/* ===== Espace cuisinière (FC10) ===== */
+.cz .ck-head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--petrol);
+  color: #f4f1e9;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ck-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ck-backb { width: 34px; height: 34px; border-radius: 10px; border: none; background: rgba(255, 255, 255, 0.14); color: #fff; display: grid; place-items: center; cursor: pointer; flex: none; }
+.ck-title { font-family: var(--font-display); font-size: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ck-title.ar { font-family: 'Noto Naskh Arabic', serif; }
+.ck-right { display: flex; align-items: center; gap: 9px; flex: none; }
+.ck-offline { font-size: 11px; color: #f4d7c7; white-space: nowrap; }
+.ck-langtog { display: flex; background: rgba(255, 255, 255, 0.12); border-radius: 9px; padding: 3px; gap: 2px; }
+.ck-langtog button { border: none; background: transparent; color: rgba(244, 241, 233, 0.7); font-weight: 600; font-size: 12.5px; padding: 6px 10px; border-radius: 7px; cursor: pointer; font-family: var(--font-body); }
+.ck-langtog button.ar { font-family: 'Noto Naskh Arabic', serif; }
+.ck-langtog button[aria-selected='true'] { background: #fff; color: var(--petrol); }
+
+.ck-body { padding: 20px 16px calc(40px + env(safe-area-inset-bottom, 0px)); background: #efe9df; min-height: calc(100dvh - 64px); }
+.ck-body.rtl { direction: rtl; text-align: right; }
+.ck-body .ar { font-family: 'Noto Naskh Arabic', serif; }
+
+.ck-today { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 2px; }
+.ck-todaybig { font-family: var(--font-display); font-size: 26px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 18px; }
+.ck-todaybig.ar { font-family: 'Noto Naskh Arabic', serif; }
+
+.ck-mealcard { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 17px 16px; box-shadow: var(--shadow); cursor: pointer; margin-bottom: 12px; width: 100%; text-align: inherit; font-family: var(--font-body); color: var(--ink); }
+.ck-mealcard:active { transform: scale(0.99); }
+.ck-mi { width: 46px; height: 46px; border-radius: 13px; background: var(--petrol-tint); color: var(--petrol); display: grid; place-items: center; flex: none; }
+.ck-mc { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ck-ml { font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--saffron); margin-bottom: 2px; }
+.ck-body.rtl .ck-ml { letter-spacing: 0; }
+.ck-mn { font-size: 17px; font-weight: 600; line-height: 1.25; }
+.ck-mn.ar { font-family: 'Noto Naskh Arabic', serif; }
+.ck-vdot { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--petrol); font-weight: 600; margin-top: 5px; }
+.ck-chev { flex: none; color: #c7bdad; display: grid; place-items: center; }
+
+.ck-rest { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--ink); margin: 24px 0 12px; }
+.ck-otherday { margin-bottom: 10px; }
+.ck-otherday-name { font-size: 12.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 6px 2px 8px; }
+.ck-otherday-name.ar { font-family: 'Noto Naskh Arabic', serif; letter-spacing: 0; text-transform: none; font-size: 15px; }
+
+.ck-rn { font-family: var(--font-display); font-size: 23px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 18px; line-height: 1.2; }
+.ck-rn.ar { font-family: 'Noto Naskh Arabic', serif; }
+.ck-voicehero { display: flex; align-items: center; gap: 14px; background: var(--petrol); color: #f4f1e9; border-radius: 16px; padding: 16px; cursor: pointer; margin-bottom: 22px; box-shadow: 0 8px 20px rgba(30, 77, 69, 0.28); width: 100%; border: none; font-family: var(--font-body); text-align: inherit; }
+.ck-voicehero:active { transform: scale(0.99); }
+.ck-pl { width: 52px; height: 52px; border-radius: 50%; background: rgba(255, 255, 255, 0.18); display: grid; place-items: center; flex: none; color: #fff; }
+.ck-vt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ck-vm { font-weight: 600; font-size: 16px; }
+.ck-vm.ar { font-family: 'Noto Naskh Arabic', serif; font-size: 18px; }
+.ck-vs { font-size: 12.5px; color: rgba(244, 241, 233, 0.72); margin-top: 2px; }
+.ck-wave { display: flex; align-items: center; gap: 2.5px; height: 26px; width: 50px; flex: none; }
+.ck-wave i { flex: 1; background: rgba(255, 255, 255, 0.45); border-radius: 2px; }
+.ck-novoice { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; color: var(--muted); font-size: 14px; margin-bottom: 22px; }
+
+.ck-rlab { font-size: 12.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+.ck-rlab.ar { font-family: 'Noto Naskh Arabic', serif; letter-spacing: 0; font-size: 15px; }
+.ck-ingl { list-style: none; margin: 0 0 24px; padding: 0; }
+.ck-ingl li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; font-size: 16px; border-bottom: 1px solid var(--line); }
+.ck-ingl li:last-child { border-bottom: none; }
+.ck-ingl li .nm.ar { font-family: 'Noto Naskh Arabic', serif; }
+.ck-ingl li .q { font-family: var(--font-mono); color: var(--petrol); font-weight: 500; direction: ltr; font-size: 14.5px; flex: none; }
+.ck-stepl { list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 13px; margin: 0; padding: 0; }
+.ck-stepl li { display: flex; gap: 13px; font-size: 16px; line-height: 1.5; align-items: flex-start; }
+.ck-stepl li.ar { font-family: 'Noto Naskh Arabic', serif; }
+.ck-stepl li::before { counter-increment: s; content: counter(s); flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--petrol); color: #fff; font-family: var(--font-mono); font-size: 13.5px; font-weight: 500; display: grid; place-items: center; margin-top: 1px; }
+.ck-body.rtl .ck-stepl li::before { margin-left: 0; }
+.ck-transnote { font-size: 11.5px; color: var(--muted); margin-top: 22px; display: flex; gap: 7px; align-items: flex-start; padding-top: 16px; border-top: 1px solid var(--line); line-height: 1.4; }
+.ck-transnote.ar { font-family: 'Noto Naskh Arabic', serif; }
+.ck-transnote svg { flex: none; margin-top: 1px; }
+
+/* ===== Envoi du menu (FC9) ===== */
+.ck-send { padding: 8px 2px 4px; }
+.ck-send h1 { font-family: var(--font-display); font-size: 23px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 18px; line-height: 1.2; }
+.ck-recip { display: flex; align-items: center; gap: 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 15px; padding: 14px; box-shadow: var(--shadow); }
+.ck-ava { width: 46px; height: 46px; border-radius: 50%; background: var(--saffron-tint); color: var(--saffron); display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; font-size: 20px; flex: none; }
+.ck-ri { flex: 1; min-width: 0; }
+.ck-ri .n { font-weight: 600; font-size: 16px; }
+.ck-ri .r { font-size: 12.5px; color: var(--muted); margin-top: 1px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.ck-ri .r .lang { color: var(--petrol-ink); background: var(--petrol-tint); padding: 2px 8px; border-radius: 20px; font-size: 12px; }
+.ck-ch { background: none; border: none; color: var(--petrol); font-weight: 600; font-size: 13px; cursor: pointer; font-family: var(--font-body); flex: none; }
+.ck-summary { background: var(--surface); border: 1px solid var(--line); border-radius: 15px; padding: 16px; margin-top: 14px; box-shadow: var(--shadow); }
+.ck-summary .big { font-size: 15px; line-height: 1.5; }
+.ck-summary .big b { font-weight: 600; }
+.ck-summary .how { display: flex; gap: 9px; align-items: flex-start; margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.ck-summary .how svg { flex: none; color: var(--petrol); margin-top: 1px; }
+.ck-prev { display: inline-flex; align-items: center; gap: 6px; margin-top: 13px; color: var(--petrol); font-weight: 600; font-size: 14px; background: none; border: none; cursor: pointer; font-family: var(--font-body); padding: 0; }
+.ck-receipt { display: flex; align-items: center; gap: 8px; margin: 18px 2px 0; font-size: 13px; color: var(--muted); }
+.ck-receipt svg { flex: none; }
+.ck-receipt b { color: var(--ink); font-weight: 600; }
+.ck-copyl { display: block; width: 100%; text-align: center; background: none; border: none; color: var(--muted); font-weight: 600; font-size: 13.5px; cursor: pointer; font-family: var(--font-body); margin-top: 16px; text-decoration: underline; }
+
+/* Aperçu plein écran de l'espace cuisinière (FC9) */
+.cz-preview-overlay { position: fixed; inset: 0; z-index: 50; background: var(--paper); display: flex; flex-direction: column; }
+.cz-preview-bar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; background: var(--ink); color: #f4f1e9; font-size: 13px; font-weight: 600; }
+.cz-preview-bar .cz-x { background: rgba(255, 255, 255, 0.14); border-color: transparent; color: #fff; }
+.cz-preview-body { flex: 1; overflow-y: auto; }
+.cz-preview-body .cz { max-width: var(--maxw); margin: 0 auto; }
+
+.cz-headicon + .cz-headicon { margin-left: 8px; }
+.cz-headicons { display: flex; align-items: center; }
+
 .cz :focus-visible { outline: 2px solid var(--petrol); outline-offset: 2px; }

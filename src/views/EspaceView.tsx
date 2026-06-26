@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { readEspace, type Espace } from '../lib/espace';
-import SharedMenuView from './SharedMenuView';
+import { readEspace, logEspaceOpen, type Espace } from '../lib/espace';
+import EspaceCuisine from '../cuisine/EspaceCuisine';
 
 // Espace permanent d'un destinataire, ouvert via le lien #e=<token>.
 // Lecture publique (sans compte) + cache offline : après une 1re ouverture en
@@ -20,6 +20,7 @@ export default function EspaceView({ token }: { token: string }) {
         if (e) {
           setEspace(e);
           setState('ok');
+          void logEspaceOpen(token); // accusé de lecture (best-effort)
           try {
             localStorage.setItem(cacheKey(token), JSON.stringify(e));
           } catch {
@@ -77,9 +78,7 @@ export default function EspaceView({ token }: { token: string }) {
     );
   }
 
-  return (
-    <SharedMenuView menu={espace.menu} securite={espace.securite} initialLang={espace.langue} />
-  );
+  return <EspaceCuisine espace={espace} />;
 }
 
 function readCache(token: string): Espace | null {

@@ -33,6 +33,13 @@ Réponds UNIQUEMENT par un JSON valide (sans texte autour, sans balises) avec EX
 {"kcal":0,"prot":0,"gluc":0,"lip":0,"calcium":0,"flag_calcium":"Champion|Moyen|Faible"}
 flag_calcium : Champion si calcium>=300, Moyen si >=150, sinon Faible. Valeurs = ESTIMATIONS.`;
 
+// Mode "translate" : traduit nom/ingrédients/étapes vers la darija (lettres arabes).
+const SYSTEM_TRANSLATE = `Tu traduis du contenu culinaire du français vers la DARIJA MAROCAINE EN LETTRES ARABES.
+Garde les chiffres et unités tels quels (200g, 1 càc…). Ne convertis pas les mesures.
+"etapes" = une étape par ligne (séparées par \\n), même découpage qu'en entrée.
+Réponds UNIQUEMENT par un JSON valide (sans texte autour, sans balises) avec EXACTEMENT ces clés :
+{"nom_ar":"","ingredients_ar":"","etapes_ar":""}`;
+
 async function callLLM(key: string, system: string, user: string, maxTokens: number): Promise<{ text?: string; error?: string }> {
   const model = Deno.env.get('ANTHROPIC_MODEL') ?? 'claude-sonnet-4-6';
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -76,6 +83,17 @@ Deno.serve(async (req: Request) => {
       const macros = parseJsonBlock(out.text ?? '');
       if (!macros) return json({ error: 'Réponse IA illisible.', raw: (out.text ?? '').slice(0, 500) }, 502);
       return json({ macros }, 200);
+    }
+
+    // --- Mode traduction (darija) ---
+    if (body?.mode === 'translate') {
+      const { nom, ingredients, etapes } = body;
+      const user = `nom : ${nom ?? ''}\ningrédients : ${ingredients ?? ''}\netapes : ${etapes ?? ''}`;
+      const out = await callLLM(key, SYSTEM_TRANSLATE, user, 1024);
+      if (out.error) return json({ error: out.error }, 502);
+      const tr = parseJsonBlock(out.text ?? '');
+      if (!tr) return json({ error: 'Réponse IA illisible.', raw: (out.text ?? '').slice(0, 500) }, 502);
+      return json({ translation: tr }, 200);
     }
 
     // --- Mode génération de brouillon (défaut, rétro-compatible) ---

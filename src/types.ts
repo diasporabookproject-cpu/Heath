@@ -99,6 +99,10 @@ export interface Destinataire {
   langue: 'fr' | 'ar';
   /** Jeton d'accès (capability) pour le lien permanent de son espace. */
   token: string;
+  /** Téléphone (format international, ex. 2126…) pour le rappel WhatsApp. */
+  tel?: string;
+  /** Nombre de personnes pour la mise à l'échelle des ingrédients (défaut 4). */
+  persons?: number;
   /** Ids des fiches Sécurité assignées à cette personne (« qui reçoit quoi »). */
   securiteIds?: string[];
   revoked?: boolean;

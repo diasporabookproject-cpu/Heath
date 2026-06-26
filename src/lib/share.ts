@@ -12,8 +12,10 @@ export const PUBLISH_PREFIX = '#p=';
 export interface SharedMeal {
   n: string; // nom FR
   i: string; // ingrédients FR
+  e?: string; // étapes FR (une par ligne)
   na?: string; // nom darija
   ia?: string; // ingrédients darija
+  ea?: string; // étapes darija
   v?: 1; // une note vocale existe (placeholder, lien sans backend)
   a?: string; // URL publique d'une note vocale (lien publié avec audio)
 }
@@ -40,8 +42,10 @@ function meal(
 ): SharedMeal | undefined {
   if (!r) return undefined;
   const m: SharedMeal = { n: r.nom, i: r.ingredients };
+  if (r.etapes) m.e = r.etapes;
   if (r.nom_ar) m.na = r.nom_ar;
   if (r.ingredients_ar) m.ia = r.ingredients_ar;
+  if (r.etapes_ar) m.ea = r.etapes_ar;
   const url = id ? audioUrls?.get(id) : undefined;
   if (url) m.a = url; // lien publié : audio jouable
   else if (id && audioIds.has(id)) m.v = 1; // lien simple : placeholder

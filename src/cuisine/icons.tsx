@@ -141,3 +141,29 @@ export const IconSwap = (p: P) => (
     <path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" />
   </Svg>
 );
+
+export const IconPlate = (p: P) => (
+  <Svg strokeWidth={1.8} {...p}>
+    <path d="M3 11h18M5 11a7 7 0 0 1 14 0M12 3v2M8 21h8" />
+  </Svg>
+);
+
+export const IconTranslate = (p: P) => (
+  <Svg {...p}>
+    <path d="M5 8h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2zM9 12h6" />
+  </Svg>
+);
+
+export const IconSend = (p: P) => (
+  <Svg {...p}>
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+  </Svg>
+);
+
+export const IconEye = (p: P) => (
+  <Svg {...p}>
+    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+    <circle cx="12" cy="12" r="3" />
+  </Svg>
+);
