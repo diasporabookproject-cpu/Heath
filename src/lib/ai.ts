@@ -34,8 +34,17 @@ export async function generateRecipeDraft(intention: string): Promise<RecipeDraf
     // Remonter le vrai message renvoyé par la fonction (sinon « non-2xx » opaque).
     let detail = error.message;
     try {
-      const body = await (error as { context?: Response }).context?.json?.();
-      if (body?.error) detail = body.error;
+      const ctx = (error as { context?: Response }).context;
+      const status = ctx?.status;
+      const raw = ctx ? await ctx.text() : '';
+      let msg = raw;
+      try {
+        const j = JSON.parse(raw);
+        msg = j?.error || raw;
+      } catch {
+        /* pas du JSON : on garde le texte brut */
+      }
+      detail = `${status ?? ''} ${msg || error.message}`.trim();
     } catch {
       /* corps illisible : on garde le message générique */
     }
