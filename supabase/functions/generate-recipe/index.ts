@@ -57,12 +57,21 @@ async function callLLM(key: string, system: string, user: string, maxTokens: num
 }
 
 function parseJsonBlock(text: string): unknown | null {
-  const jsonStr = text.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
-  try {
-    return JSON.parse(jsonStr);
-  } catch {
-    return null;
-  }
+  const s = text.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+  const tryParse = (x: string): unknown | null => {
+    try {
+      return JSON.parse(x);
+    } catch {
+      return null;
+    }
+  };
+  // 1) tel quel ; 2) sinon, extraire le 1er objet { … } (texte autour, fences…)
+  const direct = tryParse(s);
+  if (direct) return direct;
+  const a = s.indexOf('{');
+  const b = s.lastIndexOf('}');
+  if (a !== -1 && b > a) return tryParse(s.slice(a, b + 1));
+  return null;
 }
 
 Deno.serve(async (req: Request) => {
@@ -89,7 +98,7 @@ Deno.serve(async (req: Request) => {
     if (body?.mode === 'translate') {
       const { nom, ingredients, etapes } = body;
       const user = `nom : ${nom ?? ''}\ningrédients : ${ingredients ?? ''}\netapes : ${etapes ?? ''}`;
-      const out = await callLLM(key, SYSTEM_TRANSLATE, user, 1024);
+      const out = await callLLM(key, SYSTEM_TRANSLATE, user, 1536);
       if (out.error) return json({ error: out.error }, 502);
       const tr = parseJsonBlock(out.text ?? '');
       if (!tr) return json({ error: 'Réponse IA illisible.', raw: (out.text ?? '').slice(0, 500) }, 502);
@@ -99,7 +108,7 @@ Deno.serve(async (req: Request) => {
     // --- Mode génération de brouillon (défaut, rétro-compatible) ---
     const intention = body?.intention;
     if (!intention || typeof intention !== 'string') return json({ error: 'Intention manquante.' }, 400);
-    const out = await callLLM(key, SYSTEM, `Recette voulue : ${intention}`, 1024);
+    const out = await callLLM(key, SYSTEM, `Recette voulue : ${intention}`, 2048);
     if (out.error) return json({ error: out.error }, 502);
     const recipe = parseJsonBlock(out.text ?? '');
     if (!recipe) return json({ error: 'Réponse IA illisible.', raw: (out.text ?? '').slice(0, 500) }, 502);
