@@ -134,3 +134,10 @@ export const IconLoader = (p: P) => (
     <path d="M21 12a9 9 0 1 1-6.2-8.6" />
   </Svg>
 );
+
+// « Changer / choisir une autre recette » (flèches gauche-droite).
+export const IconSwap = (p: P) => (
+  <Svg {...p}>
+    <path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" />
+  </Svg>
+);

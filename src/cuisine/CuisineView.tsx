@@ -104,7 +104,6 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
             voiceIds={voiceIds}
             onOpenPicker={(dayKey, slot) => setPick({ dayKey, slot })}
             onOpenRecipe={(id) => setOpenRecipeId(id)}
-            onGenerate={() => toast('Générateur de semaine — prochain lot (FC4)')}
             onGoValidate={() => {
               setRecFilters(new Set(['draft']));
               switchSeg('recettes');

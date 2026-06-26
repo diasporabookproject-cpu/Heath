@@ -73,6 +73,8 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 20. **Auto-macros (2.3) = base locale + estimation LLM, jamais bloquant** : `src/lib/macros.ts` = base nutritionnelle « best-effort » côté client (offline, calcium soigné) ; `estimateMacros()` (lib/ai.ts) **préfère l'edge function** (`generate-recipe` mode `estimate`) quand connecté+en ligne, **repli automatique sur la base locale** sinon. L'utilisateur **ne saisit plus jamais** les macros (champs supprimés du formulaire) ; elles sont **calculées** et marquées « estimées · à valider ». Nouveaux champs Recipe (optionnels, rétro-compatibles) : `etapes?`, `etapes_ar?`, `macros_estimees?`. ✅
 21. **Edge function `generate-recipe` étendue** : (a) mode **`estimate`** (macros depuis ingrédients, prompt dédié) ; (b) le mode génération renvoie désormais **`etapes`/`etapes_ar`**. Rétro-compatible (défaut = génération via `{intention}`). **⚠️ à redéployer une fois** côté Supabase pour activer macros-IA + étapes IA ; d'ici là le **repli local** couvre les macros et la génération renvoie les étapes dès le redéploiement. ✅ (code) / ⏳ (redéploiement dashboard)
 22. **Le module Cuisine remplace les vues v1** : suppression de `ComposerView`/`BibliothequeView`/`RecipePicker`/`Totals` (absorbés par `SemaineView`/`RecettesView`/`RecipeDetailSheet`). L'**import JSON** (D7) est préservé comme 3ᵉ option du sheet d'ajout (FC6). ✅
+23. **Générateur de semaine hybride (FC4)** : `GenerateWeekSheet`. Remplit les créneaux non verrouillés **d'abord depuis la bibliothèque Validé** (proche de la cible kcal + jitter pour varier, évite les répétitions), **puis complétion IA** (`generateRecipeDraft`) pour ~25 % des créneaux + le cold-start (type sans recette dispo). **Plafond `AI_CAP = 6` appels/génération** (coût/latence), parallèles ; surplus → bibliothèque (répétition tolérée). Recettes IA en **`Test` (à valider)**, macros estimées. Respecte 🔒 ; critères alimentaires injectés **côté prompt IA**. Si IA indisponible (hors-ligne/non connecté) → 100 % bibliothèque + toast. ✅
+24. **Changer un repas déjà placé** : action **⇄ « changer ce repas »** sur chaque créneau rempli → rouvre le sélecteur (FC3) pour choisir une recette **précise** (le ⤧ restant = remplacement aléatoire). Comble le manque signalé (« je ne peux pas changer une recette déjà entrée »). Nouvelle action store `setExtras` (utilisée aussi par le générateur pour le Coupe-faim). ✅
 
 ## État actuel (au 2026-06-26)
 
@@ -99,7 +101,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 **🔨 Refonte Cuisine (brief FC1–FC10) — en cours :**
 - ✅ **Lot 1** : FC1 (nav) · FC2 (Semaine) · FC3 (sélecteur).
 - ✅ **Lot 2** : FC5 (Recettes/statuts/filtres) · FC6 (ajout manuel + IA + auto-macros + import JSON) · FC7 (fiche + édition + validation + étapes + vocal).
-- ⏭️ **Lot 3** : FC4 (générateur hybride biblio + complétion IA via edge function).
+- ✅ **Lot 3** : FC4 (générateur hybride biblio + complétion IA) + correctif « changer un repas placé ».
 - ⏭️ **Lot 4** : FC9 (envoi un geste + traduction) · FC10 (espace cuisinière, projection cuisine, voix héros, RTL).
 - ⏭️ **Lot 5** : FC8 (Courses par rayon + mise à l'échelle + partage).
 
@@ -129,6 +131,11 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
   - **Auto-macros** : base locale `src/lib/macros.ts` (offline) + edge function `estimate` (préférée si en ligne), repli auto, jamais bloquant. Champs Recipe `etapes?/etapes_ar?/macros_estimees?`. Edge function `generate-recipe` étendue (mode `estimate` + `etapes`).
   - Suppression des vues v1 mortes (Composer/Bibliothèque/RecipePicker/Totals) ; import JSON préservé. typecheck + 38 tests + build OK.
   - **⚠️ À refaire côté Supabase (1×)** : redéployer l'edge function `generate-recipe` (dashboard) pour activer l'estimation macros par IA + les étapes IA. D'ici là : repli local (macros) et étapes dès le redéploiement.
+
+- **Lot 3 livré — FC4 (générateur) + correctif UX** :
+  - **FC4 `GenerateWeekSheet`** : bottom-sheet (personnes, repas à planifier, cible Léger/Équilibré/Copieux, critères alimentaires, préférences libres, interrupteurs éviter-répétitions / compléter-IA / respecter-verrouillés). Génération **hybride** : bibliothèque Validé d'abord (proche cible + variété, anti-répétition), **IA en complétion** (~25 % des créneaux + cold-start), plafonnée à 6 appels parallèles, recettes IA « à valider ». Repli 100 % bibliothèque si IA indispo.
+  - **Correctif** : bouton **⇄ « changer ce repas »** sur les créneaux remplis (rouvre le sélecteur pour une recette précise) — répond à « je ne peux pas changer une recette déjà entrée ». _NB : l'édition d'une recette de bibliothèque fonctionnait déjà (Recettes → fiche → Modifier) ; le manque était côté Semaine._
+  - Store `setExtras`. typecheck + 38 tests + build OK.
 
 ### Session 4 — 2026-06-23
 - Passation produit v1 reçue (vision « Maison OS », fiches F1-F5).

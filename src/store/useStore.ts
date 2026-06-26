@@ -28,6 +28,7 @@ interface State {
   setSlot: (dayKey: string, slot: 'dej' | 'din', recipeId: string | null) => void;
   addExtra: (dayKey: string, recipeId: string) => void;
   removeExtra: (dayKey: string, recipeId: string) => void;
+  setExtras: (dayKey: string, recipeIds: string[]) => void;
   setDayType: (dayKey: string, type: DayType) => void;
   toggleLock: (dayKey: string, slot: 'dej' | 'din') => void;
   /** Remplace un créneau (non verrouillé) par une recette Validé au hasard. */
@@ -86,6 +87,15 @@ export const useStore = create<State>((set, get) => ({
     set((s) => {
       const day = { ...s.week.days[dayKey] };
       day.extras = day.extras.filter((id) => id !== recipeId);
+      const week = { ...s.week, days: { ...s.week.days, [dayKey]: day } };
+      void saveWeek(week);
+      return { week };
+    });
+  },
+
+  setExtras(dayKey, recipeIds) {
+    set((s) => {
+      const day = { ...s.week.days[dayKey], extras: [...recipeIds] };
       const week = { ...s.week, days: { ...s.week.days, [dayKey]: day } };
       void saveWeek(week);
       return { week };

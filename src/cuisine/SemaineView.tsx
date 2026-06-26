@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import { assessDay, weekAverages, kcalStatusWord } from '../lib/nutrition';
 import type { DayConfig, DayType, Recipe } from '../types';
 import { weekDates, weekLabel, dayLabel } from './dates';
+import GenerateWeekSheet from './GenerateWeekSheet';
 import {
   IconChevL,
   IconChevR,
@@ -14,6 +15,7 @@ import {
   IconLock,
   IconLockOpen,
   IconShuffle,
+  IconSwap,
   IconGear,
 } from './icons';
 
@@ -21,7 +23,6 @@ interface Props {
   voiceIds: Set<string>;
   onOpenPicker: (dayKey: string, slot: 'dej' | 'din') => void;
   onOpenRecipe: (id: string) => void;
-  onGenerate: () => void;
   onGoValidate: () => void;
   toast: (msg: string) => void;
 }
@@ -32,10 +33,10 @@ export default function SemaineView({
   voiceIds,
   onOpenPicker,
   onOpenRecipe,
-  onGenerate,
   onGoValidate,
   toast,
 }: Props) {
+  const [genOpen, setGenOpen] = useState(false);
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const setDayType = useStore((s) => s.setDayType);
@@ -124,10 +125,12 @@ export default function SemaineView({
         </div>
       </div>
 
-      <button className="cz-genbtn" onClick={onGenerate}>
+      <button className="cz-genbtn" onClick={() => setGenOpen(true)}>
         <IconSpark size={18} />
         Générer la semaine
       </button>
+
+      {genOpen && <GenerateWeekSheet onClose={() => setGenOpen(false)} toast={toast} />}
 
       {toValidate > 0 && (
         <button className="cz-vbanner" onClick={onGoValidate}>
@@ -177,6 +180,7 @@ export default function SemaineView({
                 locked={!!day.lockDej}
                 hasVoice={dej ? voiceIds.has(dej.id) : false}
                 onOpen={() => (dej ? onOpenRecipe(dej.id) : onOpenPicker(jour.key, 'dej'))}
+                onChoose={() => onOpenPicker(jour.key, 'dej')}
                 onLock={() => toggleLock(jour.key, 'dej')}
                 onShuffle={() => {
                   const ok = shuffleSlot(jour.key, 'dej');
@@ -189,6 +193,7 @@ export default function SemaineView({
                 locked={!!day.lockDin}
                 hasVoice={din ? voiceIds.has(din.id) : false}
                 onOpen={() => (din ? onOpenRecipe(din.id) : onOpenPicker(jour.key, 'din'))}
+                onChoose={() => onOpenPicker(jour.key, 'din')}
                 onLock={() => toggleLock(jour.key, 'din')}
                 onShuffle={() => {
                   const ok = shuffleSlot(jour.key, 'din');
@@ -233,6 +238,7 @@ function SlotRow({
   locked,
   hasVoice,
   onOpen,
+  onChoose,
   onLock,
   onShuffle,
 }: {
@@ -241,6 +247,7 @@ function SlotRow({
   locked: boolean;
   hasVoice: boolean;
   onOpen: () => void;
+  onChoose: () => void;
   onLock: () => void;
   onShuffle: () => void;
 }) {
@@ -272,6 +279,16 @@ function SlotRow({
       </span>
       <span className="cz-kcal">{recipe.kcal}</span>
       <span className="cz-slotact">
+        <button
+          className="cz-miniact"
+          title="Changer ce repas"
+          onClick={(e) => {
+            e.stopPropagation();
+            onChoose();
+          }}
+        >
+          <IconSwap size={15} />
+        </button>
         <button
           className={'cz-miniact' + (locked ? ' locked' : '')}
           title="Verrouiller"
