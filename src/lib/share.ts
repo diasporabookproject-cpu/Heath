@@ -100,12 +100,6 @@ export function decodeMenu(encoded: string): SharedMenu | null {
   }
 }
 
-/** Lien complet à partager (basé sur l'URL d'hébergement courante). */
-export function buildShareUrl(payload: SharedMenu): string {
-  const base = window.location.origin + window.location.pathname;
-  return base + SHARE_PREFIX + encodeMenu(payload);
-}
-
 /** Lit le menu partagé (encodé dans l'URL) s'il y en a un. */
 export function readSharedFromLocation(): SharedMenu | null {
   const h = window.location.hash;

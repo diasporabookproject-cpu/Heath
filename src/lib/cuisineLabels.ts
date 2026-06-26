@@ -1,5 +1,5 @@
-// Libellés darija (lettres arabes) partagés entre la vue Cuisinière et la
-// page de menu partagée.
+// Libellés darija (lettres arabes) partagés par l'espace cuisinière (FC10) et
+// la page de menu partagée legacy (#m=/#p=).
 
 export const DAY_AR: Record<string, string> = {
   lun: 'الإثنين',

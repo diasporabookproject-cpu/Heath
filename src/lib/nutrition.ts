@@ -130,7 +130,7 @@ export interface WeekAverages {
   feux: { proteines: Feu; calcium: Feu };
 }
 
-/** Moyenne de la semaine (par jour), mise en évidence dans la vue Composer. */
+/** Moyenne de la semaine (par jour), mise en évidence dans la vue Semaine. */
 export function weekAverages(
   config: AppConfig,
   days: Record<string, DayMenu>,

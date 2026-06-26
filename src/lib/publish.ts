@@ -1,10 +1,10 @@
 import { getSupabase, SUPABASE_KEY, SUPABASE_URL } from './supabase';
-import { buildSharePayload, PUBLISH_PREFIX, type SharedMenu } from './share';
+import { type SharedMenu } from './share';
 import { loadAudio } from './db';
-import type { AppConfig, Recipe, WeekMenu } from '../types';
+import type { AppConfig, WeekMenu } from '../types';
 
-// Publication d'un menu AVEC ses notes vocales : on téléverse les audios et un
-// JSON du menu dans le bucket public `shared`, puis on renvoie un lien court.
+// Téléversement des notes vocales (bucket public `shared`) pour les espaces des
+// destinataires, et lecture des anciens menus publiés (#p=, rétro-compatibilité).
 // L'écriture se fait en tant qu'utilisateur connecté (jeton de session).
 
 const BUCKET = 'shared';
@@ -15,11 +15,6 @@ function extFor(mime: string): string {
   if (mime.includes('ogg')) return 'ogg';
   if (mime.includes('wav')) return 'wav';
   return 'audio';
-}
-
-function newId(): string {
-  const rnd = (globalThis.crypto?.randomUUID?.() ?? String(Math.random())).replace(/[^a-z0-9]/gi, '');
-  return rnd.slice(0, 12);
 }
 
 function usedRecipeIds(config: AppConfig, week: WeekMenu): string[] {
@@ -97,29 +92,6 @@ export async function uploadWeekAudios(
   token: string,
 ): Promise<Map<string, string>> {
   return uploadAudios(usedRecipeIds(config, week), prefix, token);
-}
-
-export interface PublishResult {
-  url: string;
-  audioCount: number;
-}
-
-export async function publishMenu(
-  config: AppConfig,
-  week: WeekMenu,
-  byId: Map<string, Recipe>,
-): Promise<PublishResult> {
-  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Synchro non configurée.');
-  const token = await getAccessToken();
-
-  const id = newId();
-  const audioUrls = await uploadWeekAudios(config, week, id, token);
-
-  const payload = buildSharePayload(config, week, byId, new Set(audioUrls.keys()), audioUrls);
-  await uploadObject(`${id}.json`, new Blob([JSON.stringify(payload)], { type: 'application/json' }), token);
-
-  const base = window.location.origin + window.location.pathname;
-  return { url: base + PUBLISH_PREFIX + id, audioCount: audioUrls.size };
 }
 
 /** Récupère un menu publié (côté cuisinière, lecture publique, sans connexion). */
