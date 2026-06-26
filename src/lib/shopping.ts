@@ -204,12 +204,17 @@ export interface RayonGroup {
   lines: AggLine[];
 }
 
-/** Construit la liste de courses agrégée à partir de la semaine. */
+/**
+ * Construit la liste de courses agrégée à partir de la semaine.
+ * `persons` met à l'échelle les quantités (recettes = 1 portion) ; défaut 1.
+ */
 export function buildShoppingList(
   config: AppConfig,
   week: WeekMenu,
   recipesById: Map<string, Recipe>,
+  persons = 1,
 ): RayonGroup[] {
+  const factor = Math.max(1, persons);
   // Map rayonId -> Map aggKey -> AggLine
   const groups = new Map<string, { label: string; lines: Map<string, AggLine> }>();
 
@@ -222,12 +227,13 @@ export function buildShoppingList(
       if (!groups.has(rayon.id)) groups.set(rayon.id, { label: rayon.label, lines: new Map() });
       const lines = groups.get(rayon.id)!.lines;
       const aggKey = item.key + '|' + (item.unit ?? '');
+      const scaledQty = item.qty != null ? item.qty * factor : null;
       const existing = lines.get(aggKey);
       if (existing) {
         existing.count += 1;
-        if (item.qty != null) existing.qty = (existing.qty ?? 0) + item.qty;
+        if (scaledQty != null) existing.qty = (existing.qty ?? 0) + scaledQty;
       } else {
-        lines.set(aggKey, { name: item.name, qty: item.qty, unit: item.unit, count: 1 });
+        lines.set(aggKey, { name: item.name, qty: scaledQty, unit: item.unit, count: 1 });
       }
     }
   };

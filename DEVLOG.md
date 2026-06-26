@@ -78,6 +78,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 25. **Espace cuisinière refondu (FC10)** : nouveau `EspaceCuisine` (classes `ck-`, tokens maquette-partage). **Projection cuisine** : aucune macro/calcium/feu ; en-tête pétrole « Cuisine / الكوزينة » + bascule FR/الدارجة (RTL) + indicateur hors-ligne ; accueil « Aujourd'hui » + cartes repas (déj/dîn) + reste de la semaine ; recette = **voix héros** (lecture de la note vocale, voix de l'employeur) + **ingrédients ×personnes** + étapes + mention « traduit automatiquement ». `EspaceView` rend `EspaceCuisine` (et **journalise l'ouverture**). `SharedMenuView` conservé pour les liens legacy `#m=`/`#p=`. ✅
 26. **Envoi en un geste (FC9)** : `PartageSheet` accessible depuis l'en-tête Cuisine (icône Partager). Sélection du destinataire, **résumé** (jours, ingrédients ×pers., étapes, notes vocales, langue), **« Voir l'aperçu »** (rendu local via `previewEspace`, sans upload), **accusé de lecture** (« Dernier accès »), et **UN bouton « Envoyer à … »** = `publishEspace` (maj en place de l'espace) **+ rappel WhatsApp** (`wa.me` pré-rempli). Lien secondaire « Copier le menu du jour en texte ». Champs `Destinataire.tel?`/`persons?`. ✅
 27. **Traduction darija à l'envoi** : edge function `generate-recipe` mode **`translate`** ; à la publication d'un espace en darija, les champs `*_ar` manquants des recettes utilisées sont complétés (best-effort, plafonné à 12, **figés dans le payload** → lisibles hors-ligne) ; repli FR + mention si indisponible. **⚠️ nécessite un redéploiement** de l'edge function. ✅ (code) / ⏳ (redéploiement)
+29. **Courses refondues (FC8)** : `CoursesCuisine` (style maquette, classes `cz-`). Réutilise le parseur `shopping.ts` (groupage par rayon, agrégation) + **mise à l'échelle ×personnes** (nouveau param `buildShoppingList(..., persons)`), cases à cocher (barré), **Partager** (Web Share / copie WhatsApp). Remplace `CoursesView` v1 (supprimée). ✅
 28. **Accusé de lecture via table `espace_opens`** : l'ouverture de l'espace insère `(token, opened_at)` (anon) ; l'admin lit le dernier accès. Best-effort : si la table n'existe pas, ignoré → « Dernier accès : — ». **⚠️ SQL à exécuter une fois** (voir journal session 5). `SharedMeal` étendu (`e`/`ea` étapes) ; util `src/lib/ingredients.ts` (découpe + mise à l'échelle ×personnes). ✅
 
 ## État actuel (au 2026-06-26)
@@ -102,12 +103,12 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 **✅ Lot v1 de la passation produit livré (F1→F5).**
 
-**🔨 Refonte Cuisine (brief FC1–FC10) — en cours :**
+**✅ Refonte Cuisine (brief FC1–FC10) — COMPLÈTE (5 lots livrés & déployés).**
 - ✅ **Lot 1** : FC1 (nav) · FC2 (Semaine) · FC3 (sélecteur).
 - ✅ **Lot 2** : FC5 (Recettes/statuts/filtres) · FC6 (ajout manuel + IA + auto-macros + import JSON) · FC7 (fiche + édition + validation + étapes + vocal).
 - ✅ **Lot 3** : FC4 (générateur hybride biblio + complétion IA) + correctif « changer un repas placé ».
 - ✅ **Lot 4** : FC9 (envoi un geste + traduction) · FC10 (espace cuisinière, projection cuisine, voix héros, RTL).
-- ⏭️ **Lot 5** : FC8 (Courses par rayon + mise à l'échelle + partage).
+- ✅ **Lot 5** : FC8 (Courses par rayon + mise à l'échelle ×personnes + partage).
 
 - ⏳ **Affiner « quel contenu pour quelle personne »** : aujourd'hui l'espace inclut toujours le menu courant + la sécurité assignée. Permettre de choisir les briques par personne (ex. nounou sans menu).
 - ⏳ **Compléter F1** (différé) : QR imprimable + aide d'installation iOS, accusé « lu/ouvert ».
@@ -162,6 +163,9 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
        create index if not exists espace_opens_token_idx on public.espace_opens (token, opened_at desc);
        ```
   - _Note dette_ : l'ancien `DestinatairesSheet` (onglet Cuisinière) coexiste avec `PartageSheet` (mêmes données locales) ; à fusionner plus tard. Filtrage fin « quelle brique pour qui » (nounou sans menu) toujours à faire.
+
+- **Lot 5 livré — FC8 (Courses)** : `CoursesCuisine` (style maquette) — liste générée depuis la semaine, **×personnes** (stepper), groupée par rayon, cases à cocher (barré), **Partager** (Web Share / copie WhatsApp). `buildShoppingList` accepte `persons`. `CoursesView` v1 supprimée. typecheck + 45 tests + build OK. **→ Refonte Cuisine FC1–FC10 COMPLÈTE.**
+  - _Restes / dette connue_ : fusionner `DestinatairesSheet` (onglet Cuisinière) dans `PartageSheet` ; filtrage fin « quelle brique pour qui » ; re-styler l'onglet Cuisinière (preview locale) et Sécurité aux tokens `cz` ; les 2 actions Supabase (redéploiement edge `translate` + table `espace_opens`) restent à faire côté dashboard.
 
 ### Session 4 — 2026-06-23
 - Passation produit v1 reçue (vision « Maison OS », fiches F1-F5).

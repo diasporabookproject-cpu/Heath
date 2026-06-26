@@ -547,4 +547,26 @@
 .cz-headicon + .cz-headicon { margin-left: 8px; }
 .cz-headicons { display: flex; align-items: center; }
 
+/* ===== Courses (FC8) ===== */
+.cz-coursehead { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 6px; }
+.cz-coursehead .ci { font-size: 13px; color: var(--muted); }
+.cz-coursehead .ci b { color: var(--ink); font-weight: 600; }
+.cz-shareb { border: none; background: var(--petrol); color: #fff; font-family: var(--font-body); font-weight: 600; font-size: 13px; padding: 9px 13px; border-radius: 11px; cursor: pointer; display: flex; align-items: center; gap: 6px; flex: none; }
+.cz-shareb:active { transform: scale(0.98); }
+.cz-courses { padding: 6px 16px 26px; }
+.cz-rayon { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin: 18px 4px 7px; display: flex; align-items: center; gap: 7px; }
+.cz-rayon span { flex: 1; height: 1px; background: var(--line); }
+.cz-colist { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 4px 14px; box-shadow: var(--shadow); }
+.cz-coitem { display: flex; align-items: center; gap: 12px; padding: 12px 0; cursor: pointer; width: 100%; background: none; border: none; text-align: left; font-family: var(--font-body); color: var(--ink); }
+.cz-coitem + .cz-coitem { border-top: 1px solid var(--line); }
+.cz-cobox { width: 21px; height: 21px; border-radius: 6px; border: 2px solid #d9d1c2; flex: none; display: grid; place-items: center; color: #fff; }
+.cz-cobox svg { opacity: 0; }
+.cz-coitem.done .cz-cobox { background: var(--petrol); border-color: var(--petrol); }
+.cz-coitem.done .cz-cobox svg { opacity: 1; }
+.cz-coname { flex: 1; font-size: 14.5px; font-weight: 500; }
+.cz-coqty { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.cz-coitem.done .cz-coname { color: var(--muted); text-decoration: line-through; }
+.cz-persons { display: flex; align-items: center; gap: 10px; padding: 4px 16px 0; }
+.cz-persons .pl { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+
 .cz :focus-visible { outline: 2px solid var(--petrol); outline-offset: 2px; }

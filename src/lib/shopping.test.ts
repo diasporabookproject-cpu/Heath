@@ -68,6 +68,16 @@ describe('buildShoppingList', () => {
     const groups = buildShoppingList(SEED_CONFIG, { id: 't', days: {} }, byId);
     expect(groups).toHaveLength(0);
   });
+
+  it('met à l’échelle les quantités ×personnes', () => {
+    const week: WeekMenu = { id: 't', days: { lun: { dejId: 'DEJ-04', dinId: null, extras: [] } } };
+    const base = buildShoppingList(SEED_CONFIG, week, byId);
+    const x4 = buildShoppingList(SEED_CONFIG, week, byId, 4);
+    const rizBase = base.find((g) => g.id === 'epicerie')?.lines.find((l) => l.name === 'Riz');
+    const rizX4 = x4.find((g) => g.id === 'epicerie')?.lines.find((l) => l.name === 'Riz');
+    expect(rizBase?.qty).toBeTruthy();
+    expect(rizX4?.qty).toBe((rizBase!.qty as number) * 4);
+  });
 });
 
 describe('formatQty', () => {

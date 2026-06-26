@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import { loadAudioKeys } from '../lib/db';
-import CoursesView from '../views/CoursesView';
+import CoursesCuisine from './CoursesCuisine';
 import SemaineView from './SemaineView';
 import RecettesView from './RecettesView';
 import RecipePickerSheet from './RecipePickerSheet';
@@ -130,9 +130,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
             onOpenRecipe={(id) => setOpenRecipeId(id)}
           />
         ) : (
-          <div className="cz-pad" style={{ paddingTop: 8 }}>
-            <CoursesView />
-          </div>
+          <CoursesCuisine toast={toast} />
         )}
       </div>
 
