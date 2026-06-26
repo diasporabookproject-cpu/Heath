@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStore } from './store/useStore';
-import ComposerView from './views/ComposerView';
+import CuisineView from './cuisine/CuisineView';
 import CuisinierView from './views/CuisinierView';
-import CoursesView from './views/CoursesView';
-import BibliothequeView from './views/BibliothequeView';
 import SecuriteView from './views/SecuriteView';
 import SharedMenuView from './views/SharedMenuView';
 import EspaceView from './views/EspaceView';
@@ -14,20 +12,18 @@ import { fetchPublishedMenu } from './lib/publish';
 import { supabaseEnabled } from './lib/supabase';
 import { useSession } from './lib/useSession';
 
-type Tab = 'composer' | 'cuisinier' | 'courses' | 'biblio' | 'securite';
+type Tab = 'cuisine' | 'cuisinier' | 'securite';
 
 const TABS: { id: Tab; label: string; icon: string; title: string }[] = [
-  { id: 'composer', label: 'Composer', icon: '🗓️', title: 'Menu de la semaine' },
+  { id: 'cuisine', label: 'Cuisine', icon: '🍽️', title: 'Cuisine' },
   { id: 'cuisinier', label: 'Cuisinière', icon: '👩‍🍳', title: 'Vue cuisinière' },
-  { id: 'courses', label: 'Courses', icon: '🛒', title: 'Liste de courses' },
-  { id: 'biblio', label: 'Recettes', icon: '📖', title: 'Bibliothèque' },
   { id: 'securite', label: 'Sécurité', icon: '🛡️', title: 'Sécurité du foyer' },
 ];
 
 export default function App() {
   const ready = useStore((s) => s.ready);
   const init = useStore((s) => s.init);
-  const [tab, setTab] = useState<Tab>('composer');
+  const [tab, setTab] = useState<Tab>('cuisine');
   const [accountOpen, setAccountOpen] = useState(false);
   const { session } = useSession();
 
@@ -49,34 +45,44 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="topbar">
-        <span>{current.title}</span>
-        {supabaseEnabled && (
-          <button
-            className="account-btn"
-            onClick={() => setAccountOpen(true)}
-            aria-label="Compte et synchro"
-            title={session ? `Connecté : ${session.user.email}` : 'Se connecter'}
-          >
-            {session ? '☁︎' : '☁︎ Connexion'}
-          </button>
-        )}
-      </header>
-      <main className="app__main">
-        {!ready ? (
+      {tab === 'cuisine' ? (
+        // Module Cuisine : plein écran, en-tête propre (marque + segmented).
+        !ready ? (
           <div className="spinner">Chargement…</div>
-        ) : tab === 'composer' ? (
-          <ComposerView />
-        ) : tab === 'cuisinier' ? (
-          <CuisinierView />
-        ) : tab === 'courses' ? (
-          <CoursesView />
-        ) : tab === 'biblio' ? (
-          <BibliothequeView />
         ) : (
-          <SecuriteView />
-        )}
-      </main>
+          <CuisineView
+            showAccount={supabaseEnabled}
+            connected={!!session}
+            onOpenAccount={() => setAccountOpen(true)}
+          />
+        )
+      ) : (
+        <>
+          <header className="topbar">
+            <span>{current.title}</span>
+            {supabaseEnabled && (
+              <button
+                className="account-btn"
+                onClick={() => setAccountOpen(true)}
+                aria-label="Compte et synchro"
+                title={session ? `Connecté : ${session.user.email}` : 'Se connecter'}
+              >
+                {session ? '☁︎' : '☁︎ Connexion'}
+              </button>
+            )}
+          </header>
+          <main className="app__main">
+            {!ready ? (
+              <div className="spinner">Chargement…</div>
+            ) : tab === 'cuisinier' ? (
+              <CuisinierView />
+            ) : (
+              <SecuriteView />
+            )}
+          </main>
+        </>
+      )}
+
       <nav className="tabbar">
         {TABS.map((t) => (
           <button

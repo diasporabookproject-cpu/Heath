@@ -68,7 +68,10 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ---
 
-## État actuel (au 2026-06-22)
+18. **Refonte UX module Cuisine (brief FC1–FC10) — design system dédié** : nouveau dossier `src/cuisine/` avec un design system **repris exactement de `maquette-cuisine.html`** (tokens `--petrol`/`--saffron`/`--draft`, polices Fraunces/Hanken Grotesk/JetBrains Mono/Noto Naskh Arabic). CSS **scopé sous `.cz` et classes préfixées `cz-`** pour cohabiter sans collision avec le style v1 (`styles.css`). Le module Cuisine devient **une section à 3 destinations** (segmented control Semaine/Recettes/Courses) qui **absorbe** les anciens onglets Composer/Courses/Bibliothèque ; la barre du bas passe à **Cuisine · Cuisinière · Sécurité**. Construit par **lots** (FC1→FC3, puis FC5/6/7, FC4, FC9/10, FC8). ✅ Acté (lot 1 livré).
+19. **Statut « À valider » côté Cuisine = `statut: 'Test'`** : on réutilise le statut existant `Test` (déjà produit par la génération IA F5) comme état « ✦ À valider » (violet). Le sélecteur (FC3) et le ⤧ (remplacer) ne piochent que des recettes `Validé`. Champs `DayMenu` ajoutés (rétro-compatibles, optionnels) : `type?` (override ⚙ jour), `lockDej?/lockDin?` (verrouillage). ✅
+
+## État actuel (au 2026-06-26)
 
 **Fait :**
 - P0 complet : composer, feux tricolores + moyenne semaine, vue Cuisinière (copie WhatsApp), bibliothèque, persistance, mobile-first, PWA.
@@ -88,7 +91,14 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## À faire / en cours
 
-**✅ Lot v1 de la passation produit livré (F1→F5).** Prochain point : synthèse avec le chat produit pour décider du v2.
+**✅ Lot v1 de la passation produit livré (F1→F5).**
+
+**🔨 Refonte Cuisine (brief FC1–FC10) — en cours :**
+- ✅ **Lot 1** : FC1 (nav) · FC2 (Semaine) · FC3 (sélecteur).
+- ⏭️ **Lot 2** : FC5 (Recettes/statuts/filtres) · FC6 (ajout manuel + IA + auto-macros) · FC7 (fiche + édition + validation + étapes + vocal).
+- ⏭️ **Lot 3** : FC4 (générateur hybride biblio + complétion IA via edge function).
+- ⏭️ **Lot 4** : FC9 (envoi un geste + traduction) · FC10 (espace cuisinière, projection cuisine, voix héros, RTL).
+- ⏭️ **Lot 5** : FC8 (Courses par rayon + mise à l'échelle + partage).
 
 - ⏳ **Affiner « quel contenu pour quelle personne »** : aujourd'hui l'espace inclut toujours le menu courant + la sécurité assignée. Permettre de choisir les briques par personne (ex. nounou sans menu).
 - ⏳ **Compléter F1** (différé) : QR imprimable + aide d'installation iOS, accusé « lu/ouvert ».
@@ -100,6 +110,15 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 ---
 
 ## Journal des sessions
+
+### Session 5 — 2026-06-26
+- **Brief refonte Cuisine reçu** (`BRIEF_CUISINE_CLAUDE_CODE.md` + `maquette-cuisine.html` + `maquette-partage.html`) : fiches FC1–FC10 (UX complète Cuisine + partage dual). Read-back + chiffrage (2🟢 / 5🟡 / 2🔴) + risques produits et validés (« go »).
+- **Lot 1 livré — FC1 + FC2 + FC3** :
+  - **FC1 (nav)** : module `CuisineView` plein écran, en-tête marque + **segmented control Semaine/Recettes/Courses**, FAB sur Recettes, état d'onglet conservé, scroll remonté au changement. Barre du bas réduite à **Cuisine · Cuisinière · Sécurité** (Composer/Courses/Biblio absorbés).
+  - **FC2 (Semaine)** : 7 cartes-jour (nom + date réelle), résumé hebdo (moyenne kcal/prot + jauge), **socle fixe** affiché, **jauge calorie** + statut en clair (« dans la cible / un peu haut / au-dessus »…), **⚙ jour** (cycle Repos/Cardio/Muscu, persistant), **🔒 verrouiller** + **⤧ remplacer** (Validé only), bandeau « ✦ N à valider », marqueurs ✦/🎙 sur les créneaux.
+  - **FC3 (sélecteur)** : bottom-sheet, **recettes Validé du type uniquement**, recherche, filtre **Calcium champion**, drapeau calcium + macros + 🎙, tap → place le repas.
+  - Helper testé `kcalStatusWord` (nutrition) ; champs `DayMenu` `type?/lockDej?/lockDin?` + actions store `setDayType/toggleLock/shuffleSlot`. Design system `src/cuisine/cuisine.css` (tokens maquette, classes `cz-`).
+  - _Provisoire (comblé aux lots suivants)_ : segments **Recettes**/**Courses** affichent les vues v1 (à re-styler aux lots 2 et 5) ; **Générateur (FC4)**, **fiche détaillée (FC7)** et **ajout FAB (FC6)** renvoient un toast « prochain lot » ; navigation multi-semaines hors périmètre. typecheck + 34 tests + build OK.
 
 ### Session 4 — 2026-06-23
 - Passation produit v1 reçue (vision « Maison OS », fiches F1-F5).

@@ -5,6 +5,7 @@ import {
   feuCalcium,
   feuKcal,
   feuProteines,
+  kcalStatusWord,
   weekAverages,
 } from './nutrition';
 import { SEED_CONFIG, SEED_RECIPES } from '../data';
@@ -42,6 +43,21 @@ describe('feux tricolores', () => {
     expect(feuCalcium(1000, cibles)).toBe('vert');
     expect(feuCalcium(900, cibles)).toBe('orange');
     expect(feuCalcium(849, cibles)).toBe('rouge');
+  });
+});
+
+describe('kcalStatusWord (jauge Semaine)', () => {
+  it('dans la cible à ±10 %', () => {
+    expect(kcalStatusWord(1720, 1720, cibles)).toEqual({ cls: 'ok', word: 'dans la cible' });
+    expect(kcalStatusWord(1720 * 1.1, 1720, cibles).cls).toBe('ok');
+  });
+  it('un peu haut / un peu bas entre ±10 et ±20 %', () => {
+    expect(kcalStatusWord(1720 * 1.15, 1720, cibles)).toEqual({ cls: 'warn', word: 'un peu haut' });
+    expect(kcalStatusWord(1720 * 0.85, 1720, cibles)).toEqual({ cls: 'warn', word: 'un peu bas' });
+  });
+  it('au-dessus / en dessous au-delà de ±20 %', () => {
+    expect(kcalStatusWord(1720 * 1.25, 1720, cibles)).toEqual({ cls: 'bad', word: 'au-dessus' });
+    expect(kcalStatusWord(1720 * 0.7, 1720, cibles)).toEqual({ cls: 'bad', word: 'en dessous' });
   });
 });
 

@@ -74,6 +74,32 @@ export function feuCalcium(calcium: number, cibles: Cibles): Feu {
   return 'rouge';
 }
 
+/**
+ * Statut calorique « en clair » pour la jauge de la vue Semaine (FC2).
+ * Renvoie une classe (ok/warn/bad) + un mot d'état lisible.
+ *  - écart ≤ ±10 % → ok « dans la cible »
+ *  - écart ≤ ±20 % → warn « un peu haut / un peu bas »
+ *  - au-delà       → bad « au-dessus / en dessous »
+ */
+export function kcalStatusWord(
+  total: number,
+  cible: number,
+  cibles: Cibles,
+): { cls: 'ok' | 'warn' | 'bad'; word: string } {
+  if (cible <= 0) return { cls: 'bad', word: 'au-dessus' };
+  const diff = (total - cible) / cible;
+  const abs = Math.abs(diff);
+  if (abs <= cibles.kcal_seuils_pct.vert + EPS) return { cls: 'ok', word: 'dans la cible' };
+  if (diff > 0) {
+    return abs <= cibles.kcal_seuils_pct.orange + EPS
+      ? { cls: 'warn', word: 'un peu haut' }
+      : { cls: 'bad', word: 'au-dessus' };
+  }
+  return abs <= cibles.kcal_seuils_pct.orange + EPS
+    ? { cls: 'warn', word: 'un peu bas' }
+    : { cls: 'bad', word: 'en dessous' };
+}
+
 export interface DayAssessment {
   totals: Macros;
   cibleKcal: number;

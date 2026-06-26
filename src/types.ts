@@ -67,6 +67,11 @@ export interface DayMenu {
   dinId: string | null;
   /** ids de recettes Coupe-faim ajoutées en extra (comptées dans les totaux). */
   extras: string[];
+  /** Type du jour ajusté par l'utilisateur (⚙ jour). Sinon = type de la config. */
+  type?: DayType;
+  /** Créneaux verrouillés : ignorés par le générateur et le remplacement (⤧). */
+  lockDej?: boolean;
+  lockDin?: boolean;
 }
 
 /** Une semaine = 7 jours composés, repérés par la clé du jour (lun, mar, …). */
