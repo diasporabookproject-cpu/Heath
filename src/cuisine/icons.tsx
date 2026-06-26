@@ -103,3 +103,34 @@ export const IconCheck = (p: P) => (
     <polyline points="20 6 9 17 4 12" />
   </Svg>
 );
+
+export const IconPlay = ({ size = 18, ...rest }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...rest}>
+    <path d="M8 5v14l11-7z" />
+  </svg>
+);
+
+export const IconClock = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 8v4l3 2" />
+  </Svg>
+);
+
+export const IconBack = (p: P) => (
+  <Svg strokeWidth={2.2} {...p}>
+    <polyline points="15 18 9 12 15 6" />
+  </Svg>
+);
+
+export const IconShareUp = (p: P) => (
+  <Svg strokeWidth={2.2} {...p}>
+    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />
+  </Svg>
+);
+
+export const IconLoader = (p: P) => (
+  <Svg {...p}>
+    <path d="M21 12a9 9 0 1 1-6.2-8.6" />
+  </Svg>
+);

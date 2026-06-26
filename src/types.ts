@@ -19,11 +19,17 @@ export interface Recipe {
   calcium: number;
   flag_calcium: CalciumFlag;
   ingredients: string;
+  /** Étapes de préparation (une par ligne). Optionnel (recettes v1 sans étapes). */
+  etapes?: string;
   notes?: string;
+  /** Macros estimées automatiquement et non encore vérifiées (auto-macros 2.3). */
+  macros_estimees?: boolean;
   /** Nom en darija marocaine (lettres arabes), pour la vue Cuisinière. */
   nom_ar?: string;
   /** Ingrédients en darija marocaine (lettres arabes). */
   ingredients_ar?: string;
+  /** Étapes en darija marocaine (lettres arabes). */
+  etapes_ar?: string;
 }
 
 export interface DayConfig {

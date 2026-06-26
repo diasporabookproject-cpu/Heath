@@ -70,6 +70,9 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 18. **Refonte UX module Cuisine (brief FC1–FC10) — design system dédié** : nouveau dossier `src/cuisine/` avec un design system **repris exactement de `maquette-cuisine.html`** (tokens `--petrol`/`--saffron`/`--draft`, polices Fraunces/Hanken Grotesk/JetBrains Mono/Noto Naskh Arabic). CSS **scopé sous `.cz` et classes préfixées `cz-`** pour cohabiter sans collision avec le style v1 (`styles.css`). Le module Cuisine devient **une section à 3 destinations** (segmented control Semaine/Recettes/Courses) qui **absorbe** les anciens onglets Composer/Courses/Bibliothèque ; la barre du bas passe à **Cuisine · Cuisinière · Sécurité**. Construit par **lots** (FC1→FC3, puis FC5/6/7, FC4, FC9/10, FC8). ✅ Acté (lot 1 livré).
 19. **Statut « À valider » côté Cuisine = `statut: 'Test'`** : on réutilise le statut existant `Test` (déjà produit par la génération IA F5) comme état « ✦ À valider » (violet). Le sélecteur (FC3) et le ⤧ (remplacer) ne piochent que des recettes `Validé`. Champs `DayMenu` ajoutés (rétro-compatibles, optionnels) : `type?` (override ⚙ jour), `lockDej?/lockDin?` (verrouillage). ✅
+20. **Auto-macros (2.3) = base locale + estimation LLM, jamais bloquant** : `src/lib/macros.ts` = base nutritionnelle « best-effort » côté client (offline, calcium soigné) ; `estimateMacros()` (lib/ai.ts) **préfère l'edge function** (`generate-recipe` mode `estimate`) quand connecté+en ligne, **repli automatique sur la base locale** sinon. L'utilisateur **ne saisit plus jamais** les macros (champs supprimés du formulaire) ; elles sont **calculées** et marquées « estimées · à valider ». Nouveaux champs Recipe (optionnels, rétro-compatibles) : `etapes?`, `etapes_ar?`, `macros_estimees?`. ✅
+21. **Edge function `generate-recipe` étendue** : (a) mode **`estimate`** (macros depuis ingrédients, prompt dédié) ; (b) le mode génération renvoie désormais **`etapes`/`etapes_ar`**. Rétro-compatible (défaut = génération via `{intention}`). **⚠️ à redéployer une fois** côté Supabase pour activer macros-IA + étapes IA ; d'ici là le **repli local** couvre les macros et la génération renvoie les étapes dès le redéploiement. ✅ (code) / ⏳ (redéploiement dashboard)
+22. **Le module Cuisine remplace les vues v1** : suppression de `ComposerView`/`BibliothequeView`/`RecipePicker`/`Totals` (absorbés par `SemaineView`/`RecettesView`/`RecipeDetailSheet`). L'**import JSON** (D7) est préservé comme 3ᵉ option du sheet d'ajout (FC6). ✅
 
 ## État actuel (au 2026-06-26)
 
@@ -95,7 +98,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 **🔨 Refonte Cuisine (brief FC1–FC10) — en cours :**
 - ✅ **Lot 1** : FC1 (nav) · FC2 (Semaine) · FC3 (sélecteur).
-- ⏭️ **Lot 2** : FC5 (Recettes/statuts/filtres) · FC6 (ajout manuel + IA + auto-macros) · FC7 (fiche + édition + validation + étapes + vocal).
+- ✅ **Lot 2** : FC5 (Recettes/statuts/filtres) · FC6 (ajout manuel + IA + auto-macros + import JSON) · FC7 (fiche + édition + validation + étapes + vocal).
 - ⏭️ **Lot 3** : FC4 (générateur hybride biblio + complétion IA via edge function).
 - ⏭️ **Lot 4** : FC9 (envoi un geste + traduction) · FC10 (espace cuisinière, projection cuisine, voix héros, RTL).
 - ⏭️ **Lot 5** : FC8 (Courses par rayon + mise à l'échelle + partage).
@@ -119,6 +122,13 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
   - **FC3 (sélecteur)** : bottom-sheet, **recettes Validé du type uniquement**, recherche, filtre **Calcium champion**, drapeau calcium + macros + 🎙, tap → place le repas.
   - Helper testé `kcalStatusWord` (nutrition) ; champs `DayMenu` `type?/lockDej?/lockDin?` + actions store `setDayType/toggleLock/shuffleSlot`. Design system `src/cuisine/cuisine.css` (tokens maquette, classes `cz-`).
   - _Provisoire (comblé aux lots suivants)_ : segments **Recettes**/**Courses** affichent les vues v1 (à re-styler aux lots 2 et 5) ; **Générateur (FC4)**, **fiche détaillée (FC7)** et **ajout FAB (FC6)** renvoient un toast « prochain lot » ; navigation multi-semaines hors périmètre. typecheck + 34 tests + build OK.
+- **Lot 2 livré — FC5 + FC6 + FC7** :
+  - **FC5 (Recettes)** : nouvelle bibliothèque `RecettesView` (recherche + chips ✦À valider/Déjeuner/Dîner/Coupe-faim/Calcium champion), lignes avec badge statut, drapeau calcium, type, kcal/P, « macros estimées », 🎙, lignes « à valider » teintées violet ; tap → fiche.
+  - **FC6 (Ajout)** : sheet d'options **Saisir / Générer IA / Importer (JSON)**. Saisie : nom/type/ingrédients/étapes + **« Calculer les macros à partir des ingrédients »** (jamais saisies). IA : champ libre + type + personnes + critères → brouillon (nom, étapes, macros) → fiche. Tout naît **à valider**.
+  - **FC7 (Fiche)** : détail (bandeau IA si à valider, macros dont **calcium safran**, **note vocale juste sous les macros** + badge « partagée », ingrédients, étapes numérotées) + **édition** (recalcul macros, étapes, darija nom/ingrédients/étapes) + **validation** (→ Validé, lève « estimées »). Note vocale = `ConsigneVocale` (réutilise la mécanique audio éprouvée v1 : MediaRecorder + IndexedDB + fix-webm-duration).
+  - **Auto-macros** : base locale `src/lib/macros.ts` (offline) + edge function `estimate` (préférée si en ligne), repli auto, jamais bloquant. Champs Recipe `etapes?/etapes_ar?/macros_estimees?`. Edge function `generate-recipe` étendue (mode `estimate` + `etapes`).
+  - Suppression des vues v1 mortes (Composer/Bibliothèque/RecipePicker/Totals) ; import JSON préservé. typecheck + 38 tests + build OK.
+  - **⚠️ À refaire côté Supabase (1×)** : redéployer l'edge function `generate-recipe` (dashboard) pour activer l'estimation macros par IA + les étapes IA. D'ici là : repli local (macros) et étapes dès le redéploiement.
 
 ### Session 4 — 2026-06-23
 - Passation produit v1 reçue (vision « Maison OS », fiches F1-F5).

@@ -34,6 +34,8 @@ interface State {
   shuffleSlot: (dayKey: string, slot: 'dej' | 'din') => boolean;
   upsertRecipe: (recipe: Recipe) => void;
   setStatut: (id: string, statut: Recipe['statut']) => void;
+  /** Valide une recette « Test » → Validé, et lève le flag « macros estimées ». */
+  validateRecipe: (id: string) => void;
 }
 
 export const useStore = create<State>((set, get) => ({
@@ -143,5 +145,11 @@ export const useStore = create<State>((set, get) => ({
     const recipe = get().recipes.find((r) => r.id === id);
     if (!recipe) return;
     get().upsertRecipe({ ...recipe, statut });
+  },
+
+  validateRecipe(id) {
+    const recipe = get().recipes.find((r) => r.id === id);
+    if (!recipe) return;
+    get().upsertRecipe({ ...recipe, statut: 'Validé', macros_estimees: false });
   },
 }));

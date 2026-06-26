@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import { loadAudioKeys } from '../lib/db';
-import BibliothequeView from '../views/BibliothequeView';
 import CoursesView from '../views/CoursesView';
 import SemaineView from './SemaineView';
+import RecettesView from './RecettesView';
 import RecipePickerSheet from './RecipePickerSheet';
+import RecipeDetailSheet from './RecipeDetailSheet';
+import AddRecipeSheet from './AddRecipeSheet';
 import { IconPlus, IconCheck } from './icons';
 import './cuisine.css';
 
@@ -35,6 +37,9 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
 
   const [seg, setSeg] = useState<Segment>('semaine');
   const [pick, setPick] = useState<PickTarget>(null);
+  const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [recFilters, setRecFilters] = useState<Set<string>>(new Set());
   const [voiceIds, setVoiceIds] = useState<Set<string>>(new Set());
 
   const [toastMsg, setToastMsg] = useState('');
@@ -46,8 +51,9 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
   };
 
   // Recettes disposant d'une note vocale (pour les marqueurs 🎙).
+  const refreshVoice = () => void loadAudioKeys().then((keys) => setVoiceIds(new Set(keys)));
   useEffect(() => {
-    void loadAudioKeys().then((keys) => setVoiceIds(new Set(keys)));
+    refreshVoice();
   }, [recipes]);
 
   const switchSeg = (s: Segment) => {
@@ -97,15 +103,21 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
           <SemaineView
             voiceIds={voiceIds}
             onOpenPicker={(dayKey, slot) => setPick({ dayKey, slot })}
-            onOpenRecipe={() => toast('Fiche recette détaillée — prochain lot (FC7)')}
+            onOpenRecipe={(id) => setOpenRecipeId(id)}
             onGenerate={() => toast('Générateur de semaine — prochain lot (FC4)')}
-            onGoValidate={() => switchSeg('recettes')}
+            onGoValidate={() => {
+              setRecFilters(new Set(['draft']));
+              switchSeg('recettes');
+            }}
             toast={toast}
           />
         ) : seg === 'recettes' ? (
-          <div className="cz-pad" style={{ paddingTop: 8 }}>
-            <BibliothequeView />
-          </div>
+          <RecettesView
+            voiceIds={voiceIds}
+            filters={recFilters}
+            setFilters={setRecFilters}
+            onOpenRecipe={(id) => setOpenRecipeId(id)}
+          />
         ) : (
           <div className="cz-pad" style={{ paddingTop: 8 }}>
             <CoursesView />
@@ -114,11 +126,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
       </div>
 
       {seg === 'recettes' && (
-        <button
-          className="cz-fab"
-          aria-label="Ajouter une recette"
-          onClick={() => toast('Ajout de recette (saisie / IA) — prochain lot (FC6)')}
-        >
+        <button className="cz-fab" aria-label="Ajouter une recette" onClick={() => setAdding(true)}>
           <IconPlus size={24} />
         </button>
       )}
@@ -136,6 +144,35 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
             toast('Repas ajouté');
           }}
           onClose={() => setPick(null)}
+        />
+      )}
+
+      {adding && (
+        <AddRecipeSheet
+          onClose={() => setAdding(false)}
+          onCreated={(id) => {
+            setAdding(false);
+            refreshVoice();
+            setOpenRecipeId(id);
+          }}
+          toast={toast}
+        />
+      )}
+
+      {openRecipeId && (
+        <RecipeDetailSheet
+          recipeId={openRecipeId}
+          voiceIds={voiceIds}
+          onClose={() => setOpenRecipeId(null)}
+          onVoiceChange={(id, has) =>
+            setVoiceIds((prev) => {
+              const n = new Set(prev);
+              if (has) n.add(id);
+              else n.delete(id);
+              return n;
+            })
+          }
+          toast={toast}
         />
       )}
 
