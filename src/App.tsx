@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useStore } from './store/useStore';
 import CuisineView from './cuisine/CuisineView';
-import CuisinierView from './views/CuisinierView';
 import SecuriteView from './views/SecuriteView';
 import SharedMenuView from './views/SharedMenuView';
 import EspaceView from './views/EspaceView';
@@ -12,11 +11,10 @@ import { fetchPublishedMenu } from './lib/publish';
 import { supabaseEnabled } from './lib/supabase';
 import { useSession } from './lib/useSession';
 
-type Tab = 'cuisine' | 'cuisinier' | 'securite';
+type Tab = 'cuisine' | 'securite';
 
 const TABS: { id: Tab; label: string; icon: string; title: string }[] = [
   { id: 'cuisine', label: 'Cuisine', icon: '🍽️', title: 'Cuisine' },
-  { id: 'cuisinier', label: 'Cuisinière', icon: '👩‍🍳', title: 'Vue cuisinière' },
   { id: 'securite', label: 'Sécurité', icon: '🛡️', title: 'Sécurité du foyer' },
 ];
 
@@ -72,13 +70,7 @@ export default function App() {
             )}
           </header>
           <main className="app__main">
-            {!ready ? (
-              <div className="spinner">Chargement…</div>
-            ) : tab === 'cuisinier' ? (
-              <CuisinierView />
-            ) : (
-              <SecuriteView />
-            )}
+            {!ready ? <div className="spinner">Chargement…</div> : <SecuriteView />}
           </main>
         </>
       )}
