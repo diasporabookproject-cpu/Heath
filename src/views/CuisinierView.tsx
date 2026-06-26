@@ -7,7 +7,7 @@ import { DAY_AR, LABELS, TYPE_AR, type Lang } from '../lib/cuisineLabels';
 import { buildSharePayload, buildShareUrl } from '../lib/share';
 import { publishMenu } from '../lib/publish';
 import { supabaseEnabled } from '../lib/supabase';
-import DestinatairesSheet from '../components/DestinatairesSheet';
+import PartageSheet from '../cuisine/PartageSheet';
 
 function recipeName(r: Recipe, lang: Lang): string {
   return lang === 'ar' ? r.nom_ar || r.nom : r.nom;
@@ -214,7 +214,15 @@ export default function CuisinierView() {
         );
       })}
 
-      {destOpen && <DestinatairesSheet onClose={() => setDestOpen(false)} />}
+      {destOpen && (
+        <PartageSheet
+          onClose={() => setDestOpen(false)}
+          toast={(m) => {
+            setShareMsg(m);
+            setTimeout(() => setShareMsg((c) => (c === m ? null : c)), 2500);
+          }}
+        />
+      )}
     </div>
   );
 }
