@@ -31,10 +31,15 @@ export async function generateRecipeDraft(intention: string): Promise<RecipeDraf
     body: { intention },
   });
   if (error) {
-    // 404 = fonction non déployée ; message lisible.
-    throw new Error(
-      "Génération indisponible (l'edge function n'est peut-être pas déployée). " + error.message,
-    );
+    // Remonter le vrai message renvoyé par la fonction (sinon « non-2xx » opaque).
+    let detail = error.message;
+    try {
+      const body = await (error as { context?: Response }).context?.json?.();
+      if (body?.error) detail = body.error;
+    } catch {
+      /* corps illisible : on garde le message générique */
+    }
+    throw new Error('Génération : ' + detail);
   }
   if (!data || data.error) throw new Error(data?.error ?? 'Réponse vide.');
   return data.recipe as RecipeDraft;
