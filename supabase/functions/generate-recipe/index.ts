@@ -27,6 +27,12 @@ const SYSTEM_TRANSLATE = `Tu traduis du contenu culinaire du français vers la D
 Garde chiffres et unités tels quels (200g, 1 càc…). etapes_ar = une étape par ligne, même découpage.
 Utilise l'outil fourni pour répondre.`;
 
+const SYSTEM_IMPORT = `Tu STRUCTURES une recette à partir d'un texte collé (légende Instagram, blog…).
+Reste fidèle au texte ; complète les manques de façon raisonnable. Détecte le RÔLE
+(petit-déj/entrée/plat/accompagnement). ingredients = composants séparés par " · " avec leurs quantités ;
+etapes = une étape par ligne. Estime les macros (ESTIMATIONS). Conserve les càc/càs.
+Fournis aussi la darija (nom_ar, ingredients_ar, etapes_ar). Utilise l'outil fourni pour répondre.`;
+
 const RECIPE_TOOL = {
   name: 'recette',
   description: 'Enregistre la recette structurée.',
@@ -121,6 +127,14 @@ Deno.serve(async (req: Request) => {
       const out = await callTool(key, SYSTEM_ESTIMATE, user, 512, MACROS_TOOL);
       if (out.error) return json({ error: out.error }, 502);
       return json({ macros: out.input }, 200);
+    }
+
+    if (body?.mode === 'import') {
+      const text = String(body.text ?? '').trim();
+      if (!text) return json({ error: 'Texte manquant.' }, 400);
+      const out = await callTool(key, SYSTEM_IMPORT, `Texte de la recette :\n${text}`, 2048, RECIPE_TOOL);
+      if (out.error) return json({ error: out.error }, 502);
+      return json({ recipe: out.input }, 200);
     }
 
     if (body?.mode === 'translate') {

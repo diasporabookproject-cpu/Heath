@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
-import { estimateMacros, generateRecipeDraft, aiAvailable } from '../lib/ai';
+import { estimateMacros, generateRecipeDraft, importRecipeText, aiAvailable } from '../lib/ai';
 import { parseRecipesJson } from '../lib/importRecipes';
 import { nextRecipeId } from '../lib/recipeId';
 import { ROLE_LABEL, type CalciumFlag, type Recipe, type RecipeRole } from '../types';
@@ -23,7 +23,7 @@ interface Props {
   toast: (m: string) => void;
 }
 
-type Step = 'choose' | 'manual' | 'ai' | 'import';
+type Step = 'choose' | 'manual' | 'ai' | 'import' | 'importjson';
 
 export default function AddRecipeSheet({ onClose, onCreated, toast }: Props) {
   const [step, setStep] = useState<Step>('choose');
@@ -49,7 +49,9 @@ export default function AddRecipeSheet({ onClose, onCreated, toast }: Props) {
                 ? 'Saisir une recette'
                 : step === 'ai'
                   ? 'Générer avec l’IA'
-                  : 'Importer (JSON)'}
+                  : step === 'import'
+                    ? 'Importer une recette'
+                    : 'Importer (JSON)'}
             {step !== 'choose' && <small>Les macros sont calculées, pas saisies</small>}
           </div>
           <button className="cz-x" onClick={onClose} aria-label="Fermer">
@@ -59,13 +61,28 @@ export default function AddRecipeSheet({ onClose, onCreated, toast }: Props) {
         <div className="cz-sheetbody">
           {step === 'choose' && (
             <div style={{ paddingTop: 8 }}>
+              <button
+                className="cz-opt2"
+                onClick={() => (canAi ? setStep('import') : toast('Connecte-toi (☁︎) et sois en ligne pour l’import IA'))}
+                style={{ opacity: canAi ? 1 : 0.6 }}
+              >
+                <span className="ic imp">
+                  <IconShareUp size={20} />
+                </span>
+                <span className="ot">
+                  <span className="h">Importer (coller un texte)</span>
+                  <span className="d">
+                    {canAi ? 'Colle la légende d’un post / blog → l’IA la convertit.' : 'Indisponible hors-ligne / sans connexion.'}
+                  </span>
+                </span>
+              </button>
               <button className="cz-opt2" onClick={() => setStep('manual')}>
                 <span className="ic pen">
                   <IconStar size={20} />
                 </span>
                 <span className="ot">
                   <span className="h">Saisir une recette</span>
-                  <span className="d">Nom, ingrédients, étapes — les macros se calculent toutes seules.</span>
+                  <span className="d">Nom, rôle, ingrédients — les macros se calculent toutes seules.</span>
                 </span>
               </button>
               <button
@@ -79,17 +96,8 @@ export default function AddRecipeSheet({ onClose, onCreated, toast }: Props) {
                 <span className="ot">
                   <span className="h">Générer avec l’IA</span>
                   <span className="d">
-                    {canAi ? 'Un brouillon (nom, étapes, macros) à relire et valider.' : 'Indisponible hors-ligne / sans connexion.'}
+                    {canAi ? 'Décris ce que tu veux ; brouillon à valider.' : 'Indisponible hors-ligne / sans connexion.'}
                   </span>
-                </span>
-              </button>
-              <button className="cz-opt2" onClick={() => setStep('import')}>
-                <span className="ic pen">
-                  <IconShareUp size={20} />
-                </span>
-                <span className="ot">
-                  <span className="h">Importer (JSON)</span>
-                  <span className="d">Coller un lot de recettes préparées ailleurs.</span>
                 </span>
               </button>
             </div>
@@ -97,7 +105,8 @@ export default function AddRecipeSheet({ onClose, onCreated, toast }: Props) {
 
           {step === 'manual' && <ManualForm onCreated={onCreated} toast={toast} />}
           {step === 'ai' && <AiForm onCreated={onCreated} toast={toast} />}
-          {step === 'import' && <ImportForm onClose={onClose} toast={toast} />}
+          {step === 'import' && <ImportTextForm onCreated={onCreated} toast={toast} onJson={() => setStep('importjson')} />}
+          {step === 'importjson' && <ImportForm onClose={onClose} toast={toast} />}
         </div>
       </div>
     </>
@@ -354,6 +363,82 @@ function AiForm({ onCreated, toast }: { onCreated: (id: string) => void; toast: 
           </button>
         </>
       )}
+    </div>
+  );
+}
+
+function ImportTextForm({
+  onCreated,
+  toast,
+  onJson,
+}: {
+  onCreated: (id: string) => void;
+  toast: (m: string) => void;
+  onJson: () => void;
+}) {
+  const recipes = useStore((s) => s.recipes);
+  const upsertRecipe = useStore((s) => s.upsertRecipe);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const convert = async () => {
+    if (!text.trim()) {
+      toast('Colle d’abord le texte de la recette');
+      return;
+    }
+    setBusy(true);
+    try {
+      const d = await importRecipeText(text.trim());
+      const rr = roleFromDraft(d.role);
+      const id = nextRecipeId(recipes, rr);
+      const recipe: Recipe = {
+        id,
+        nom: d.nom?.trim() || 'Recette importée',
+        role: rr,
+        statut: 'Test',
+        kcal: Math.round(Number(d.kcal) || 0),
+        prot: Math.round(Number(d.prot) || 0),
+        gluc: Math.round(Number(d.gluc) || 0),
+        lip: Math.round(Number(d.lip) || 0),
+        calcium: Math.round(Number(d.calcium) || 0),
+        flag_calcium: (d.flag_calcium as CalciumFlag) || 'Moyen',
+        ingredients: d.ingredients?.trim() || '',
+        etapes: d.etapes?.trim() || undefined,
+        macros_estimees: true,
+        nom_ar: d.nom_ar?.trim() || undefined,
+        ingredients_ar: d.ingredients_ar?.trim() || undefined,
+        etapes_ar: d.etapes_ar?.trim() || undefined,
+      };
+      upsertRecipe(recipe);
+      toast('Recette importée — à valider');
+      onCreated(id); // ouvre la fiche (FC18)
+    } catch (e) {
+      toast((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="cz-block" style={{ marginTop: 2 }}>
+        <div className="cz-blab">Colle le texte de la recette</div>
+        <textarea
+          className="cz-ta"
+          rows={7}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={'Ex. (légende Instagram) :\nPÂTES CRÉMEUSES AU POULET 🍝\nPour 4. Faire revenir 500g de poulet…'}
+          autoFocus
+        />
+      </div>
+      <button className="cz-cta draft" onClick={convert} disabled={busy}>
+        {busy ? <IconLoader size={18} className="cz-spin" /> : <IconStar size={18} />}
+        {busy ? 'Conversion…' : 'Convertir avec l’IA'}
+      </button>
+      <button className="cz-cta ghost" onClick={onJson}>
+        Coller du JSON à la place
+      </button>
     </div>
   );
 }

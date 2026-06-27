@@ -83,6 +83,38 @@ export async function translateToDarija(input: {
   }
 }
 
+/**
+ * FC17 — Importe une recette depuis un texte collé (légende/blog) via l'edge
+ * function (mode import, sortie structurée). Renvoie un brouillon « à valider ».
+ */
+export async function importRecipeText(text: string): Promise<RecipeDraft> {
+  const supa = getSupabase();
+  if (!supa) throw new Error('Synchro non configurée.');
+  const { data: sess } = await supa.auth.getSession();
+  if (!sess.session) throw new Error('Connecte-toi (☁︎) pour utiliser l’import IA.');
+
+  const { data, error } = await supa.functions.invoke('generate-recipe', {
+    body: { mode: 'import', text },
+  });
+  if (error) {
+    let detail = error.message;
+    try {
+      const ctx = (error as { context?: Response }).context;
+      const raw = ctx ? await ctx.text() : '';
+      try {
+        detail = JSON.parse(raw)?.error || raw || error.message;
+      } catch {
+        detail = raw || error.message;
+      }
+    } catch {
+      /* garde le message générique */
+    }
+    throw new Error('Import : ' + detail);
+  }
+  if (!data || data.error || !data.recipe) throw new Error(data?.error ?? 'Réponse vide.');
+  return data.recipe as RecipeDraft;
+}
+
 /** Vrai si la génération/estimation IA est utilisable maintenant (connecté + en ligne). */
 export async function aiAvailable(): Promise<boolean> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;

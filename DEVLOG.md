@@ -132,6 +132,10 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
   - **Nettoyage v2** : retrait des liens legacy `#m=`/`#p=` (déjà non générables) → `SharedMenuView`, `GenerateWeekSheet` supprimés ; `share.ts` refondu en **payload espace v2** (3 repas + composants) ; `espace.ts`/`publish.ts`/`shopping.ts`/`EspaceCuisine`/`PartageSheet`/`CoursesCuisine` adaptés au nouveau modèle (FC19 partiel, finition au lot 5). Favoris (FC15) déjà câblés au passage.
   - **Provisoire (lots suivants)** : « Générer la semaine » → toast (FC16, lot 3) ; navigation/copie de semaine → toast (FC14, lot 4) ; import **texte** IA (FC17, lot 2) — l'ajout actuel reste Saisir/IA/Import JSON.
   - Qualité : typecheck + **37 tests** + build + **smoke v2 réécrit & exécuté (vert)**.
+- **Lot 2 livré — FC15 + FC17 + FC18** :
+  - **FC15 (favoris)** & **FC18 (création → fiche directe + Valider 1‑tap)** : déjà câblés au Lot 1 (étoile biblio/sélecteur/fiche, tri favoris en tête, filtre ★ ; ajout → fiche ; bouton « Valider » sur les lignes à valider). Vérifiés.
+  - **FC17 (import par texte collé)** : edge function `generate-recipe` mode **`import`** (structuration d'un texte → recette via tool use : rôle + ingrédients + étapes + macros + darija). UI : option **« Importer (coller un texte) »** dans le FAB → zone de texte → « Convertir avec l'IA » → recette **« à valider »** qui **ouvre directement sa fiche** (FC18). L'import **JSON** reste accessible (lien « Coller du JSON à la place »).
+  - **⚠️ redéploiement** de l'edge function requis (nouveau mode `import`). typecheck + 37 tests + build OK.
 
 
 ### Session 5 — 2026-06-26
