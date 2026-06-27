@@ -140,6 +140,10 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
   - « Générer la semaine » remplit **uniquement les repas sans plat**, en générant de **nouvelles recettes IA « à valider »**, **sans toucher** au déjà composé (plus de verrou). Chaque recette est **dimensionnée sous l'objectif** : budget restant (objectif − déjà rempli) réparti entre repas vides (poids petit‑déj 0,28 / déj 0,40 / dîner 0,40, plancher 250) → `mealBudgets` (pur, testé).
   - Orchestration dans `SemaineView` : concurrence limitée (4) sur les appels `generate-recipe`, recettes Test + macros estimées + rôle imposé (petit‑déj/plat), bandeau « N à valider » déjà présent. Réutilise l'edge function existante (**pas de redéploiement**). Hors‑ligne/non connecté → message.
   - typecheck + 39 tests + build + smoke (vert).
+- **Lot 4 livré — FC14 (navigation entre semaines + copier)** :
+  - **Persistance multi‑semaines** : chaque semaine = un plan stocké sous une **clé = date du lundi** (`weekId(offset)`, YYYY‑MM‑DD). Store : `weekOffset` + `navWeek(±1)` (charge/crée la semaine, vide si jamais composée) ; flèches ← → branchées ; libellé + sous‑titre relatif (cette semaine / prochaine / passée).
+  - **Copier une semaine** : `CopyWeekSheet` liste les semaines déjà composées (date + nb de jours + moyenne kcal/j) → **copie profonde** (composants compris) dans la semaine courante (`copyWeekInto`). `db.loadAllWeeks`.
+  - typecheck + 39 tests + build + smoke OK.
 
 
 ### Session 5 — 2026-06-26

@@ -12,13 +12,24 @@ import {
   saveWeek,
 } from '../lib/db';
 import { emptyDay } from '../lib/nutrition';
+import { weekId } from '../cuisine/dates';
 
-const CURRENT_WEEK_ID = 'current';
-
-function freshWeek(): WeekMenu {
+function freshWeek(id: string): WeekMenu {
   const days: WeekMenu['days'] = {};
   for (const j of SEED_CONFIG.jours) days[j.key] = emptyDay();
-  return { id: CURRENT_WEEK_ID, days };
+  return { id, days };
+}
+
+/** Charge la semaine d'un id (fusion des jours v2 valides), sinon vide. */
+async function weekFor(id: string): Promise<WeekMenu> {
+  const saved = await loadWeek(id);
+  const week = freshWeek(id);
+  if (saved) {
+    for (const key of Object.keys(week.days)) {
+      if (isV2Day(saved.days[key])) week.days[key] = saved.days[key];
+    }
+  }
+  return week;
 }
 
 /** Une journée chargée est-elle au nouveau format (3 repas) ? */
@@ -32,8 +43,12 @@ interface State {
   ready: boolean;
   recipes: Recipe[];
   week: WeekMenu;
+  weekOffset: number;
   settings: CuisineSettings;
   init: () => Promise<void>;
+  navWeek: (delta: number) => Promise<void>;
+  /** Copie en profondeur les jours d'une autre semaine dans la semaine courante. */
+  copyWeekInto: (srcDays: WeekMenu['days']) => void;
   setComponent: (dayKey: string, meal: MealKey, slot: Slot, value: string | AccRef | null) => void;
   setAccQty: (dayKey: string, meal: MealKey, deltaG: number) => void;
   setObjective: (n: number) => void;
@@ -47,23 +62,35 @@ interface State {
 export const useStore = create<State>((set, get) => ({
   ready: false,
   recipes: [],
-  week: freshWeek(),
+  week: freshWeek(weekId(0)),
+  weekOffset: 0,
   settings: DEFAULT_SETTINGS,
 
   async init() {
     await ensureSeeded();
-    const [recipes, savedWeek, settings] = await Promise.all([
+    const [recipes, week, settings] = await Promise.all([
       loadRecipes(),
-      loadWeek(CURRENT_WEEK_ID),
+      weekFor(weekId(0)),
       loadSettings(),
     ]);
-    const week = freshWeek();
-    if (savedWeek) {
+    set({ recipes, week, weekOffset: 0, settings, ready: true });
+  },
+
+  async navWeek(delta) {
+    const offset = get().weekOffset + delta;
+    const week = await weekFor(weekId(offset));
+    set({ weekOffset: offset, week });
+  },
+
+  copyWeekInto(srcDays) {
+    set((s) => {
+      const week = freshWeek(s.week.id);
       for (const key of Object.keys(week.days)) {
-        if (isV2Day(savedWeek.days[key])) week.days[key] = savedWeek.days[key];
+        if (isV2Day(srcDays[key])) week.days[key] = JSON.parse(JSON.stringify(srcDays[key]));
       }
-    }
-    set({ recipes, week, settings, ready: true });
+      void saveWeek(week);
+      return { week };
+    });
   },
 
   setComponent(dayKey, meal, slot, value) {

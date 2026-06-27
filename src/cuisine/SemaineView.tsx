@@ -14,7 +14,7 @@ import { aiAvailable, generateRecipeDraft, type RecipeDraft } from '../lib/ai';
 import { estimateMacrosLocal } from '../lib/macros';
 import { nextRecipeId } from '../lib/recipeId';
 import { ROLE_LABEL, type CalciumFlag, type MealKey, type Recipe, type RecipeRole } from '../types';
-import { weekDates, weekLabel, dayLabel } from './dates';
+import { weekDatesOffset, weekLabelOffset, weekSub, dayLabel } from './dates';
 import { IconChevL, IconChevR, IconSpark, IconStar, IconPlus, IconCopy, IconLoader } from './icons';
 
 const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit-déj', dej: 'Déjeuner', diner: 'Dîner' };
@@ -69,13 +69,15 @@ interface Props {
 export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
+  const weekOffset = useStore((s) => s.weekOffset);
+  const navWeek = useStore((s) => s.navWeek);
   const objective = useStore((s) => s.settings.objective);
   const setComponent = useStore((s) => s.setComponent);
   const upsertRecipe = useStore((s) => s.upsertRecipe);
   const [busy, setBusy] = useState(false);
 
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
-  const dates = useMemo(() => weekDates(), []);
+  const dates = useMemo(() => weekDatesOffset(weekOffset), [weekOffset]);
   const avg = useMemo(() => weekAverage(SEED_CONFIG, week.days, byId), [week.days, byId]);
 
   const toValidate = useMemo(() => {
@@ -152,14 +154,14 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, toas
   return (
     <div>
       <div className="cz-weeknav">
-        <button className="cz-navchev" aria-label="Précédente" onClick={() => toast('Navigation entre semaines — prochain lot (FC14)')}>
+        <button className="cz-navchev" aria-label="Précédente" onClick={() => void navWeek(-1)}>
           <IconChevL size={16} />
         </button>
         <span className="cz-wk">
-          {weekLabel()}
-          <small>cette semaine</small>
+          {weekLabelOffset(weekOffset)}
+          <small>{weekSub(weekOffset)}</small>
         </span>
-        <button className="cz-navchev" aria-label="Suivante" onClick={() => toast('Navigation entre semaines — prochain lot (FC14)')}>
+        <button className="cz-navchev" aria-label="Suivante" onClick={() => void navWeek(1)}>
           <IconChevR size={16} />
         </button>
       </div>

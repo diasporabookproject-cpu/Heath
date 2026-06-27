@@ -14,6 +14,49 @@ export function mondayOf(ref: Date = new Date()): Date {
   return d;
 }
 
+/** Lundi de la semaine à `offset` semaines de la semaine courante. */
+export function mondayOfOffset(offset: number): Date {
+  const m = mondayOf();
+  m.setDate(m.getDate() + offset * 7);
+  return m;
+}
+
+/** Identifiant de semaine = date du lundi, format YYYY-MM-DD (clé locale stable). */
+export function weekId(offset: number): string {
+  const d = mondayOfOffset(offset);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/** Dates des 7 jours de la semaine à `offset`. */
+export function weekDatesOffset(offset: number): Date[] {
+  const m = mondayOfOffset(offset);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(m);
+    d.setDate(m.getDate() + i);
+    return d;
+  });
+}
+
+/** « Semaine du 23 juin » pour un offset. */
+export function weekLabelOffset(offset: number): string {
+  return `Semaine du ${dayLabel(mondayOfOffset(offset))}`;
+}
+
+/** Sous-titre relatif (cette semaine / prochaine / passée…). */
+export function weekSub(offset: number): string {
+  return offset === 0
+    ? 'cette semaine'
+    : offset === 1
+      ? 'semaine prochaine'
+      : offset === -1
+        ? 'semaine passée'
+        : offset > 0
+          ? 'à venir'
+          : 'passée';
+}
+
 /** Dates des 7 jours (lun→dim) de la semaine courante, dans l'ordre des clés de config. */
 export function weekDates(ref: Date = new Date()): Date[] {
   const m = mondayOf(ref);

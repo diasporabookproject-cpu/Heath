@@ -12,6 +12,7 @@ import RecipeDetailSheet from './RecipeDetailSheet';
 import AddRecipeSheet from './AddRecipeSheet';
 import PartageSheet from './PartageSheet';
 import ObjectiveSheet from './ObjectiveSheet';
+import CopyWeekSheet from './CopyWeekSheet';
 import { IconPlus, IconCheck, IconShareUp } from './icons';
 import './cuisine.css';
 
@@ -40,6 +41,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
   const [adding, setAdding] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [objectiveOpen, setObjectiveOpen] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
   const [recFilters, setRecFilters] = useState<string>('all');
   const [voiceIds, setVoiceIds] = useState<Set<string>>(new Set());
 
@@ -107,7 +109,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
           <SemaineView
             voiceIds={voiceIds}
             onOpenMeal={(dayKey, mealKey) => setComposer({ dayKey, mealKey })}
-            onCopyWeek={() => toast('Navigation & copie de semaine — prochain lot (FC14)')}
+            onCopyWeek={() => setCopyOpen(true)}
             onGoValidate={() => {
               setRecFilters('draft');
               switchSeg('recettes');
@@ -162,6 +164,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
 
       {sharing && <PartageSheet onClose={() => setSharing(false)} toast={toast} />}
       {objectiveOpen && <ObjectiveSheet onClose={() => setObjectiveOpen(false)} />}
+      {copyOpen && <CopyWeekSheet onClose={() => setCopyOpen(false)} toast={toast} />}
 
       {adding && (
         <AddRecipeSheet

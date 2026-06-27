@@ -155,6 +155,12 @@ export async function loadWeek(id: string): Promise<WeekMenu | undefined> {
   return db.get('weeks', id);
 }
 
+/** Toutes les semaines stockées (pour « copier une semaine »). */
+export async function loadAllWeeks(): Promise<WeekMenu[]> {
+  const db = await getDB();
+  return db.getAll('weeks');
+}
+
 export async function saveWeek(week: WeekMenu): Promise<void> {
   const db = await getDB();
   await db.put('weeks', week);
