@@ -14,9 +14,9 @@ interface Props {
 export default function CoursesCuisine({ toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
+  const persons = useStore((s) => s.settings.persons);
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
 
-  const [persons, setPersons] = useState(4);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
 
   const groups = useMemo(
@@ -65,13 +65,9 @@ export default function CoursesCuisine({ toast }: Props) {
       </div>
 
       <div className="cz-persons">
-        <span className="pl">Pour</span>
-        <div className="cz-stepper">
-          <button onClick={() => setPersons((p) => Math.max(1, p - 1))}>−</button>
-          <div className="sv">{persons}</div>
-          <button onClick={() => setPersons((p) => p + 1)}>+</button>
-        </div>
-        <span className="pl">personne{persons > 1 ? 's' : ''}</span>
+        <span className="pl">
+          Quantités pour <b>{persons}</b> personne{persons > 1 ? 's' : ''} · réglable dans Objectif
+        </span>
       </div>
 
       <div className="cz-courses">

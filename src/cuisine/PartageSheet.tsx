@@ -35,6 +35,7 @@ interface Props {
 export default function PartageSheet({ onClose, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
+  const persons = useStore((s) => s.settings.persons);
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
 
   const [shown, setShown] = useState(false);
@@ -78,17 +79,14 @@ export default function PartageSheet({ onClose, toast }: Props) {
       role: 'Cuisinière',
       langue: 'ar',
       token: newToken(),
-      persons: 4,
       createdAt: Date.now(),
     };
   }
 
-  const persons = selected?.persons ?? 4;
-
   // Compte des jours composés (pour la phrase de résumé).
   const dayCount = SEED_CONFIG.jours.filter((j) => {
     const d = week.days[j.key];
-    return d && (d.dejId || d.dinId || d.extras.length);
+    return !!d && (d.petitdej.plat || d.dej.plat || d.diner.plat);
   }).length;
 
   const waText = (d: Destinataire, url: string) =>
@@ -100,7 +98,7 @@ export default function PartageSheet({ onClose, toast }: Props) {
     if (!selected) return;
     setBusy(true);
     try {
-      await publishEspace(selected, SEED_CONFIG, week, byId);
+      await publishEspace(selected, SEED_CONFIG, week, byId, persons);
       const url = buildEspaceUrl(selected.token);
       const wa = `https://wa.me/${digits(selected.tel)}?text=${encodeURIComponent(waText(selected, url))}`;
       window.open(wa, '_blank');
@@ -120,7 +118,7 @@ export default function PartageSheet({ onClose, toast }: Props) {
     const d = week.days[j.key];
     const ar = selected.langue === 'ar';
     const lines: string[] = [ar ? `منيو ${DAY_AR[j.key] ?? j.nom}` : `Menu ${j.nom}`];
-    const add = (label: string, id: string | null) => {
+    const add = (label: string, id: string | null | undefined) => {
       if (!id) return;
       const r = byId.get(id);
       if (!r) return;
@@ -130,8 +128,13 @@ export default function PartageSheet({ onClose, toast }: Props) {
         .join(' · ');
       lines.push(`\n${label} : ${nom}\n${ing}`);
     };
-    add(ar ? 'الغدا' : 'Déjeuner', d?.dejId ?? null);
-    add(ar ? 'العشا' : 'Dîner', d?.dinId ?? null);
+    if (d) {
+      add(ar ? 'الفطور' : 'Petit-déj', d.petitdej.plat);
+      add(ar ? 'الغدا' : 'Déjeuner', d.dej.plat);
+      if (d.dej.entree) add(ar ? 'مقبلات' : 'Entrée', d.dej.entree);
+      add(ar ? 'العشا' : 'Dîner', d.diner.plat);
+      if (d.diner.entree) add(ar ? 'مقبلات' : 'Entrée', d.diner.entree);
+    }
     try {
       await navigator.clipboard.writeText(lines.join('\n'));
       toast('Menu du jour copié');
@@ -144,7 +147,7 @@ export default function PartageSheet({ onClose, toast }: Props) {
     if (!selected) return;
     setBusy(true);
     try {
-      setPreview(await previewEspace(selected, SEED_CONFIG, week, byId));
+      setPreview(await previewEspace(selected, SEED_CONFIG, week, byId, persons));
     } finally {
       setBusy(false);
     }
@@ -358,14 +361,6 @@ function EditForm({
           value={editing.tel ?? ''}
           onChange={(e) => setEditing({ ...editing, tel: e.target.value })}
         />
-      </div>
-      <div className="cz-block">
-        <div className="cz-blab">Nombre de personnes</div>
-        <div className="cz-stepper">
-          <button onClick={() => setEditing({ ...editing, persons: Math.max(1, (editing.persons ?? 4) - 1) })}>−</button>
-          <div className="sv">{editing.persons ?? 4}</div>
-          <button onClick={() => setEditing({ ...editing, persons: (editing.persons ?? 4) + 1 })}>+</button>
-        </div>
       </div>
       {secFiches.length > 0 && (
         <div className="cz-block">

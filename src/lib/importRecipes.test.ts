@@ -3,7 +3,7 @@ import { deriveFlag, parseRecipesJson } from './importRecipes';
 import type { Recipe } from '../types';
 
 const existing: Recipe[] = [
-  { id: 'DEJ-01', nom: 'X', type: 'Déjeuner', statut: 'Validé', jour: 'Tous', kcal: 1, prot: 1, gluc: 1, lip: 1, calcium: 1, flag_calcium: 'Faible', ingredients: '' },
+  { id: 'PLT-01', nom: 'X', role: 'plat', statut: 'Validé', kcal: 1, prot: 1, gluc: 1, lip: 1, calcium: 1, flag_calcium: 'Faible', ingredients: '' },
 ];
 
 describe('deriveFlag', () => {
@@ -17,36 +17,35 @@ describe('deriveFlag', () => {
 describe('parseRecipesJson', () => {
   it('importe un tableau et génère un id sans collision', () => {
     const json = JSON.stringify([
-      { nom: 'Bowl test', type: 'Déjeuner', kcal: 700, prot: 60, calcium: 400, ingredients: 'riz 100g' },
+      { nom: 'Bowl test', role: 'plat', kcal: 700, prot: 60, calcium: 400, ingredients: 'riz 100g' },
     ]);
     const { recipes, errors } = parseRecipesJson(json, existing);
     expect(errors).toEqual([]);
-    expect(recipes[0].id).toBe('DEJ-02'); // DEJ-01 déjà pris
-    expect(recipes[0].flag_calcium).toBe('Champion'); // dérivé de 400
-    expect(recipes[0].statut).toBe('Validé');
+    expect(recipes[0].id).toBe('PLT-02'); // PLT-01 déjà pris
+    expect(recipes[0].role).toBe('plat');
+    expect(recipes[0].flag_calcium).toBe('Champion');
   });
 
-  it('accepte un objet seul et { recettes: [...] }', () => {
-    expect(parseRecipesJson('{"nom":"A","type":"Dîner"}', []).recipes).toHaveLength(1);
-    expect(
-      parseRecipesJson('{"recettes":[{"nom":"A","type":"Coupe-faim"}]}', []).recipes,
-    ).toHaveLength(1);
+  it('tolère l’ancien "type" et le mappe au rôle', () => {
+    expect(parseRecipesJson('{"nom":"A","type":"Coupe-faim"}', []).recipes[0].role).toBe('entree');
+    expect(parseRecipesJson('{"nom":"A","type":"Dîner"}', []).recipes[0].role).toBe('plat');
   });
 
-  it('remonte des erreurs lisibles', () => {
-    const { recipes, errors } = parseRecipesJson('[{"type":"Déjeuner"},{"nom":"B","type":"x"}]', []);
-    expect(recipes).toHaveLength(0);
-    expect(errors).toHaveLength(2);
+  it('déduit le rôle par défaut (plat) et n’échoue que sur le nom manquant', () => {
+    const { recipes, errors } = parseRecipesJson('[{"role":"plat"},{"nom":"B"}]', []);
+    expect(recipes).toHaveLength(1); // 2e importée (rôle plat par défaut)
+    expect(errors).toHaveLength(1); // 1re sans nom
   });
 
   it('signale un JSON invalide', () => {
     expect(parseRecipesJson('pas du json', []).errors[0]).toMatch(/JSON invalide/);
   });
 
-  it('conserve les champs darija', () => {
-    const json = '[{"nom":"A","type":"Dîner","nom_ar":"أ","ingredients_ar":"مكونات"}]';
+  it('conserve les champs darija et les étapes', () => {
+    const json = '[{"nom":"A","role":"plat","nom_ar":"أ","ingredients_ar":"مكونات","etapes_ar":"خطوة"}]';
     const r = parseRecipesJson(json, []).recipes[0];
     expect(r.nom_ar).toBe('أ');
     expect(r.ingredients_ar).toBe('مكونات');
+    expect(r.etapes_ar).toBe('خطوة');
   });
 });

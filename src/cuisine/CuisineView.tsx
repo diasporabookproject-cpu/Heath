@@ -2,46 +2,45 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import { loadAudioKeys } from '../lib/db';
+import type { AccRef, MealKey, RecipeRole } from '../types';
 import CoursesCuisine from './CoursesCuisine';
 import SemaineView from './SemaineView';
 import RecettesView from './RecettesView';
+import MealComposerSheet from './MealComposerSheet';
 import RecipePickerSheet from './RecipePickerSheet';
 import RecipeDetailSheet from './RecipeDetailSheet';
 import AddRecipeSheet from './AddRecipeSheet';
 import PartageSheet from './PartageSheet';
+import ObjectiveSheet from './ObjectiveSheet';
 import { IconPlus, IconCheck, IconShareUp } from './icons';
 import './cuisine.css';
 
 type Segment = 'semaine' | 'recettes' | 'courses';
-type PickTarget = { dayKey: string; slot: 'dej' | 'din' } | null;
+type Composer = { dayKey: string; mealKey: MealKey } | null;
+type Pick = { dayKey: string; mealKey: MealKey; slot: 'plat' | 'entree' | 'acc'; role: RecipeRole } | null;
 
-const SEG_LABEL: Record<Segment, string> = {
-  semaine: 'Semaine',
-  recettes: 'Recettes',
-  courses: 'Courses',
-};
+const SEG_LABEL: Record<Segment, string> = { semaine: 'Semaine', recettes: 'Recettes', courses: 'Courses' };
+const dayNom = (key: string) => SEED_CONFIG.jours.find((j) => j.key === key)?.nom ?? '';
 
 interface Props {
-  /** Bouton compte (☁︎) repris du chrome global ; masqué si Supabase off. */
   showAccount: boolean;
   connected: boolean;
   onOpenAccount: () => void;
 }
 
-/**
- * FC1 — Module Cuisine : header marque + segmented control (Semaine/Recettes/Courses),
- * FAB d'ajout sur Recettes uniquement, état d'onglet conservé, scroll remonté au changement.
- */
 export default function CuisineView({ showAccount, connected, onOpenAccount }: Props) {
   const recipes = useStore((s) => s.recipes);
-  const setSlot = useStore((s) => s.setSlot);
+  const objective = useStore((s) => s.settings.objective);
+  const setComponent = useStore((s) => s.setComponent);
 
   const [seg, setSeg] = useState<Segment>('semaine');
-  const [pick, setPick] = useState<PickTarget>(null);
+  const [composer, setComposer] = useState<Composer>(null);
+  const [pick, setPick] = useState<Pick>(null);
   const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [sharing, setSharing] = useState(false);
-  const [recFilters, setRecFilters] = useState<Set<string>>(new Set());
+  const [objectiveOpen, setObjectiveOpen] = useState(false);
+  const [recFilters, setRecFilters] = useState<string>('all');
   const [voiceIds, setVoiceIds] = useState<Set<string>>(new Set());
 
   const [toastMsg, setToastMsg] = useState('');
@@ -52,7 +51,6 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
     toastT.current = setTimeout(() => setToastMsg(''), 2200);
   };
 
-  // Recettes disposant d'une note vocale (pour les marqueurs 🎙).
   const refreshVoice = () => void loadAudioKeys().then((keys) => setVoiceIds(new Set(keys)));
   useEffect(() => {
     refreshVoice();
@@ -63,9 +61,6 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
     window.scrollTo({ top: 0 });
   };
 
-  const pickType = pick?.slot === 'dej' ? 'Déjeuner' : 'Dîner';
-  const pickDayNom = pick ? SEED_CONFIG.jours.find((j) => j.key === pick.dayKey)?.nom ?? '' : '';
-
   return (
     <div className="cz">
       <header className="cz-head">
@@ -75,11 +70,14 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
             Cuisine
           </div>
           <div className="cz-headicons">
+            <button className="cz-pill" onClick={() => setObjectiveOpen(true)}>
+              Objectif {objective.toLocaleString('fr-FR')} kcal/pers.
+            </button>
             <button
               className="cz-headicon"
+              style={{ marginLeft: 8 }}
               onClick={() => setSharing(true)}
               aria-label="Partager le menu"
-              title="Partager à la cuisinière"
             >
               <IconShareUp size={18} />
             </button>
@@ -97,13 +95,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
         </div>
         <div className="cz-segmented" role="tablist">
           {(['semaine', 'recettes', 'courses'] as Segment[]).map((s) => (
-            <button
-              key={s}
-              className="cz-seg"
-              role="tab"
-              aria-selected={seg === s}
-              onClick={() => switchSeg(s)}
-            >
+            <button key={s} className="cz-seg" role="tab" aria-selected={seg === s} onClick={() => switchSeg(s)}>
               {SEG_LABEL[s]}
             </button>
           ))}
@@ -114,10 +106,11 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
         {seg === 'semaine' ? (
           <SemaineView
             voiceIds={voiceIds}
-            onOpenPicker={(dayKey, slot) => setPick({ dayKey, slot })}
-            onOpenRecipe={(id) => setOpenRecipeId(id)}
+            onOpenMeal={(dayKey, mealKey) => setComposer({ dayKey, mealKey })}
+            onGenerate={() => toast('Générateur de semaine — prochain lot (FC16)')}
+            onCopyWeek={() => toast('Navigation & copie de semaine — prochain lot (FC14)')}
             onGoValidate={() => {
-              setRecFilters(new Set(['draft']));
+              setRecFilters('draft');
               switchSeg('recettes');
             }}
             toast={toast}
@@ -125,9 +118,10 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
         ) : seg === 'recettes' ? (
           <RecettesView
             voiceIds={voiceIds}
-            filters={recFilters}
-            setFilters={setRecFilters}
+            filter={recFilters}
+            setFilter={setRecFilters}
             onOpenRecipe={(id) => setOpenRecipeId(id)}
+            toast={toast}
           />
         ) : (
           <CoursesCuisine toast={toast} />
@@ -140,23 +134,35 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
         </button>
       )}
 
+      {composer && (
+        <MealComposerSheet
+          dayKey={composer.dayKey}
+          dayNom={dayNom(composer.dayKey)}
+          mealKey={composer.mealKey}
+          onPickSlot={(slot, role) =>
+            setPick({ dayKey: composer.dayKey, mealKey: composer.mealKey, slot, role })
+          }
+          onClose={() => setComposer(null)}
+        />
+      )}
+
       {pick && (
         <RecipePickerSheet
-          title={pick.slot === 'dej' ? 'Choisir un déjeuner' : 'Choisir un dîner'}
-          sub={pickDayNom}
-          type={pickType}
-          recipes={recipes}
+          role={pick.role}
+          sub={`${dayNom(pick.dayKey)}`}
           voiceIds={voiceIds}
           onPick={(id) => {
-            setSlot(pick.dayKey, pick.slot, id);
+            const value: string | AccRef = pick.slot === 'acc' ? { id, g: 100 } : id;
+            setComponent(pick.dayKey, pick.mealKey, pick.slot, value);
             setPick(null);
-            toast('Repas ajouté');
+            toast('Composant ajouté');
           }}
           onClose={() => setPick(null)}
         />
       )}
 
       {sharing && <PartageSheet onClose={() => setSharing(false)} toast={toast} />}
+      {objectiveOpen && <ObjectiveSheet onClose={() => setObjectiveOpen(false)} />}
 
       {adding && (
         <AddRecipeSheet

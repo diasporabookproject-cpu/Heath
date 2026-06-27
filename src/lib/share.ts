@@ -1,116 +1,109 @@
-import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
-import type { AppConfig, Recipe, WeekMenu } from '../types';
+import type { AppConfig, MealKey, MealSlot, Recipe, WeekMenu } from '../types';
 
-// Partage du menu via un LIEN sans backend : on encode (compressé) le menu
-// directement dans le hash de l'URL. L'app étant hébergée, la cuisinière
-// ouvre une page en lecture seule. L'audio n'entre pas dans un lien
-// (placeholder pour l'instant) — il viendra avec le backend.
+// Payload du menu envoyé dans l'espace cuisinière (FC10/FC19, modèle v2).
+// 3 repas par jour, chacun pouvant être structuré (plat / entrée / accompagnement).
+// Les anciens liens encodés (#m=) et publiés (#p=) ont été retirés : le canal
+// est l'espace permanent par destinataire (#e=).
 
-export const SHARE_PREFIX = '#m=';
-export const PUBLISH_PREFIX = '#p=';
-
-export interface SharedMeal {
+export interface SharedComp {
   n: string; // nom FR
-  i: string; // ingrédients FR
-  e?: string; // étapes FR (une par ligne)
+  i: string; // ingrédients FR (1 portion ; accompagnement = pour `g` grammes de référence)
+  e?: string; // étapes FR
   na?: string; // nom darija
   ia?: string; // ingrédients darija
   ea?: string; // étapes darija
-  v?: 1; // une note vocale existe (placeholder, lien sans backend)
-  a?: string; // URL publique d'une note vocale (lien publié avec audio)
+  a?: string; // URL publique de la note vocale
+  g?: number; // quantité en grammes (accompagnement)
+}
+
+export interface SharedMealV2 {
+  plat?: SharedComp;
+  entree?: SharedComp;
+  acc?: SharedComp;
 }
 
 export interface SharedDay {
-  k: string; // clé jour
-  nom: string; // nom FR du jour
-  t: string; // type (Repos/Muscu/Cardio)
-  dej?: SharedMeal;
-  din?: SharedMeal;
-  ex?: SharedMeal[];
+  k: string;
+  nom: string;
+  petitdej?: SharedMealV2;
+  dej?: SharedMealV2;
+  diner?: SharedMealV2;
 }
 
 export interface SharedMenu {
-  v: 1;
+  v: 2;
   days: SharedDay[];
 }
 
-function meal(
-  r: Recipe | undefined,
-  id: string | null,
-  audioIds: Set<string>,
-  audioUrls?: Map<string, string>,
-): SharedMeal | undefined {
-  if (!r) return undefined;
-  const m: SharedMeal = { n: r.nom, i: r.ingredients };
-  if (r.etapes) m.e = r.etapes;
-  if (r.nom_ar) m.na = r.nom_ar;
-  if (r.ingredients_ar) m.ia = r.ingredients_ar;
-  if (r.etapes_ar) m.ea = r.etapes_ar;
-  const url = id ? audioUrls?.get(id) : undefined;
-  if (url) m.a = url; // lien publié : audio jouable
-  else if (id && audioIds.has(id)) m.v = 1; // lien simple : placeholder
-  return m;
+/** Ids de toutes les recettes utilisées dans la semaine (pour téléverser les audios). */
+export function usedRecipeIds(config: AppConfig, week: WeekMenu): string[] {
+  const ids = new Set<string>();
+  for (const j of config.jours) {
+    const day = week.days[j.key];
+    if (!day) continue;
+    for (const key of ['petitdej', 'dej', 'diner'] as MealKey[]) {
+      const m = day[key];
+      if (m.plat) ids.add(m.plat);
+      if (key !== 'petitdej') {
+        if (m.entree) ids.add(m.entree);
+        if (m.acc) ids.add(m.acc.id);
+      }
+    }
+  }
+  return [...ids];
 }
 
-/**
- * Construit la charge utile à partir de la semaine (jours non vides).
- * `audioIds` : recettes ayant une note vocale (→ placeholder).
- * `audioUrls` : URLs publiques des notes (→ audio jouable, lien publié).
- */
-export function buildSharePayload(
+function comp(r: Recipe, audioUrls?: Map<string, string>, g?: number): SharedComp {
+  const c: SharedComp = { n: r.nom, i: r.ingredients };
+  if (r.etapes) c.e = r.etapes;
+  if (r.nom_ar) c.na = r.nom_ar;
+  if (r.ingredients_ar) c.ia = r.ingredients_ar;
+  if (r.etapes_ar) c.ea = r.etapes_ar;
+  const u = audioUrls?.get(r.id);
+  if (u) c.a = u;
+  if (g != null) c.g = g;
+  return c;
+}
+
+function buildMeal(
+  slot: MealSlot,
+  key: MealKey,
+  byId: Map<string, Recipe>,
+  audioUrls?: Map<string, string>,
+): SharedMealV2 | undefined {
+  const out: SharedMealV2 = {};
+  const plat = slot.plat ? byId.get(slot.plat) : undefined;
+  if (plat) out.plat = comp(plat, audioUrls);
+  if (key !== 'petitdej') {
+    const e = slot.entree ? byId.get(slot.entree) : undefined;
+    if (e) out.entree = comp(e, audioUrls);
+    if (slot.acc) {
+      const a = byId.get(slot.acc.id);
+      if (a) out.acc = comp(a, audioUrls, slot.acc.g);
+    }
+  }
+  return out.plat || out.entree || out.acc ? out : undefined;
+}
+
+/** Construit le menu de l'espace à partir de la semaine (jours non vides). */
+export function buildEspaceMenu(
   config: AppConfig,
   week: WeekMenu,
   byId: Map<string, Recipe>,
-  audioIds: Set<string>,
   audioUrls?: Map<string, string>,
 ): SharedMenu {
   const days: SharedDay[] = [];
   for (const j of config.jours) {
     const day = week.days[j.key];
-    if (!day || (!day.dejId && !day.dinId && day.extras.length === 0)) continue;
-    const dej = day.dejId ? byId.get(day.dejId) : undefined;
-    const din = day.dinId ? byId.get(day.dinId) : undefined;
-    const sd: SharedDay = { k: j.key, nom: j.nom, t: j.type };
-    const mdej = meal(dej, day.dejId, audioIds, audioUrls);
-    const mdin = meal(din, day.dinId, audioIds, audioUrls);
-    if (mdej) sd.dej = mdej;
-    if (mdin) sd.din = mdin;
-    const ex = day.extras
-      .map((id) => meal(byId.get(id), id, audioIds, audioUrls))
-      .filter((m): m is SharedMeal => !!m);
-    if (ex.length) sd.ex = ex;
-    days.push(sd);
+    if (!day) continue;
+    const sd: SharedDay = { k: j.key, nom: j.nom };
+    const pd = buildMeal(day.petitdej, 'petitdej', byId, audioUrls);
+    const dj = buildMeal(day.dej, 'dej', byId, audioUrls);
+    const dn = buildMeal(day.diner, 'diner', byId, audioUrls);
+    if (pd) sd.petitdej = pd;
+    if (dj) sd.dej = dj;
+    if (dn) sd.diner = dn;
+    if (sd.petitdej || sd.dej || sd.diner) days.push(sd);
   }
-  return { v: 1, days };
-}
-
-export function encodeMenu(payload: SharedMenu): string {
-  return compressToEncodedURIComponent(JSON.stringify(payload));
-}
-
-export function decodeMenu(encoded: string): SharedMenu | null {
-  try {
-    const json = decompressFromEncodedURIComponent(encoded);
-    if (!json) return null;
-    const data = JSON.parse(json);
-    if (data && data.v === 1 && Array.isArray(data.days)) return data as SharedMenu;
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-/** Lit le menu partagé (encodé dans l'URL) s'il y en a un. */
-export function readSharedFromLocation(): SharedMenu | null {
-  const h = window.location.hash;
-  if (!h.startsWith(SHARE_PREFIX)) return null;
-  return decodeMenu(h.slice(SHARE_PREFIX.length));
-}
-
-/** Lit l'identifiant d'un menu publié (#p=...) s'il y en a un. */
-export function readPublishId(): string | null {
-  const h = window.location.hash;
-  if (!h.startsWith(PUBLISH_PREFIX)) return null;
-  const id = h.slice(PUBLISH_PREFIX.length).trim();
-  return /^[A-Za-z0-9_-]+$/.test(id) ? id : null;
+  return { v: 2, days };
 }

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { estimateMacros } from '../lib/ai';
-import type { CalciumFlag, Recipe, RecipeType } from '../types';
+import { splitIngredients, splitSteps } from '../lib/ingredients';
+import { ROLE_LABEL, type CalciumFlag, type Recipe, type RecipeRole } from '../types';
 import ConsigneVocale from './ConsigneVocale';
 import {
   IconStar,
@@ -9,31 +10,11 @@ import {
   IconClock,
   IconShareUp,
   IconLoader,
+  IconFav,
 } from './icons';
 
 const flagClass = (f: CalciumFlag) => (f === 'Champion' ? 'champion' : f === 'Moyen' ? 'moyen' : 'faible');
-const TYPES: RecipeType[] = ['Déjeuner', 'Dîner', 'Coupe-faim'];
-
-/** Découpe le texte d'ingrédients en lignes nom / quantité (best-effort). */
-function splitIngredients(text: string): { name: string; qty: string }[] {
-  return text
-    .split(/·|\n|\++/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((seg) => {
-      const m = seg.match(/^(.*?)(\s+\d[\d.,]*\s*(?:kg|g|ml|cl|l|càc|càs|càs?\.?|pièces?|unités?)?\.?)$/i);
-      if (m && m[1].trim()) return { name: m[1].trim(), qty: m[2].trim() };
-      return { name: seg, qty: '' };
-    });
-}
-
-function splitSteps(text: string | undefined): string[] {
-  if (!text) return [];
-  return text
-    .split('\n')
-    .map((s) => s.replace(/^\s*\d+[.)]\s*/, '').trim())
-    .filter(Boolean);
-}
+const ROLES: RecipeRole[] = ['petitdej', 'entree', 'plat', 'acc'];
 
 interface Props {
   recipeId: string;
@@ -128,9 +109,7 @@ function DetailBody({
       <div className="cz-sheethead">
         <div className="ttl">
           {recipe.nom}
-          <small>
-            {recipe.type} · 100 % sans gluten
-          </small>
+          <small>{ROLE_LABEL[recipe.role]} · 100 % sans gluten</small>
         </div>
         <button className="cz-x" onClick={onClose} aria-label="Fermer">
           ✕
@@ -147,15 +126,13 @@ function DetailBody({
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 8, margin: '6px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '6px 0' }}>
+          <FavStar id={recipe.id} fav={recipe.fav} />
+          <span className="cz-tag role">{ROLE_LABEL[recipe.role]}</span>
           <span className={'cz-caflag ' + flagClass(recipe.flag_calcium)} style={{ fontSize: 11.5 }}>
-            ◆ Calcium {recipe.flag_calcium.toLowerCase()}
+            ◆ {recipe.flag_calcium.toLowerCase()}
           </span>
-          {draft ? (
-            <span className="cz-tag draft">✦ À valider</span>
-          ) : (
-            <span className="cz-tag ok">Validé</span>
-          )}
+          {draft ? <span className="cz-tag draft">✦ À valider</span> : <span className="cz-tag ok">Validé</span>}
         </div>
 
         {estimated && (
@@ -166,7 +143,7 @@ function DetailBody({
         )}
 
         <div className="cz-dmacros">
-          <Cell v={recipe.kcal} l="kcal" />
+          <Cell v={recipe.kcal} l={recipe.role === 'acc' ? 'kcal/100g' : 'kcal'} />
           <Cell v={recipe.prot} l="prot" />
           <Cell v={recipe.gluc} l="gluc" />
           <Cell v={recipe.calcium} l="calcium" ca />
@@ -181,7 +158,7 @@ function DetailBody({
         </div>
         <ConsigneVocale recipeId={recipe.id} onChange={onVoiceChange} />
 
-        <div className="cz-sect">Ingrédients · une portion</div>
+        <div className="cz-sect">Ingrédients · {recipe.role === 'acc' ? '100 g de référence' : 'une portion'}</div>
         {ings.length > 0 ? (
           <div className="cz-inglist">
             {ings.map((it, i) => (
@@ -242,6 +219,21 @@ function Cell({ v, l, ca }: { v: number; l: string; ca?: boolean }) {
   );
 }
 
+function FavStar({ id, fav }: { id: string; fav?: boolean }) {
+  const toggleFav = useStore((s) => s.toggleFav);
+  return (
+    <span
+      className={'cz-starbtn' + (fav ? ' on' : '')}
+      role="button"
+      tabIndex={0}
+      aria-label="Favori"
+      onClick={() => toggleFav(id)}
+    >
+      <IconFav size={16} filled={fav} />
+    </span>
+  );
+}
+
 function EditBody({
   recipe,
   onCancel,
@@ -256,7 +248,7 @@ function EditBody({
   toast: (m: string) => void;
 }) {
   const [nom, setNom] = useState(recipe.nom);
-  const [type, setType] = useState<RecipeType>(recipe.type);
+  const [role, setRole] = useState<RecipeRole>(recipe.role);
   const [ingredients, setIngredients] = useState(recipe.ingredients);
   const [etapes, setEtapes] = useState(recipe.etapes ?? '');
   const [nomAr, setNomAr] = useState(recipe.nom_ar ?? '');
@@ -280,7 +272,7 @@ function EditBody({
       return;
     }
     setCalc(true);
-    const m = await estimateMacros(ingredients, type);
+    const m = await estimateMacros(ingredients, ROLE_LABEL[role]);
     setMacros({ kcal: m.kcal, prot: m.prot, gluc: m.gluc, lip: m.lip, calcium: m.calcium, flag_calcium: m.flag_calcium });
     setEstimated(true);
     setCalc(false);
@@ -291,7 +283,7 @@ function EditBody({
     const next: Recipe = {
       ...recipe,
       nom: nom.trim() || recipe.nom,
-      type,
+      role,
       ingredients: ingredients.trim(),
       etapes: etapes.trim() || undefined,
       kcal: macros.kcal,
@@ -325,22 +317,17 @@ function EditBody({
           <input className="cz-inp" value={nom} onChange={(e) => setNom(e.target.value)} />
         </div>
         <div className="cz-block">
-          <div className="cz-blab">Type</div>
-          <div className="cz-dietchips">
-            {TYPES.map((t) => (
-              <button
-                key={t}
-                className="cz-dchip"
-                aria-pressed={type === t}
-                onClick={() => setType(t)}
-              >
-                {t}
+          <div className="cz-blab">Rôle</div>
+          <div className="cz-rolepick">
+            {ROLES.map((r) => (
+              <button key={r} className="cz-rchip" aria-pressed={role === r} onClick={() => setRole(r)}>
+                {ROLE_LABEL[r]}
               </button>
             ))}
           </div>
         </div>
         <div className="cz-block">
-          <div className="cz-blab">Ingrédients pesés (1 portion)</div>
+          <div className="cz-blab">Ingrédients pesés ({role === 'acc' ? '100 g de référence' : '1 portion'})</div>
           <textarea
             className="cz-ta"
             rows={5}

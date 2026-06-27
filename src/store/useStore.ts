@@ -1,11 +1,14 @@
 import { create } from 'zustand';
-import type { DayType, Recipe, WeekMenu } from '../types';
+import type { AccRef, CuisineSettings, MealKey, Recipe, WeekMenu } from '../types';
+import { DEFAULT_SETTINGS } from '../types';
 import { SEED_CONFIG } from '../data';
 import {
   ensureSeeded,
   loadRecipes,
+  loadSettings,
   loadWeek,
   saveRecipe,
+  saveSettings,
   saveWeek,
 } from '../lib/db';
 import { emptyDay } from '../lib/nutrition';
@@ -14,129 +17,96 @@ const CURRENT_WEEK_ID = 'current';
 
 function freshWeek(): WeekMenu {
   const days: WeekMenu['days'] = {};
-  for (const j of SEED_CONFIG.jours) {
-    days[j.key] = emptyDay();
-  }
+  for (const j of SEED_CONFIG.jours) days[j.key] = emptyDay();
   return { id: CURRENT_WEEK_ID, days };
 }
+
+/** Une journée chargée est-elle au nouveau format (3 repas) ? */
+function isV2Day(d: unknown): boolean {
+  return !!d && typeof d === 'object' && 'petitdej' in (d as object);
+}
+
+type Slot = 'plat' | 'entree' | 'acc';
 
 interface State {
   ready: boolean;
   recipes: Recipe[];
   week: WeekMenu;
+  settings: CuisineSettings;
   init: () => Promise<void>;
-  setSlot: (dayKey: string, slot: 'dej' | 'din', recipeId: string | null) => void;
-  addExtra: (dayKey: string, recipeId: string) => void;
-  removeExtra: (dayKey: string, recipeId: string) => void;
-  setExtras: (dayKey: string, recipeIds: string[]) => void;
-  setDayType: (dayKey: string, type: DayType) => void;
-  toggleLock: (dayKey: string, slot: 'dej' | 'din') => void;
-  /** Remplace un créneau (non verrouillé) par une recette Validé au hasard. */
-  shuffleSlot: (dayKey: string, slot: 'dej' | 'din') => boolean;
+  setComponent: (dayKey: string, meal: MealKey, slot: Slot, value: string | AccRef | null) => void;
+  setAccQty: (dayKey: string, meal: MealKey, deltaG: number) => void;
+  setObjective: (n: number) => void;
+  setPersons: (n: number) => void;
   upsertRecipe: (recipe: Recipe) => void;
   setStatut: (id: string, statut: Recipe['statut']) => void;
-  /** Valide une recette « Test » → Validé, et lève le flag « macros estimées ». */
   validateRecipe: (id: string) => void;
+  toggleFav: (id: string) => void;
 }
 
 export const useStore = create<State>((set, get) => ({
   ready: false,
   recipes: [],
   week: freshWeek(),
+  settings: DEFAULT_SETTINGS,
 
   async init() {
     await ensureSeeded();
-    const [recipes, savedWeek] = await Promise.all([
+    const [recipes, savedWeek, settings] = await Promise.all([
       loadRecipes(),
       loadWeek(CURRENT_WEEK_ID),
+      loadSettings(),
     ]);
-    // On part d'une semaine fraîche et on fusionne les jours sauvegardés,
-    // pour rester robuste si la config des jours évolue.
     const week = freshWeek();
     if (savedWeek) {
       for (const key of Object.keys(week.days)) {
-        if (savedWeek.days[key]) week.days[key] = savedWeek.days[key];
+        if (isV2Day(savedWeek.days[key])) week.days[key] = savedWeek.days[key];
       }
     }
-    set({ recipes, week, ready: true });
+    set({ recipes, week, settings, ready: true });
   },
 
-  setSlot(dayKey, slot, recipeId) {
+  setComponent(dayKey, meal, slot, value) {
     set((s) => {
       const day = { ...s.week.days[dayKey] };
-      if (slot === 'dej') day.dejId = recipeId;
-      else day.dinId = recipeId;
+      const m = { ...day[meal] };
+      if (slot === 'acc') m.acc = value as AccRef | null;
+      else if (slot === 'entree') m.entree = value as string | null;
+      else m.plat = value as string | null;
+      day[meal] = m;
       const week = { ...s.week, days: { ...s.week.days, [dayKey]: day } };
       void saveWeek(week);
       return { week };
     });
   },
 
-  addExtra(dayKey, recipeId) {
+  setAccQty(dayKey, meal, deltaG) {
     set((s) => {
       const day = { ...s.week.days[dayKey] };
-      if (day.extras.includes(recipeId)) return s;
-      day.extras = [...day.extras, recipeId];
+      const m = { ...day[meal] };
+      if (!m.acc) return s;
+      m.acc = { ...m.acc, g: Math.max(25, m.acc.g + deltaG) };
+      day[meal] = m;
       const week = { ...s.week, days: { ...s.week.days, [dayKey]: day } };
       void saveWeek(week);
       return { week };
     });
   },
 
-  removeExtra(dayKey, recipeId) {
+  setObjective(n) {
     set((s) => {
-      const day = { ...s.week.days[dayKey] };
-      day.extras = day.extras.filter((id) => id !== recipeId);
-      const week = { ...s.week, days: { ...s.week.days, [dayKey]: day } };
-      void saveWeek(week);
-      return { week };
+      const settings = { ...s.settings, objective: Math.max(1000, Math.min(3500, n)) };
+      void saveSettings(settings);
+      return { settings };
     });
   },
 
-  setExtras(dayKey, recipeIds) {
+  setPersons(n) {
     set((s) => {
-      const day = { ...s.week.days[dayKey], extras: [...recipeIds] };
-      const week = { ...s.week, days: { ...s.week.days, [dayKey]: day } };
-      void saveWeek(week);
-      return { week };
+      const settings = { ...s.settings, persons: Math.max(1, Math.min(12, n)) };
+      void saveSettings(settings);
+      return { settings };
     });
-  },
-
-  setDayType(dayKey, type) {
-    set((s) => {
-      const day = { ...s.week.days[dayKey], type };
-      const week = { ...s.week, days: { ...s.week.days, [dayKey]: day } };
-      void saveWeek(week);
-      return { week };
-    });
-  },
-
-  toggleLock(dayKey, slot) {
-    set((s) => {
-      const day = { ...s.week.days[dayKey] };
-      if (slot === 'dej') day.lockDej = !day.lockDej;
-      else day.lockDin = !day.lockDin;
-      const week = { ...s.week, days: { ...s.week.days, [dayKey]: day } };
-      void saveWeek(week);
-      return { week };
-    });
-  },
-
-  shuffleSlot(dayKey, slot) {
-    const s = get();
-    const day = s.week.days[dayKey];
-    const locked = slot === 'dej' ? day.lockDej : day.lockDin;
-    if (locked) return false;
-    const wantType = slot === 'dej' ? 'Déjeuner' : 'Dîner';
-    const current = slot === 'dej' ? day.dejId : day.dinId;
-    // ⤧ ne pioche que des recettes Validé du bon type, différentes de l'actuelle.
-    const pool = s.recipes.filter(
-      (r) => r.type === wantType && r.statut === 'Validé' && r.id !== current,
-    );
-    if (pool.length === 0) return false;
-    const pick = pool[Math.floor(Math.random() * pool.length)];
-    get().setSlot(dayKey, slot, pick.id);
-    return true;
   },
 
   upsertRecipe(recipe) {
@@ -144,9 +114,7 @@ export const useStore = create<State>((set, get) => ({
       void saveRecipe(recipe);
       const idx = s.recipes.findIndex((r) => r.id === recipe.id);
       const recipes =
-        idx >= 0
-          ? s.recipes.map((r) => (r.id === recipe.id ? recipe : r))
-          : [...s.recipes, recipe];
+        idx >= 0 ? s.recipes.map((r) => (r.id === recipe.id ? recipe : r)) : [...s.recipes, recipe];
       return { recipes };
     });
   },
@@ -161,5 +129,11 @@ export const useStore = create<State>((set, get) => ({
     const recipe = get().recipes.find((r) => r.id === id);
     if (!recipe) return;
     get().upsertRecipe({ ...recipe, statut: 'Validé', macros_estimees: false });
+  },
+
+  toggleFav(id) {
+    const recipe = get().recipes.find((r) => r.id === id);
+    if (!recipe) return;
+    get().upsertRecipe({ ...recipe, fav: !recipe.fav });
   },
 }));

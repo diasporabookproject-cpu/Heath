@@ -1,9 +1,9 @@
 import { getSupabase } from './supabase';
 import { getAccessToken, uploadAudios, uploadWeekAudios } from './publish';
-import { buildSharePayload, type SharedMenu } from './share';
+import { buildEspaceMenu, usedRecipeIds, type SharedMenu } from './share';
 import { loadAudio, loadSecurite } from './db';
 import { translateToDarija } from './ai';
-import type { AppConfig, Destinataire, Recipe, SecuriteType, WeekMenu } from '../types';
+import { DEFAULT_SETTINGS, type AppConfig, type Destinataire, type Recipe, type SecuriteType, type WeekMenu } from '../types';
 
 // Espace permanent par destinataire (keystone F1, cœur).
 // Contenu stocké dans la table Supabase `espaces` (upsert en place, lecture
@@ -27,7 +27,7 @@ export interface Espace {
   langue: 'fr' | 'ar';
   nom: string;
   role: string;
-  /** Nombre de personnes pour la mise à l'échelle des ingrédients (défaut 4). */
+  /** Nombre de personnes pour la mise à l'échelle des ingrédients. */
   persons?: number;
   menu: SharedMenu;
   securite?: SecuritePublic[];
@@ -42,18 +42,6 @@ export function newToken(): string {
 
 export function buildEspaceUrl(token: string): string {
   return window.location.origin + window.location.pathname + ESPACE_PREFIX + token;
-}
-
-function usedRecipeIds(config: AppConfig, week: WeekMenu): string[] {
-  const ids = new Set<string>();
-  for (const j of config.jours) {
-    const d = week.days[j.key];
-    if (!d) continue;
-    if (d.dejId) ids.add(d.dejId);
-    if (d.dinId) ids.add(d.dinId);
-    for (const e of d.extras) ids.add(e);
-  }
-  return [...ids];
 }
 
 /**
@@ -126,6 +114,7 @@ export async function publishEspace(
   config: AppConfig,
   week: WeekMenu,
   byId: Map<string, Recipe>,
+  persons: number = DEFAULT_SETTINGS.persons,
 ): Promise<{ url: string; audioCount: number }> {
   const supa = getSupabase();
   if (!supa) throw new Error('Synchro non configurée.');
@@ -137,7 +126,7 @@ export async function publishEspace(
 
   // Traduction darija figée (best-effort) si le destinataire lit en darija.
   const recipes = dest.langue === 'ar' ? await augmentDarija(config, week, byId) : byId;
-  const menu = buildSharePayload(config, week, recipes, new Set(audioUrls.keys()), audioUrls);
+  const menu = buildEspaceMenu(config, week, recipes, audioUrls);
   const securite = await buildSecurite(dest, prefix, token);
 
   const payload: Espace = {
@@ -145,7 +134,7 @@ export async function publishEspace(
     langue: dest.langue,
     nom: dest.nom,
     role: dest.role,
-    persons: dest.persons ?? 4,
+    persons,
     menu,
     securite,
   };
@@ -164,6 +153,7 @@ export async function previewEspace(
   config: AppConfig,
   week: WeekMenu,
   byId: Map<string, Recipe>,
+  persons: number = DEFAULT_SETTINGS.persons,
 ): Promise<Espace> {
   // audios locaux → object URLs jouables dans l'aperçu
   const audioUrls = new Map<string, string>();
@@ -171,14 +161,14 @@ export async function previewEspace(
     const blob = await loadAudio(id);
     if (blob) audioUrls.set(id, URL.createObjectURL(blob));
   }
-  const menu = buildSharePayload(config, week, byId, new Set(audioUrls.keys()), audioUrls);
+  const menu = buildEspaceMenu(config, week, byId, audioUrls);
   const securite = await buildSecurite(dest, null, null);
   return {
     v: 1,
     langue: dest.langue,
     nom: dest.nom,
     role: dest.role,
-    persons: dest.persons ?? 4,
+    persons,
     menu,
     securite,
   };

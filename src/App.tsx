@@ -2,12 +2,9 @@ import { useEffect, useState } from 'react';
 import { useStore } from './store/useStore';
 import CuisineView from './cuisine/CuisineView';
 import SecuriteView from './views/SecuriteView';
-import SharedMenuView from './views/SharedMenuView';
 import EspaceView from './views/EspaceView';
 import AccountSheet from './components/AccountSheet';
-import { readPublishId, readSharedFromLocation, type SharedMenu } from './lib/share';
 import { readEspaceToken } from './lib/espace';
-import { fetchPublishedMenu } from './lib/publish';
 import { supabaseEnabled } from './lib/supabase';
 import { useSession } from './lib/useSession';
 
@@ -25,18 +22,13 @@ export default function App() {
   const [accountOpen, setAccountOpen] = useState(false);
   const { session } = useSession();
 
-  // Liens lecture seule : menu encodé (#m=), menu publié (#p=), ou espace
-  // permanent d'un destinataire (#e=). Aucun ne nécessite les données locales.
-  const shared = readSharedFromLocation();
-  const publishId = readPublishId();
+  // Espace permanent d'un destinataire (#e=) : lecture seule, sans données locales.
   const espaceToken = readEspaceToken();
 
   useEffect(() => {
-    if (!shared && !publishId && !espaceToken) void init();
-  }, [init, shared, publishId, espaceToken]);
+    if (!espaceToken) void init();
+  }, [init, espaceToken]);
 
-  if (shared) return <SharedMenuView menu={shared} />;
-  if (publishId) return <PublishedMenu id={publishId} />;
   if (espaceToken) return <EspaceView token={espaceToken} />;
 
   const current = TABS.find((t) => t.id === tab)!;
@@ -44,7 +36,6 @@ export default function App() {
   return (
     <div className="app">
       {tab === 'cuisine' ? (
-        // Module Cuisine : plein écran, en-tête propre (marque + segmented).
         !ready ? (
           <div className="spinner">Chargement…</div>
         ) : (
@@ -90,38 +81,4 @@ export default function App() {
       {accountOpen && <AccountSheet session={session} onClose={() => setAccountOpen(false)} />}
     </div>
   );
-}
-
-/** Page cuisinière d'un menu publié (lien #p=), chargé depuis Supabase. */
-function PublishedMenu({ id }: { id: string }) {
-  const [menu, setMenu] = useState<SharedMenu | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchPublishedMenu(id)
-      .then(setMenu)
-      .catch((e) => setError(e.message));
-  }, [id]);
-
-  if (error) {
-    return (
-      <div className="app">
-        <header className="topbar">Menu de la semaine</header>
-        <main className="app__main">
-          <p className="empty-note">{error}</p>
-        </main>
-      </div>
-    );
-  }
-  if (!menu) {
-    return (
-      <div className="app">
-        <header className="topbar">Menu de la semaine</header>
-        <main className="app__main">
-          <div className="spinner">Chargement…</div>
-        </main>
-      </div>
-    );
-  }
-  return <SharedMenuView menu={menu} />;
 }

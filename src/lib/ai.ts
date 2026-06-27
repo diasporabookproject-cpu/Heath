@@ -6,6 +6,7 @@ import { estimateMacrosLocal, calciumFlag, type MacroEstimate } from './macros';
 
 export interface RecipeDraft {
   nom?: string;
+  role?: string;
   type?: string;
   jour?: string;
   kcal?: number;

@@ -123,6 +123,17 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### Session 6 — 2026-06-27 (Cuisine v2)
+- **Brief v2 reçu** (FC11–FC19) : refonte du modèle Cuisine. Read-back + chiffrage + risques validés ; décisions : (1) garder 3 segments Semaine/Recettes/Courses ; (2) supprimer Coupe-faim (ex-CF → rôle **Entrée**) ; (3) **un seul nombre de personnes global** (réglages Objectif).
+- **Lot 1 livré — FC11 + FC12 + FC13** (réécriture du cœur) :
+  - **Modèle** : `Recipe.type`→**`role`** (petit-déj/entrée/plat/accompagnement) + `fav` ; `DayMenu` = **3 repas** (`petitdej/dej/diner`), chacun conteneur **{plat, entrée, acc{id,g}}** ; **suppression socle + type de jour**. Migration DB (`SEED_VERSION=4`) : backfill role, ajout petit-déj/accompagnements au seed, **reset des semaines** (modèle incompatible). Réglages persistés (`meta.settings` : objectif + personnes).
+  - **FC11/FC12** vue Semaine v2 : 3 repas par jour, **composeur** (plat + entrée + accompagnement avec quantité g, macros = somme), sélecteur filtré par rôle + **favoris** en tête.
+  - **FC13** objectif individuel (plafond) + personnes : pastille d'en-tête + sheet ; jauges/statuts « sous / dans / léger dépassement / dépassé » ; moyenne hebდo sur jours complets.
+  - **Nettoyage v2** : retrait des liens legacy `#m=`/`#p=` (déjà non générables) → `SharedMenuView`, `GenerateWeekSheet` supprimés ; `share.ts` refondu en **payload espace v2** (3 repas + composants) ; `espace.ts`/`publish.ts`/`shopping.ts`/`EspaceCuisine`/`PartageSheet`/`CoursesCuisine` adaptés au nouveau modèle (FC19 partiel, finition au lot 5). Favoris (FC15) déjà câblés au passage.
+  - **Provisoire (lots suivants)** : « Générer la semaine » → toast (FC16, lot 3) ; navigation/copie de semaine → toast (FC14, lot 4) ; import **texte** IA (FC17, lot 2) — l'ajout actuel reste Saisir/IA/Import JSON.
+  - Qualité : typecheck + **37 tests** + build + **smoke v2 réécrit & exécuté (vert)**.
+
+
 ### Session 5 — 2026-06-26
 - **Brief refonte Cuisine reçu** (`BRIEF_CUISINE_CLAUDE_CODE.md` + `maquette-cuisine.html` + `maquette-partage.html`) : fiches FC1–FC10 (UX complète Cuisine + partage dual). Read-back + chiffrage (2🟢 / 5🟡 / 2🔴) + risques produits et validés (« go »).
 - **Lot 1 livré — FC1 + FC2 + FC3** :

@@ -1,17 +1,27 @@
-// Modèle métier — voir BRIEF_PRODUIT.md §4
+// Modèle métier — Cuisine v2 (brief FC11-FC19).
 
-export type RecipeType = 'Déjeuner' | 'Dîner' | 'Coupe-faim';
+/** Rôle d'une recette : sert au filtrage et à la composition des repas. */
+export type RecipeRole = 'petitdej' | 'entree' | 'plat' | 'acc';
 export type RecipeStatus = 'Validé' | 'Écarté' | 'Test';
 export type CalciumFlag = 'Champion' | 'Moyen' | 'Faible';
-export type DayType = 'Repos' | 'Cardio' | 'Muscu';
+
+export const ROLE_LABEL: Record<RecipeRole, string> = {
+  petitdej: 'Petit-déj',
+  entree: 'Entrée',
+  plat: 'Plat',
+  acc: 'Accompagnement',
+};
 
 export interface Recipe {
   id: string;
   nom: string;
-  type: RecipeType;
+  /** Rôle (petit-déj / entrée / plat / accompagnement). */
+  role: RecipeRole;
   statut: RecipeStatus;
-  /** Jour adapté indicatif : 'Tous' | 'Repos' | 'Sport' */
-  jour: string;
+  /**
+   * Macros : PAR PORTION (1 portion = 1 personne) pour petitdej/entree/plat ;
+   * PAR 100 g pour les accompagnements (role === 'acc').
+   */
   kcal: number;
   prot: number;
   gluc: number;
@@ -19,27 +29,40 @@ export interface Recipe {
   calcium: number;
   flag_calcium: CalciumFlag;
   ingredients: string;
-  /** Étapes de préparation (une par ligne). Optionnel (recettes v1 sans étapes). */
+  /** Étapes de préparation (une par ligne). */
   etapes?: string;
   notes?: string;
-  /** Macros estimées automatiquement et non encore vérifiées (auto-macros 2.3). */
+  /** Macros estimées automatiquement et non encore vérifiées (auto-macros). */
   macros_estimees?: boolean;
-  /** Nom en darija marocaine (lettres arabes), pour la vue Cuisinière. */
+  /** Favori (étoile). */
+  fav?: boolean;
+  /** Darija marocaine (lettres arabes), pour l'espace cuisinière. */
   nom_ar?: string;
-  /** Ingrédients en darija marocaine (lettres arabes). */
   ingredients_ar?: string;
-  /** Étapes en darija marocaine (lettres arabes). */
   etapes_ar?: string;
 }
 
+/** Jour de la semaine (clé + libellé). Plus de type de jour ni de cible (v2). */
 export interface DayConfig {
   key: string;
   nom: string;
-  type: DayType;
-  cible_kcal: number;
 }
 
-/** Macros d'un élément (élément fixe, ou total agrégé). */
+export interface AppConfig {
+  jours: DayConfig[];
+}
+
+/** Réglages Cuisine : objectif calorique individuel + nombre de personnes au foyer. */
+export interface CuisineSettings {
+  /** Objectif calorique PAR PERSONNE / jour (plafond). */
+  objective: number;
+  /** Nombre de personnes au foyer (mise à l'échelle des quantités). */
+  persons: number;
+}
+
+export const DEFAULT_SETTINGS: CuisineSettings = { objective: 1800, persons: 4 };
+
+/** Macros agrégées. */
 export interface Macros {
   kcal: number;
   prot: number;
@@ -48,42 +71,35 @@ export interface Macros {
   calcium: number;
 }
 
-export interface FixedElements {
-  collation: Macros;
-  kefir_coucher: Macros;
-}
-
-export interface Cibles {
-  kcal_par_type: Record<DayType, number>;
-  kcal_seuils_pct: { vert: number; orange: number };
-  proteines: { vert: number; orange: number };
-  calcium: { vert: number; orange: number };
-}
-
-export interface AppConfig {
-  jours: DayConfig[];
-  elements_fixes: FixedElements;
-  cibles: Cibles;
-  repas_verrouilles_suggeres?: Record<string, string>;
-}
-
-/** Composition d'une journée : un déjeuner, un dîner, et des extras optionnels (ex. Creami). */
-export interface DayMenu {
-  dejId: string | null;
-  dinId: string | null;
-  /** ids de recettes Coupe-faim ajoutées en extra (comptées dans les totaux). */
-  extras: string[];
-  /** Type du jour ajusté par l'utilisateur (⚙ jour). Sinon = type de la config. */
-  type?: DayType;
-  /** Créneaux verrouillés : ignorés par le générateur et le remplacement (⤧). */
-  lockDej?: boolean;
-  lockDin?: boolean;
-}
-
-/** Une semaine = 7 jours composés, repérés par la clé du jour (lun, mar, …). */
-export interface WeekMenu {
+/** Référence à un accompagnement avec sa quantité (en grammes). */
+export interface AccRef {
   id: string;
-  /** clé jour -> composition */
+  g: number;
+}
+
+export type MealKey = 'petitdej' | 'dej' | 'diner';
+
+/**
+ * Un repas = conteneur de composants. `plat` = composant principal.
+ * `entree` / `acc` optionnels (déjeuner & dîner seulement ; le petit-déjeuner
+ * n'a que `plat`).
+ */
+export interface MealSlot {
+  plat: string | null;
+  entree?: string | null;
+  acc?: AccRef | null;
+}
+
+export interface DayMenu {
+  petitdej: MealSlot;
+  dej: MealSlot;
+  diner: MealSlot;
+}
+
+/** Une semaine = 7 jours, repérés par la clé du jour (lun, mar, …). */
+export interface WeekMenu {
+  /** Identifiant de semaine = date du lundi (YYYY-MM-DD) ; 'current' en v1. */
+  id: string;
   days: Record<string, DayMenu>;
 }
 
@@ -95,15 +111,12 @@ export interface Destinataire {
   nom: string;
   /** Rôle indicatif : Cuisinière / Femme de ménage / Nounou / Autre. */
   role: string;
-  /** Langue de lecture préférée. */
   langue: 'fr' | 'ar';
   /** Jeton d'accès (capability) pour le lien permanent de son espace. */
   token: string;
   /** Téléphone (format international, ex. 2126…) pour le rappel WhatsApp. */
   tel?: string;
-  /** Nombre de personnes pour la mise à l'échelle des ingrédients (défaut 4). */
-  persons?: number;
-  /** Ids des fiches Sécurité assignées à cette personne (« qui reçoit quoi »). */
+  /** Ids des fiches Sécurité assignées à cette personne. */
   securiteIds?: string[];
   revoked?: boolean;
   createdAt: number;
@@ -112,11 +125,8 @@ export interface Destinataire {
 export type SecuriteType = 'numeros' | 'procedure' | 'gestes';
 
 /**
- * Fiche du référentiel Sécurité (consignes du foyer). Contenu = lignes
- * (une par item), darija en parallèle. AUCUNE génération IA (D7).
- * - numeros   : « Label : numéro » par ligne
- * - procedure : une étape par ligne (ordre = ordre des lignes)
- * - gestes    : un geste par ligne ; préfixe « - » = interdit, sinon permis
+ * Fiche du référentiel Sécurité (consignes du foyer). Contenu = lignes,
+ * darija en parallèle. AUCUNE génération IA.
  */
 export interface SecuriteFiche {
   id: string;
@@ -125,6 +135,6 @@ export interface SecuriteFiche {
   titre_ar?: string;
   contenu: string;
   contenu_ar?: string;
-  statut: RecipeStatus; // Validé / Test / Écarté(=archivé)
+  statut: RecipeStatus;
   createdAt: number;
 }

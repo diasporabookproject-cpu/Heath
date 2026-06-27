@@ -1,39 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Recipe, RecipeType } from '../types';
-import { IconSearch, IconMic } from './icons';
+import { useStore } from '../store/useStore';
+import { ROLE_LABEL, type Recipe, type RecipeRole } from '../types';
+import { IconSearch, IconMic, IconFav } from './icons';
 
 interface Props {
-  title: string;
+  role: RecipeRole;
   sub: string;
-  type: RecipeType;
-  recipes: Recipe[];
   voiceIds: Set<string>;
   onPick: (id: string) => void;
   onClose: () => void;
 }
 
-const flagClass = (f: Recipe['flag_calcium']) =>
-  f === 'Champion' ? 'champion' : f === 'Moyen' ? 'moyen' : 'faible';
-
-/**
- * FC3 — Sélecteur de recette (bottom-sheet).
- * Seules les recettes « Validé » du type du créneau apparaissent ; recherche ;
- * filtre « Calcium champion » ; le calcium EST montré ici (aide au choix).
- */
-export default function RecipePickerSheet({
-  title,
-  sub,
-  type,
-  recipes,
-  voiceIds,
-  onPick,
-  onClose,
-}: Props) {
+/** FC12/FC15 — Sélecteur d'un composant : recettes Validé du rôle, favoris en tête. */
+export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onClose }: Props) {
+  const recipes = useStore((s) => s.recipes);
+  const toggleFav = useStore((s) => s.toggleFav);
   const [q, setQ] = useState('');
-  const [champOnly, setChampOnly] = useState(false);
   const [shown, setShown] = useState(false);
 
-  // Animation d'entrée (translateY) au montage.
   useEffect(() => {
     const t = requestAnimationFrame(() => setShown(true));
     return () => cancelAnimationFrame(t);
@@ -42,11 +26,21 @@ export default function RecipePickerSheet({
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return recipes
-      .filter((r) => r.type === type && r.statut === 'Validé')
+      .filter((r) => r.role === role && r.statut === 'Validé')
       .filter((r) => (needle ? r.nom.toLowerCase().includes(needle) : true))
-      .filter((r) => (champOnly ? r.flag_calcium === 'Champion' : true))
-      .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
-  }, [recipes, type, q, champOnly]);
+      .sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || a.nom.localeCompare(b.nom, 'fr'));
+  }, [recipes, role, q]);
+
+  const macroText = (r: Recipe) =>
+    r.role === 'acc' ? (
+      <>
+        <b>{r.kcal}</b> kcal/100g · <b>{r.prot}</b>g P
+      </>
+    ) : (
+      <>
+        <b>{r.kcal}</b> kcal · <b>{r.prot}</b>g P
+      </>
+    );
 
   return (
     <>
@@ -55,7 +49,7 @@ export default function RecipePickerSheet({
         <div className="cz-handle" />
         <div className="cz-sheethead">
           <div className="ttl">
-            {title}
+            Choisir : {ROLE_LABEL[role]}
             <small>{sub}</small>
           </div>
           <button className="cz-x" onClick={onClose} aria-label="Fermer">
@@ -65,48 +59,44 @@ export default function RecipePickerSheet({
         <div className="cz-sheetbody">
           <div className="cz-search">
             <IconSearch size={18} />
-            <input
-              placeholder="Rechercher une recette…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              autoFocus
-            />
+            <input placeholder="Rechercher…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
           </div>
-          <div className="cz-chips">
-            <button
-              className="cz-chip ca"
-              aria-pressed={champOnly}
-              onClick={() => setChampOnly((v) => !v)}
-            >
-              ◆ Calcium champion
-            </button>
-          </div>
-
           {list.length === 0 ? (
-            <p className="cz-emptynote">Aucune recette validée ne correspond.</p>
+            <p className="cz-emptynote">Aucune recette validée pour ce rôle.</p>
           ) : (
-            list.map((r) => (
-              <button key={r.id} className="cz-pick" onClick={() => onPick(r.id)}>
-                <div className="cz-libtop">
-                  <span className="nm">{r.nom}</span>
-                  <span className={'cz-caflag ' + flagClass(r.flag_calcium)}>◆ {r.calcium} mg</span>
-                </div>
-                <div className="cz-macros">
-                  <span>
-                    <b>{r.kcal}</b> kcal
-                  </span>
-                  <span>
-                    <b>{r.prot}</b>g P
-                  </span>
-                  {voiceIds.has(r.id) && (
-                    <span className="cz-vchip">
-                      <IconMic size={11} />
-                      vocal
+            <div style={{ paddingTop: 10 }}>
+              {list.map((r) => (
+                <button key={r.id} className="cz-pick" onClick={() => onPick(r.id)}>
+                  <div className="cz-libtop">
+                    <span
+                      className={'cz-starbtn' + (r.fav ? ' on' : '')}
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Favori"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFav(r.id);
+                      }}
+                    >
+                      <IconFav size={16} filled={r.fav} />
                     </span>
-                  )}
-                </div>
-              </button>
-            ))
+                    <span className="nm" style={{ flex: 1, fontWeight: 600 }}>
+                      {r.nom}
+                    </span>
+                    <span className="cz-tag role">{ROLE_LABEL[r.role]}</span>
+                  </div>
+                  <div className="cz-macros">
+                    <span>{macroText(r)}</span>
+                    {voiceIds.has(r.id) && (
+                      <span className="cz-vchip">
+                        <IconMic size={11} />
+                        vocal
+                      </span>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
           )}
         </div>
       </div>

@@ -205,7 +205,8 @@ export interface RayonGroup {
 }
 
 /**
- * Construit la liste de courses agrégée à partir de la semaine.
+ * Construit la liste de courses agrégée à partir de la semaine (modèle v2).
+ * Agrège plats + entrées (×personnes) et accompagnements (quantité g ×personnes).
  * `persons` met à l'échelle les quantités (recettes = 1 portion) ; défaut 1.
  */
 export function buildShoppingList(
@@ -218,32 +219,49 @@ export function buildShoppingList(
   // Map rayonId -> Map aggKey -> AggLine
   const groups = new Map<string, { label: string; lines: Map<string, AggLine> }>();
 
-  const addRecipe = (id: string | null) => {
+  const push = (name: string, key: string, qty: number | null, unit: string | null) => {
+    const rayon = rayonFor(key);
+    if (!groups.has(rayon.id)) groups.set(rayon.id, { label: rayon.label, lines: new Map() });
+    const lines = groups.get(rayon.id)!.lines;
+    const aggKey = key + '|' + (unit ?? '');
+    const existing = lines.get(aggKey);
+    if (existing) {
+      existing.count += 1;
+      if (qty != null) existing.qty = (existing.qty ?? 0) + qty;
+    } else {
+      lines.set(aggKey, { name, qty, unit, count: 1 });
+    }
+  };
+
+  // Plat / entrée : ingrédients par portion → ×personnes.
+  const addRecipe = (id: string | null | undefined) => {
     if (!id) return;
     const recipe = recipesById.get(id);
     if (!recipe) return;
     for (const item of parseIngredients(recipe.ingredients)) {
-      const rayon = rayonFor(item.key);
-      if (!groups.has(rayon.id)) groups.set(rayon.id, { label: rayon.label, lines: new Map() });
-      const lines = groups.get(rayon.id)!.lines;
-      const aggKey = item.key + '|' + (item.unit ?? '');
-      const scaledQty = item.qty != null ? item.qty * factor : null;
-      const existing = lines.get(aggKey);
-      if (existing) {
-        existing.count += 1;
-        if (scaledQty != null) existing.qty = (existing.qty ?? 0) + scaledQty;
-      } else {
-        lines.set(aggKey, { name: item.name, qty: scaledQty, unit: item.unit, count: 1 });
-      }
+      push(item.name, item.key, item.qty != null ? item.qty * factor : null, item.unit);
     }
+  };
+  // Accompagnement : la recette EST l'ingrédient, quantité = g (par personne) ×personnes.
+  const addAcc = (ref: { id: string; g: number } | null | undefined) => {
+    if (!ref) return;
+    const recipe = recipesById.get(ref.id);
+    if (!recipe) return;
+    const p = parseItem(recipe.nom);
+    push(p?.name ?? recipe.nom, p?.key ?? recipe.nom.toLowerCase(), ref.g * factor, 'g');
   };
 
   for (const j of config.jours) {
     const day = week.days[j.key];
     if (!day) continue;
-    addRecipe(day.dejId);
-    addRecipe(day.dinId);
-    for (const ex of day.extras) addRecipe(ex);
+    for (const key of ['petitdej', 'dej', 'diner'] as const) {
+      const m = day[key];
+      addRecipe(m.plat);
+      if (key !== 'petitdej') {
+        addRecipe(m.entree);
+        addAcc(m.acc);
+      }
+    }
   }
 
   // Respecte l'ordre des rayons défini ci-dessus, puis "Autres".

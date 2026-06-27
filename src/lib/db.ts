@@ -1,5 +1,13 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Destinataire, Recipe, SecuriteFiche, WeekMenu } from '../types';
+import {
+  DEFAULT_SETTINGS,
+  type CuisineSettings,
+  type Destinataire,
+  type Recipe,
+  type RecipeRole,
+  type SecuriteFiche,
+  type WeekMenu,
+} from '../types';
 import { SEED_RECIPES } from '../data';
 
 // IndexedDB = source de vérité locale (offline-first). La synchro Supabase
@@ -59,51 +67,77 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
 
 const SEEDED_KEY = 'seeded';
 const SEED_VERSION_KEY = 'seedVersion';
-// 1 = jeu initial · 2 = traductions darija · 3 = +2 recettes (DEJ-09, DIN-10)
-const SEED_VERSION = 3;
+const SETTINGS_KEY = 'settings';
+// 1 = jeu initial · 2 = darija · 3 = +2 recettes · 4 = modèle v2 (rôles + petitdej/acc)
+const SEED_VERSION = 4;
 
 /**
  * Au premier lancement : importe le jeu de données de départ.
- * Aux lancements suivants : applique les migrations (ex. backfill darija)
- * sans écraser les recettes ajoutées/modifiées par l'utilisateur.
+ * Aux lancements suivants : applique les migrations sans écraser les recettes
+ * ajoutées/modifiées par l'utilisateur. v4 : migration vers le modèle v2
+ * (Recipe.type → Recipe.role ; ajout petit-déj/accompagnements ; reset semaines).
  */
 export async function ensureSeeded(): Promise<void> {
   const db = await getDB();
 
   let version = (await db.get('meta', SEED_VERSION_KEY)) as number | undefined;
   if (version === undefined) {
-    // Compat : les anciennes installations n'avaient que le flag booléen.
     version = (await db.get('meta', SEEDED_KEY)) ? 1 : 0;
   }
 
   if (version === 0) {
-    // Installation neuve : on importe tout.
     const tx = db.transaction('recipes', 'readwrite');
     for (const r of SEED_RECIPES) await tx.store.put(r);
     await tx.done;
   } else if (version < SEED_VERSION) {
-    // Migration v1 -> v2 : on complète les champs darija manquants,
-    // sans toucher au statut ni aux champs déjà personnalisés.
-    const tx = db.transaction('recipes', 'readwrite');
+    // a) Migrer les recettes existantes (type → role) si besoin.
+    if (version < 4) {
+      const tx = db.transaction('recipes', 'readwrite');
+      let cursor = await tx.store.openCursor();
+      while (cursor) {
+        const r = cursor.value as Recipe & { role?: RecipeRole; type?: string; jour?: string };
+        if (!r.role) {
+          r.role = r.type === 'Coupe-faim' ? 'entree' : 'plat';
+          if (r.fav === undefined) r.fav = false;
+          delete r.type;
+          delete r.jour;
+          await cursor.update(r);
+        }
+        cursor = await cursor.continue();
+      }
+      await tx.done;
+      // Le modèle de semaine change (3 repas + composants) → repartir propre.
+      await db.clear('weeks');
+    }
+    // b) Ajouter les recettes du seed absentes + compléter la darija manquante.
+    const tx2 = db.transaction('recipes', 'readwrite');
     for (const seed of SEED_RECIPES) {
-      const existing = await tx.store.get(seed.id);
+      const existing = await tx2.store.get(seed.id);
       if (!existing) {
-        await tx.store.put(seed); // recette du seed absente : on l'ajoute
+        await tx2.store.put(seed);
       } else if (!existing.nom_ar && (seed.nom_ar || seed.ingredients_ar)) {
-        await tx.store.put({
-          ...existing,
-          nom_ar: seed.nom_ar,
-          ingredients_ar: seed.ingredients_ar,
-        });
+        await tx2.store.put({ ...existing, nom_ar: seed.nom_ar, ingredients_ar: seed.ingredients_ar });
       }
     }
-    await tx.done;
+    await tx2.done;
   }
 
   if (version < SEED_VERSION) {
     await db.put('meta', true, SEEDED_KEY);
     await db.put('meta', SEED_VERSION, SEED_VERSION_KEY);
   }
+}
+
+/** Réglages Cuisine (objectif individuel + nombre de personnes). */
+export async function loadSettings(): Promise<CuisineSettings> {
+  const db = await getDB();
+  const s = (await db.get('meta', SETTINGS_KEY)) as Partial<CuisineSettings> | undefined;
+  return { ...DEFAULT_SETTINGS, ...(s ?? {}) };
+}
+
+export async function saveSettings(s: CuisineSettings): Promise<void> {
+  const db = await getDB();
+  await db.put('meta', s, SETTINGS_KEY);
 }
 
 export async function loadRecipes(): Promise<Recipe[]> {

@@ -3,11 +3,19 @@ import { useStore } from '../store/useStore';
 import { estimateMacros, generateRecipeDraft, aiAvailable } from '../lib/ai';
 import { parseRecipesJson } from '../lib/importRecipes';
 import { nextRecipeId } from '../lib/recipeId';
-import type { CalciumFlag, Recipe, RecipeType } from '../types';
+import { ROLE_LABEL, type CalciumFlag, type Recipe, type RecipeRole } from '../types';
 import { IconClock, IconStar, IconLoader, IconCheck, IconShareUp } from './icons';
 
-const TYPES: RecipeType[] = ['Déjeuner', 'Dîner', 'Coupe-faim'];
+const ROLES: RecipeRole[] = ['petitdej', 'entree', 'plat', 'acc'];
 const DIETS = ['Sans gluten', 'Végétarien', 'Végan', 'Sans lactose', 'Riche en protéines', 'Halal'];
+
+function roleFromDraft(v: unknown): RecipeRole {
+  const s = String(v ?? '').trim().toLowerCase();
+  if (s.startsWith('petit')) return 'petitdej';
+  if (s.startsWith('entr') || s.startsWith('coupe')) return 'entree';
+  if (s.startsWith('acc') || s.startsWith('garniture')) return 'acc';
+  return 'plat';
+}
 
 interface Props {
   onClose: () => void;
@@ -116,7 +124,7 @@ function ManualForm({ onCreated, toast }: { onCreated: (id: string) => void; toa
   const recipes = useStore((s) => s.recipes);
   const upsertRecipe = useStore((s) => s.upsertRecipe);
   const [nom, setNom] = useState('');
-  const [type, setType] = useState<RecipeType>('Déjeuner');
+  const [role, setRole] = useState<RecipeRole>('plat');
   const [ingredients, setIngredients] = useState('');
   const [etapes, setEtapes] = useState('');
   const [macros, setMacros] = useState<{ kcal: number; prot: number; gluc: number; lip: number; calcium: number; flag_calcium: CalciumFlag } | null>(null);
@@ -128,7 +136,7 @@ function ManualForm({ onCreated, toast }: { onCreated: (id: string) => void; toa
       return;
     }
     setCalc(true);
-    const m = await estimateMacros(ingredients, type);
+    const m = await estimateMacros(ingredients, ROLE_LABEL[role]);
     setMacros(m);
     setCalc(false);
     toast(m.source === 'ia' ? 'Macros estimées par l’IA' : 'Macros estimées (base locale)');
@@ -139,16 +147,15 @@ function ManualForm({ onCreated, toast }: { onCreated: (id: string) => void; toa
     let m = macros;
     if (!m) {
       setCalc(true);
-      m = await estimateMacros(ingredients, type);
+      m = await estimateMacros(ingredients, ROLE_LABEL[role]);
       setCalc(false);
     }
-    const id = nextRecipeId(recipes, type);
+    const id = nextRecipeId(recipes, role);
     const recipe: Recipe = {
       id,
       nom: nom.trim(),
-      type,
+      role,
       statut: 'Test', // à valider : macros estimées, validation explicite requise
-      jour: 'Tous',
       kcal: m.kcal,
       prot: m.prot,
       gluc: m.gluc,
@@ -170,17 +177,17 @@ function ManualForm({ onCreated, toast }: { onCreated: (id: string) => void; toa
         <input className="cz-inp" value={nom} onChange={(e) => setNom(e.target.value)} autoFocus />
       </div>
       <div className="cz-block">
-        <div className="cz-blab">Type</div>
-        <div className="cz-dietchips">
-          {TYPES.map((t) => (
-            <button key={t} className="cz-dchip" aria-pressed={type === t} onClick={() => setType(t)}>
-              {t}
+        <div className="cz-blab">Rôle</div>
+        <div className="cz-rolepick">
+          {ROLES.map((r) => (
+            <button key={r} className="cz-rchip" aria-pressed={role === r} onClick={() => setRole(r)}>
+              {ROLE_LABEL[r]}
             </button>
           ))}
         </div>
       </div>
       <div className="cz-block">
-        <div className="cz-blab">Ingrédients pesés (1 portion)</div>
+        <div className="cz-blab">Ingrédients ({role === 'acc' ? '100 g de référence' : '1 portion'})</div>
         <textarea
           className="cz-ta"
           rows={5}
@@ -225,8 +232,7 @@ function AiForm({ onCreated, toast }: { onCreated: (id: string) => void; toast: 
   const recipes = useStore((s) => s.recipes);
   const upsertRecipe = useStore((s) => s.upsertRecipe);
   const [intention, setIntention] = useState('');
-  const [type, setType] = useState<RecipeType>('Dîner');
-  const [persons, setPersons] = useState(4);
+  const [role, setRole] = useState<RecipeRole>('plat');
   const [diets, setDiets] = useState<Set<string>>(new Set(['Sans gluten']));
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [draft, setDraft] = useState<Awaited<ReturnType<typeof generateRecipeDraft>> | null>(null);
@@ -244,9 +250,9 @@ function AiForm({ onCreated, toast }: { onCreated: (id: string) => void; toast: 
     setStatus('loading');
     setErr('');
     const parts = [
-      intention.trim() || `${type.toLowerCase()} équilibré`,
-      `type ${type}`,
-      `${persons} personne${persons > 1 ? 's' : ''}`,
+      intention.trim() || `${ROLE_LABEL[role].toLowerCase()} équilibré`,
+      `rôle ${ROLE_LABEL[role]}`,
+      'pour 1 portion',
       `critères : ${[...diets].join(', ') || 'sans gluten'}`,
     ];
     try {
@@ -261,14 +267,13 @@ function AiForm({ onCreated, toast }: { onCreated: (id: string) => void; toast: 
 
   const add = () => {
     if (!draft) return;
-    const t = (TYPES.includes(draft.type as RecipeType) ? (draft.type as RecipeType) : type);
-    const id = nextRecipeId(recipes, t);
+    const rr = roleFromDraft(draft.role ?? role);
+    const id = nextRecipeId(recipes, rr);
     const recipe: Recipe = {
       id,
       nom: draft.nom?.trim() || 'Recette générée',
-      type: t,
+      role: rr,
       statut: 'Test',
-      jour: draft.jour || 'Tous',
       kcal: Math.round(Number(draft.kcal) || 0),
       prot: Math.round(Number(draft.prot) || 0),
       gluc: Math.round(Number(draft.gluc) || 0),
@@ -301,21 +306,13 @@ function AiForm({ onCreated, toast }: { onCreated: (id: string) => void; toast: 
         />
       </div>
       <div className="cz-block">
-        <div className="cz-blab">Type</div>
-        <div className="cz-dietchips">
-          {TYPES.map((t) => (
-            <button key={t} className="cz-dchip" aria-pressed={type === t} onClick={() => setType(t)}>
-              {t}
+        <div className="cz-blab">Rôle</div>
+        <div className="cz-rolepick">
+          {ROLES.map((r) => (
+            <button key={r} className="cz-rchip" aria-pressed={role === r} onClick={() => setRole(r)}>
+              {ROLE_LABEL[r]}
             </button>
           ))}
-        </div>
-      </div>
-      <div className="cz-block">
-        <div className="cz-blab">Personnes</div>
-        <div className="cz-stepper">
-          <button onClick={() => setPersons((p) => Math.max(1, p - 1))}>−</button>
-          <div className="sv">{persons}</div>
-          <button onClick={() => setPersons((p) => p + 1)}>+</button>
         </div>
       </div>
       <div className="cz-block">

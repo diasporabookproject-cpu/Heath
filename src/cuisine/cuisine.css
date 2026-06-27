@@ -569,4 +569,67 @@
 .cz-persons { display: flex; align-items: center; gap: 10px; padding: 4px 16px 0; }
 .cz-persons .pl { font-size: 12.5px; color: var(--muted); font-weight: 600; }
 
+/* ===== Cuisine v2 ===== */
+.cz-tag.role { background: var(--petrol-tint); color: var(--petrol-ink); }
+.cz-pill { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); padding: 6px 10px; border-radius: 20px; cursor: pointer; font-family: var(--font-body); }
+.cz-starbtn { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; cursor: pointer; flex: none; color: #d8cfbe; }
+.cz-starbtn.on { color: var(--saffron); }
+.cz-starbtn:hover { background: var(--surface-2); }
+.cz-subgen { margin: 9px 16px 0; width: calc(100% - 32px); border: none; cursor: pointer; background: transparent; color: var(--muted); font-family: var(--font-body); font-weight: 600; font-size: 14px; border-radius: 11px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.cz-subgen:hover { color: var(--petrol); }
+.cz-wk small { display: block; font-family: var(--font-body); font-size: 11.5px; color: var(--muted); font-weight: 500; text-align: center; margin-top: 1px; }
+.cz-sempty { position: relative; z-index: 1; font-size: 13px; color: rgba(244, 241, 233, 0.7); margin-top: 6px; }
+
+/* meal rows (daycard) */
+.cz-mrow { display: flex; align-items: center; gap: 11px; padding: 10px 2px; border-radius: 10px; cursor: pointer; width: 100%; background: none; border: none; text-align: left; font-family: var(--font-body); color: var(--ink); }
+.cz-mrow + .cz-mrow { border-top: 1px solid var(--line); }
+.cz-mrow:hover { background: var(--surface-2); }
+.cz-mrow .ml { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); width: 64px; flex: none; }
+.cz-mrow .mid { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cz-mrow .mn { font-size: 15px; font-weight: 500; line-height: 1.25; display: flex; align-items: center; gap: 6px; }
+.cz-mrow .mn .vio { color: var(--draft); display: inline-flex; }
+.cz-mrow .sub { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+.cz-mrow.empty .mn { color: var(--muted); }
+.cz-mrow.empty .mn svg { color: var(--petrol); }
+.cz-mrow .mk2 { font-family: var(--font-mono); font-size: 12px; color: var(--muted); flex: none; }
+.cz-mrow .chev { flex: none; color: #c7bdad; display: grid; place-items: center; }
+
+/* meal composer */
+.cz-mealmac { display: flex; align-items: center; justify-content: space-between; background: var(--petrol-tint); border-radius: 12px; padding: 13px 15px; margin: 8px 0 6px; }
+.cz-mealmac .l { font-size: 12px; font-weight: 600; color: var(--petrol-ink); }
+.cz-mealmac .v { font-family: var(--font-mono); font-size: 18px; font-weight: 500; color: var(--petrol-ink); }
+.cz-mealmac .v small { font-family: var(--font-body); font-size: 11px; color: var(--petrol); margin-left: 3px; }
+.cz-complist { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 4px 14px; box-shadow: var(--shadow); }
+.cz-comp { display: flex; align-items: center; gap: 12px; padding: 14px 2px; }
+.cz-comp + .cz-comp { border-top: 1px solid var(--line); }
+.cz-comp .crole { width: 92px; flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.cz-comp .cmid { flex: 1; min-width: 0; cursor: pointer; }
+.cz-comp .cn { font-size: 15px; font-weight: 500; }
+.cz-comp .cn.empty { color: var(--petrol); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.cz-comp .ck { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 2px; }
+.cz-comp .rm { width: 28px; height: 28px; border-radius: 8px; border: none; background: transparent; color: #c2b8a8; display: grid; place-items: center; cursor: pointer; flex: none; }
+.cz-comp .rm:hover { background: var(--surface-2); color: var(--bad); }
+.cz-qty { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; flex: none; }
+.cz-qty button { width: 34px; height: 34px; border: none; background: var(--surface); font-size: 17px; color: var(--petrol); cursor: pointer; }
+.cz-qty .qv { min-width: 54px; text-align: center; font-family: var(--font-mono); font-size: 13.5px; border-left: 1px solid var(--line); border-right: 1px solid var(--line); height: 34px; display: grid; place-items: center; }
+.cz-addcomp { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 10px; padding: 12px; border: 1px dashed var(--line); border-radius: 11px; background: var(--surface); color: var(--petrol); font-family: var(--font-body); font-weight: 600; font-size: 14px; cursor: pointer; }
+.cz-addcomp svg { color: var(--saffron); }
+.cz-composernote { font-size: 12px; color: var(--muted); margin-top: 14px; display: flex; gap: 7px; align-items: flex-start; line-height: 1.4; }
+.cz-composernote svg { flex: none; margin-top: 1px; color: #b7ad9e; }
+
+/* objective sheet */
+.cz-objset { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 18px 0 4px; }
+.cz-objset button { width: 52px; height: 52px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); font-size: 24px; color: var(--petrol); cursor: pointer; }
+.cz-objval { text-align: center; min-width: 130px; }
+.cz-objval span { font-family: var(--font-mono); font-size: 30px; font-weight: 500; }
+.cz-objval small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* role picker (chips) */
+.cz-rolepick { display: flex; flex-wrap: wrap; gap: 8px; }
+.cz-rchip { font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+.cz-rchip[aria-pressed='true'] { background: var(--petrol); color: #fff; border-color: var(--petrol); }
+
+/* draft "Valider" inline button (lib rows) */
+.cz-vbtn { margin-left: auto; border: none; background: var(--draft); color: #fff; font-family: var(--font-body); font-weight: 600; font-size: 12px; padding: 7px 12px; border-radius: 9px; cursor: pointer; flex: none; }
+
 .cz :focus-visible { outline: 2px solid var(--petrol); outline-offset: 2px; }

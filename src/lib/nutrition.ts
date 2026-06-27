@@ -1,16 +1,18 @@
-import type {
-  AppConfig,
-  Cibles,
-  DayConfig,
-  DayMenu,
-  Feu,
-  Macros,
-  Recipe,
-} from '../types';
+import type { AccRef, AppConfig, DayMenu, Macros, MealKey, MealSlot, Recipe } from '../types';
+
+// Moteur nutritionnel — Cuisine v2.
+// Repas = composants (plat + entrée + accompagnement). Macros du repas = somme.
+// Plus de socle, plus de type de jour : un objectif individuel (plafond) par personne.
+// Macros stockées PAR PORTION (plat/entrée) et PAR 100 g (accompagnement).
 
 const EMPTY: Macros = { kcal: 0, prot: 0, gluc: 0, lip: 0, calcium: 0 };
 
-export function addMacros(a: Macros, b: Macros): Macros {
+function recipeMacros(r: Recipe | undefined): Macros {
+  if (!r) return EMPTY;
+  return { kcal: r.kcal, prot: r.prot, gluc: r.gluc, lip: r.lip, calcium: r.calcium };
+}
+
+function add(a: Macros, b: Macros): Macros {
   return {
     kcal: a.kcal + b.kcal,
     prot: a.prot + b.prot,
@@ -20,145 +22,127 @@ export function addMacros(a: Macros, b: Macros): Macros {
   };
 }
 
-function recipeMacros(r: Recipe | undefined): Macros {
-  if (!r) return EMPTY;
-  return { kcal: r.kcal, prot: r.prot, gluc: r.gluc, lip: r.lip, calcium: r.calcium };
+function scale(m: Macros, f: number): Macros {
+  return { kcal: m.kcal * f, prot: m.prot * f, gluc: m.gluc * f, lip: m.lip * f, calcium: m.calcium * f };
 }
 
-/**
- * Totaux d'une journée = déjeuner + dîner + extras
- * + les DEUX éléments fixes toujours comptés (collation + kéfir du coucher).
- * Voir BRIEF_PRODUIT.md §4 et §7.
- */
-export function dayTotals(
-  day: DayMenu,
-  recipesById: Map<string, Recipe>,
-  config: AppConfig,
+/** Macros d'un composant. L'accompagnement est mis à l'échelle de sa quantité (g). */
+export function componentMacros(
+  slot: 'plat' | 'entree' | 'acc',
+  value: string | AccRef | null | undefined,
+  byId: Map<string, Recipe>,
 ): Macros {
-  let total: Macros = addMacros(
-    config.elements_fixes.collation,
-    config.elements_fixes.kefir_coucher,
-  );
-  total = addMacros(total, recipeMacros(day.dejId ? recipesById.get(day.dejId) : undefined));
-  total = addMacros(total, recipeMacros(day.dinId ? recipesById.get(day.dinId) : undefined));
-  for (const id of day.extras) {
-    total = addMacros(total, recipeMacros(recipesById.get(id)));
+  if (!value) return EMPTY;
+  if (slot === 'acc') {
+    const ref = value as AccRef;
+    const r = byId.get(ref.id);
+    return r ? scale(recipeMacros(r), ref.g / 100) : EMPTY;
+  }
+  return recipeMacros(byId.get(value as string));
+}
+
+/** Macros d'un repas = somme de ses composants (le petit-déj n'a que le plat). */
+export function mealMacros(meal: MealSlot, key: MealKey, byId: Map<string, Recipe>): Macros {
+  let total = componentMacros('plat', meal.plat, byId);
+  if (key !== 'petitdej') {
+    total = add(total, componentMacros('entree', meal.entree ?? null, byId));
+    total = add(total, componentMacros('acc', meal.acc ?? null, byId));
   }
   return total;
 }
 
-// Petite tolérance pour que les valeurs pile sur la borne (ex. exactement ±10 %)
-// comptent du bon côté malgré les arrondis flottants.
-const EPS = 1e-9;
-
-/** Feu des calories : comparées à la cible du jour (selon son type). */
-export function feuKcal(total: number, cible: number, cibles: Cibles): Feu {
-  if (cible <= 0) return 'rouge';
-  const ecart = Math.abs(total - cible) / cible;
-  if (ecart <= cibles.kcal_seuils_pct.vert + EPS) return 'vert';
-  if (ecart <= cibles.kcal_seuils_pct.orange + EPS) return 'orange';
-  return 'rouge';
+/** Total de la journée (par personne) = somme des 3 repas. */
+export function dayMacros(day: DayMenu, byId: Map<string, Recipe>): Macros {
+  return add(
+    add(mealMacros(day.petitdej, 'petitdej', byId), mealMacros(day.dej, 'dej', byId)),
+    mealMacros(day.diner, 'diner', byId),
+  );
 }
 
-/** Feu protéines : ≥150 vert · 130–150 orange · <130 rouge. */
-export function feuProteines(prot: number, cibles: Cibles): Feu {
-  if (prot >= cibles.proteines.vert) return 'vert';
-  if (prot >= cibles.proteines.orange) return 'orange';
-  return 'rouge';
+export function dayComplete(day: DayMenu): boolean {
+  return !!(day.petitdej.plat && day.dej.plat && day.diner.plat);
 }
 
-/** Feu calcium : ≥1000 vert · 850–1000 orange · <850 rouge. Enjeu n°1 (ostéopénie). */
-export function feuCalcium(calcium: number, cibles: Cibles): Feu {
-  if (calcium >= cibles.calcium.vert) return 'vert';
-  if (calcium >= cibles.calcium.orange) return 'orange';
-  return 'rouge';
+export function dayHasAny(day: DayMenu): boolean {
+  return !!(
+    day.petitdej.plat ||
+    day.dej.plat ||
+    day.dej.entree ||
+    day.dej.acc ||
+    day.diner.plat ||
+    day.diner.entree ||
+    day.diner.acc
+  );
+}
+
+/** Un composant du repas est-il « à valider » (statut Test) ? */
+export function mealHasDraft(meal: MealSlot, key: MealKey, byId: Map<string, Recipe>): boolean {
+  const ids: (string | null | undefined)[] = [meal.plat];
+  if (key !== 'petitdej') {
+    ids.push(meal.entree);
+    if (meal.acc) ids.push(meal.acc.id);
+  }
+  return ids.some((id) => {
+    if (!id) return false;
+    const r = byId.get(id);
+    return !!r && r.statut === 'Test';
+  });
+}
+
+export interface ObjectiveStatus {
+  cls: 'ok' | 'warn' | 'bad';
+  word: string;
 }
 
 /**
- * Statut calorique « en clair » pour la jauge de la vue Semaine (FC2).
- * Renvoie une classe (ok/warn/bad) + un mot d'état lisible.
- *  - écart ≤ ±10 % → ok « dans la cible »
- *  - écart ≤ ±20 % → warn « un peu haut / un peu bas »
- *  - au-delà       → bad « au-dessus / en dessous »
+ * Statut d'une journée vs l'objectif individuel (plafond) :
+ *  ≤ 85 % → « sous l'objectif » (ok) · ≤ objectif → « dans l'objectif » (ok)
+ *  ≤ +10 % → « léger dépassement » (orange) · au-delà → « objectif dépassé » (rouge)
  */
-export function kcalStatusWord(
-  total: number,
-  cible: number,
-  cibles: Cibles,
-): { cls: 'ok' | 'warn' | 'bad'; word: string } {
-  if (cible <= 0) return { cls: 'bad', word: 'au-dessus' };
-  const diff = (total - cible) / cible;
-  const abs = Math.abs(diff);
-  if (abs <= cibles.kcal_seuils_pct.vert + EPS) return { cls: 'ok', word: 'dans la cible' };
-  if (diff > 0) {
-    return abs <= cibles.kcal_seuils_pct.orange + EPS
-      ? { cls: 'warn', word: 'un peu haut' }
-      : { cls: 'bad', word: 'au-dessus' };
-  }
-  return abs <= cibles.kcal_seuils_pct.orange + EPS
-    ? { cls: 'warn', word: 'un peu bas' }
-    : { cls: 'bad', word: 'en dessous' };
+export function objectiveStatus(totalKcal: number, objective: number): ObjectiveStatus {
+  if (objective <= 0) return { cls: 'bad', word: 'objectif dépassé' };
+  if (totalKcal <= objective * 0.85) return { cls: 'ok', word: 'sous l’objectif' };
+  if (totalKcal <= objective) return { cls: 'ok', word: 'dans l’objectif' };
+  if (totalKcal <= objective * 1.1) return { cls: 'warn', word: 'léger dépassement' };
+  return { cls: 'bad', word: 'objectif dépassé' };
 }
 
-export interface DayAssessment {
-  totals: Macros;
-  cibleKcal: number;
-  feux: { kcal: Feu; proteines: Feu; calcium: Feu };
+export interface WeekAverage {
+  kcal: number;
+  prot: number;
+  /** Nombre de jours complets (les 3 repas composés) pris dans la moyenne. */
+  count: number;
 }
 
-export function assessDay(
-  dayConfig: DayConfig,
-  day: DayMenu,
-  recipesById: Map<string, Recipe>,
-  config: AppConfig,
-): DayAssessment {
-  const totals = dayTotals(day, recipesById, config);
-  const cibleKcal = config.cibles.kcal_par_type[dayConfig.type] ?? dayConfig.cible_kcal;
-  return {
-    totals,
-    cibleKcal,
-    feux: {
-      kcal: feuKcal(totals.kcal, cibleKcal, config.cibles),
-      proteines: feuProteines(totals.prot, config.cibles),
-      calcium: feuCalcium(totals.calcium, config.cibles),
-    },
-  };
-}
-
-export interface WeekAverages {
-  perDay: Macros;
-  feux: { proteines: Feu; calcium: Feu };
-}
-
-/** Moyenne de la semaine (par jour), mise en évidence dans la vue Semaine. */
-export function weekAverages(
+/** Moyenne par jour, calculée seulement sur les jours complets. */
+export function weekAverage(
   config: AppConfig,
   days: Record<string, DayMenu>,
-  recipesById: Map<string, Recipe>,
-): WeekAverages {
-  const keys = config.jours.map((j) => j.key);
-  const n = keys.length || 1;
-  let sum: Macros = { ...EMPTY };
-  for (const key of keys) {
-    const day = days[key] ?? { dejId: null, dinId: null, extras: [] };
-    sum = addMacros(sum, dayTotals(day, recipesById, config));
+  byId: Map<string, Recipe>,
+): WeekAverage {
+  const complete = config.jours
+    .map((j) => days[j.key])
+    .filter((d): d is DayMenu => !!d)
+    .filter(dayComplete);
+  if (complete.length === 0) return { kcal: 0, prot: 0, count: 0 };
+  let sumK = 0;
+  let sumP = 0;
+  for (const d of complete) {
+    const m = dayMacros(d, byId);
+    sumK += m.kcal;
+    sumP += m.prot;
   }
-  const perDay: Macros = {
-    kcal: Math.round(sum.kcal / n),
-    prot: Math.round(sum.prot / n),
-    gluc: Math.round(sum.gluc / n),
-    lip: Math.round(sum.lip / n),
-    calcium: Math.round(sum.calcium / n),
-  };
   return {
-    perDay,
-    feux: {
-      proteines: feuProteines(perDay.prot, config.cibles),
-      calcium: feuCalcium(perDay.calcium, config.cibles),
-    },
+    kcal: Math.round(sumK / complete.length),
+    prot: Math.round(sumP / complete.length),
+    count: complete.length,
   };
+}
+
+export function emptyMeal(full: boolean): MealSlot {
+  return full ? { plat: null, entree: null, acc: null } : { plat: null };
 }
 
 export function emptyDay(): DayMenu {
-  return { dejId: null, dinId: null, extras: [] };
+  return { petitdej: emptyMeal(false), dej: emptyMeal(true), diner: emptyMeal(true) };
 }

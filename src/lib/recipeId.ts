@@ -1,14 +1,15 @@
-import type { Recipe, RecipeType } from '../types';
+import type { Recipe, RecipeRole } from '../types';
 
-const PREFIX: Record<RecipeType, string> = {
-  Déjeuner: 'DEJ',
-  Dîner: 'DIN',
-  'Coupe-faim': 'CF',
+const PREFIX: Record<RecipeRole, string> = {
+  petitdej: 'PDJ',
+  entree: 'ENT',
+  plat: 'PLT',
+  acc: 'ACC',
 };
 
-/** Prochain identifiant libre pour un type (DEJ-01, DIN-02, CF-03…). */
-export function nextRecipeId(recipes: Recipe[], type: RecipeType): string {
-  const prefix = PREFIX[type];
+/** Prochain identifiant libre pour un rôle (PLT-01, ENT-02, ACC-03…). */
+export function nextRecipeId(recipes: Recipe[], role: RecipeRole): string {
+  const prefix = PREFIX[role];
   let max = 0;
   for (const r of recipes) {
     const m = r.id.match(new RegExp(`^${prefix}-(\\d+)$`));

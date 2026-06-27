@@ -1,90 +1,74 @@
 import { describe, expect, it } from 'vitest';
 import {
-  assessDay,
-  dayTotals,
-  feuCalcium,
-  feuKcal,
-  feuProteines,
-  kcalStatusWord,
-  weekAverages,
+  componentMacros,
+  mealMacros,
+  dayMacros,
+  dayComplete,
+  objectiveStatus,
+  weekAverage,
+  emptyDay,
 } from './nutrition';
 import { SEED_CONFIG, SEED_RECIPES } from '../data';
-import type { Recipe } from '../types';
+import type { DayMenu, Recipe } from '../types';
 
 const byId = new Map<string, Recipe>(SEED_RECIPES.map((r) => [r.id, r]));
-const cibles = SEED_CONFIG.cibles;
+const plat = SEED_RECIPES.find((r) => r.role === 'plat')!;
+const entree = SEED_RECIPES.find((r) => r.role === 'entree')!;
+const acc = SEED_RECIPES.find((r) => r.id === 'ACC-01')!; // Riz, 130 kcal/100g
 
-describe('éléments fixes toujours comptés', () => {
-  it('une journée vide vaut collation + kéfir', () => {
-    const totals = dayTotals({ dejId: null, dinId: null, extras: [] }, byId, SEED_CONFIG);
-    // collation 195 + kéfir 135 = 330 kcal ; calcium 275 + 325 = 600
-    expect(totals.kcal).toBe(330);
-    expect(totals.calcium).toBe(600);
-    expect(totals.prot).toBe(19);
+describe('componentMacros', () => {
+  it('plat = macros par portion', () => {
+    expect(componentMacros('plat', plat.id, byId).kcal).toBe(plat.kcal);
+  });
+  it('accompagnement = base /100g × quantité', () => {
+    expect(componentMacros('acc', { id: acc.id, g: 200 }, byId).kcal).toBe(acc.kcal * 2);
+    expect(componentMacros('acc', { id: acc.id, g: 50 }, byId).kcal).toBe(acc.kcal * 0.5);
   });
 });
 
-describe('feux tricolores', () => {
-  it('kcal : ±10% vert, ±20% orange, au-delà rouge', () => {
-    expect(feuKcal(1720, 1720, cibles)).toBe('vert');
-    expect(feuKcal(1720 * 1.1, 1720, cibles)).toBe('vert');
-    expect(feuKcal(1720 * 1.15, 1720, cibles)).toBe('orange');
-    expect(feuKcal(1720 * 1.25, 1720, cibles)).toBe('rouge');
-    expect(feuKcal(1720 * 0.75, 1720, cibles)).toBe('rouge');
+describe('mealMacros / dayMacros', () => {
+  it('repas = somme des composants ; petit-déj = plat seul', () => {
+    const dej = { plat: plat.id, entree: entree.id, acc: { id: acc.id, g: 100 } };
+    expect(mealMacros(dej, 'dej', byId).kcal).toBe(plat.kcal + entree.kcal + acc.kcal);
+    // petit-déj ignore entrée/acc
+    expect(mealMacros({ plat: plat.id, entree: entree.id }, 'petitdej', byId).kcal).toBe(plat.kcal);
   });
-
-  it('protéines : ≥150 vert · 130–150 orange · <130 rouge', () => {
-    expect(feuProteines(150, cibles)).toBe('vert');
-    expect(feuProteines(140, cibles)).toBe('orange');
-    expect(feuProteines(129, cibles)).toBe('rouge');
-  });
-
-  it('calcium : ≥1000 vert · 850–1000 orange · <850 rouge', () => {
-    expect(feuCalcium(1000, cibles)).toBe('vert');
-    expect(feuCalcium(900, cibles)).toBe('orange');
-    expect(feuCalcium(849, cibles)).toBe('rouge');
+  it('jour = somme des 3 repas', () => {
+    const day: DayMenu = {
+      petitdej: { plat: plat.id },
+      dej: { plat: plat.id, entree: null, acc: null },
+      diner: { plat: plat.id, entree: null, acc: null },
+    };
+    expect(dayMacros(day, byId).kcal).toBe(plat.kcal * 3);
+    expect(dayComplete(day)).toBe(true);
+    expect(dayComplete(emptyDay())).toBe(false);
   });
 });
 
-describe('kcalStatusWord (jauge Semaine)', () => {
-  it('dans la cible à ±10 %', () => {
-    expect(kcalStatusWord(1720, 1720, cibles)).toEqual({ cls: 'ok', word: 'dans la cible' });
-    expect(kcalStatusWord(1720 * 1.1, 1720, cibles).cls).toBe('ok');
-  });
-  it('un peu haut / un peu bas entre ±10 et ±20 %', () => {
-    expect(kcalStatusWord(1720 * 1.15, 1720, cibles)).toEqual({ cls: 'warn', word: 'un peu haut' });
-    expect(kcalStatusWord(1720 * 0.85, 1720, cibles)).toEqual({ cls: 'warn', word: 'un peu bas' });
-  });
-  it('au-dessus / en dessous au-delà de ±20 %', () => {
-    expect(kcalStatusWord(1720 * 1.25, 1720, cibles)).toEqual({ cls: 'bad', word: 'au-dessus' });
-    expect(kcalStatusWord(1720 * 0.7, 1720, cibles)).toEqual({ cls: 'bad', word: 'en dessous' });
+describe('objectiveStatus (plafond)', () => {
+  it('sous / dans / léger dépassement / dépassé', () => {
+    expect(objectiveStatus(1500, 1800)).toEqual({ cls: 'ok', word: 'sous l’objectif' });
+    expect(objectiveStatus(1750, 1800)).toEqual({ cls: 'ok', word: 'dans l’objectif' });
+    expect(objectiveStatus(1900, 1800)).toEqual({ cls: 'warn', word: 'léger dépassement' });
+    expect(objectiveStatus(2100, 1800)).toEqual({ cls: 'bad', word: 'objectif dépassé' });
   });
 });
 
-describe('assessDay utilise la cible selon le type de jour', () => {
-  it('un jour Muscu vise 1950 kcal', () => {
-    const jourMuscu = SEED_CONFIG.jours.find((j) => j.type === 'Muscu')!;
-    const a = assessDay(jourMuscu, { dejId: null, dinId: null, extras: [] }, byId, SEED_CONFIG);
-    expect(a.cibleKcal).toBe(1950);
+describe('weekAverage', () => {
+  it('ne moyenne que les jours complets', () => {
+    const days: Record<string, DayMenu> = {};
+    for (const j of SEED_CONFIG.jours) days[j.key] = emptyDay();
+    const full: DayMenu = {
+      petitdej: { plat: plat.id },
+      dej: { plat: plat.id, entree: null, acc: null },
+      diner: { plat: plat.id, entree: null, acc: null },
+    };
+    days[SEED_CONFIG.jours[0].key] = full;
+    const avg = weekAverage(SEED_CONFIG, days, byId);
+    expect(avg.count).toBe(1);
+    expect(avg.kcal).toBe(plat.kcal * 3);
   });
-});
-
-describe('extras comptés (ex. Creami)', () => {
-  it("ajoute les macros de l'extra", () => {
-    const sans = dayTotals({ dejId: 'DEJ-01', dinId: 'DIN-05', extras: [] }, byId, SEED_CONFIG);
-    const avec = dayTotals(
-      { dejId: 'DEJ-01', dinId: 'DIN-05', extras: ['CF-03'] },
-      byId,
-      SEED_CONFIG,
-    );
-    expect(avec.kcal - sans.kcal).toBe(SEED_RECIPES.find((r) => r.id === 'CF-03')!.kcal);
-  });
-});
-
-describe('moyenne semaine', () => {
-  it('moyenne une semaine vide = éléments fixes par jour', () => {
-    const avg = weekAverages(SEED_CONFIG, {}, byId);
-    expect(avg.perDay.kcal).toBe(330);
-    expect(avg.perDay.calcium).toBe(600);
+  it('semaine vide → count 0', () => {
+    expect(weekAverage(SEED_CONFIG, {}, byId).count).toBe(0);
   });
 });

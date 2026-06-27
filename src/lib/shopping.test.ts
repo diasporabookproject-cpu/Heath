@@ -45,38 +45,43 @@ describe('rayonFor', () => {
   });
 });
 
-describe('buildShoppingList', () => {
+describe('buildShoppingList (modèle v2)', () => {
   const byId = new Map<string, Recipe>(SEED_RECIPES.map((r) => [r.id, r]));
-
-  it('agrège les grammes des mêmes ingrédients sur la semaine', () => {
-    const week: WeekMenu = {
-      id: 't',
-      days: {
-        lun: { dejId: 'DEJ-01', dinId: 'DIN-01', extras: [] }, // riz 110 + …
-        mar: { dejId: 'DEJ-04', dinId: 'DIN-05', extras: [] }, // riz 150 + 150
+  const mk = (plat: string, acc?: { id: string; g: number }): WeekMenu => ({
+    id: 't',
+    days: {
+      lun: {
+        petitdej: { plat: null },
+        dej: { plat, entree: null, acc: acc ?? null },
+        diner: { plat: null, entree: null, acc: null },
       },
-    };
-    const groups = buildShoppingList(SEED_CONFIG, week, byId);
-    const epicerie = groups.find((g) => g.id === 'epicerie');
-    const riz = epicerie?.lines.find((l) => l.name === 'Riz');
+    },
+  });
+
+  it('agrège les ingrédients du plat (riz présent)', () => {
+    const groups = buildShoppingList(SEED_CONFIG, mk('DEJ-04'), byId);
+    const riz = groups.find((g) => g.id === 'epicerie')?.lines.find((l) => l.name === 'Riz');
     expect(riz?.unit).toBe('g');
-    // DEJ-01 110 + DEJ-04 150 + DIN-05 150 = 410 (DIN-01 n'a pas de riz)
-    expect(riz?.qty).toBe(410);
+    expect(riz?.qty).toBe(150); // DEJ-04 riz 150g, 1 personne
+  });
+
+  it('met à l’échelle ×personnes', () => {
+    const base = buildShoppingList(SEED_CONFIG, mk('DEJ-04'), byId);
+    const x4 = buildShoppingList(SEED_CONFIG, mk('DEJ-04'), byId, 4);
+    const rizB = base.find((g) => g.id === 'epicerie')?.lines.find((l) => l.name === 'Riz');
+    const rizX4 = x4.find((g) => g.id === 'epicerie')?.lines.find((l) => l.name === 'Riz');
+    expect(rizX4?.qty).toBe((rizB!.qty as number) * 4);
+  });
+
+  it('inclut l’accompagnement (quantité g ×personnes)', () => {
+    const groups = buildShoppingList(SEED_CONFIG, mk('DEJ-04', { id: 'ACC-01', g: 100 }), byId, 3);
+    const allLines = groups.flatMap((g) => g.lines);
+    const acc = allLines.find((l) => /riz blanc/i.test(l.name));
+    expect(acc?.qty).toBe(300); // 100 g × 3 personnes
   });
 
   it('ignore les jours vides', () => {
-    const groups = buildShoppingList(SEED_CONFIG, { id: 't', days: {} }, byId);
-    expect(groups).toHaveLength(0);
-  });
-
-  it('met à l’échelle les quantités ×personnes', () => {
-    const week: WeekMenu = { id: 't', days: { lun: { dejId: 'DEJ-04', dinId: null, extras: [] } } };
-    const base = buildShoppingList(SEED_CONFIG, week, byId);
-    const x4 = buildShoppingList(SEED_CONFIG, week, byId, 4);
-    const rizBase = base.find((g) => g.id === 'epicerie')?.lines.find((l) => l.name === 'Riz');
-    const rizX4 = x4.find((g) => g.id === 'epicerie')?.lines.find((l) => l.name === 'Riz');
-    expect(rizBase?.qty).toBeTruthy();
-    expect(rizX4?.qty).toBe((rizBase!.qty as number) * 4);
+    expect(buildShoppingList(SEED_CONFIG, { id: 't', days: {} }, byId)).toHaveLength(0);
   });
 });
 
