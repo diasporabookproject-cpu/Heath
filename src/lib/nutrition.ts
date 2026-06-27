@@ -139,6 +139,29 @@ export function weekAverage(
   };
 }
 
+// Poids de répartition du budget calorique entre repas (petit-déj plus léger).
+const MEAL_WEIGHT: Record<MealKey, number> = { petitdej: 0.28, dej: 0.4, diner: 0.4 };
+const MEAL_FLOOR = 250; // plancher kcal par repas généré
+
+/**
+ * FC16 — Cible kcal par repas VIDE à générer : on répartit le budget restant
+ * (objectif − déjà rempli) entre les repas vides, avec un plancher.
+ */
+export function mealBudgets(
+  emptyKeys: MealKey[],
+  filledKcal: number,
+  objective: number,
+): Record<string, number> {
+  const wsum = emptyKeys.reduce((s, k) => s + MEAL_WEIGHT[k], 0);
+  const budget = Math.max(0, objective - filledKcal);
+  const out: Record<string, number> = {};
+  for (const k of emptyKeys) {
+    const part = wsum > 0 ? (budget * MEAL_WEIGHT[k]) / wsum : 0;
+    out[k] = Math.max(MEAL_FLOOR, Math.round(part));
+  }
+  return out;
+}
+
 export function emptyMeal(full: boolean): MealSlot {
   return full ? { plat: null, entree: null, acc: null } : { plat: null };
 }

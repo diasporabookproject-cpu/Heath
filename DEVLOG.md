@@ -136,6 +136,10 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
   - **FC15 (favoris)** & **FC18 (création → fiche directe + Valider 1‑tap)** : déjà câblés au Lot 1 (étoile biblio/sélecteur/fiche, tri favoris en tête, filtre ★ ; ajout → fiche ; bouton « Valider » sur les lignes à valider). Vérifiés.
   - **FC17 (import par texte collé)** : edge function `generate-recipe` mode **`import`** (structuration d'un texte → recette via tool use : rôle + ingrédients + étapes + macros + darija). UI : option **« Importer (coller un texte) »** dans le FAB → zone de texte → « Convertir avec l'IA » → recette **« à valider »** qui **ouvre directement sa fiche** (FC18). L'import **JSON** reste accessible (lien « Coller du JSON à la place »).
   - **⚠️ redéploiement** de l'edge function requis (nouveau mode `import`). typecheck + 37 tests + build OK.
+- **Lot 3 livré — FC16 (génération = complétion IA des repas vides)** :
+  - « Générer la semaine » remplit **uniquement les repas sans plat**, en générant de **nouvelles recettes IA « à valider »**, **sans toucher** au déjà composé (plus de verrou). Chaque recette est **dimensionnée sous l'objectif** : budget restant (objectif − déjà rempli) réparti entre repas vides (poids petit‑déj 0,28 / déj 0,40 / dîner 0,40, plancher 250) → `mealBudgets` (pur, testé).
+  - Orchestration dans `SemaineView` : concurrence limitée (4) sur les appels `generate-recipe`, recettes Test + macros estimées + rôle imposé (petit‑déj/plat), bandeau « N à valider » déjà présent. Réutilise l'edge function existante (**pas de redéploiement**). Hors‑ligne/non connecté → message.
+  - typecheck + 39 tests + build + smoke (vert).
 
 
 ### Session 5 — 2026-06-26

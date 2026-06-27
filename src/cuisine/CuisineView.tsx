@@ -107,7 +107,6 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
           <SemaineView
             voiceIds={voiceIds}
             onOpenMeal={(dayKey, mealKey) => setComposer({ dayKey, mealKey })}
-            onGenerate={() => toast('Générateur de semaine — prochain lot (FC16)')}
             onCopyWeek={() => toast('Navigation & copie de semaine — prochain lot (FC14)')}
             onGoValidate={() => {
               setRecFilters('draft');

@@ -6,6 +6,7 @@ import {
   dayComplete,
   objectiveStatus,
   weekAverage,
+  mealBudgets,
   emptyDay,
 } from './nutrition';
 import { SEED_CONFIG, SEED_RECIPES } from '../data';
@@ -51,6 +52,18 @@ describe('objectiveStatus (plafond)', () => {
     expect(objectiveStatus(1750, 1800)).toEqual({ cls: 'ok', word: 'dans l’objectif' });
     expect(objectiveStatus(1900, 1800)).toEqual({ cls: 'warn', word: 'léger dépassement' });
     expect(objectiveStatus(2100, 1800)).toEqual({ cls: 'bad', word: 'objectif dépassé' });
+  });
+});
+
+describe('mealBudgets (FC16)', () => {
+  it('répartit le budget restant entre repas vides, sous l’objectif', () => {
+    const b = mealBudgets(['petitdej', 'dej', 'diner'], 0, 1800);
+    expect(b.petitdej + b.dej + b.diner).toBeLessThanOrEqual(1803); // ± arrondi
+    expect(b.dej).toBeGreaterThan(b.petitdej); // déjeuner > petit-déj
+  });
+  it('applique un plancher quand le budget est faible', () => {
+    const b = mealBudgets(['dej'], 1750, 1800); // reste 50 → plancher 250
+    expect(b.dej).toBe(250);
   });
 });
 

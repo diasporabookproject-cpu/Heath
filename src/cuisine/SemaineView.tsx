@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import {
@@ -6,30 +6,73 @@ import {
   dayComplete,
   mealMacros,
   mealHasDraft,
+  mealBudgets,
   objectiveStatus,
   weekAverage,
 } from '../lib/nutrition';
-import type { MealKey, Recipe } from '../types';
+import { aiAvailable, generateRecipeDraft, type RecipeDraft } from '../lib/ai';
+import { estimateMacrosLocal } from '../lib/macros';
+import { nextRecipeId } from '../lib/recipeId';
+import { ROLE_LABEL, type CalciumFlag, type MealKey, type Recipe, type RecipeRole } from '../types';
 import { weekDates, weekLabel, dayLabel } from './dates';
-import { IconChevL, IconChevR, IconSpark, IconStar, IconPlus, IconCopy } from './icons';
+import { IconChevL, IconChevR, IconSpark, IconStar, IconPlus, IconCopy, IconLoader } from './icons';
 
 const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit-déj', dej: 'Déjeuner', diner: 'Dîner' };
 const MEAL_KEYS: MealKey[] = ['petitdej', 'dej', 'diner'];
 const fmt = (n: number) => Math.round(n).toLocaleString('fr-FR');
 
+/** Exécute `worker` sur `items` avec une concurrence limitée. */
+async function runPool<T, R>(items: T[], worker: (item: T) => Promise<R>, concurrency = 4): Promise<R[]> {
+  const results = new Array(items.length) as R[];
+  let i = 0;
+  const next = async (): Promise<void> => {
+    const idx = i++;
+    if (idx >= items.length) return;
+    results[idx] = await worker(items[idx]);
+    return next();
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, next));
+  return results;
+}
+
+function recipeFromDraft(id: string, role: RecipeRole, d: RecipeDraft): Recipe {
+  const hasMacros = Number(d.kcal) > 0;
+  const est = hasMacros ? null : estimateMacrosLocal(d.ingredients ?? '');
+  return {
+    id,
+    nom: d.nom?.trim() || `${ROLE_LABEL[role]} (IA)`,
+    role,
+    statut: 'Test',
+    kcal: hasMacros ? Math.round(Number(d.kcal)) : est!.kcal,
+    prot: hasMacros ? Math.round(Number(d.prot) || 0) : est!.prot,
+    gluc: hasMacros ? Math.round(Number(d.gluc) || 0) : est!.gluc,
+    lip: hasMacros ? Math.round(Number(d.lip) || 0) : est!.lip,
+    calcium: hasMacros ? Math.round(Number(d.calcium) || 0) : est!.calcium,
+    flag_calcium: (d.flag_calcium as CalciumFlag) || (est ? est.flag_calcium : 'Moyen'),
+    ingredients: d.ingredients?.trim() || '',
+    etapes: d.etapes?.trim() || undefined,
+    macros_estimees: true,
+    nom_ar: d.nom_ar?.trim() || undefined,
+    ingredients_ar: d.ingredients_ar?.trim() || undefined,
+    etapes_ar: d.etapes_ar?.trim() || undefined,
+  };
+}
+
 interface Props {
   voiceIds: Set<string>;
   onOpenMeal: (dayKey: string, meal: MealKey) => void;
-  onGenerate: () => void;
   onCopyWeek: () => void;
   onGoValidate: () => void;
   toast: (msg: string) => void;
 }
 
-export default function SemaineView({ onOpenMeal, onGenerate, onCopyWeek, onGoValidate, toast }: Props) {
+export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const objective = useStore((s) => s.settings.objective);
+  const setComponent = useStore((s) => s.setComponent);
+  const upsertRecipe = useStore((s) => s.upsertRecipe);
+  const [busy, setBusy] = useState(false);
 
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
   const dates = useMemo(() => weekDates(), []);
@@ -53,6 +96,58 @@ export default function SemaineView({ onOpenMeal, onGenerate, onCopyWeek, onGoVa
 
   const avgStatus = objectiveStatus(avg.kcal, objective);
   const avgPct = Math.min(100, Math.round((avg.kcal / (objective || 1)) * 100));
+
+  // FC16 — complète UNIQUEMENT les repas vides par IA, dimensionnés sous l'objectif.
+  const generate = async () => {
+    if (busy) return;
+    if (!(await aiAvailable())) {
+      toast('Génération IA indisponible (hors-ligne / non connecté)');
+      return;
+    }
+    const tasks: { dayKey: string; mealKey: MealKey; role: RecipeRole; target: number }[] = [];
+    for (const j of SEED_CONFIG.jours) {
+      const d = week.days[j.key];
+      const empties = MEAL_KEYS.filter((k) => !d[k].plat);
+      if (empties.length === 0) continue;
+      const budgets = mealBudgets(empties, dayMacros(d, byId).kcal, objective);
+      for (const k of empties) {
+        tasks.push({ dayKey: j.key, mealKey: k, role: k === 'petitdej' ? 'petitdej' : 'plat', target: budgets[k] });
+      }
+    }
+    if (tasks.length === 0) {
+      toast('Aucun repas vide à compléter');
+      return;
+    }
+    setBusy(true);
+    try {
+      const drafts = await runPool(
+        tasks,
+        async (t) => {
+          try {
+            const intention = `${ROLE_LABEL[t.role]} équilibré, sans gluten, ~${t.target} kcal pour 1 portion`;
+            return { t, d: await generateRecipeDraft(intention) };
+          } catch {
+            return null;
+          }
+        },
+        4,
+      );
+      const pool = [...recipes];
+      let n = 0;
+      for (const r of drafts) {
+        if (!r) continue;
+        const id = nextRecipeId(pool, r.t.role);
+        const rec = recipeFromDraft(id, r.t.role, r.d);
+        pool.push(rec);
+        upsertRecipe(rec);
+        setComponent(r.t.dayKey, r.t.mealKey, 'plat', id);
+        n++;
+      }
+      toast(n ? `${n} repas complété${n > 1 ? 's' : ''} par l’IA — à valider` : 'Génération indisponible');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div>
@@ -105,9 +200,9 @@ export default function SemaineView({ onOpenMeal, onGenerate, onCopyWeek, onGoVa
         </div>
       </div>
 
-      <button className="cz-genbtn" onClick={onGenerate}>
-        <IconSpark size={18} />
-        Générer la semaine
+      <button className="cz-genbtn" onClick={generate} disabled={busy}>
+        {busy ? <IconLoader size={18} className="cz-spin" /> : <IconSpark size={18} />}
+        {busy ? 'Génération des repas vides…' : 'Générer la semaine'}
       </button>
       <button className="cz-subgen" onClick={onCopyWeek}>
         <IconCopy size={15} />
