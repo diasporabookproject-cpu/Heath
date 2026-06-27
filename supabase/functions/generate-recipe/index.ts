@@ -40,8 +40,7 @@ const RECIPE_TOOL = {
     type: 'object',
     properties: {
       nom: { type: 'string' },
-      type: { type: 'string', enum: ['Déjeuner', 'Dîner', 'Coupe-faim'] },
-      jour: { type: 'string', enum: ['Tous', 'Repos', 'Sport'] },
+      role: { type: 'string', enum: ['petitdej', 'entree', 'plat', 'acc'], description: 'petit-déj / entrée / plat / accompagnement' },
       kcal: { type: 'number' },
       prot: { type: 'number' },
       gluc: { type: 'number' },
@@ -54,7 +53,7 @@ const RECIPE_TOOL = {
       ingredients_ar: { type: 'string' },
       etapes_ar: { type: 'string' },
     },
-    required: ['nom', 'type', 'kcal', 'prot', 'gluc', 'lip', 'calcium', 'flag_calcium', 'ingredients', 'etapes', 'nom_ar', 'ingredients_ar', 'etapes_ar'],
+    required: ['nom', 'role', 'kcal', 'prot', 'gluc', 'lip', 'calcium', 'flag_calcium', 'ingredients', 'etapes', 'nom_ar', 'ingredients_ar', 'etapes_ar'],
   },
 };
 
