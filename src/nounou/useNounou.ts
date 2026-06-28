@@ -16,10 +16,10 @@ interface NounouState {
   upsertEnfant: (e: Partial<Enfant> & { prenom: string }) => string;
   removeEnfant: (id: string) => void;
 
-  // Rythme habituel (moments)
-  addMoment: (m: Omit<Moment, 'id'>) => string;
-  updateMoment: (id: string, patch: Partial<Moment>) => void;
-  removeMoment: (id: string) => void;
+  // Moments : rythme habituel, ou rythme d'une période si `periodeId` fourni.
+  addMoment: (m: Omit<Moment, 'id'>, periodeId?: string) => string;
+  updateMoment: (id: string, patch: Partial<Moment>, periodeId?: string) => void;
+  removeMoment: (id: string, periodeId?: string) => void;
 
   // Périodes
   addPeriode: (p: Omit<Periode, 'id' | 'rythme'> & { rythme?: Moment[] }) => string;
@@ -94,21 +94,50 @@ export const useNounou = create<NounouState>((set) => {
       }));
     },
 
-    addMoment(m) {
+    addMoment(m, periodeId) {
       const id = uid();
-      mutate((doc) => ({ ...doc, rythme: [...doc.rythme, { ...m, id }] }));
+      mutate((doc) => {
+        if (periodeId) {
+          return {
+            ...doc,
+            periodes: doc.periodes.map((p) =>
+              p.id === periodeId ? { ...p, rythme: [...p.rythme, { ...m, id }] } : p,
+            ),
+          };
+        }
+        return { ...doc, rythme: [...doc.rythme, { ...m, id }] };
+      });
       return id;
     },
 
-    updateMoment(id, patch) {
-      mutate((doc) => ({
-        ...doc,
-        rythme: doc.rythme.map((m) => (m.id === id ? { ...m, ...patch } : m)),
-      }));
+    updateMoment(id, patch, periodeId) {
+      mutate((doc) => {
+        if (periodeId) {
+          return {
+            ...doc,
+            periodes: doc.periodes.map((p) =>
+              p.id === periodeId
+                ? { ...p, rythme: p.rythme.map((m) => (m.id === id ? { ...m, ...patch } : m)) }
+                : p,
+            ),
+          };
+        }
+        return { ...doc, rythme: doc.rythme.map((m) => (m.id === id ? { ...m, ...patch } : m)) };
+      });
     },
 
-    removeMoment(id) {
-      mutate((doc) => ({ ...doc, rythme: doc.rythme.filter((m) => m.id !== id) }));
+    removeMoment(id, periodeId) {
+      mutate((doc) => {
+        if (periodeId) {
+          return {
+            ...doc,
+            periodes: doc.periodes.map((p) =>
+              p.id === periodeId ? { ...p, rythme: p.rythme.filter((m) => m.id !== id) } : p,
+            ),
+          };
+        }
+        return { ...doc, rythme: doc.rythme.filter((m) => m.id !== id) };
+      });
     },
 
     addPeriode(p) {

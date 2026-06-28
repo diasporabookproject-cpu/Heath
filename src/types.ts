@@ -128,23 +128,29 @@ export interface Destinataire {
 
 /** Catégorie d'un moment (icône + filtrage visuel). */
 export type MomentType =
+  | 'reveil'
   | 'ecole'
-  | 'sieste'
   | 'repas'
+  | 'sieste'
   | 'gouter'
+  | 'bain'
+  | 'sortie'
+  | 'sante'
   | 'coucher'
   | 'activite'
-  | 'sante'
   | 'autre';
 
 export const MOMENT_LABEL: Record<MomentType, string> = {
+  reveil: 'Réveil',
   ecole: 'École',
-  sieste: 'Sieste',
   repas: 'Repas',
+  sieste: 'Sieste',
   gouter: 'Goûter',
+  bain: 'Bain',
+  sortie: 'Sortie',
+  sante: 'Santé',
   coucher: 'Coucher',
   activite: 'Activité',
-  sante: 'Santé',
   autre: 'Autre',
 };
 

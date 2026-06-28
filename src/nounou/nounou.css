@@ -1,83 +1,114 @@
 /* Page Nounou — réutilise les tokens & la coquille Cuisine (cz-*). */
-/* Classes propres préfixées nz-. */
+/* Classes propres préfixées nz-, portées de la maquette admin (Journée). */
 
 .nz-mark { background: var(--draft) !important; }
 .nz-mark::before { border-color: var(--saffron) !important; }
 
-/* État vide invitant (anti-page-blanche). */
-.nz-empty {
-  text-align: center;
-  padding: 48px 24px;
-  color: var(--ink);
-  opacity: 0.7;
-}
+/* ── Bande de jours + navigation ─────────────────────────────────────────── */
+.nz-daystrip { display: flex; gap: 7px; padding: 16px 16px 4px; align-items: stretch; }
+.nz-dsnav { width: 34px; flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 11px; display: grid; place-items: center; cursor: pointer; color: var(--ink); }
+.nz-dsnav:active { transform: scale(0.95); }
+.nz-dschips { flex: 1; display: flex; gap: 6px; }
+.nz-dchip { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 2px 7px; text-align: center; cursor: pointer; font-family: var(--font-body); }
+.nz-dchip .dn { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; }
+.nz-dchip .dd { font-family: var(--font-mono); font-size: 15px; font-weight: 500; margin-top: 3px; color: var(--ink); }
+.nz-dchip[aria-pressed='true'] { background: var(--petrol); border-color: var(--petrol); }
+.nz-dchip[aria-pressed='true'] .dn, .nz-dchip[aria-pressed='true'] .dd { color: #fff; }
+.nz-dchip.inper { border-color: #e6d4ac; background: var(--saffron-tint); }
+.nz-dchip.inper .dn { color: var(--saffron); }
+.nz-dchip[aria-pressed='true'].inper { background: var(--saffron); border-color: var(--saffron); }
+.nz-dchip[aria-pressed='true'].inper .dn { color: #fff; }
+.nz-pdot { width: 5px; height: 5px; border-radius: 50%; background: var(--saffron); margin: 4px auto 0; }
+.nz-dchip[aria-pressed='true'] .nz-pdot { background: #fff; }
+
+.nz-daytitle { padding: 16px 16px 0; font-family: var(--font-display, 'Fraunces', serif); font-size: 21px; font-weight: 600; }
+.nz-daytitle small { display: block; font-family: var(--font-body); font-size: 12.5px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+
+.nz-perbanner { margin: 11px 16px 0; background: var(--saffron-tint); border: 1px solid #e8d6ae; border-radius: 13px; padding: 11px 14px; display: flex; align-items: center; gap: 11px; }
+.nz-perbanner .pe { font-size: 20px; flex: none; }
+.nz-perbanner .pt { font-size: 13.5px; font-weight: 600; color: #8a6414; line-height: 1.2; }
+.nz-perbanner .pd { font-size: 12px; color: #a07a2e; margin-top: 1px; }
+
+/* ── Liste des moments du jour ───────────────────────────────────────────── */
+.nz-sheetlist { padding: 8px 16px; margin-top: 6px; }
+.nz-shcard { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 4px 16px; box-shadow: var(--shadow); }
+.nz-item { display: flex; align-items: center; gap: 13px; padding: 14px 0; cursor: pointer; width: 100%; background: none; border: none; text-align: left; font-family: var(--font-body); color: var(--ink); }
+.nz-item + .nz-item { border-top: 1px solid var(--line); }
+.nz-item .tm { font-family: var(--font-mono); font-size: 13px; color: var(--ink); width: 44px; flex: none; font-weight: 500; }
+.nz-item .ic { width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); color: var(--petrol); display: grid; place-items: center; flex: none; }
+.nz-item .ic.exc { background: var(--saffron-tint); color: var(--saffron); }
+.nz-item .mm { flex: 1; min-width: 0; }
+.nz-item .nn { font-size: 15.5px; font-weight: 500; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; line-height: 1.25; }
+.nz-item .ss { font-size: 12.5px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+.nz-item .chev { color: #c7bdad; flex: none; }
+.nz-kidtag { display: inline-grid; place-items: center; height: 18px; padding: 0 6px; border-radius: 5px; color: #fff; font-size: 10.5px; font-weight: 700; flex: none; }
+.nz-ponct { font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; background: var(--saffron-tint); color: var(--saffron); padding: 2px 7px; border-radius: 5px; }
+.nz-dayempty { text-align: center; color: var(--muted); padding: 34px 16px; font-size: 14px; line-height: 1.5; }
+
+.nz-addbar { display: flex; gap: 8px; padding: 12px 16px 26px; }
+.nz-add1 { flex: 1; border: 1px solid var(--line); background: var(--surface); color: var(--petrol); font-family: var(--font-body); font-weight: 600; font-size: 14.5px; border-radius: 12px; padding: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: var(--shadow); }
+.nz-add1:active { transform: scale(0.99); }
+.nz-add1 svg { color: var(--saffron); }
+.nz-add2 { flex: none; border: none; background: transparent; color: var(--muted); font-family: var(--font-body); font-weight: 600; font-size: 12.5px; padding: 10px 8px; cursor: pointer; white-space: nowrap; }
+.nz-add2:hover { color: var(--petrol); }
+
+/* ── Détail d'un événement (sheet) ───────────────────────────────────────── */
+.nz-info { display: flex; gap: 9px; align-items: flex-start; background: var(--saffron-tint); border: 1px solid #ead9b5; color: #8a6414; border-radius: 12px; padding: 13px; margin-top: 2px; font-size: 13px; line-height: 1.45; }
+.nz-info svg { flex: none; margin-top: 1px; }
+.nz-info.draft { background: var(--draft-tint); border-color: var(--draft-line); color: #5d4d79; }
+.nz-kv { display: flex; gap: 12px; padding: 11px 0; font-size: 14px; border-top: 1px solid var(--line); line-height: 1.4; }
+.nz-kv .k { width: 92px; flex: none; color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding-top: 1px; }
+.nz-kv .v { flex: 1; }
+.nz-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 0 15px; box-shadow: var(--shadow); }
+
+/* ── Formulaire moment : suggestions, jours, enfants ─────────────────────── */
+.nz-suggest { display: flex; gap: 9px; overflow-x: auto; padding: 2px 0 6px; }
+.nz-suggest::-webkit-scrollbar { height: 0; }
+.nz-scard { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 13px; padding: 11px 13px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 7px; min-width: 104px; box-shadow: var(--shadow); position: relative; font-family: var(--font-body); color: var(--ink); text-align: left; }
+.nz-scard:active { transform: scale(0.97); }
+.nz-scard .si { width: 32px; height: 32px; border-radius: 9px; background: var(--petrol-tint); color: var(--petrol); display: grid; place-items: center; }
+.nz-scard .sl { font-size: 13px; font-weight: 600; line-height: 1.15; }
+.nz-scard .st { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.nz-scard .sp { position: absolute; top: 9px; right: 11px; font-size: 17px; color: var(--saffron); line-height: 1; }
+.nz-quickdays { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.nz-qd { font-size: 12.5px; font-weight: 600; padding: 8px 13px; border-radius: 18px; border: 1px dashed var(--line); background: transparent; color: var(--petrol); cursor: pointer; font-family: var(--font-body); }
+.nz-daysel { display: flex; gap: 6px; flex-wrap: wrap; }
+.nz-dbtn { min-width: 42px; height: 40px; padding: 0 6px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface); font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; font-family: var(--font-body); }
+.nz-dbtn[aria-pressed='true'] { background: var(--petrol); color: #fff; border-color: var(--petrol); }
+.nz-kidsel { display: flex; gap: 8px; flex-wrap: wrap; }
+.nz-kbtn { display: flex; align-items: center; gap: 8px; padding: 9px 13px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface); font-size: 13.5px; font-weight: 600; color: var(--muted); cursor: pointer; font-family: var(--font-body); }
+.nz-kbtn[aria-pressed='true'] { border-color: var(--petrol); color: var(--ink); background: var(--petrol-tint); }
+.nz-kbtn .kd { width: 16px; height: 16px; border-radius: 4px; color: #fff; font-size: 9px; font-weight: 700; display: grid; place-items: center; }
+.nz-row2 { display: flex; gap: 10px; }
+
+/* ── Hub Rythme & périodes ───────────────────────────────────────────────── */
+.nz-mgsec { font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin: 20px 0 9px; display: flex; align-items: center; justify-content: space-between; }
+.nz-addlink { border: none; background: transparent; color: var(--petrol); font-family: var(--font-body); font-weight: 600; font-size: 12.5px; cursor: pointer; text-transform: none; letter-spacing: 0; display: flex; align-items: center; gap: 4px; }
+.nz-emptyline { font-size: 13px; color: var(--muted); line-height: 1.5; padding: 4px 0 2px; }
+.nz-cardflush { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 15px; box-shadow: var(--shadow); }
+.nz-brick { display: flex; align-items: center; gap: 12px; padding: 13px 0; }
+.nz-brick + .nz-brick { border-top: 1px solid var(--line); }
+.nz-brick .bi { width: 34px; height: 34px; border-radius: 9px; background: var(--petrol-tint); color: var(--petrol); display: grid; place-items: center; flex: none; }
+.nz-brick .bm { flex: 1; min-width: 0; cursor: pointer; background: none; border: none; text-align: left; font-family: var(--font-body); color: var(--ink); padding: 0; }
+.nz-brick .bl { font-size: 14.5px; font-weight: 600; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.nz-brick .bs { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.nz-brick .brm { width: 30px; height: 30px; border-radius: 8px; border: none; background: transparent; color: #c2b8a8; display: grid; place-items: center; cursor: pointer; flex: none; }
+.nz-brick .brm:hover { background: var(--surface-2); color: var(--bad); }
+.nz-periodrow { display: flex; align-items: center; gap: 12px; padding: 13px 0; }
+.nz-periodrow + .nz-periodrow { border-top: 1px solid var(--line); }
+.nz-periodrow .pi { width: 38px; height: 38px; border-radius: 11px; background: var(--saffron-tint); display: grid; place-items: center; font-size: 18px; flex: none; }
+.nz-periodrow .pm { flex: 1; min-width: 0; cursor: pointer; background: none; border: none; text-align: left; font-family: var(--font-body); color: var(--ink); padding: 0; }
+.nz-periodrow .pl { font-size: 14.5px; font-weight: 600; }
+.nz-periodrow .ps { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.nz-periodrow .chev { color: #c7bdad; flex: none; }
+
+/* ── États vides / placeholder ───────────────────────────────────────────── */
+.nz-empty { text-align: center; padding: 48px 24px; color: var(--ink); opacity: 0.7; }
 .nz-empty .nz-emoji { font-size: 34px; display: block; margin-bottom: 10px; }
 .nz-empty small { display: block; margin-top: 6px; font-size: 13px; opacity: 0.8; }
 
-/* Bandeau de période (jour ∈ période). */
-.nz-periodbar {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  background: var(--draft-tint);
-  border: 1px solid var(--draft-line);
-  color: var(--draft);
-  border-radius: 12px;
-  padding: 10px 13px;
-  font-weight: 600;
-  font-size: 14px;
-  margin: 4px 0 14px;
-}
+/* Variante « jour » de l'icône d'option (cz-opt2), absente de cuisine.css. */
+.cz-opt2 .ic.day { background: var(--surface-2); color: var(--muted); }
 
-/* En-tête de la journée (date + navigation simple). */
-.nz-dayhead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin: 6px 0 14px;
-}
-.nz-dayhead .nz-daytitle { font-family: var(--font-display, inherit); font-size: 22px; font-weight: 600; }
-.nz-dayhead small { color: var(--ink); opacity: 0.6; font-size: 13px; }
-
-/* Une ligne de moment du jour. */
-.nz-line {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 13px;
-  padding: 13px;
-  margin-bottom: 9px;
-  box-shadow: var(--shadow);
-}
-.nz-line.ponctuel { border-color: var(--saffron); background: var(--saffron-tint); }
-.nz-line .nz-h { font-family: var(--font-mono); color: var(--petrol); font-weight: 600; flex: none; min-width: 46px; }
-.nz-line .nz-body { flex: 1; min-width: 0; }
-.nz-line .nz-lab { font-weight: 600; font-size: 15px; }
-.nz-line .nz-sub { font-size: 12.5px; color: var(--ink); opacity: 0.6; margin-top: 2px; }
-.nz-line .nz-icon { font-size: 18px; flex: none; }
-
-/* Pastille de source / ponctuel. */
-.nz-tag {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 20px;
-  flex: none;
-}
-.nz-tag.ponctuel { background: var(--saffron); color: #fff; }
-.nz-tag.periode { background: var(--draft-tint); color: var(--draft); }
-
-/* Initiales d'enfants concernés en propre. */
-.nz-kids { display: inline-flex; gap: 4px; flex: none; }
-.nz-kid {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-}
+/* Variante danger sur un bouton secondaire (cz-cta ghost). */
+.nz-danger { color: var(--bad) !important; }
