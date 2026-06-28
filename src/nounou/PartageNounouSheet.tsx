@@ -93,7 +93,17 @@ export default function PartageNounouSheet({
       const tel = (dest.tel ?? '').replace(/[^\d]/g, '');
       const wa = `https://wa.me/${tel}?text=${encodeURIComponent(text)}`;
       window.open(wa, '_blank');
-      toast('Lien publié et prêt à envoyer');
+      // Rappel de relecture (non bloquant) si du sensible n'est pas encore relu.
+      const cache = doc.translations?.[dest.langue] ?? {};
+      const aRelire = Object.values(cache).filter((e) => e.status === 'aValider').length;
+      const noTrans = dest.langue !== 'fr' && Object.keys(cache).length === 0;
+      toast(
+        noTrans
+          ? 'Envoyé (en français — pense à générer la traduction)'
+          : aRelire
+            ? `Envoyé · ${aRelire} traduction(s) sensible(s) à relire`
+            : 'Lien publié et prêt à envoyer',
+      );
       void lastEspaceOpen(dest.token).then(setLastOpen);
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Échec de la publication');
@@ -196,8 +206,8 @@ export default function PartageNounouSheet({
             <>
               <div className="nz-info draft" style={{ marginTop: 10 }}>
                 <span>
-                  Tu écris en français ; la traduction est dérivée. Le <b>sensible</b> (santé,
-                  urgences, conduites, allergies) n’est actif qu’<b>après ta relecture</b>.
+                  Tu écris en français ; la traduction part avec le lien. Pense à <b>relire le
+                  sensible</b> (santé, urgences, conduites, allergies) quand tu peux.
                 </span>
               </div>
               <button className="cz-cta ghost" onClick={() => onTraduire(dest.langue)}>

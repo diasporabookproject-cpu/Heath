@@ -21,8 +21,11 @@ export default function TraductionSheet({
   const doc = useNounou((s) => s.doc);
   const mergeTranslations = useNounou((s) => s.mergeTranslations);
   const validateTranslation = useNounou((s) => s.validateTranslation);
+  const editTranslation = useNounou((s) => s.editTranslation);
   const rejectTranslation = useNounou((s) => s.rejectTranslation);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
 
   const info = NOUNOU_LANGS.find((l) => l.code === langue)!;
   const cache = doc.translations?.[langue] ?? {};
@@ -59,8 +62,8 @@ export default function TraductionSheet({
     <Sheet title={`Traduction · ${info.nom}`} sub="Tu écris en français ; ceci est dérivé" onClose={onClose}>
       <div className="nz-info draft" style={{ marginTop: 2 }}>
         <span>
-          Le <b>planning</b> est traduit automatiquement. Le <b>sensible</b> (santé, urgences,
-          conduites, allergies) n’apparaît dans cette langue qu’<b>après ta relecture</b>.
+          Tout est traduit et envoyé. Le <b>sensible</b> (santé, urgences, conduites, allergies) est
+          marqué <b>« à relire »</b> — vérifie-le quand tu peux : valider, éditer, ou rejeter.
         </span>
       </div>
 
@@ -70,7 +73,7 @@ export default function TraductionSheet({
 
       {entries.length > 0 && (
         <div className="nz-emptyline" style={{ marginTop: 12 }}>
-          Planning actif : <b>{autoCount}</b> · sensible validé : <b>{valideCount}</b> · à relire :{' '}
+          Planning : <b>{autoCount}</b> · sensible relu : <b>{valideCount}</b> · sensible à relire :{' '}
           <b>{aValider.length}</b>
         </div>
       )}
@@ -86,15 +89,53 @@ export default function TraductionSheet({
           {aValider.map(([src, e]) => (
             <div key={src} className="nz-trrow draft">
               <div className="nz-trsrc">{src}</div>
-              <div className={'nz-trtxt' + (info.rtl ? ' ar' : '')}>{e.tr || '—'}</div>
-              <div className="nz-tractions">
-                <button className="nz-trbtn ok" onClick={() => validateTranslation(langue, src)}>
-                  Valider
-                </button>
-                <button className="nz-trbtn no" onClick={() => rejectTranslation(langue, src)}>
-                  Rejeter
-                </button>
-              </div>
+              {editing === src ? (
+                <>
+                  <textarea
+                    className={'cz-ta' + (info.rtl ? ' ar' : '')}
+                    rows={2}
+                    dir={info.rtl ? 'rtl' : 'ltr'}
+                    value={editText}
+                    onChange={(ev) => setEditText(ev.target.value)}
+                  />
+                  <div className="nz-tractions">
+                    <button
+                      className="nz-trbtn ok"
+                      onClick={() => {
+                        editTranslation(langue, src, editText.trim());
+                        setEditing(null);
+                        toast('Traduction éditée et validée');
+                      }}
+                    >
+                      Enregistrer
+                    </button>
+                    <button className="nz-trbtn" onClick={() => setEditing(null)}>
+                      Annuler
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={'nz-trtxt' + (info.rtl ? ' ar' : '')}>{e.tr || '—'}</div>
+                  <div className="nz-tractions">
+                    <button className="nz-trbtn ok" onClick={() => validateTranslation(langue, src)}>
+                      Valider
+                    </button>
+                    <button
+                      className="nz-trbtn"
+                      onClick={() => {
+                        setEditing(src);
+                        setEditText(e.tr);
+                      }}
+                    >
+                      Éditer
+                    </button>
+                    <button className="nz-trbtn no" onClick={() => rejectTranslation(langue, src)}>
+                      Rejeter
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </>

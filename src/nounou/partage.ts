@@ -24,13 +24,18 @@ export interface NounouEspace {
   publishedAt: string;
 }
 
-/** Traductions actives (auto + validées) pour une langue → map figée. */
+/**
+ * Traductions diffusées pour une langue → map figée. On envoie TOUT le traduit
+ * (planning + sensible), même non relu : la relecture du sensible est un rappel,
+ * pas un blocage (décision produit Amine, MVP). Seules les entrées vides/rejetées
+ * (absentes) retombent sur le français.
+ */
 function activeTranslations(doc: NounouDoc, langue: NounouLangue): Record<string, string> {
   const out: Record<string, string> = {};
   if (langue === 'fr') return out;
   const cache = doc.translations?.[langue] ?? {};
   for (const [src, e] of Object.entries(cache)) {
-    if (e.status === 'auto' || e.status === 'valide') out[src] = e.tr;
+    if (e.tr.trim()) out[src] = e.tr;
   }
   return out;
 }

@@ -129,6 +129,10 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 ## Journal des sessions
 
 ### Session 7 — 2026-06-28 (Page Nounou)
+- **Lot 4.2 livré — traduction + relecture (dernier 🔴)** : edge function **`generate-translation`** (tool use, darija/arabe/anglais ; garde chiffres/heures/unités + **noms propres** ; lots de 40). Cache `NounouDoc.translations[langue]` (`{src:{tr,sensible,status}}`) ; `collect.ts` étiquette planning (non-sensible) vs sensible ; `translate.ts` appelle l'edge. **Figé au partage** (`payload.trans`) ; page reçue rend via `tr(src)` (repli français), RTL/Naskh en place.
+  - **Déploiement** : fonction déployée côté Supabase (piège du nom : créée d'abord en `rapid-api`, recréée au bon nom `generate-translation` ; pingée OK, noms propres préservés ex. « Sieste d'Adam » → قيلولة Adam). Réutilise le secret `ANTHROPIC_API_KEY`. **Aucune table** ajoutée.
+  - **Ajustement UX (décision Amine) — relecture NON bloquante** : assouplissement de l'invariant §1.6. **Toute la traduction part avec le lien** (planning + sensible), même non relue ; le statut « à valider » devient un **rappel** (compteur dans le partage + écran de relecture ; toast « N à relire » à l'envoi), plus un gate. **Option Éditer** ajoutée (`TraductionSheet` : Valider / Éditer / Rejeter ; éditer fige le texte choisi → validé) ; store `editTranslation`. _Réversible : re-filtrer `activeTranslations` sur auto+valide pour revenir au gate._
+  - Qualité : typecheck + 47 tests + build OK. **→ Brief Nounou FN0–FN5 COMPLET et en prod.**
 - **Lot 3 livré — FN3.1 (Fiche urgence + fiches enfants)** : onglet **Fiche urgence** (admin) avec 4 sections éditables.
   - **Numéros d'urgence** : 19/15/150 Maroc « à vérifier » (édition/ajout/suppression, libellé + numéro + bascule « à vérifier »).
   - **Contacts** : ajout/édition/suppression (nom, téléphone, rôle) → **appel au tap** (`tel:`) côté reçu.

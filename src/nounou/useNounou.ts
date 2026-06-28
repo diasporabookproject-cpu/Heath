@@ -60,6 +60,7 @@ interface NounouState {
   // Traductions (Lot 4.2)
   mergeTranslations: (langue: NounouLangue, entries: { src: string; tr: string; sensible: boolean }[]) => void;
   validateTranslation: (langue: NounouLangue, src: string) => void;
+  editTranslation: (langue: NounouLangue, src: string, tr: string) => void;
   rejectTranslation: (langue: NounouLangue, src: string) => void;
 }
 
@@ -317,6 +318,18 @@ export const useNounou = create<NounouState>((set) => {
         const all = { ...(doc.translations ?? {}) };
         const cur = { ...(all[langue] ?? {}) };
         if (cur[src]) cur[src] = { ...cur[src], status: 'valide' };
+        all[langue] = cur;
+        return { ...doc, translations: all };
+      });
+    },
+
+    editTranslation(langue, src, tr) {
+      mutate((doc) => {
+        const all = { ...(doc.translations ?? {}) };
+        const cur = { ...(all[langue] ?? {}) };
+        const prev = cur[src];
+        // Éditer = relire : on fige le texte choisi par le parent (statut validé).
+        cur[src] = { tr, sensible: prev?.sensible ?? true, status: 'valide' };
         all[langue] = cur;
         return { ...doc, translations: all };
       });
