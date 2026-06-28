@@ -1,26 +1,18 @@
 import { useState } from 'react';
 import type { NounouEspace } from './partage';
 import { projectDay, activePeriode, type DayEntry } from './projection';
-import {
-  todayISO,
-  dayTitleISO,
-  weekDaysISO,
-  dayNumberISO,
-  addDaysISO,
-  SHORT,
-} from './dates';
+import { todayISO, weekDaysISO, dayNumberISO, addDaysISO, SHORT } from './dates';
+import { RLABELS, localizedDayTitle, localizedTimeAgo, type RLabels } from './labels';
 import { MomentIcon, IconChevron, IconChevronLeft, IconPhone, IconAlert } from './icons';
-import { CONDUITE_LABEL, type Conduite, type Enfant, type NounouContact, type NumeroUrgence, type ReglePerm } from '../types';
-import { NOUNOU_LANGS } from '../types';
+import { NOUNOU_LANGS, type Conduite, type Enfant, type NounouContact, type NumeroUrgence, type ReglePerm } from '../types';
 import '../cuisine/cuisine.css';
 import './nounou.css';
 
 // Page reçue (lecture seule) — maquette vue-nounou-v2.
 // Atterrit sur aujourd'hui ; bande de jours ; fiche du jour + bandeau période ;
-// 3 accès d'un seul niveau (Que faire si… / Qui appeler / Les enfants).
-// Hors-ligne (cache PWA). RTL + Naskh si langue arabe.
-// La voix « Mot de Maman » et le contenu Conduites/Contacts se remplissent aux
-// lots 2-3 (le payload les porte dès qu'ils existent).
+// 3 accès d'un seul niveau. RTL + Naskh si langue arabe. Hors-ligne (cache PWA).
+// Contenu (rédigé par le parent) traduit via `espace.trans` ; chrome (libellés
+// fixes + dates) via le dictionnaire `RLABELS`.
 
 type Screen = 'home' | 'conduites' | 'appeler' | 'enfants';
 
@@ -30,8 +22,9 @@ export default function NounouEspaceView({ espace }: { espace: NounouEspace }) {
   const [screen, setScreen] = useState<Screen>('home');
 
   const rtl = NOUNOU_LANGS.find((l) => l.code === espace.langue)?.rtl ?? false;
+  const L = RLABELS[espace.langue] ?? RLABELS.fr;
   const enfantsLabel = doc.enfants.map((e) => e.prenom).join(' & ');
-  /** Traduction figée si disponible, sinon langue d'auteur. */
+  /** Traduction figée du contenu si dispo, sinon langue d'auteur. */
   const tr = (s?: string) => (s ? (espace.trans?.[s] ?? s) : '');
 
   const go = (s: Screen) => {
@@ -47,40 +40,41 @@ export default function NounouEspaceView({ espace }: { espace: NounouEspace }) {
             <span className="cz-mark nz-mark" />
             <span>
               {enfantsLabel || 'La page'}
-              <span className="nz-recsub">Page partagée par Maman</span>
+              <span className="nz-recsub">{L.sharedBy}</span>
             </span>
           </div>
           <span className="nz-offbadge">
-            <span className="od" /> Hors-ligne
+            <span className="od" /> {L.offline}
           </span>
         </div>
       </header>
 
       <div className="cz-content">
         {screen === 'home' && (
-          <HomeScreen doc={doc} date={date} setDate={setDate} go={go} publishedAt={espace.publishedAt} tr={tr} />
+          <HomeScreen doc={doc} date={date} setDate={setDate} go={go} publishedAt={espace.publishedAt} tr={tr} L={L} />
         )}
-        {screen === 'conduites' && <ConduitesScreen conduites={doc.conduites} tr={tr} onBack={() => go('home')} />}
+        {screen === 'conduites' && <ConduitesScreen conduites={doc.conduites} tr={tr} L={L} onBack={() => go('home')} />}
         {screen === 'appeler' && (
           <AppelerScreen
             numeros={doc.urgence.numeros}
             contacts={doc.urgence.contacts}
             regles={doc.urgence.regles}
             tr={tr}
+            L={L}
             onBack={() => go('home')}
           />
         )}
-        {screen === 'enfants' && <EnfantsScreen enfants={doc.enfants} tr={tr} onBack={() => go('home')} />}
+        {screen === 'enfants' && <EnfantsScreen enfants={doc.enfants} tr={tr} L={L} onBack={() => go('home')} />}
       </div>
     </div>
   );
 }
 
-function Back({ onBack }: { onBack: () => void }) {
+function Back({ L, onBack }: { L: RLabels; onBack: () => void }) {
   return (
     <button className="nz-rsback" onClick={onBack}>
       <IconChevronLeft size={20} />
-      Retour
+      {L.back}
     </button>
   );
 }
@@ -92,6 +86,7 @@ function HomeScreen({
   go,
   publishedAt,
   tr,
+  L,
 }: {
   doc: NounouEspace['doc'];
   date: string;
@@ -99,6 +94,7 @@ function HomeScreen({
   go: (s: Screen) => void;
   publishedAt: string;
   tr: (s?: string) => string;
+  L: RLabels;
 }) {
   const week = weekDaysISO(date);
   const entries = projectDay(doc, date);
@@ -114,7 +110,7 @@ function HomeScreen({
   return (
     <>
       <div className="nz-daystrip">
-        <button className="nz-dsnav" onClick={() => setDate(addDaysISO(date, -7))} aria-label="Semaine précédente">
+        <button className="nz-dsnav" onClick={() => setDate(addDaysISO(date, -7))} aria-label="←">
           <IconChevronLeft size={16} />
         </button>
         <div className="nz-dschips">
@@ -134,7 +130,7 @@ function HomeScreen({
             );
           })}
         </div>
-        <button className="nz-dsnav" onClick={() => setDate(addDaysISO(date, 7))} aria-label="Semaine suivante">
+        <button className="nz-dsnav" onClick={() => setDate(addDaysISO(date, 7))} aria-label="→">
           <span style={{ transform: 'rotate(180deg)', display: 'grid' }}>
             <IconChevronLeft size={16} />
           </span>
@@ -142,8 +138,8 @@ function HomeScreen({
       </div>
 
       <div className="nz-daytitle">
-        {isToday ? 'Aujourd’hui' : dayTitleISO(date)}
-        <small>{isToday ? dayTitleISO(date) : ''}</small>
+        {isToday ? L.today : localizedDayTitle(date, L)}
+        <small>{isToday ? localizedDayTitle(date, L) : ''}</small>
       </div>
 
       {per && (
@@ -158,12 +154,12 @@ function HomeScreen({
 
       <div className="nz-sheetlist">
         {entries.length === 0 ? (
-          <div className="nz-dayempty">Rien de prévu ce jour.</div>
+          <div className="nz-dayempty">{L.nothing}</div>
         ) : (
           <div className="nz-shcard">
             {entries.map((e) => {
               const kids = tagsFor(e);
-              const sub = [tr(e.lieu), e.qui ? `${tr(e.qui)}` : ''].filter(Boolean).join(' · ');
+              const sub = [tr(e.lieu), e.qui ? tr(e.qui) : ''].filter(Boolean).join(' · ');
               return (
                 <div key={e.id} className="nz-item" style={{ cursor: 'default' }}>
                   <span className="tm">{e.heure}</span>
@@ -178,7 +174,6 @@ function HomeScreen({
                           {k.initiale}
                         </span>
                       ))}
-                      {e.source === 'ponctuel' && <span className="nz-ponct">Ponctuel</span>}
                     </span>
                     {sub && <span className="ss">{sub}</span>}
                   </span>
@@ -189,7 +184,6 @@ function HomeScreen({
         )}
       </div>
 
-      {/* 3 accès d'un seul niveau */}
       <div className="nz-rentries">
         <button className="nz-rentry" onClick={() => go('conduites')}>
           <span className="rei c1">
@@ -198,8 +192,8 @@ function HomeScreen({
             </svg>
           </span>
           <span className="rew">
-            <span className="reh">Que faire si…</span>
-            <span className="resub">Fièvre, blessure, étouffement…</span>
+            <span className="reh">{L.tConduites}</span>
+            <span className="resub">{L.tConduitesSub}</span>
           </span>
           <span className="rec">
             <IconChevron size={20} />
@@ -211,8 +205,8 @@ function HomeScreen({
             <IconPhone size={22} />
           </span>
           <span className="rew">
-            <span className="reh">Qui appeler</span>
-            <span className="resub">Urgences et contacts</span>
+            <span className="reh">{L.tAppeler}</span>
+            <span className="resub">{L.tAppelerSub}</span>
           </span>
           <span className="rec">
             <IconChevron size={20} />
@@ -228,8 +222,8 @@ function HomeScreen({
             </svg>
           </span>
           <span className="rew">
-            <span className="reh">Les enfants</span>
-            <span className="resub">Allergies, habitudes, médecin</span>
+            <span className="reh">{L.tEnfants}</span>
+            <span className="resub">{L.tEnfantsSub}</span>
           </span>
           <span className="rec">
             <IconChevron size={20} />
@@ -240,9 +234,9 @@ function HomeScreen({
       <div className="nz-recfoot">
         <span className="upd">
           <span className="fdot" />
-          Mis à jour par Maman {timeAgo(publishedAt)}
+          {L.updatedBy} {localizedTimeAgo(publishedAt, L)}
         </span>
-        <span>Cette page reste à jour toute seule.</span>
+        <span>{L.autoUpdate}</span>
       </div>
     </>
   );
@@ -251,10 +245,12 @@ function HomeScreen({
 function ConduitesScreen({
   conduites,
   tr,
+  L,
   onBack,
 }: {
   conduites: Conduite[];
   tr: (s?: string) => string;
+  L: RLabels;
   onBack: () => void;
 }) {
   const [open, setOpen] = useState<string | null>(null);
@@ -262,11 +258,11 @@ function ConduitesScreen({
 
   return (
     <div className="nz-rscreen">
-      <Back onBack={onBack} />
-      <div className="nz-rstitle">Que faire si…</div>
-      <div className="nz-rssub">Les consignes de Maman. Sa voix est en haut de chaque consigne.</div>
+      <Back L={L} onBack={onBack} />
+      <div className="nz-rstitle">{L.tConduites}</div>
+      <div className="nz-rssub">{L.conduitesSub}</div>
       {ready.length === 0 ? (
-        <div className="nz-dayempty">Aucune consigne partagée pour l’instant.</div>
+        <div className="nz-dayempty">{L.conduitesEmpty}</div>
       ) : (
         <div className="nz-acc">
           {ready.map((c) => {
@@ -281,9 +277,9 @@ function ConduitesScreen({
                   <span className="aw">
                     <span className="an">{tr(c.titre)}</span>
                     <span className="asub">
-                      <span>{CONDUITE_LABEL[c.categ]}</span>
-                      {c.urgent && <span className="urgtag">Urgent</span>}
-                      {c.voix && <span className="voicetag">Voix de Maman</span>}
+                      <span>{L.cat[c.categ]}</span>
+                      {c.urgent && <span className="urgtag">{L.urgent}</span>}
+                      {c.voix && <span className="voicetag">{L.voix}</span>}
                     </span>
                   </span>
                   <span className="achev">
@@ -291,7 +287,7 @@ function ConduitesScreen({
                   </span>
                 </button>
                 <div className="nz-accbody">
-                  {c.urgent && <div className="nz-urgnote">Urgence : agir d’abord, prévenir ensuite.</div>}
+                  {c.urgent && <div className="nz-urgnote">{L.urgenceNote}</div>}
                   {c.voix && (
                     <div className="nz-accvoice">
                       <audio src={c.voix} controls style={{ width: '100%' }} />
@@ -301,7 +297,7 @@ function ConduitesScreen({
                     <div className="nz-callrow">
                       <IconPhone size={18} />
                       <div>
-                        <div className="cl">Qui appeler</div>
+                        <div className="cl">{L.quiAppeler}</div>
                         <div className="cv">{tr(c.quiAppeler)}</div>
                       </div>
                     </div>
@@ -328,29 +324,31 @@ function AppelerScreen({
   contacts,
   regles,
   tr,
+  L,
   onBack,
 }: {
   numeros: NumeroUrgence[];
   contacts: NounouContact[];
   regles: ReglePerm[];
   tr: (s?: string) => string;
+  L: RLabels;
   onBack: () => void;
 }) {
   return (
     <div className="nz-rscreen">
-      <Back onBack={onBack} />
-      <div className="nz-rstitle">Qui appeler</div>
+      <Back L={L} onBack={onBack} />
+      <div className="nz-rstitle">{L.quiAppeler}</div>
 
       {numeros.length > 0 && (
         <>
-          <div className="nz-callsec">En cas d’urgence</div>
+          <div className="nz-callsec">{L.enUrgence}</div>
           <div className="nz-ccard">
             {numeros.map((n) => (
               <a key={n.numero} className="nz-crow" href={`tel:${n.numero}`}>
                 <span className="nz-cav num">{n.numero}</span>
                 <span className="nz-cw">
                   <span className="nz-cnm">{tr(n.label)}</span>
-                  <span className="nz-ccr">{n.aVerifier ? 'À vérifier' : ''}</span>
+                  <span className="nz-ccr">{n.aVerifier ? L.aVerifier : ''}</span>
                 </span>
                 <span className="nz-cbtn urg">
                   <IconPhone size={18} />
@@ -361,9 +359,9 @@ function AppelerScreen({
         </>
       )}
 
-      <div className="nz-callsec">Contacts</div>
+      <div className="nz-callsec">{L.contacts}</div>
       {contacts.length === 0 ? (
-        <div className="nz-dayempty">Pas encore de contact ajouté.</div>
+        <div className="nz-dayempty">{L.contactsEmpty}</div>
       ) : (
         <div className="nz-ccard">
           {contacts.map((c) => (
@@ -383,7 +381,7 @@ function AppelerScreen({
 
       {regles.length > 0 && (
         <>
-          <div className="nz-callsec">Règles &amp; autorisations</div>
+          <div className="nz-callsec">{L.regles}</div>
           <div className="nz-card" style={{ padding: '4px 15px' }}>
             {regles.map((r) => (
               <div key={r.id} className="nz-permrow">
@@ -401,16 +399,18 @@ function AppelerScreen({
 function EnfantsScreen({
   enfants,
   tr,
+  L,
   onBack,
 }: {
   enfants: Enfant[];
   tr: (s?: string) => string;
+  L: RLabels;
   onBack: () => void;
 }) {
   return (
     <div className="nz-rscreen">
-      <Back onBack={onBack} />
-      <div className="nz-rstitle">Les enfants</div>
+      <Back L={L} onBack={onBack} />
+      <div className="nz-rstitle">{L.tEnfants}</div>
       {enfants.map((e) => {
         const f = e.fiche;
         return (
@@ -433,41 +433,32 @@ function EnfantsScreen({
             )}
             {f?.traitement && (
               <div className="nz-kidkv">
-                <div className="kk">Traitement</div>
+                <div className="kk">{L.traitement}</div>
                 <div className="kvv">{tr(f.traitement)}</div>
               </div>
             )}
             {f?.medecin && (
               <div className="nz-kidkv">
-                <div className="kk">Médecin</div>
+                <div className="kk">{L.medecin}</div>
                 <div className="kvv">{tr(f.medecin)}</div>
               </div>
             )}
             {f?.groupe && (
               <div className="nz-kidkv">
-                <div className="kk">Groupe</div>
+                <div className="kk">{L.groupe}</div>
                 <div className="kvv">{f.groupe}</div>
               </div>
             )}
             {f?.habitudes && (
               <div className="nz-kidkv">
-                <div className="kk">Habitudes</div>
+                <div className="kk">{L.habitudes}</div>
                 <div className="kvv">{tr(f.habitudes)}</div>
               </div>
             )}
-            {!f && <div className="nz-emptyline">Fiche à compléter par le parent.</div>}
+            {!f && <div className="nz-emptyline">{L.ficheTodo}</div>}
           </div>
         );
       })}
     </div>
   );
-}
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const h = Math.floor(diff / 3_600_000);
-  if (h < 1) return 'à l’instant';
-  if (h < 24) return `il y a ${h} h`;
-  const d = Math.floor(h / 24);
-  return d === 1 ? 'hier' : `il y a ${d} j`;
 }
