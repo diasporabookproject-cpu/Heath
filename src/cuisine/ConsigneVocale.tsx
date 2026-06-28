@@ -17,9 +17,16 @@ function pickMime(): string {
 export default function ConsigneVocale({
   recipeId,
   onChange,
+  title = 'Consigne vocale pour la cuisinière',
+  subtitle = 'Ta voix, dans sa langue',
+  idleHint = 'Ta voix sera partagée avec la cuisinière dans le brief',
 }: {
   recipeId: string;
   onChange?: (has: boolean) => void;
+  /** Libellés (la page Nounou réutilise ce composant avec un autre contexte). */
+  title?: string;
+  subtitle?: string;
+  idleHint?: string;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
@@ -118,8 +125,8 @@ export default function ConsigneVocale({
       <div className="cz-voicecard">
         <div className="vh">
           <div className="vl">
-            Consigne vocale pour la cuisinière
-            <small>Ta voix, dans sa langue</small>
+            {title}
+            <small>{subtitle}</small>
           </div>
           <span className="cz-vshare">
             <IconShareUp size={11} />
@@ -166,7 +173,7 @@ export default function ConsigneVocale({
         </span>
         <span className="rt">
           Enregistrer une consigne vocale
-          <small>Ta voix sera partagée avec la cuisinière dans le brief</small>
+          <small>{idleHint}</small>
         </span>
       </button>
       {error && <div className="cz-voiceerr">{error}</div>}

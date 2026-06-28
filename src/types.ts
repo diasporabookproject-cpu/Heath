@@ -235,6 +235,8 @@ export interface Conduite {
   /** Étapes numérotées (une par ligne). */
   etapes: string;
   quiAppeler?: string;
+  /** URL publique de la consigne vocale (renseignée seulement dans le payload publié). */
+  voix?: string;
   createdAt: number;
 }
 

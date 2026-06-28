@@ -265,6 +265,7 @@ function ConduitesScreen({ conduites, onBack }: { conduites: Conduite[]; onBack:
                     <span className="asub">
                       <span>{CONDUITE_LABEL[c.categ]}</span>
                       {c.urgent && <span className="urgtag">Urgent</span>}
+                      {c.voix && <span className="voicetag">Voix de Maman</span>}
                     </span>
                   </span>
                   <span className="achev">
@@ -273,6 +274,11 @@ function ConduitesScreen({ conduites, onBack }: { conduites: Conduite[]; onBack:
                 </button>
                 <div className="nz-accbody">
                   {c.urgent && <div className="nz-urgnote">Urgence : agir d’abord, prévenir ensuite.</div>}
+                  {c.voix && (
+                    <div className="nz-accvoice">
+                      <audio src={c.voix} controls style={{ width: '100%' }} />
+                    </div>
+                  )}
                   {c.quiAppeler && (
                     <div className="nz-callrow">
                       <IconPhone size={18} />

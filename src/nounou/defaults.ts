@@ -2,7 +2,7 @@
 // et ne fait qu'amorcer la page : un rythme plausible, deux enfants, les numéros
 // d'urgence Maroc « à vérifier ». Aucun conseil médical n'est généré (§1.8).
 
-import type { NounouDoc, UrgenceFiche } from '../types';
+import type { ConduiteCateg, NounouDoc, UrgenceFiche } from '../types';
 
 /** Identifiant local court, stable et non devinable. */
 export function uid(): string {
@@ -22,6 +22,16 @@ export const TOUS_LES_JOURS = [0, 1, 2, 3, 4, 5, 6];
 
 /** Palette d'accents pour les enfants (lisible sur fond clair). */
 export const ENFANT_COULEURS = ['#1e4d45', '#b6791c', '#7a5aa6', '#9a3b3b', '#2f6f8f', '#6b7a2f'];
+
+/** Modèles de conduites « à compléter » par le parent (aucun conseil généré, §1.8). */
+export const CONDUITE_MODELES: { titre: string; categ: ConduiteCateg; urgent?: boolean }[] = [
+  { titre: 'Fièvre', categ: 'sante' },
+  { titre: 'Petite blessure / chute', categ: 'sante' },
+  { titre: 'Étouffement', categ: 'sante', urgent: true },
+  { titre: 'Réaction allergique', categ: 'sante', urgent: true },
+  { titre: 'Refus de manger', categ: 'quotidien' },
+  { titre: 'Étranger à la porte', categ: 'securite' },
+];
 
 /** Numéros d'urgence Maroc — affichés avec la mention « à vérifier » (§FN3.1). */
 const NUMEROS_MAROC: UrgenceFiche['numeros'] = [
@@ -59,6 +69,16 @@ export function seedNounouDoc(): NounouDoc {
     { id: uid(), label: 'Goûter', heure: '16:30', type: 'gouter', jours: TOUS_LES_JOURS, enfants: [] },
     { id: uid(), label: 'Coucher', heure: '20:30', type: 'coucher', jours: TOUS_LES_JOURS, enfants: [] },
   ];
+  // Bibliothèque de conduites amorcée en gabarits « à compléter » (anti-page-blanche).
+  doc.conduites = CONDUITE_MODELES.map((m, i) => ({
+    id: uid(),
+    titre: m.titre,
+    categ: m.categ,
+    urgent: m.urgent,
+    aCompleter: true,
+    etapes: '',
+    createdAt: i,
+  }));
   // Un destinataire de départ (anti-page-blanche) : la nounou, scopée à tous.
   doc.destinataires = [
     {

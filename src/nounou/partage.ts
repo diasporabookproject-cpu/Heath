@@ -1,6 +1,8 @@
 import { getSupabase } from '../lib/supabase';
-import { getAccessToken } from '../lib/publish';
+import { getAccessToken, uploadAudios } from '../lib/publish';
 import { buildEspaceUrl } from '../lib/espace';
+import { loadAudioKeys } from '../lib/db';
+import { newToken } from './defaults';
 import type { Enfant, Moment, NounouDest, NounouDoc, NounouLangue, Periode } from '../types';
 
 // Partage de la page Nounou : payload scopé au destinataire (ses enfants, son
@@ -74,9 +76,22 @@ export async function publishNounouEspace(
 ): Promise<{ url: string }> {
   const supa = getSupabase();
   if (!supa) throw new Error('Synchro non configurée.');
-  await getAccessToken(); // exige une session (écriture connectée)
+  const token = await getAccessToken(); // exige une session (écriture connectée)
 
   const payload = buildNounouEspace(doc, dest, new Date().toISOString());
+
+  // Consignes vocales des conduites (la voix du parent) → bucket public `shared`,
+  // figées dans le payload (URL) pour la lecture côté employée.
+  const audioKeys = new Set(await loadAudioKeys());
+  const withVoix = payload.doc.conduites.filter((c) => !c.aCompleter && audioKeys.has(c.id));
+  if (withVoix.length) {
+    const prefix = `${dest.token}/${newToken().slice(0, 8)}`;
+    const urls = await uploadAudios(withVoix.map((c) => c.id), prefix, token);
+    payload.doc.conduites = payload.doc.conduites.map((c) =>
+      urls.has(c.id) ? { ...c, voix: urls.get(c.id) } : c,
+    );
+  }
+
   const { error } = await supa
     .from('espaces')
     .upsert({ token: dest.token, payload, updated_at: new Date().toISOString() });

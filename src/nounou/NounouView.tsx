@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNounou } from './useNounou';
 import JourneeView from './JourneeView';
+import ConduitesView from './ConduitesView';
 import PartageNounouSheet from './PartageNounouSheet';
 import { IconShareUp, IconCheck } from '../cuisine/icons';
 import '../cuisine/cuisine.css';
@@ -89,11 +90,7 @@ export default function NounouView({ showAccount, connected, onOpenAccount }: Pr
         {seg === 'journee' ? (
           <JourneeView toast={toast} />
         ) : seg === 'conduites' ? (
-          <Placeholder
-            emoji="🧭"
-            titre="Conduites — à venir"
-            sub="« Que faire si… » : protocoles, voix et qui appeler (Lot 2)."
-          />
+          <ConduitesView toast={toast} />
         ) : (
           <Placeholder
             emoji="🚨"
