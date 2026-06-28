@@ -181,6 +181,13 @@
 .nz-cbtn { width: 44px; height: 44px; border-radius: 13px; border: none; display: grid; place-items: center; flex: none; color: #fff; background: var(--petrol); }
 .nz-cbtn.urg { background: var(--bad); }
 
+/* Règles & autorisations (page reçue) */
+.nz-permrow { display: flex; align-items: flex-start; gap: 10px; padding: 11px 0; font-size: 14px; line-height: 1.35; }
+.nz-permrow + .nz-permrow { border-top: 1px solid var(--line); }
+.nz-permrow .pm { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; margin-top: 1px; }
+.nz-permrow .pm.ok { background: #eaf5ee; color: var(--ok); }
+.nz-permrow .pm.no { background: #f7e7e3; color: var(--bad); }
+
 /* Fiches enfants */
 .nz-kidblock { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); margin-bottom: 14px; }
 .nz-kidhd { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
@@ -218,6 +225,16 @@
 .nz-switch[aria-pressed='true'] .kn { background: var(--bad); }
 .nz-switch .kn::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: 0.18s; }
 .nz-switch[aria-pressed='true'] .kn::after { left: 21px; }
+
+/* Sélecteur de couleur (fiche enfant) */
+.nz-coulsel { display: flex; gap: 10px; flex-wrap: wrap; }
+.nz-coul { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+.nz-coul.on { border-color: var(--ink); box-shadow: 0 0 0 2px var(--paper) inset; }
+
+/* Pastille numéro / icône règle dans une brique */
+.nz-brick .bi.num { font-family: var(--font-mono); font-weight: 600; font-size: 14px; background: #f7e7e3; color: var(--bad); }
+.nz-brick .bi.ok { background: #eaf5ee; color: var(--ok); }
+.nz-brick .bi.no { background: #f7e7e3; color: var(--bad); }
 
 /* RTL (arabe / darija) */
 .nz-rtl { direction: rtl; }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNounou } from './useNounou';
 import JourneeView from './JourneeView';
 import ConduitesView from './ConduitesView';
+import FicheUrgenceView from './FicheUrgenceView';
 import PartageNounouSheet from './PartageNounouSheet';
 import { IconShareUp, IconCheck } from '../cuisine/icons';
 import '../cuisine/cuisine.css';
@@ -92,11 +93,7 @@ export default function NounouView({ showAccount, connected, onOpenAccount }: Pr
         ) : seg === 'conduites' ? (
           <ConduitesView toast={toast} />
         ) : (
-          <Placeholder
-            emoji="🚨"
-            titre="Fiche urgence — à venir"
-            sub="Numéros, contacts, règles et fiches enfants (Lot 3)."
-          />
+          <FicheUrgenceView toast={toast} />
         )}
       </div>
 
@@ -108,16 +105,6 @@ export default function NounouView({ showAccount, connected, onOpenAccount }: Pr
         {toastMsg && <IconCheck size={16} />}
         {toastMsg}
       </div>
-    </div>
-  );
-}
-
-function Placeholder({ emoji, titre, sub }: { emoji: string; titre: string; sub: string }) {
-  return (
-    <div className="nz-empty">
-      <span className="nz-emoji">{emoji}</span>
-      {titre}
-      <small>{sub}</small>
     </div>
   );
 }

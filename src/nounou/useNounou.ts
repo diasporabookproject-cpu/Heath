@@ -1,5 +1,16 @@
 import { create } from 'zustand';
-import type { Conduite, Enfant, Moment, NounouDest, NounouDoc, Periode, Ponctuel } from '../types';
+import type {
+  Conduite,
+  Enfant,
+  Moment,
+  NounouContact,
+  NounouDest,
+  NounouDoc,
+  NumeroUrgence,
+  Periode,
+  Ponctuel,
+  ReglePerm,
+} from '../types';
 import { loadNounou, saveNounou } from '../lib/db';
 import { emptyNounouDoc, mergeNounouDoc, newToken, seedNounouDoc, uid } from './defaults';
 
@@ -37,6 +48,13 @@ interface NounouState {
   // Destinataires (lien durable scopé)
   upsertDest: (d: Partial<NounouDest> & { prenom: string }) => string;
   removeDest: (id: string) => void;
+
+  // Fiche urgence (Lot 3)
+  setNumeros: (numeros: NumeroUrgence[]) => void;
+  upsertContact: (c: Partial<NounouContact> & { nom: string; tel: string }) => string;
+  removeContact: (id: string) => void;
+  upsertRegle: (r: Partial<ReglePerm> & { texte: string; permis: boolean }) => string;
+  removeRegle: (id: string) => void;
 }
 
 export const useNounou = create<NounouState>((set) => {
@@ -68,17 +86,17 @@ export const useNounou = create<NounouState>((set) => {
     upsertEnfant(e) {
       const id = e.id ?? uid();
       mutate((doc) => {
-        const initiale = e.initiale ?? e.prenom.charAt(0).toUpperCase();
         const idx = doc.enfants.findIndex((x) => x.id === id);
+        const prev = idx >= 0 ? doc.enfants[idx] : undefined;
         const next: Enfant = {
           id,
           prenom: e.prenom,
-          initiale,
-          couleur: e.couleur ?? '#1e4d45',
-          fiche: e.fiche,
+          initiale: e.initiale ?? prev?.initiale ?? e.prenom.charAt(0).toUpperCase(),
+          couleur: e.couleur ?? prev?.couleur ?? '#1e4d45',
+          fiche: e.fiche ?? prev?.fiche,
         };
         const enfants =
-          idx >= 0 ? doc.enfants.map((x) => (x.id === id ? { ...x, ...next } : x)) : [...doc.enfants, next];
+          idx >= 0 ? doc.enfants.map((x) => (x.id === id ? next : x)) : [...doc.enfants, next];
         return { ...doc, enfants };
       });
       return id;
@@ -226,6 +244,52 @@ export const useNounou = create<NounouState>((set) => {
 
     removeDest(id) {
       mutate((doc) => ({ ...doc, destinataires: doc.destinataires.filter((d) => d.id !== id) }));
+    },
+
+    setNumeros(numeros) {
+      mutate((doc) => ({ ...doc, urgence: { ...doc.urgence, numeros } }));
+    },
+
+    upsertContact(c) {
+      const id = c.id ?? uid();
+      mutate((doc) => {
+        const next: NounouContact = { id, nom: c.nom, tel: c.tel, role: c.role };
+        const idx = doc.urgence.contacts.findIndex((x) => x.id === id);
+        const contacts =
+          idx >= 0
+            ? doc.urgence.contacts.map((x) => (x.id === id ? next : x))
+            : [...doc.urgence.contacts, next];
+        return { ...doc, urgence: { ...doc.urgence, contacts } };
+      });
+      return id;
+    },
+
+    removeContact(id) {
+      mutate((doc) => ({
+        ...doc,
+        urgence: { ...doc.urgence, contacts: doc.urgence.contacts.filter((c) => c.id !== id) },
+      }));
+    },
+
+    upsertRegle(r) {
+      const id = r.id ?? uid();
+      mutate((doc) => {
+        const next: ReglePerm = { id, texte: r.texte, permis: r.permis };
+        const idx = doc.urgence.regles.findIndex((x) => x.id === id);
+        const regles =
+          idx >= 0
+            ? doc.urgence.regles.map((x) => (x.id === id ? next : x))
+            : [...doc.urgence.regles, next];
+        return { ...doc, urgence: { ...doc.urgence, regles } };
+      });
+      return id;
+    },
+
+    removeRegle(id) {
+      mutate((doc) => ({
+        ...doc,
+        urgence: { ...doc.urgence, regles: doc.urgence.regles.filter((r) => r.id !== id) },
+      }));
     },
   };
 

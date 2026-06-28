@@ -10,7 +10,7 @@ import {
   SHORT,
 } from './dates';
 import { MomentIcon, IconChevron, IconChevronLeft, IconPhone, IconAlert } from './icons';
-import { CONDUITE_LABEL, type Conduite, type Enfant, type NounouContact, type NumeroUrgence } from '../types';
+import { CONDUITE_LABEL, type Conduite, type Enfant, type NounouContact, type NumeroUrgence, type ReglePerm } from '../types';
 import { NOUNOU_LANGS } from '../types';
 import '../cuisine/cuisine.css';
 import './nounou.css';
@@ -60,7 +60,12 @@ export default function NounouEspaceView({ espace }: { espace: NounouEspace }) {
         )}
         {screen === 'conduites' && <ConduitesScreen conduites={doc.conduites} onBack={() => go('home')} />}
         {screen === 'appeler' && (
-          <AppelerScreen numeros={doc.urgence.numeros} contacts={doc.urgence.contacts} onBack={() => go('home')} />
+          <AppelerScreen
+            numeros={doc.urgence.numeros}
+            contacts={doc.urgence.contacts}
+            regles={doc.urgence.regles}
+            onBack={() => go('home')}
+          />
         )}
         {screen === 'enfants' && <EnfantsScreen enfants={doc.enfants} onBack={() => go('home')} />}
       </div>
@@ -308,10 +313,12 @@ function ConduitesScreen({ conduites, onBack }: { conduites: Conduite[]; onBack:
 function AppelerScreen({
   numeros,
   contacts,
+  regles,
   onBack,
 }: {
   numeros: NumeroUrgence[];
   contacts: NounouContact[];
+  regles: ReglePerm[];
   onBack: () => void;
 }) {
   return (
@@ -357,6 +364,20 @@ function AppelerScreen({
             </a>
           ))}
         </div>
+      )}
+
+      {regles.length > 0 && (
+        <>
+          <div className="nz-callsec">Règles &amp; autorisations</div>
+          <div className="nz-card" style={{ padding: '4px 15px' }}>
+            {regles.map((r) => (
+              <div key={r.id} className="nz-permrow">
+                <span className={'pm ' + (r.permis ? 'ok' : 'no')}>{r.permis ? '✓' : '✗'}</span>
+                <span>{r.texte}</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
