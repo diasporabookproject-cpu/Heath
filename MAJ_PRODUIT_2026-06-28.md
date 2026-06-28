@@ -119,10 +119,40 @@ nounou ouvre une **page en lecture seule, hors-ligne, dans sa langue**.
 
 ---
 
-## G. Cuisine — inchangée aujourd'hui
+## G. Cuisine — historique des lots (rappel, **inchangée aujourd'hui**)
 
-Aucune évolution produit. Seul changement technique : le composant de **consigne vocale**
-est devenu réutilisable (il sert aussi à Nounou) — comportement Cuisine identique.
+Aucune évolution produit ce jour (seul changement technique : composant de consigne
+vocale rendu réutilisable). Rappel de l'historique pour le manifeste — la Cuisine a été
+livrée en **deux refontes**, toutes deux en prod.
+
+### G.1 — Refonte Cuisine v1 (brief FC1→FC10), 5 lots
+
+| Lot | Fiches | Objet | Statut |
+|----|--------|-------|--------|
+| 1 | FC1, FC2, FC3 | Navigation (segments Semaine/Recettes/Courses) · vue Semaine · sélecteur de recette | ✅ prod |
+| 2 | FC5, FC6, FC7 | Bibliothèque Recettes (statuts/filtres) · ajout (saisir / IA / import JSON) + auto-macros · fiche recette (édition, validation, étapes, vocal) | ✅ prod |
+| 3 | FC4 | Générateur de semaine hybride (bibliothèque + complétion IA) + « changer un repas placé » | ✅ prod |
+| 4 | FC9, FC10 | Envoi en un geste (partage + WhatsApp + accusé) · espace cuisinière (voix, FR/darija, RTL) | ✅ prod |
+| 5 | FC8 | Liste de courses par rayon, ×personnes, partage | ✅ prod |
+
+### G.2 — Refonte Cuisine v2 (brief FC11→FC19), 5 lots + ajustements
+
+Réécriture du modèle : **3 repas/jour** (petit-déj/déj/dîner, optionnels), repas
+**multi-composants** (entrée/plat/accompagnement), objectif calorique **individuel**.
+
+| Lot | Fiches | Objet | Statut |
+|----|--------|-------|--------|
+| 1 | FC11, FC12, FC13 | Modèle 3 repas · composeur multi-composants · objectif individuel + nb de personnes | ✅ prod |
+| 2 | FC15, FC17, FC18 | Favoris · import par **texte collé** (IA) · création → fiche directe + « Valider » 1-tap | ✅ prod |
+| 3 | FC16 | Génération = **complétion IA des repas vides** (dimensionnée sous l'objectif) | ✅ prod |
+| 4 | FC14 | Navigation **multi-semaines** + copier une semaine | ✅ prod |
+| 5 | FC19 | Courses + espace cuisinière sur le modèle complet (composants ×personnes, voix) | ✅ prod |
+| + | — | Repas **optionnels** (totaux/moyenne sur jours non vides) · audit de code v2 | ✅ prod |
+
+### G.3 — État Cuisine aujourd'hui (résumé manifeste)
+3 repas/jour avec composants · objectif individuel · favoris · génération IA des repas
+vides · multi-semaines + copie · courses par rayon ×personnes · espace cuisinière (voix +
+darija RTL, sans nutrition) · partage par lien avec accusé de lecture.
 
 ## H. Infrastructure
 
