@@ -111,7 +111,93 @@
 .nz-recsub { display: block; font-family: var(--font-body); font-size: 11.5px; color: var(--muted); font-weight: 500; margin-top: 2px; }
 .nz-offbadge { font-size: 10.5px; font-weight: 600; color: var(--ok); background: #eaf5ee; border: 1px solid #cbe6d6; padding: 6px 9px; border-radius: 20px; display: flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; }
 .nz-offbadge .od { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
-.nz-recfoot { text-align: center; color: var(--muted); font-size: 12.5px; margin: 22px 0 34px; }
+.nz-recfoot { text-align: center; color: var(--muted); font-size: 12.5px; margin: 22px 16px 34px; display: flex; flex-direction: column; gap: 5px; align-items: center; line-height: 1.5; }
+.nz-recfoot .upd { display: flex; align-items: center; gap: 7px; }
+.nz-recfoot .upd .fdot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+
+/* Hero « Mot de Maman » (voix du parent) */
+.nz-vhero { margin: 4px 16px 16px; background: var(--petrol); color: #f4f1e9; border-radius: 16px; padding: 14px 15px; display: flex; align-items: center; gap: 13px; box-shadow: var(--shadow); }
+.nz-vhero .play { width: 50px; height: 50px; border-radius: 50%; background: rgba(244, 241, 233, 0.16); border: 1.5px solid rgba(244, 241, 233, 0.42); display: grid; place-items: center; flex: none; cursor: pointer; color: #fff; }
+.nz-vhero .vt { font-family: var(--font-display, 'Fraunces', serif); font-size: 16.5px; font-weight: 600; line-height: 1.1; }
+.nz-vhero .vd { font-size: 12.5px; color: rgba(244, 241, 233, 0.72); margin-top: 2px; }
+
+/* Les 3 accès */
+.nz-rentries { margin: 18px 16px 0; display: flex; flex-direction: column; gap: 11px; }
+.nz-rentry { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 15px 16px; cursor: pointer; box-shadow: var(--shadow); text-align: left; width: 100%; font-family: var(--font-body); color: var(--ink); }
+.nz-rentry:active { transform: scale(0.99); }
+.nz-rentry .rei { width: 48px; height: 48px; border-radius: 13px; display: grid; place-items: center; flex: none; }
+.nz-rentry .rei.c1 { background: var(--petrol-tint); color: var(--petrol); }
+.nz-rentry .rei.c2 { background: #f7e7e3; color: var(--bad); }
+.nz-rentry .rei.c3 { background: var(--saffron-tint); color: var(--saffron); }
+.nz-rentry .rew { flex: 1; min-width: 0; }
+.nz-rentry .reh { font-size: 16.5px; font-weight: 600; line-height: 1.15; }
+.nz-rentry .resub { font-size: 12.5px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+.nz-rentry .rec { color: #c7bdad; flex: none; }
+
+/* Sous-écran (Que faire si… / Qui appeler / Les enfants) */
+.nz-rscreen { padding: 14px 16px 8px; }
+.nz-rsback { display: flex; align-items: center; gap: 9px; padding: 2px 0 14px; cursor: pointer; color: var(--petrol); font-weight: 600; font-size: 15px; background: none; border: none; font-family: var(--font-body); }
+.nz-rstitle { font-family: var(--font-display, 'Fraunces', serif); font-size: 23px; font-weight: 600; margin-bottom: 6px; }
+.nz-rssub { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.45; }
+
+/* Accordéon conduites */
+.nz-acc { display: flex; flex-direction: column; gap: 11px; }
+.nz-accitem { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+.nz-acchead { display: flex; align-items: center; gap: 12px; padding: 15px 16px; cursor: pointer; width: 100%; background: none; border: none; text-align: left; font-family: var(--font-body); color: var(--ink); }
+.nz-acchead .ai { width: 42px; height: 42px; border-radius: 12px; background: var(--petrol-tint); color: var(--petrol); display: grid; place-items: center; flex: none; }
+.nz-acchead .ai.urg { background: #f7e7e3; color: var(--bad); }
+.nz-acchead .aw { flex: 1; min-width: 0; }
+.nz-acchead .an { font-size: 16.5px; font-weight: 600; line-height: 1.15; }
+.nz-acchead .asub { font-size: 12px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.nz-acchead .urgtag { font-size: 9.5px; font-weight: 700; text-transform: uppercase; background: #f7e7e3; color: var(--bad); padding: 2px 7px; border-radius: 5px; }
+.nz-acchead .voicetag { font-size: 9.5px; font-weight: 700; text-transform: uppercase; background: var(--petrol-tint); color: var(--petrol-ink); padding: 2px 7px; border-radius: 5px; }
+.nz-acchead .achev { color: #c7bdad; flex: none; transition: 0.2s; }
+.nz-accitem.open .achev { transform: rotate(90deg); }
+.nz-accbody { display: none; padding: 0 16px 16px; }
+.nz-accitem.open .nz-accbody { display: block; }
+.nz-accvoice { display: flex; align-items: center; gap: 12px; background: var(--petrol); color: #f4f1e9; border-radius: 13px; padding: 11px 13px; margin-bottom: 13px; }
+.nz-accvoice .ap { width: 46px; height: 46px; border-radius: 50%; background: rgba(244, 241, 233, 0.16); border: 1.5px solid rgba(244, 241, 233, 0.42); display: grid; place-items: center; flex: none; cursor: pointer; color: #fff; }
+.nz-accvoice .at { font-size: 14px; font-weight: 600; }
+.nz-accvoice .am { font-size: 11.5px; color: rgba(244, 241, 233, 0.72); margin-top: 1px; }
+.nz-callrow { display: flex; align-items: center; gap: 11px; background: #f7e7e3; border-radius: 12px; padding: 11px 13px; margin-bottom: 13px; text-decoration: none; }
+.nz-callrow svg { color: var(--bad); flex: none; }
+.nz-callrow .cl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bad); }
+.nz-callrow .cv { font-size: 14.5px; font-weight: 600; color: #8a3324; margin-top: 1px; }
+.nz-urgnote { background: #f7e7e3; border: 1px solid #e8c5bd; border-radius: 11px; padding: 10px 12px; font-size: 13px; color: #8a3324; line-height: 1.4; margin-bottom: 13px; }
+.nz-rsteps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 11px; }
+.nz-rsteps li { display: flex; gap: 11px; font-size: 15px; line-height: 1.5; }
+.nz-rsteps li::before { counter-increment: s; content: counter(s); flex: none; width: 25px; height: 25px; border-radius: 50%; background: var(--petrol); color: #fff; font-family: var(--font-mono); font-size: 12.5px; display: grid; place-items: center; margin-top: 1px; }
+
+/* Qui appeler */
+.nz-callsec { font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin: 18px 0 9px; }
+.nz-ccard { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 4px 15px; box-shadow: var(--shadow); }
+.nz-crow { display: flex; align-items: center; gap: 13px; padding: 13px 0; text-decoration: none; color: var(--ink); }
+.nz-crow + .nz-crow { border-top: 1px solid var(--line); }
+.nz-cav { width: 42px; height: 42px; border-radius: 12px; background: var(--petrol-tint); color: var(--petrol-ink); display: grid; place-items: center; flex: none; font-weight: 600; font-family: var(--font-display, 'Fraunces', serif); font-size: 16px; }
+.nz-cav.num { font-family: var(--font-mono); font-size: 15px; background: #f7e7e3; color: var(--bad); }
+.nz-cw { flex: 1; min-width: 0; }
+.nz-cnm { font-size: 15.5px; font-weight: 600; }
+.nz-ccr { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+.nz-cbtn { width: 44px; height: 44px; border-radius: 13px; border: none; display: grid; place-items: center; flex: none; color: #fff; background: var(--petrol); }
+.nz-cbtn.urg { background: var(--bad); }
+
+/* Fiches enfants */
+.nz-kidblock { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); margin-bottom: 14px; }
+.nz-kidhd { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.nz-kidav { width: 46px; height: 46px; border-radius: 13px; color: #fff; font-family: var(--font-display, 'Fraunces', serif); font-weight: 600; font-size: 20px; display: grid; place-items: center; flex: none; }
+.nz-kidnm { font-family: var(--font-display, 'Fraunces', serif); font-size: 19px; font-weight: 600; }
+.nz-kidalert { background: #f7e7e3; border: 1px solid #e8c5bd; border-radius: 12px; padding: 12px 13px; margin: 11px 0; display: flex; gap: 10px; }
+.nz-kidalert .ka { color: var(--bad); flex: none; margin-top: 1px; }
+.nz-kidalert .kt { font-size: 14.5px; color: #8a3324; line-height: 1.45; }
+.nz-kidkv { display: flex; gap: 11px; padding: 10px 0; font-size: 14.5px; border-top: 1px solid var(--line); line-height: 1.4; }
+.nz-kidkv .kk { width: 88px; flex: none; color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding-top: 2px; }
+.nz-kidkv .kvv { flex: 1; }
+.nz-allerg { color: var(--bad); font-weight: 600; }
+
+/* RTL (arabe / darija) */
+.nz-rtl { direction: rtl; }
+.nz-rtl .tm, .nz-rtl .nz-item .tm { direction: ltr; }
+.nz-naskh, .nz-rtl .nn, .nz-rtl .nz-daytitle, .nz-rtl .nz-rstitle, .nz-rtl .an, .nz-rtl .nz-kidnm { font-family: 'Noto Naskh Arabic', serif; }
 
 /* ── Partage (FN4.1 + FN4.3) ─────────────────────────────────────────────── */
 .nz-destsel { display: flex; gap: 8px; flex-wrap: wrap; margin: 2px 0 14px; }
