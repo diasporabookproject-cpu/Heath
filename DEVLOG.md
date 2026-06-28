@@ -106,6 +106,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 **✅ Lot v1 de la passation produit livré (F1→F5).**
 
 **✅ Refonte Cuisine (brief FC1–FC10) — COMPLÈTE (5 lots livrés & déployés).**
+**✅ Cuisine v2 (brief FC11–FC19) — COMPLÈTE (5 lots + repas optionnels, déployés).**
 - ✅ **Lot 1** : FC1 (nav) · FC2 (Semaine) · FC3 (sélecteur).
 - ✅ **Lot 2** : FC5 (Recettes/statuts/filtres) · FC6 (ajout manuel + IA + auto-macros + import JSON) · FC7 (fiche + édition + validation + étapes + vocal).
 - ✅ **Lot 3** : FC4 (générateur hybride biblio + complétion IA) + correctif « changer un repas placé ».
@@ -145,6 +146,10 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
   - **Copier une semaine** : `CopyWeekSheet` liste les semaines déjà composées (date + nb de jours + moyenne kcal/j) → **copie profonde** (composants compris) dans la semaine courante (`copyWeekInto`). `db.loadAllWeeks`.
   - typecheck + 39 tests + build + smoke OK.
 - **Ajustement (2026-06-27) — repas optionnels** : un repas peut rester **volontairement vide** (ex. pas de petit-déjeuner). Le **total du jour** et la **moyenne hebdo** se calculent désormais sur les jours ayant **au moins un repas** (`dayHasAny`) au lieu d'exiger les 3 (`dayComplete`). Jauge affichée dès qu'un repas est présent. 40 tests.
+- **Lot 5 livré — FC19 (Courses + espace cuisinière, modèle complet)** :
+  - L'essentiel avait été fait à la migration du Lot 1 : **Courses** (`shopping.ts`/`CoursesCuisine`) agrègent les 3 repas + tous les composants, accompagnement = quantité g, **×nombre de personnes (global)** ; **espace cuisinière** (`EspaceCuisine`) rend les repas **structurés** (entrée/plat/accompagnement) avec quantités ×personnes, **voix par composant**, étapes, FR/الدارجة RTL, sans nutrition.
+  - Finition : **sous-ligne « entrée / accompagnement »** sur les cartes repas de l'espace (rappel rapide du repas structuré). typecheck + 40 tests + build + smoke OK.
+  - **→ Brief Cuisine v2 (FC11–FC19) COMPLET.** _Rappel : re-envoyer le menu (Partager → Envoyer) pour passer les espaces déjà publiés au format v2._
 
 
 ### Session 5 — 2026-06-26

@@ -479,6 +479,8 @@
 .ck-body.rtl .ck-ml { letter-spacing: 0; }
 .ck-mn { font-size: 17px; font-weight: 600; line-height: 1.25; }
 .ck-mn.ar { font-family: 'Noto Naskh Arabic', serif; }
+.ck-msub { font-size: 12.5px; color: var(--muted); margin-top: 3px; line-height: 1.3; }
+.ck-msub.ar { font-family: 'Noto Naskh Arabic', serif; }
 .ck-vdot { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--petrol); font-weight: 600; margin-top: 5px; }
 .ck-chev { flex: none; color: #c7bdad; display: grid; place-items: center; }
 

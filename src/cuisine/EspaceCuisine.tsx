@@ -123,6 +123,10 @@ function MealCard({
   const ar = lang === 'ar';
   const t = STR[lang];
   const title = meal.plat ? compName(meal.plat) : meal.entree ? compName(meal.entree) : '—';
+  // Sous-ligne pour un repas structuré (entrée / accompagnement).
+  const extras: string[] = [];
+  if (meal.entree) extras.push(`${t.entree} : ${compName(meal.entree)}`);
+  if (meal.acc) extras.push(`${compName(meal.acc)}${meal.acc.g ? ` ${meal.acc.g} g` : ''}`);
   return (
     <button className="ck-mealcard" onClick={onClick}>
       <span className="ck-mi">
@@ -131,6 +135,9 @@ function MealCard({
       <span className="ck-mc">
         <span className="ck-ml">{label}</span>
         <span className={'ck-mn' + (ar ? ' ar' : '')}>{title}</span>
+        {extras.length > 0 && (
+          <span className={'ck-msub' + (ar ? ' ar' : '')}>{extras.join(' · ')}</span>
+        )}
         {mealHasVoice(meal) && (
           <span className={'ck-vdot' + (ar ? ' ar' : '')}>
             <IconMic size={12} />
