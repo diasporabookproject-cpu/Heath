@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import {
   dayMacros,
-  dayComplete,
+  dayHasAny,
   mealMacros,
   mealHasDraft,
   mealBudgets,
@@ -226,7 +226,7 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, toas
       <div className="cz-days">
         {SEED_CONFIG.jours.map((jour, i) => {
           const day = week.days[jour.key];
-          const complete = dayComplete(day);
+          const hasAny = dayHasAny(day);
           const dk = dayMacros(day, byId).kcal;
           const status = objectiveStatus(dk, objective);
           const pct = Math.min(100, Math.round((dk / (objective || 1)) * 100));
@@ -248,7 +248,7 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, toas
                 />
               ))}
 
-              {complete ? (
+              {hasAny ? (
                 <div className="cz-gauge">
                   <div className="cz-gtrack">
                     <div className={'cz-gfill ' + status.cls} style={{ width: pct + '%' }} />
@@ -260,7 +260,7 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, toas
                   </div>
                 </div>
               ) : (
-                <div className="cz-gincomplete">Complète les trois repas pour voir l’équilibre.</div>
+                <div className="cz-gincomplete">Ajoute au moins un repas pour voir l’équilibre.</div>
               )}
             </div>
           );

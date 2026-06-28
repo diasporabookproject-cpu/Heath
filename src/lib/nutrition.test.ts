@@ -81,6 +81,18 @@ describe('weekAverage', () => {
     expect(avg.count).toBe(1);
     expect(avg.kcal).toBe(plat.kcal * 3);
   });
+  it('compte un jour partiel (repas volontairement vide)', () => {
+    const days: Record<string, DayMenu> = {};
+    days[SEED_CONFIG.jours[0].key] = {
+      petitdej: { plat: null }, // pas de petit-déjeuner
+      dej: { plat: plat.id, entree: null, acc: null },
+      diner: { plat: null, entree: null, acc: null },
+    };
+    const avg = weekAverage(SEED_CONFIG, days, byId);
+    expect(avg.count).toBe(1);
+    expect(avg.kcal).toBe(plat.kcal); // seul le déjeuner compte
+  });
+
   it('semaine vide → count 0', () => {
     expect(weekAverage(SEED_CONFIG, {}, byId).count).toBe(0);
   });

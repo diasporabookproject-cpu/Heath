@@ -114,28 +114,31 @@ export interface WeekAverage {
   count: number;
 }
 
-/** Moyenne par jour, calculée seulement sur les jours complets. */
+/**
+ * Moyenne par jour, calculée sur les jours qui ont AU MOINS un repas
+ * (un repas peut rester volontairement vide — ex. pas de petit-déjeuner).
+ */
 export function weekAverage(
   config: AppConfig,
   days: Record<string, DayMenu>,
   byId: Map<string, Recipe>,
 ): WeekAverage {
-  const complete = config.jours
+  const planned = config.jours
     .map((j) => days[j.key])
     .filter((d): d is DayMenu => !!d)
-    .filter(dayComplete);
-  if (complete.length === 0) return { kcal: 0, prot: 0, count: 0 };
+    .filter(dayHasAny);
+  if (planned.length === 0) return { kcal: 0, prot: 0, count: 0 };
   let sumK = 0;
   let sumP = 0;
-  for (const d of complete) {
+  for (const d of planned) {
     const m = dayMacros(d, byId);
     sumK += m.kcal;
     sumP += m.prot;
   }
   return {
-    kcal: Math.round(sumK / complete.length),
-    prot: Math.round(sumP / complete.length),
-    count: complete.length,
+    kcal: Math.round(sumK / planned.length),
+    prot: Math.round(sumP / planned.length),
+    count: planned.length,
   };
 }
 

@@ -144,6 +144,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
   - **Persistance multi‑semaines** : chaque semaine = un plan stocké sous une **clé = date du lundi** (`weekId(offset)`, YYYY‑MM‑DD). Store : `weekOffset` + `navWeek(±1)` (charge/crée la semaine, vide si jamais composée) ; flèches ← → branchées ; libellé + sous‑titre relatif (cette semaine / prochaine / passée).
   - **Copier une semaine** : `CopyWeekSheet` liste les semaines déjà composées (date + nb de jours + moyenne kcal/j) → **copie profonde** (composants compris) dans la semaine courante (`copyWeekInto`). `db.loadAllWeeks`.
   - typecheck + 39 tests + build + smoke OK.
+- **Ajustement (2026-06-27) — repas optionnels** : un repas peut rester **volontairement vide** (ex. pas de petit-déjeuner). Le **total du jour** et la **moyenne hebdo** se calculent désormais sur les jours ayant **au moins un repas** (`dayHasAny`) au lieu d'exiger les 3 (`dayComplete`). Jauge affichée dès qu'un repas est présent. 40 tests.
 
 
 ### Session 5 — 2026-06-26

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import { loadAllWeeks } from '../lib/db';
-import { dayHasAny, dayMacros, dayComplete } from '../lib/nutrition';
+import { dayHasAny, dayMacros } from '../lib/nutrition';
 import type { Recipe, WeekMenu } from '../types';
 
 const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
@@ -42,9 +42,8 @@ export default function CopyWeekSheet({ onClose, toast }: Props) {
       .map((w) => {
         const days = SEED_CONFIG.jours.map((j) => w.days[j.key]).filter(Boolean);
         const filled = days.filter(dayHasAny);
-        const complete = days.filter(dayComplete);
-        const avg = complete.length
-          ? complete.reduce((s, d) => s + dayMacros(d, byId).kcal, 0) / complete.length
+        const avg = filled.length
+          ? filled.reduce((s, d) => s + dayMacros(d, byId).kcal, 0) / filled.length
           : 0;
         return { id: w.id, days: w.days, count: filled.length, avg };
       })
