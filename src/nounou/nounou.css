@@ -1,0 +1,83 @@
+/* Page Nounou — réutilise les tokens & la coquille Cuisine (cz-*). */
+/* Classes propres préfixées nz-. */
+
+.nz-mark { background: var(--draft) !important; }
+.nz-mark::before { border-color: var(--saffron) !important; }
+
+/* État vide invitant (anti-page-blanche). */
+.nz-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--ink);
+  opacity: 0.7;
+}
+.nz-empty .nz-emoji { font-size: 34px; display: block; margin-bottom: 10px; }
+.nz-empty small { display: block; margin-top: 6px; font-size: 13px; opacity: 0.8; }
+
+/* Bandeau de période (jour ∈ période). */
+.nz-periodbar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--draft-tint);
+  border: 1px solid var(--draft-line);
+  color: var(--draft);
+  border-radius: 12px;
+  padding: 10px 13px;
+  font-weight: 600;
+  font-size: 14px;
+  margin: 4px 0 14px;
+}
+
+/* En-tête de la journée (date + navigation simple). */
+.nz-dayhead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 6px 0 14px;
+}
+.nz-dayhead .nz-daytitle { font-family: var(--font-display, inherit); font-size: 22px; font-weight: 600; }
+.nz-dayhead small { color: var(--ink); opacity: 0.6; font-size: 13px; }
+
+/* Une ligne de moment du jour. */
+.nz-line {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 13px;
+  margin-bottom: 9px;
+  box-shadow: var(--shadow);
+}
+.nz-line.ponctuel { border-color: var(--saffron); background: var(--saffron-tint); }
+.nz-line .nz-h { font-family: var(--font-mono); color: var(--petrol); font-weight: 600; flex: none; min-width: 46px; }
+.nz-line .nz-body { flex: 1; min-width: 0; }
+.nz-line .nz-lab { font-weight: 600; font-size: 15px; }
+.nz-line .nz-sub { font-size: 12.5px; color: var(--ink); opacity: 0.6; margin-top: 2px; }
+.nz-line .nz-icon { font-size: 18px; flex: none; }
+
+/* Pastille de source / ponctuel. */
+.nz-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  flex: none;
+}
+.nz-tag.ponctuel { background: var(--saffron); color: #fff; }
+.nz-tag.periode { background: var(--draft-tint); color: var(--draft); }
+
+/* Initiales d'enfants concernés en propre. */
+.nz-kids { display: inline-flex; gap: 4px; flex: none; }
+.nz-kid {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}

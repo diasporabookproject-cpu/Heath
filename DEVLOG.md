@@ -83,6 +83,10 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 29. **Courses refondues (FC8)** : `CoursesCuisine` (style maquette, classes `cz-`). Réutilise le parseur `shopping.ts` (groupage par rayon, agrégation) + **mise à l'échelle ×personnes** (nouveau param `buildShoppingList(..., persons)`), cases à cocher (barré), **Partager** (Web Share / copie WhatsApp). Remplace `CoursesView` v1 (supprimée). ✅
 28. **Accusé de lecture via table `espace_opens`** : l'ouverture de l'espace insère `(token, opened_at)` (anon) ; l'admin lit le dernier accès. Best-effort : si la table n'existe pas, ignoré → « Dernier accès : — ». **⚠️ SQL à exécuter une fois** (voir journal session 5). `SharedMeal` étendu (`e`/`ea` étapes) ; util `src/lib/ingredients.ts` (découpe + mise à l'échelle ×personnes). ✅
 
+---
+
+32. **Page Nounou (brief FN0–FN5) — nouvelle page par rôle, sœur de Cuisine** : dossier `src/nounou/`, **modèle en couches** (`Moment` récurrent / `Periode` rythme alternatif sur plage / `Ponctuel` un jour / `Enfant`), **précédence stricte `ponctuel > période > rythme habituel`** (`projection.ts`, aligné RRULE pour un futur ICS). **Stockage = document JSON unique** (store IndexedDB `nounou`, clé `'doc'`, **DB v5**), fusion à la lecture (`mergeNounouDoc`) pour la compat ascendante ; **last-write-wins** assumé (MVP). Store dédié `useNounou` (séparé de Cuisine). **Chevauchement de périodes interdit à la création** (`periodesOverlap`). **Jours d'école = lun–ven (0–4)**, tous = 0–6. Numéros d'urgence Maroc **19/15/150** seedés « à vérifier ». Réutilise tokens + coquille Cuisine (`cz-*`), classes propres `nz-*`. Onglets **Journée · Conduites · Fiche urgence** (« Repères » banni). Construit par lots, ordre **0 → 1 → (4.1+4.3) → 5 → 2 → 3 → 4.2** (page reçue partageable tôt, traduction en dernier). ✅ Lot 0 livré. ⏳ maquettes Nounou à fournir pour les lots visuels.
+
 ## État actuel (au 2026-06-26)
 
 **Fait :**
@@ -123,6 +127,17 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 ---
 
 ## Journal des sessions
+
+### Session 7 — 2026-06-28 (Page Nounou)
+- **Brief Nounou reçu** (`BRIEF_NOUNOU_CLAUDE_CODE.md`) : nouvelle page par rôle, sœur de Cuisine. **Read-back + chiffrage (🟢/🟡/🔴) par lot et par fiche + questions** livrés ; validés en bloc (« ok pour tout »). Décisions actées : **document JSON unique** (pas de stores multiples) ; **chevauchement de périodes interdit à la création** ; **last-write-wins** ; **jours d'école = lun–ven** ; **sensible = par catégorie** (conduites/urgence/fiches enfants) ; **multi-destinataire** dès le départ ; **lib QR locale** ; **ordre A** = `0 → 1 → (4.1+4.3) → 5 → 2 → 3 → 4.2` (page reçue partageable tôt, traduction en dernier).
+- **Lot 0 livré — FN0.1 + FN0.2 (socle technique & coquille)** :
+  - **Modèle (`src/types.ts`)** : `Moment`/`Periode`/`Ponctuel`/`Enfant` (+ `Conduite`/`UrgenceFiche`/contacts/règles pour stabiliser le type dès maintenant) ; `NounouDoc` = document unique.
+  - **Persistance (`src/lib/db.ts`, DB v5)** : store `nounou` (clé fixe `'doc'`), `loadNounou`/`saveNounou`. Compat ascendante par fusion (`mergeNounouDoc`).
+  - **Projection (`src/nounou/projection.ts`)** : `projectDay(doc, dateISO)` applique §3 (rythme actif = période si la date y tombe, filtre par jour de semaine 0=lundi, + ponctuels du jour, tri par heure, source marquée). `activePeriode`, `weekdayOf`, `periodesOverlap`. **Couvert par 7 tests** (`projection.test.ts`).
+  - **Store (`src/nounou/useNounou.ts`)** : `init` (seed au 1er lancement, anti-page-blanche : 2 enfants + rythme plausible + numéros Maroc), CRUD complet des 4 couches + conduites (prêt pour les lots suivants), persistance immédiate.
+  - **Coquille (`src/nounou/NounouView.tsx`)** : onglet **Nounou** (🧸) dans la barre du bas ; 3 segments **Journée · Conduites · Fiche urgence** + action Partager ; tokens/coquille Cuisine réutilisés (`cz-*`), classes propres `nz-*`. **Journée** rend déjà la projection du jour (preuve modèle+persistance+projection) ; Conduites/Fiche urgence = placeholders « à venir ».
+  - Qualité : typecheck + **47 tests** + build OK.
+  - **⏳ Limites connues** : maquettes Nounou (`maquette-nounou-v4.html`, etc.) **absentes du repo** → à fournir pour les lots visuels (Journée complète, sheets, page reçue) ; bande de jours/navigation = Lot 1 ; synchro Supabase de `nounou` = à brancher (lien/partage, Lot 4.3).
 
 ### Session 6 — 2026-06-27 (Cuisine v2)
 - **Brief v2 reçu** (FC11–FC19) : refonte du modèle Cuisine. Read-back + chiffrage + risques validés ; décisions : (1) garder 3 segments Semaine/Recettes/Courses ; (2) supprimer Coupe-faim (ex-CF → rôle **Entrée**) ; (3) **un seul nombre de personnes global** (réglages Objectif).

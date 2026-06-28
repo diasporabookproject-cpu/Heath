@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStore } from './store/useStore';
 import CuisineView from './cuisine/CuisineView';
+import NounouView from './nounou/NounouView';
 import SecuriteView from './views/SecuriteView';
 import EspaceView from './views/EspaceView';
 import AccountSheet from './components/AccountSheet';
@@ -8,10 +9,11 @@ import { readEspaceToken } from './lib/espace';
 import { supabaseEnabled } from './lib/supabase';
 import { useSession } from './lib/useSession';
 
-type Tab = 'cuisine' | 'securite';
+type Tab = 'cuisine' | 'nounou' | 'securite';
 
 const TABS: { id: Tab; label: string; icon: string; title: string }[] = [
   { id: 'cuisine', label: 'Cuisine', icon: '🍽️', title: 'Cuisine' },
+  { id: 'nounou', label: 'Nounou', icon: '🧸', title: 'Nounou' },
   { id: 'securite', label: 'Sécurité', icon: '🛡️', title: 'Sécurité du foyer' },
 ];
 
@@ -45,6 +47,12 @@ export default function App() {
             onOpenAccount={() => setAccountOpen(true)}
           />
         )
+      ) : tab === 'nounou' ? (
+        <NounouView
+          showAccount={supabaseEnabled}
+          connected={!!session}
+          onOpenAccount={() => setAccountOpen(true)}
+        />
       ) : (
         <>
           <header className="topbar">

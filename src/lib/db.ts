@@ -3,6 +3,7 @@ import {
   DEFAULT_SETTINGS,
   type CuisineSettings,
   type Destinataire,
+  type NounouDoc,
   type Recipe,
   type RecipeRole,
   type SecuriteFiche,
@@ -27,10 +28,11 @@ interface MenuDB extends DBSchema {
   audio: { key: string; value: AudioNote };
   destinataires: { key: string; value: Destinataire };
   securite: { key: string; value: SecuriteFiche };
+  nounou: { key: string; value: NounouDoc };
 }
 
 const DB_NAME = 'menu-semaine';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 let dbPromise: Promise<IDBPDatabase<MenuDB>> | null = null;
 
@@ -58,6 +60,10 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
         // v4 : référentiel Sécurité (consignes du foyer).
         if (!db.objectStoreNames.contains('securite')) {
           db.createObjectStore('securite', { keyPath: 'id' });
+        }
+        // v5 : document Nounou unique (modèle en couches, clé fixe 'doc').
+        if (!db.objectStoreNames.contains('nounou')) {
+          db.createObjectStore('nounou');
         }
       },
     });
@@ -224,4 +230,18 @@ export async function saveSecurite(f: SecuriteFiche): Promise<void> {
 export async function deleteSecurite(id: string): Promise<void> {
   const db = await getDB();
   await db.delete('securite', id);
+}
+
+// ── Document Nounou (page par rôle, modèle en couches) ───────────────────────
+
+const NOUNOU_KEY = 'doc';
+
+export async function loadNounou(): Promise<NounouDoc | undefined> {
+  const db = await getDB();
+  return (await db.get('nounou', NOUNOU_KEY)) as NounouDoc | undefined;
+}
+
+export async function saveNounou(doc: NounouDoc): Promise<void> {
+  const db = await getDB();
+  await db.put('nounou', doc, NOUNOU_KEY);
 }

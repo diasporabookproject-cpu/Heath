@@ -122,6 +122,156 @@ export interface Destinataire {
   createdAt: number;
 }
 
+// ── Nounou (page par rôle, brief FN0-FN5) ────────────────────────────────────
+// Modèle en couches, précédence stricte : ponctuel > période > rythme habituel.
+// Stockage : document JSON unique en local-first (IndexedDB), synchro `espaces`.
+
+/** Catégorie d'un moment (icône + filtrage visuel). */
+export type MomentType =
+  | 'ecole'
+  | 'sieste'
+  | 'repas'
+  | 'gouter'
+  | 'coucher'
+  | 'activite'
+  | 'sante'
+  | 'autre';
+
+export const MOMENT_LABEL: Record<MomentType, string> = {
+  ecole: 'École',
+  sieste: 'Sieste',
+  repas: 'Repas',
+  gouter: 'Goûter',
+  coucher: 'Coucher',
+  activite: 'Activité',
+  sante: 'Santé',
+  autre: 'Autre',
+};
+
+/** Fiche d'un enfant (Lot 3). Tout est rédigé par le parent. */
+export interface EnfantFiche {
+  allergies?: string;
+  traitement?: string;
+  medecin?: string;
+  groupe?: string;
+  habitudes?: string;
+}
+
+/** Un enfant du foyer. */
+export interface Enfant {
+  id: string;
+  prenom: string;
+  initiale: string;
+  /** Couleur d'accent (badge/initiale). */
+  couleur: string;
+  fiche?: EnfantFiche;
+}
+
+/** Une ligne récurrente du planning (école, sieste, coucher). */
+export interface Moment {
+  id: string;
+  label: string;
+  /** Heure au format HH:MM (tri). */
+  heure: string;
+  type: MomentType;
+  /** Jours de semaine concernés, 0..6 (0 = lundi). */
+  jours: number[];
+  /** Ids d'enfants concernés ; vide = tous. */
+  enfants: string[];
+  qui?: string;
+  lieu?: string;
+  note?: string;
+}
+
+/** Un rythme alternatif sur une plage de dates (vacances, Ramadan, voyage). */
+export interface Periode {
+  id: string;
+  nom: string;
+  emoji: string;
+  /** Date de début incluse (YYYY-MM-DD). */
+  debut: string;
+  /** Date de fin incluse (YYYY-MM-DD). */
+  fin: string;
+  note?: string;
+  /** Rythme propre à la période (copie ajustable du rythme habituel). */
+  rythme: Moment[];
+}
+
+/** Un événement sur un seul jour, par-dessus le rythme (ne le modifie pas). */
+export interface Ponctuel {
+  id: string;
+  /** Jour concerné (YYYY-MM-DD). */
+  date: string;
+  label: string;
+  heure: string;
+  type: MomentType;
+  enfants: string[];
+  lieu?: string;
+  qui?: string;
+}
+
+/** Conduite (« que faire si… ») rédigée par le parent — aucun conseil généré. */
+export type ConduiteCateg = 'sante' | 'securite' | 'quotidien';
+
+export const CONDUITE_LABEL: Record<ConduiteCateg, string> = {
+  sante: 'Santé',
+  securite: 'Sécurité',
+  quotidien: 'Quotidien',
+};
+
+export interface Conduite {
+  id: string;
+  titre: string;
+  categ: ConduiteCateg;
+  urgent?: boolean;
+  /** Gabarit en attente de rédaction par le parent. */
+  aCompleter?: boolean;
+  /** Étapes numérotées (une par ligne). */
+  etapes: string;
+  quiAppeler?: string;
+  createdAt: number;
+}
+
+/** Contact d'urgence (appel au tap). */
+export interface NounouContact {
+  id: string;
+  nom: string;
+  tel: string;
+  role?: string;
+}
+
+/** Règle / autorisation (autorisé vs interdit). */
+export interface ReglePerm {
+  id: string;
+  texte: string;
+  permis: boolean;
+}
+
+/** Numéro d'urgence (mention « à vérifier » par défaut). */
+export interface NumeroUrgence {
+  label: string;
+  numero: string;
+  aVerifier?: boolean;
+}
+
+/** Onglet Fiche urgence (Lot 3). */
+export interface UrgenceFiche {
+  numeros: NumeroUrgence[];
+  contacts: NounouContact[];
+  regles: ReglePerm[];
+}
+
+/** Document Nounou unique (local-first, source de vérité). */
+export interface NounouDoc {
+  enfants: Enfant[];
+  /** Rythme habituel : socle des moments récurrents. */
+  rythme: Moment[];
+  periodes: Periode[];
+  ponctuels: Ponctuel[];
+  conduites: Conduite[];
+  urgence: UrgenceFiche;
+}
+
 export type SecuriteType = 'numeros' | 'procedure' | 'gestes';
 
 /**
