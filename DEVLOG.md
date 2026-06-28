@@ -150,6 +150,11 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
   - L'essentiel avait été fait à la migration du Lot 1 : **Courses** (`shopping.ts`/`CoursesCuisine`) agrègent les 3 repas + tous les composants, accompagnement = quantité g, **×nombre de personnes (global)** ; **espace cuisinière** (`EspaceCuisine`) rend les repas **structurés** (entrée/plat/accompagnement) avec quantités ×personnes, **voix par composant**, étapes, FR/الدارجة RTL, sans nutrition.
   - Finition : **sous-ligne « entrée / accompagnement »** sur les cartes repas de l'espace (rappel rapide du repas structuré). typecheck + 40 tests + build + smoke OK.
   - **→ Brief Cuisine v2 (FC11–FC19) COMPLET.** _Rappel : re-envoyer le menu (Partager → Envoyer) pour passer les espaces déjà publiés au format v2._
+- **Audit v2 (2026-06-27)** : revue complète post‑réécriture.
+  - **Aucune** référence aux symboles v1 supprimés (RecipeType/DayType/dayTotals/feu*/dejId/dinId/extras/setSlot/lock…), **aucun** import inutilisé (`tsc --noUnusedLocals` vert), **aucun** fichier orphelin.
+  - **Code mort retiré** : `weekDates()`/`weekLabel()` (versions sans offset, remplacées par `weekDatesOffset`/`weekLabelOffset`).
+  - `dayComplete` conservé (prédicat métier, couvert par test). Espaces publiés en v1 : rendu vide tant que non re‑envoyés (dégradation propre, pas de crash).
+  - Vérifs : typecheck + 40 tests + build + smoke (vert).
 
 
 ### Session 5 — 2026-06-26

@@ -57,24 +57,9 @@ export function weekSub(offset: number): string {
           : 'passée';
 }
 
-/** Dates des 7 jours (lun→dim) de la semaine courante, dans l'ordre des clés de config. */
-export function weekDates(ref: Date = new Date()): Date[] {
-  const m = mondayOf(ref);
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(m);
-    d.setDate(m.getDate() + i);
-    return d;
-  });
-}
-
 /** « 23 juin » */
 export function dayLabel(d: Date): string {
   return `${d.getDate()} ${MOIS[d.getMonth()]}`;
-}
-
-/** « Semaine du 23 juin » */
-export function weekLabel(ref: Date = new Date()): string {
-  return `Semaine du ${dayLabel(mondayOf(ref))}`;
 }
 
 const KEYS = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
