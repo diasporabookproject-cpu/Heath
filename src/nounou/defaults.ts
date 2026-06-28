@@ -11,6 +11,11 @@ export function uid(): string {
   return Math.random().toString(36).slice(2, 14);
 }
 
+/** Jeton capability long (lien permanent #e=…), même format que la Cuisine. */
+export function newToken(): string {
+  return (uid() + uid() + uid() + uid()).slice(0, 40);
+}
+
 /** Jours d'école = lundi→vendredi (0..4) ; tous les jours = 0..6. */
 export const JOURS_ECOLE = [0, 1, 2, 3, 4];
 export const TOUS_LES_JOURS = [0, 1, 2, 3, 4, 5, 6];
@@ -34,6 +39,7 @@ export function emptyNounouDoc(): NounouDoc {
     ponctuels: [],
     conduites: [],
     urgence: { numeros: NUMEROS_MAROC.map((n) => ({ ...n })), contacts: [], regles: [] },
+    destinataires: [],
   };
 }
 
@@ -53,6 +59,18 @@ export function seedNounouDoc(): NounouDoc {
     { id: uid(), label: 'Goûter', heure: '16:30', type: 'gouter', jours: TOUS_LES_JOURS, enfants: [] },
     { id: uid(), label: 'Coucher', heure: '20:30', type: 'coucher', jours: TOUS_LES_JOURS, enfants: [] },
   ];
+  // Un destinataire de départ (anti-page-blanche) : la nounou, scopée à tous.
+  doc.destinataires = [
+    {
+      id: uid(),
+      prenom: 'Khadija',
+      role: 'Nounou',
+      langue: 'fr',
+      enfants: [],
+      token: newToken(),
+      createdAt: 0,
+    },
+  ];
   return doc;
 }
 
@@ -71,5 +89,6 @@ export function mergeNounouDoc(loaded: Partial<NounouDoc> | undefined): NounouDo
       contacts: loaded.urgence?.contacts ?? base.urgence.contacts,
       regles: loaded.urgence?.regles ?? base.urgence.regles,
     },
+    destinataires: loaded.destinataires ?? base.destinataires,
   };
 }

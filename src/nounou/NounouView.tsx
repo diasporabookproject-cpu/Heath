@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNounou } from './useNounou';
 import JourneeView from './JourneeView';
+import PartageNounouSheet from './PartageNounouSheet';
 import { IconShareUp, IconCheck } from '../cuisine/icons';
 import '../cuisine/cuisine.css';
 import './nounou.css';
@@ -23,6 +24,7 @@ export default function NounouView({ showAccount, connected, onOpenAccount }: Pr
   const init = useNounou((s) => s.init);
 
   const [seg, setSeg] = useState<Segment>('journee');
+  const [sharing, setSharing] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const toastT = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = (msg: string) => {
@@ -48,7 +50,7 @@ export default function NounouView({ showAccount, connected, onOpenAccount }: Pr
           <div className="cz-headicons">
             <button
               className="cz-headicon"
-              onClick={() => toast('Partage : à venir (Lot 4)')}
+              onClick={() => setSharing(true)}
               aria-label="Partager la page"
             >
               <IconShareUp size={18} />
@@ -100,6 +102,10 @@ export default function NounouView({ showAccount, connected, onOpenAccount }: Pr
           />
         )}
       </div>
+
+      {sharing && (
+        <PartageNounouSheet connected={connected} onClose={() => setSharing(false)} toast={toast} />
+      )}
 
       <div className={'cz-toast' + (toastMsg ? ' show' : '')}>
         {toastMsg && <IconCheck size={16} />}

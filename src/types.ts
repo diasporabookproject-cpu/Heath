@@ -267,6 +267,40 @@ export interface UrgenceFiche {
   regles: ReglePerm[];
 }
 
+/** Langues disponibles pour la page reçue (darija distincte de l'arabe standard). */
+export type NounouLangue = 'fr' | 'dr' | 'ar' | 'en';
+
+export interface NounouLangInfo {
+  code: NounouLangue;
+  nom: string;
+  sub: string;
+  /** Sens d'écriture droite→gauche (arabe / darija). */
+  rtl: boolean;
+  /** Langue d'auteur (source de vérité). */
+  author?: boolean;
+}
+
+export const NOUNOU_LANGS: NounouLangInfo[] = [
+  { code: 'fr', nom: 'Français', sub: "Langue d'auteur", rtl: false, author: true },
+  { code: 'dr', nom: 'الدارجة', sub: 'Marocain', rtl: true },
+  { code: 'ar', nom: 'العربية', sub: 'Standard', rtl: true },
+  { code: 'en', nom: 'English', sub: 'À activer si besoin', rtl: false },
+];
+
+/** Destinataire de la page Nounou : lien durable scopé (enfants, rôle, langue). */
+export interface NounouDest {
+  id: string;
+  prenom: string;
+  role: string;
+  langue: NounouLangue;
+  /** Enfants scopés ; vide = tous. */
+  enfants: string[];
+  tel?: string;
+  /** Jeton capability du lien permanent (#e=…). */
+  token: string;
+  createdAt: number;
+}
+
 /** Document Nounou unique (local-first, source de vérité). */
 export interface NounouDoc {
   enfants: Enfant[];
@@ -276,6 +310,7 @@ export interface NounouDoc {
   ponctuels: Ponctuel[];
   conduites: Conduite[];
   urgence: UrgenceFiche;
+  destinataires: NounouDest[];
 }
 
 export type SecuriteType = 'numeros' | 'procedure' | 'gestes';

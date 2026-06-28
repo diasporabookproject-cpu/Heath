@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import type { Conduite, Enfant, Moment, NounouDoc, Periode, Ponctuel } from '../types';
+import type { Conduite, Enfant, Moment, NounouDest, NounouDoc, Periode, Ponctuel } from '../types';
 import { loadNounou, saveNounou } from '../lib/db';
-import { emptyNounouDoc, mergeNounouDoc, seedNounouDoc, uid } from './defaults';
+import { emptyNounouDoc, mergeNounouDoc, newToken, seedNounouDoc, uid } from './defaults';
 
 // Store de la page Nounou — document unique en local-first (IndexedDB = vérité).
 // Précédence du modèle : ponctuel > période > rythme habituel (cf. projection.ts).
@@ -33,6 +33,10 @@ interface NounouState {
   // Conduites (Lot 2 — actions prêtes côté data)
   upsertConduite: (c: Partial<Conduite> & { titre: string; categ: Conduite['categ'] }) => string;
   removeConduite: (id: string) => void;
+
+  // Destinataires (lien durable scopé)
+  upsertDest: (d: Partial<NounouDest> & { prenom: string }) => string;
+  removeDest: (id: string) => void;
 }
 
 export const useNounou = create<NounouState>((set) => {
@@ -194,6 +198,34 @@ export const useNounou = create<NounouState>((set) => {
 
     removeConduite(id) {
       mutate((doc) => ({ ...doc, conduites: doc.conduites.filter((c) => c.id !== id) }));
+    },
+
+    upsertDest(d) {
+      const id = d.id ?? uid();
+      mutate((doc) => {
+        const idx = doc.destinataires.findIndex((x) => x.id === id);
+        const prev = idx >= 0 ? doc.destinataires[idx] : undefined;
+        const next: NounouDest = {
+          id,
+          prenom: d.prenom,
+          role: d.role ?? prev?.role ?? 'Nounou',
+          langue: d.langue ?? prev?.langue ?? 'fr',
+          enfants: d.enfants ?? prev?.enfants ?? [],
+          tel: d.tel ?? prev?.tel,
+          token: prev?.token ?? d.token ?? newToken(),
+          createdAt: prev?.createdAt ?? nowSeq(),
+        };
+        const destinataires =
+          idx >= 0
+            ? doc.destinataires.map((x) => (x.id === id ? next : x))
+            : [...doc.destinataires, next];
+        return { ...doc, destinataires };
+      });
+      return id;
+    },
+
+    removeDest(id) {
+      mutate((doc) => ({ ...doc, destinataires: doc.destinataires.filter((d) => d.id !== id) }));
     },
   };
 

@@ -107,6 +107,39 @@
 .nz-empty .nz-emoji { font-size: 34px; display: block; margin-bottom: 10px; }
 .nz-empty small { display: block; margin-top: 6px; font-size: 13px; opacity: 0.8; }
 
+/* ── Page reçue ──────────────────────────────────────────────────────────── */
+.nz-recsub { display: block; font-family: var(--font-body); font-size: 11.5px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+.nz-offbadge { font-size: 10.5px; font-weight: 600; color: var(--ok); background: #eaf5ee; border: 1px solid #cbe6d6; padding: 6px 9px; border-radius: 20px; display: flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; }
+.nz-offbadge .od { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
+.nz-recfoot { text-align: center; color: var(--muted); font-size: 12.5px; margin: 22px 0 34px; }
+
+/* ── Partage (FN4.1 + FN4.3) ─────────────────────────────────────────────── */
+.nz-destsel { display: flex; gap: 8px; flex-wrap: wrap; margin: 2px 0 14px; }
+.nz-destchip { border: 1px solid var(--line); background: var(--surface); border-radius: 20px; padding: 8px 14px; font-family: var(--font-body); font-weight: 600; font-size: 13.5px; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.nz-destchip[aria-pressed='true'] { background: var(--draft); color: #fff; border-color: var(--draft); }
+.nz-destchip.add { color: var(--petrol); border-style: dashed; }
+
+.nz-summary { background: var(--draft); color: #f4f1e9; border-radius: 18px; padding: 16px 17px 15px; box-shadow: var(--shadow); margin: 2px 0 4px; }
+.nz-summary .slab { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(244, 241, 233, 0.66); font-weight: 600; margin-bottom: 7px; }
+.nz-summary .sbig { font-family: var(--font-display, 'Fraunces', serif); font-size: 22px; font-weight: 600; line-height: 1.1; }
+.nz-summary .ssub { font-size: 13px; color: rgba(244, 241, 233, 0.78); margin-top: 7px; }
+
+.nz-langsel { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.nz-langchip { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1px solid var(--line); background: var(--surface); border-radius: 13px; padding: 11px 13px; cursor: pointer; font-family: var(--font-body); color: var(--ink); text-align: left; }
+.nz-langchip .ln { font-size: 15px; font-weight: 600; }
+.nz-langchip.ar .ln { font-family: 'Noto Naskh Arabic', serif; }
+.nz-langchip .ls { font-size: 11px; color: var(--muted); font-weight: 600; }
+.nz-langchip[aria-pressed='true'] { border-color: var(--petrol); background: var(--petrol-tint); }
+.nz-langchip[aria-pressed='true'] .ls { color: var(--petrol); }
+
+.nz-qrcard { display: flex; flex-direction: column; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-top: 9px; }
+.nz-qr { width: 196px; height: 196px; }
+.nz-qr svg { width: 100%; height: 100%; display: block; }
+.nz-qrcard .qc { font-size: 12.5px; color: var(--muted); text-align: center; }
+
+.nz-receipt { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+.nz-receipt .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+
 /* Variante « jour » de l'icône d'option (cz-opt2), absente de cuisine.css. */
 .cz-opt2 .ic.day { background: var(--surface-2); color: var(--muted); }
 

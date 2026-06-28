@@ -1,21 +1,27 @@
 import { useEffect, useState } from 'react';
 import { readEspace, logEspaceOpen, type Espace } from '../lib/espace';
 import EspaceCuisine from '../cuisine/EspaceCuisine';
+import NounouEspaceView from '../nounou/NounouEspaceView';
+import type { NounouEspace } from '../nounou/partage';
 
 // Espace permanent d'un destinataire, ouvert via le lien #e=<token>.
 // Lecture publique (sans compte) + cache offline : après une 1re ouverture en
-// ligne, l'espace reste consultable hors-ligne.
+// ligne, l'espace reste consultable hors-ligne. Le payload peut être une page
+// Cuisine (menu) ou Nounou (kind:'nounou') — on route selon le contenu.
+
+type Payload = Espace | NounouEspace;
+const isNounou = (p: Payload): p is NounouEspace => (p as NounouEspace).kind === 'nounou';
 
 const cacheKey = (token: string) => `espace:${token}`;
 
 export default function EspaceView({ token }: { token: string }) {
-  const [espace, setEspace] = useState<Espace | null>(null);
+  const [espace, setEspace] = useState<Payload | null>(null);
   const [state, setState] = useState<'loading' | 'ok' | 'empty' | 'offline'>('loading');
 
   useEffect(() => {
     let cancelled = false;
     readEspace(token)
-      .then((e) => {
+      .then((e: Payload | null) => {
         if (cancelled) return;
         if (e) {
           setEspace(e);
@@ -78,13 +84,13 @@ export default function EspaceView({ token }: { token: string }) {
     );
   }
 
-  return <EspaceCuisine espace={espace} />;
+  return isNounou(espace) ? <NounouEspaceView espace={espace} /> : <EspaceCuisine espace={espace} />;
 }
 
-function readCache(token: string): Espace | null {
+function readCache(token: string): Payload | null {
   try {
     const raw = localStorage.getItem(cacheKey(token));
-    return raw ? (JSON.parse(raw) as Espace) : null;
+    return raw ? (JSON.parse(raw) as Payload) : null;
   } catch {
     return null;
   }
