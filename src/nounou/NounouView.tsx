@@ -4,6 +4,8 @@ import JourneeView from './JourneeView';
 import ConduitesView from './ConduitesView';
 import FicheUrgenceView from './FicheUrgenceView';
 import PartageNounouSheet from './PartageNounouSheet';
+import TraductionSheet from './TraductionSheet';
+import type { NounouLangue } from '../types';
 import { IconShareUp, IconCheck } from '../cuisine/icons';
 import '../cuisine/cuisine.css';
 import './nounou.css';
@@ -27,6 +29,7 @@ export default function NounouView({ showAccount, connected, onOpenAccount }: Pr
 
   const [seg, setSeg] = useState<Segment>('journee');
   const [sharing, setSharing] = useState(false);
+  const [traduire, setTraduire] = useState<NounouLangue | null>(null);
   const [toastMsg, setToastMsg] = useState('');
   const toastT = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = (msg: string) => {
@@ -98,7 +101,19 @@ export default function NounouView({ showAccount, connected, onOpenAccount }: Pr
       </div>
 
       {sharing && (
-        <PartageNounouSheet connected={connected} onClose={() => setSharing(false)} toast={toast} />
+        <PartageNounouSheet
+          connected={connected}
+          onClose={() => setSharing(false)}
+          onTraduire={(l) => {
+            setSharing(false);
+            setTraduire(l);
+          }}
+          toast={toast}
+        />
+      )}
+
+      {traduire && (
+        <TraductionSheet langue={traduire} onClose={() => setTraduire(null)} toast={toast} />
       )}
 
       <div className={'cz-toast' + (toastMsg ? ' show' : '')}>

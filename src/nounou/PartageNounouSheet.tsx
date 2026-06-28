@@ -22,10 +22,12 @@ function timeAgo(iso: string): string {
 export default function PartageNounouSheet({
   connected,
   onClose,
+  onTraduire,
   toast,
 }: {
   connected: boolean;
   onClose: () => void;
+  onTraduire: (langue: NounouLangue) => void;
   toast: (m: string) => void;
 }) {
   const doc = useNounou((s) => s.doc);
@@ -191,12 +193,17 @@ export default function PartageNounouSheet({
             ))}
           </div>
           {dest.langue !== 'fr' && (
-            <div className="nz-info draft" style={{ marginTop: 10 }}>
-              <span>
-                Tu écris en français ; la traduction (et la relecture du sensible) arrivera bientôt.
-                D’ici là sa page s’affiche dans la langue d’auteur.
-              </span>
-            </div>
+            <>
+              <div className="nz-info draft" style={{ marginTop: 10 }}>
+                <span>
+                  Tu écris en français ; la traduction est dérivée. Le <b>sensible</b> (santé,
+                  urgences, conduites, allergies) n’est actif qu’<b>après ta relecture</b>.
+                </span>
+              </div>
+              <button className="cz-cta ghost" onClick={() => onTraduire(dest.langue)}>
+                Préparer / relire la traduction
+              </button>
+            </>
           )}
 
           {/* Enfants scopés */}

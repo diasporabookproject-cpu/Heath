@@ -303,6 +303,20 @@ export interface NounouDest {
   createdAt: number;
 }
 
+/** Statut d'une traduction : auto (non-sensible, actif) / à valider / validé. */
+export type TransStatus = 'auto' | 'aValider' | 'valide';
+
+export interface TransEntry {
+  /** Texte traduit. */
+  tr: string;
+  /** Contenu sensible (santé/urgences/conduites/allergies) → relecture requise. */
+  sensible: boolean;
+  status: TransStatus;
+}
+
+/** Cache de traductions par langue : { langue: { texte source: entrée } }. */
+export type TransCache = Partial<Record<NounouLangue, Record<string, TransEntry>>>;
+
 /** Document Nounou unique (local-first, source de vérité). */
 export interface NounouDoc {
   enfants: Enfant[];
@@ -313,6 +327,8 @@ export interface NounouDoc {
   conduites: Conduite[];
   urgence: UrgenceFiche;
   destinataires: NounouDest[];
+  /** Traductions dérivées (figées), par langue. La langue d'auteur reste le français. */
+  translations?: TransCache;
 }
 
 export type SecuriteType = 'numeros' | 'procedure' | 'gestes';

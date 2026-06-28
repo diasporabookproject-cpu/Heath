@@ -19,7 +19,20 @@ export interface NounouEspace {
   role: string;
   /** Document scopé (enfants du destinataire + moments les concernant). */
   doc: NounouDoc;
+  /** Traductions actives figées (texte source → traduction). Vide en français. */
+  trans?: Record<string, string>;
   publishedAt: string;
+}
+
+/** Traductions actives (auto + validées) pour une langue → map figée. */
+function activeTranslations(doc: NounouDoc, langue: NounouLangue): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (langue === 'fr') return out;
+  const cache = doc.translations?.[langue] ?? {};
+  for (const [src, e] of Object.entries(cache)) {
+    if (e.status === 'auto' || e.status === 'valide') out[src] = e.tr;
+  }
+  return out;
 }
 
 /** Un moment concerne-t-il au moins un enfant scopé ? (vide = tous → oui) */
@@ -58,13 +71,16 @@ export function buildScopedDoc(doc: NounouDoc, dest: NounouDest): NounouDoc {
 }
 
 export function buildNounouEspace(doc: NounouDoc, dest: NounouDest, publishedAt: string): NounouEspace {
+  const scoped = buildScopedDoc(doc, dest);
+  scoped.translations = undefined; // la map figée `trans` suffit côté reçu
   return {
     kind: 'nounou',
     v: 1,
     langue: dest.langue,
     nom: dest.prenom,
     role: dest.role,
-    doc: buildScopedDoc(doc, dest),
+    doc: scoped,
+    trans: activeTranslations(doc, dest.langue),
     publishedAt,
   };
 }

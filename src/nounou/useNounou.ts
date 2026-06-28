@@ -6,6 +6,7 @@ import type {
   NounouContact,
   NounouDest,
   NounouDoc,
+  NounouLangue,
   NumeroUrgence,
   Periode,
   Ponctuel,
@@ -55,6 +56,11 @@ interface NounouState {
   removeContact: (id: string) => void;
   upsertRegle: (r: Partial<ReglePerm> & { texte: string; permis: boolean }) => string;
   removeRegle: (id: string) => void;
+
+  // Traductions (Lot 4.2)
+  mergeTranslations: (langue: NounouLangue, entries: { src: string; tr: string; sensible: boolean }[]) => void;
+  validateTranslation: (langue: NounouLangue, src: string) => void;
+  rejectTranslation: (langue: NounouLangue, src: string) => void;
 }
 
 export const useNounou = create<NounouState>((set) => {
@@ -290,6 +296,40 @@ export const useNounou = create<NounouState>((set) => {
         ...doc,
         urgence: { ...doc.urgence, regles: doc.urgence.regles.filter((r) => r.id !== id) },
       }));
+    },
+
+    mergeTranslations(langue, entries) {
+      mutate((doc) => {
+        const all = { ...(doc.translations ?? {}) };
+        const cur = { ...(all[langue] ?? {}) };
+        for (const e of entries) {
+          const prev = cur[e.src];
+          if (prev && prev.status === 'valide') continue; // garder la version relue
+          cur[e.src] = { tr: e.tr, sensible: e.sensible, status: e.sensible ? 'aValider' : 'auto' };
+        }
+        all[langue] = cur;
+        return { ...doc, translations: all };
+      });
+    },
+
+    validateTranslation(langue, src) {
+      mutate((doc) => {
+        const all = { ...(doc.translations ?? {}) };
+        const cur = { ...(all[langue] ?? {}) };
+        if (cur[src]) cur[src] = { ...cur[src], status: 'valide' };
+        all[langue] = cur;
+        return { ...doc, translations: all };
+      });
+    },
+
+    rejectTranslation(langue, src) {
+      mutate((doc) => {
+        const all = { ...(doc.translations ?? {}) };
+        const cur = { ...(all[langue] ?? {}) };
+        delete cur[src];
+        all[langue] = cur;
+        return { ...doc, translations: all };
+      });
     },
   };
 

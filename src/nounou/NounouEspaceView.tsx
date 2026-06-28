@@ -31,6 +31,8 @@ export default function NounouEspaceView({ espace }: { espace: NounouEspace }) {
 
   const rtl = NOUNOU_LANGS.find((l) => l.code === espace.langue)?.rtl ?? false;
   const enfantsLabel = doc.enfants.map((e) => e.prenom).join(' & ');
+  /** Traduction figée si disponible, sinon langue d'auteur. */
+  const tr = (s?: string) => (s ? (espace.trans?.[s] ?? s) : '');
 
   const go = (s: Screen) => {
     setScreen(s);
@@ -56,18 +58,19 @@ export default function NounouEspaceView({ espace }: { espace: NounouEspace }) {
 
       <div className="cz-content">
         {screen === 'home' && (
-          <HomeScreen doc={doc} date={date} setDate={setDate} go={go} publishedAt={espace.publishedAt} />
+          <HomeScreen doc={doc} date={date} setDate={setDate} go={go} publishedAt={espace.publishedAt} tr={tr} />
         )}
-        {screen === 'conduites' && <ConduitesScreen conduites={doc.conduites} onBack={() => go('home')} />}
+        {screen === 'conduites' && <ConduitesScreen conduites={doc.conduites} tr={tr} onBack={() => go('home')} />}
         {screen === 'appeler' && (
           <AppelerScreen
             numeros={doc.urgence.numeros}
             contacts={doc.urgence.contacts}
             regles={doc.urgence.regles}
+            tr={tr}
             onBack={() => go('home')}
           />
         )}
-        {screen === 'enfants' && <EnfantsScreen enfants={doc.enfants} onBack={() => go('home')} />}
+        {screen === 'enfants' && <EnfantsScreen enfants={doc.enfants} tr={tr} onBack={() => go('home')} />}
       </div>
     </div>
   );
@@ -88,12 +91,14 @@ function HomeScreen({
   setDate,
   go,
   publishedAt,
+  tr,
 }: {
   doc: NounouEspace['doc'];
   date: string;
   setDate: (d: string) => void;
   go: (s: Screen) => void;
   publishedAt: string;
+  tr: (s?: string) => string;
 }) {
   const week = weekDaysISO(date);
   const entries = projectDay(doc, date);
@@ -145,8 +150,8 @@ function HomeScreen({
         <div className="nz-perbanner">
           <span className="pe">{per.emoji}</span>
           <div>
-            <div className="pt">{per.nom}</div>
-            {per.note && <div className="pd">{per.note}</div>}
+            <div className="pt">{tr(per.nom)}</div>
+            {per.note && <div className="pd">{tr(per.note)}</div>}
           </div>
         </div>
       )}
@@ -158,7 +163,7 @@ function HomeScreen({
           <div className="nz-shcard">
             {entries.map((e) => {
               const kids = tagsFor(e);
-              const sub = [e.lieu, e.qui ? `avec ${e.qui}` : ''].filter(Boolean).join(' · ');
+              const sub = [tr(e.lieu), e.qui ? `${tr(e.qui)}` : ''].filter(Boolean).join(' · ');
               return (
                 <div key={e.id} className="nz-item" style={{ cursor: 'default' }}>
                   <span className="tm">{e.heure}</span>
@@ -167,7 +172,7 @@ function HomeScreen({
                   </span>
                   <span className="mm">
                     <span className="nn">
-                      {e.label}
+                      {tr(e.label)}
                       {kids.map((k) => (
                         <span key={k.id} className="nz-kidtag" style={{ background: k.couleur }}>
                           {k.initiale}
@@ -243,7 +248,15 @@ function HomeScreen({
   );
 }
 
-function ConduitesScreen({ conduites, onBack }: { conduites: Conduite[]; onBack: () => void }) {
+function ConduitesScreen({
+  conduites,
+  tr,
+  onBack,
+}: {
+  conduites: Conduite[];
+  tr: (s?: string) => string;
+  onBack: () => void;
+}) {
   const [open, setOpen] = useState<string | null>(null);
   const ready = conduites.filter((c) => !c.aCompleter);
 
@@ -266,7 +279,7 @@ function ConduitesScreen({ conduites, onBack }: { conduites: Conduite[]; onBack:
                     <IconAlert size={18} />
                   </span>
                   <span className="aw">
-                    <span className="an">{c.titre}</span>
+                    <span className="an">{tr(c.titre)}</span>
                     <span className="asub">
                       <span>{CONDUITE_LABEL[c.categ]}</span>
                       {c.urgent && <span className="urgtag">Urgent</span>}
@@ -289,14 +302,14 @@ function ConduitesScreen({ conduites, onBack }: { conduites: Conduite[]; onBack:
                       <IconPhone size={18} />
                       <div>
                         <div className="cl">Qui appeler</div>
-                        <div className="cv">{c.quiAppeler}</div>
+                        <div className="cv">{tr(c.quiAppeler)}</div>
                       </div>
                     </div>
                   )}
                   {steps.length > 0 && (
                     <ol className="nz-rsteps">
                       {steps.map((s, i) => (
-                        <li key={i}>{s}</li>
+                        <li key={i}>{tr(s)}</li>
                       ))}
                     </ol>
                   )}
@@ -314,11 +327,13 @@ function AppelerScreen({
   numeros,
   contacts,
   regles,
+  tr,
   onBack,
 }: {
   numeros: NumeroUrgence[];
   contacts: NounouContact[];
   regles: ReglePerm[];
+  tr: (s?: string) => string;
   onBack: () => void;
 }) {
   return (
@@ -334,7 +349,7 @@ function AppelerScreen({
               <a key={n.numero} className="nz-crow" href={`tel:${n.numero}`}>
                 <span className="nz-cav num">{n.numero}</span>
                 <span className="nz-cw">
-                  <span className="nz-cnm">{n.label}</span>
+                  <span className="nz-cnm">{tr(n.label)}</span>
                   <span className="nz-ccr">{n.aVerifier ? 'À vérifier' : ''}</span>
                 </span>
                 <span className="nz-cbtn urg">
@@ -356,7 +371,7 @@ function AppelerScreen({
               <span className="nz-cav">{c.nom.charAt(0).toUpperCase()}</span>
               <span className="nz-cw">
                 <span className="nz-cnm">{c.nom}</span>
-                {c.role && <span className="nz-ccr">{c.role}</span>}
+                {c.role && <span className="nz-ccr">{tr(c.role)}</span>}
               </span>
               <span className="nz-cbtn">
                 <IconPhone size={16} />
@@ -373,7 +388,7 @@ function AppelerScreen({
             {regles.map((r) => (
               <div key={r.id} className="nz-permrow">
                 <span className={'pm ' + (r.permis ? 'ok' : 'no')}>{r.permis ? '✓' : '✗'}</span>
-                <span>{r.texte}</span>
+                <span>{tr(r.texte)}</span>
               </div>
             ))}
           </div>
@@ -383,7 +398,15 @@ function AppelerScreen({
   );
 }
 
-function EnfantsScreen({ enfants, onBack }: { enfants: Enfant[]; onBack: () => void }) {
+function EnfantsScreen({
+  enfants,
+  tr,
+  onBack,
+}: {
+  enfants: Enfant[];
+  tr: (s?: string) => string;
+  onBack: () => void;
+}) {
   return (
     <div className="nz-rscreen">
       <Back onBack={onBack} />
@@ -404,20 +427,20 @@ function EnfantsScreen({ enfants, onBack }: { enfants: Enfant[]; onBack: () => v
                   <IconAlert size={19} />
                 </span>
                 <span className="kt">
-                  <span className="nz-allerg">{f.allergies}</span>
+                  <span className="nz-allerg">{tr(f.allergies)}</span>
                 </span>
               </div>
             )}
             {f?.traitement && (
               <div className="nz-kidkv">
                 <div className="kk">Traitement</div>
-                <div className="kvv">{f.traitement}</div>
+                <div className="kvv">{tr(f.traitement)}</div>
               </div>
             )}
             {f?.medecin && (
               <div className="nz-kidkv">
                 <div className="kk">Médecin</div>
-                <div className="kvv">{f.medecin}</div>
+                <div className="kvv">{tr(f.medecin)}</div>
               </div>
             )}
             {f?.groupe && (
@@ -429,7 +452,7 @@ function EnfantsScreen({ enfants, onBack }: { enfants: Enfant[]; onBack: () => v
             {f?.habitudes && (
               <div className="nz-kidkv">
                 <div className="kk">Habitudes</div>
-                <div className="kvv">{f.habitudes}</div>
+                <div className="kvv">{tr(f.habitudes)}</div>
               </div>
             )}
             {!f && <div className="nz-emptyline">Fiche à compléter par le parent.</div>}

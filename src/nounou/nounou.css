@@ -271,5 +271,17 @@
 /* Variante « jour » de l'icône d'option (cz-opt2), absente de cuisine.css. */
 .cz-opt2 .ic.day { background: var(--surface-2); color: var(--muted); }
 
+/* ── Traduction (relecture du sensible, FN4.2) ───────────────────────────── */
+.nz-trrow { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 12px 13px; margin-bottom: 9px; }
+.nz-trrow.draft { background: #fcfafe; border-color: var(--draft-line); }
+.nz-trsrc { font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+.nz-trtxt { font-size: 15px; font-weight: 600; line-height: 1.4; }
+.nz-trtxt.ar { font-family: 'Noto Naskh Arabic', serif; direction: rtl; text-align: right; }
+.nz-tractions { display: flex; gap: 8px; margin-top: 10px; }
+.nz-trbtn { flex: 1; border-radius: 10px; padding: 9px; font-family: var(--font-body); font-weight: 600; font-size: 13.5px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); }
+.nz-trbtn.ok { background: var(--petrol); color: #fff; border-color: var(--petrol); }
+.nz-trbtn.no { color: var(--bad); }
+.nz-trvalide { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ok); }
+
 /* Variante danger sur un bouton secondaire (cz-cta ghost). */
 .nz-danger { color: var(--bad) !important; }

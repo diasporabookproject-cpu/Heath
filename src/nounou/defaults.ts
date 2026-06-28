@@ -110,5 +110,6 @@ export function mergeNounouDoc(loaded: Partial<NounouDoc> | undefined): NounouDo
       regles: loaded.urgence?.regles ?? base.urgence.regles,
     },
     destinataires: loaded.destinataires ?? base.destinataires,
+    translations: loaded.translations,
   };
 }
