@@ -58,6 +58,20 @@
   align-items: center;
   gap: 9px;
 }
+.cz-back {
+  width: 34px; height: 34px;
+  margin-left: -4px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex: none;
+}
 .cz-mark { width: 27px; height: 27px; border-radius: 8px; background: var(--petrol); position: relative; flex: none; }
 .cz-mark::before {
   content: '';

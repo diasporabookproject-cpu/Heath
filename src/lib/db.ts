@@ -29,10 +29,18 @@ interface MenuDB extends DBSchema {
   destinataires: { key: string; value: Destinataire };
   securite: { key: string; value: SecuriteFiche };
   nounou: { key: string; value: NounouDoc };
+  published: { key: string; value: PublishRecord };
+}
+
+/** Trace locale du dernier envoi par destinataire (état « à envoyer », L1-4). */
+export interface PublishRecord {
+  token: string;
+  sig: string;
+  at: string;
 }
 
 const DB_NAME = 'menu-semaine';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 let dbPromise: Promise<IDBPDatabase<MenuDB>> | null = null;
 
@@ -64,6 +72,10 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
         // v5 : document Nounou unique (modèle en couches, clé fixe 'doc').
         if (!db.objectStoreNames.contains('nounou')) {
           db.createObjectStore('nounou');
+        }
+        // v6 : trace du dernier envoi par destinataire (état de transmission).
+        if (!db.objectStoreNames.contains('published')) {
+          db.createObjectStore('published', { keyPath: 'token' });
         }
       },
     });
@@ -244,4 +256,19 @@ export async function loadNounou(): Promise<NounouDoc | undefined> {
 export async function saveNounou(doc: NounouDoc): Promise<void> {
   const db = await getDB();
   await db.put('nounou', doc, NOUNOU_KEY);
+}
+
+// ── État de transmission (dernier envoi par destinataire, L1-4) ──────────────
+
+export async function loadPublished(): Promise<Record<string, PublishRecord>> {
+  const db = await getDB();
+  const all = await db.getAll('published');
+  const map: Record<string, PublishRecord> = {};
+  for (const r of all) map[r.token] = r;
+  return map;
+}
+
+export async function recordPublished(token: string, sig: string): Promise<void> {
+  const db = await getDB();
+  await db.put('published', { token, sig, at: new Date().toISOString() });
 }

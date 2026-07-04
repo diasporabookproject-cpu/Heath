@@ -27,9 +27,10 @@ interface Props {
   showAccount: boolean;
   connected: boolean;
   onOpenAccount: () => void;
+  onBack?: () => void;
 }
 
-export default function CuisineView({ showAccount, connected, onOpenAccount }: Props) {
+export default function CuisineView({ showAccount, connected, onOpenAccount, onBack }: Props) {
   const recipes = useStore((s) => s.recipes);
   const objective = useStore((s) => s.settings.objective);
   const setComponent = useStore((s) => s.setComponent);
@@ -68,6 +69,11 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
       <header className="cz-head">
         <div className="cz-brandrow">
           <div className="cz-brand">
+            {onBack && (
+              <button className="cz-back" onClick={onBack} aria-label="Retour à Maison">
+                ‹
+              </button>
+            )}
             <span className="cz-mark" />
             Cuisine
           </div>

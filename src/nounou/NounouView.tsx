@@ -21,9 +21,10 @@ interface Props {
   showAccount: boolean;
   connected: boolean;
   onOpenAccount: () => void;
+  onBack?: () => void;
 }
 
-export default function NounouView({ showAccount, connected, onOpenAccount }: Props) {
+export default function NounouView({ showAccount, connected, onOpenAccount, onBack }: Props) {
   const ready = useNounou((s) => s.ready);
   const init = useNounou((s) => s.init);
 
@@ -49,6 +50,11 @@ export default function NounouView({ showAccount, connected, onOpenAccount }: Pr
       <header className="cz-head">
         <div className="cz-brandrow">
           <div className="cz-brand">
+            {onBack && (
+              <button className="cz-back" onClick={onBack} aria-label="Retour à Maison">
+                ‹
+              </button>
+            )}
             <span className="cz-mark nz-mark" />
             Nounou
           </div>
