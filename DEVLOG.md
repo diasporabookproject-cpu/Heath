@@ -87,9 +87,17 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 32. **Page Nounou (brief FN0–FN5) — nouvelle page par rôle, sœur de Cuisine** : dossier `src/nounou/`, **modèle en couches** (`Moment` récurrent / `Periode` rythme alternatif sur plage / `Ponctuel` un jour / `Enfant`), **précédence stricte `ponctuel > période > rythme habituel`** (`projection.ts`, aligné RRULE pour un futur ICS). **Stockage = document JSON unique** (store IndexedDB `nounou`, clé `'doc'`, **DB v5**), fusion à la lecture (`mergeNounouDoc`) pour la compat ascendante ; **last-write-wins** assumé (MVP). Store dédié `useNounou` (séparé de Cuisine). **Chevauchement de périodes interdit à la création** (`periodesOverlap`). **Jours d'école = lun–ven (0–4)**, tous = 0–6. Numéros d'urgence Maroc **19/15/150** seedés « à vérifier ». Réutilise tokens + coquille Cuisine (`cz-*`), classes propres `nz-*`. Onglets **Journée · Conduites · Fiche urgence** (« Repères » banni). Construit par lots, ordre **0 → 1 → (4.1+4.3) → 5 → 2 → 3 → 4.2** (page reçue partageable tôt, traduction en dernier). ✅ Lots 0, 1, **4.1+4.3**, **5**, **2** et **3** livrés — **MVP fonctionnellement complet** (admin Journée + Conduites/voix + Fiche urgence/enfants → lien scopé → page reçue + 3 accès + RTL, réutilisant la table `espaces`). ⏳ reste : **Lot 4.2** (traduction edge function + relecture du sensible) — le seul 🔴.
 
-## État actuel (au 2026-06-26)
+## État actuel (au 2026-07-04)
 
-**Fait :**
+> **⚠️ Refonte UI/UX « Bento lumineux » → Manzil en cours sur la branche `refonte/bento-v1`.**
+> Voir **`PASSATION_REFONTE_BENTO.md`** (dossier de passation complet : état, ADR, fichiers,
+> comment auditer/tester, et fonctionnalités restantes à cadrer). Résumé express :
+> - **Lots 0→2 livrés** (socle `mz-`, hub Maison, Cuisine+Nounou rhabillées Manzil) + **L3-1** (câblage « personne → envoi ciblé »).
+> - **Prévue déployée** sur l'URL de prod via `refonte/bento-v1` ; **branche de prod `claude/jolly-wozniak-s83str` intacte** (ce n'est pas fusionné).
+> - **Reste du Lot 3 = fonctionnalités nouvelles** (EnvoiSheet v2, création 3 portes + quota IA, file de relecture IA, collections/packs, rappels) → **à cadrer avec prototype/spec avant code**.
+> - Merge en prod = **décision explicite d'Amine** (non prise).
+
+**Fait (base, avant refonte) :**
 - P0 complet : composer, feux tricolores + moyenne semaine, vue Cuisinière (copie WhatsApp), bibliothèque, persistance, mobile-first, PWA.
 - P1 : liste de courses (onglet Courses), PWA installable, **fiches non encore détaillées**.
 - Darija (vue Cuisinière, 24 recettes traduites) + bascule FR/AR + RTL.
