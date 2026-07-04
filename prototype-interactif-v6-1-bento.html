@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Manzil — Prototype v6.1 · Bento lumineux</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F5F1;--card:#FFFFFF;--ink:#1D1B16;--mut:#8B887C;--ln:#EBE9E1;
+    --vio1:#8B78E8;--vio2:#5A45C4;--vioT:#EEE9FB;
+    --grn1:#2FA37E;--grn2:#136B52;--grnT:#E6F2ED;
+    --amber:#FFD466;--amberInk:#5C4200;--ok:#1F7A4D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{background:#E3E1DA;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center;padding:14px}
+  .phone{width:min(400px,100%);height:min(830px,100dvh - 28px);background:var(--bg);border-radius:32px;overflow:hidden;position:relative;box-shadow:0 30px 70px rgba(0,0,0,.28);border:1px solid rgba(0,0,0,.07)}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+  .screen.on{display:flex}
+  .scroll{flex:1;overflow-y:auto;padding:18px 18px 10px}
+  button{font:inherit;color:inherit;background:none;border:none;text-align:left;cursor:pointer}
+  .hrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .t-greet{font-size:13px;font-weight:700;color:var(--mut)}
+  .t-big{font-size:24px;font-weight:800;letter-spacing:-.03em}
+  .t-sm{font-size:12px;color:var(--mut);font-weight:600}
+  .t-lab{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--mut);margin:16px 0 9px}
+  .av{width:34px;height:34px;border-radius:50%;background:#fff;border:1px solid var(--ln);flex:none;box-shadow:0 2px 6px rgba(29,27,22,.06);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--mut)}
+  /* ===== Maison ===== */
+  .hero{width:100%;border-radius:24px;background:linear-gradient(140deg,var(--grn1),var(--grn2));color:#fff;padding:16px;display:flex;align-items:center;gap:14px;box-shadow:0 12px 28px rgba(19,107,82,.28);position:relative;overflow:hidden}
+  .hero .halo{position:absolute;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.14);top:-60px;right:-50px}
+  .hero .g{font-size:44px;line-height:1;filter:drop-shadow(0 6px 14px rgba(0,0,0,.25));flex:none}
+  .hero .lab{font-size:9.5px;font-weight:800;letter-spacing:.1em;opacity:.85}
+  .hero h3{font-size:16.5px;font-weight:800;letter-spacing:-.01em;margin-top:2px}
+  .hero .sub{font-size:12px;font-weight:600;opacity:.85;margin-top:2px}
+  .hero .t{margin-left:auto;flex:none;font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:500}
+  .tl{margin-top:8px}
+  .tlr{width:100%;display:flex;align-items:center;gap:12px;padding:8px 2px}
+  .tlr .t{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--mut);width:42px;flex:none}
+  .tlr .e{width:34px;height:34px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px;background:var(--vioT)}
+  .tlr h4{font-size:13.5px;font-weight:700}
+  .tlr .d{margin-left:auto;flex:none;width:8px;height:8px;border-radius:50%;background:var(--vio1)}
+  .tlr.past{opacity:.38}
+  .prow{width:100%;background:var(--card);border-radius:20px;padding:13px;display:flex;align-items:center;gap:13px;margin-bottom:10px;box-shadow:0 3px 12px rgba(29,27,22,.06)}
+  .prow .tav{width:48px;height:48px;border-radius:15px;flex:none;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 14px rgba(29,27,22,.14)}
+  .prow h4{font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .prow .st{font-size:11.5px;font-weight:700;margin-top:2px;color:var(--mut)}
+  .prow .st.g{color:var(--ok)}
+  .prow .st.w{color:#A87A10}
+  .prow .pill{margin-left:auto;flex:none;background:var(--amber);color:var(--amberInk);font-size:12px;font-weight:800;border-radius:999px;padding:10px 16px;box-shadow:0 4px 10px rgba(255,212,102,.4)}
+  .prow .chev{margin-left:auto;flex:none;color:var(--mut);font-size:17px}
+  .tav.vio{background:linear-gradient(140deg,var(--vio1),var(--vio2))}
+  .tav.grn{background:linear-gradient(140deg,var(--grn1),var(--grn2))}
+  .dashed{width:100%;border:1.5px dashed #D8D5CA;border-radius:18px;padding:13px;text-align:center;color:var(--mut);font-size:12.5px;font-weight:700;margin-top:4px}
+  /* ===== Pages de rôle ===== */
+  .pgh{color:#fff;padding:14px 18px 16px;border-radius:0 0 28px 28px;flex:none;position:relative;overflow:hidden}
+  .pgh.vio{background:linear-gradient(150deg,var(--vio1),var(--vio2))}
+  .pgh.grn{background:linear-gradient(150deg,var(--grn1),var(--grn2))}
+  .pgh .halo{position:absolute;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.12);top:-80px;right:-60px}
+  .pgh .hrow{margin-bottom:10px;position:relative}
+  .pgh .back{font-size:13px;font-weight:800;background:rgba(255,255,255,.16);border-radius:999px;padding:7px 13px}
+  .pgh .lang{font-size:11.5px;font-weight:800;background:rgba(255,255,255,.16);border-radius:999px;padding:7px 13px}
+  .pgh .who{display:flex;align-items:center;gap:12px;position:relative}
+  .pgh .who .g{font-size:40px;line-height:1;filter:drop-shadow(0 6px 14px rgba(0,0,0,.28))}
+  .pgh .who h3{font-size:19px;font-weight:800;letter-spacing:-.01em}
+  .pgh .who .st{font-size:12px;font-weight:700;opacity:.92;margin-top:2px}
+  .pgh .who .st b{font-weight:800;color:#C9F5D6}
+  .pgh .who .st.w b{color:var(--amber)}
+  .pgh .seg{display:flex;gap:7px;margin-top:13px;position:relative}
+  .sgi{font-size:12px;font-weight:800;color:rgba(255,255,255,.8);background:rgba(255,255,255,.15);border-radius:999px;padding:8px 14px}
+  .pgh.vio .sgi.on{background:#fff;color:var(--vio2)}
+  .pgh.grn .sgi.on{background:#fff;color:var(--grn2)}
+  /* bande de jours */
+  .dstrip{display:flex;gap:5px;margin:2px 0 12px}
+  .dchip{flex:1;text-align:center;background:var(--card);border-radius:12px;padding:7px 0;box-shadow:0 2px 6px rgba(29,27,22,.05);position:relative}
+  .dchip .dw{font-size:9px;font-weight:800;letter-spacing:.05em;color:var(--mut)}
+  .dchip .dn{font-family:'JetBrains Mono',monospace;font-size:14px;margin-top:1px}
+  .dchip.on{background:var(--vio2);color:#fff;box-shadow:0 6px 14px rgba(90,69,196,.35)}
+  .dchip.on .dw{color:rgba(255,255,255,.7)}
+  .dchip .dot{position:absolute;top:5px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--amber)}
+  .dlab{display:flex;align-items:center;justify-content:space-between;margin:2px 0 9px}
+  .dlab .t-lab{margin:0}
+  .dlab .lnk{font-size:12px;font-weight:800;color:var(--vio2)}
+  .dlab .lnk.grn{color:var(--grn2)}
+  .mrow{width:100%;background:var(--card);border-radius:18px;padding:12px 13px;display:flex;align-items:center;gap:12px;margin-bottom:9px;box-shadow:0 3px 10px rgba(29,27,22,.05)}
+  .mrow .e{width:42px;height:42px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .mrow h4{font-size:14px;font-weight:800;letter-spacing:-.01em}
+  .mrow i{font-style:normal;font-size:11px;color:var(--mut);font-weight:600;display:block;margin-top:1px}
+  .mrow .t{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--vio2);flex:none;font-weight:500}
+  .mrow .t.grn{color:var(--grn2)}
+  .mrow .kv{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mut);flex:none;text-align:right}
+  .mrow.dash{background:transparent;border:1.5px dashed #D8D5CA;box-shadow:none}
+  .mrow .star{flex:none;font-size:16px;color:#D8D5CA;padding:4px}
+  .mrow .star.on{color:#E9B60C}
+  .abar{flex:none;padding:10px 16px calc(15px + env(safe-area-inset-bottom));display:flex;gap:10px;background:linear-gradient(180deg,rgba(246,245,241,0),var(--bg) 35%)}
+  .abar .plus{width:52px;height:52px;border-radius:16px;background:var(--card);box-shadow:0 4px 14px rgba(29,27,22,.1);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700;flex:none}
+  .abar .cta{flex:1;background:var(--ink);color:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:800;box-shadow:0 10px 22px rgba(29,27,22,.25)}
+  /* chips filtre */
+  .fchips{display:flex;gap:7px;margin-bottom:12px}
+  .fc{white-space:nowrap;flex:none;font-size:11.5px;font-weight:800;background:var(--card);border-radius:999px;padding:8px 14px;color:var(--mut);box-shadow:0 2px 6px rgba(29,27,22,.05)}
+  .fc.on{background:var(--ink);color:#fff}
+  /* rail collections */
+  .rail{display:flex;gap:10px;overflow-x:auto;margin:0 -18px;padding:2px 18px 8px;scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
+  .pkt{flex:none;width:122px;background:var(--card);border-radius:18px;padding:11px;display:flex;flex-direction:column;gap:7px;position:relative;box-shadow:0 4px 14px rgba(29,27,22,.07)}
+  .pkt .cov{width:100%;height:58px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px}
+  .pkt h5{font-size:11.5px;font-weight:800;line-height:1.25}
+  .pkt i{font-style:normal;font-size:9.5px;color:var(--mut);font-family:'JetBrains Mono',monospace}
+  .pkt .newb{position:absolute;top:16px;left:16px;font-size:8.5px;font-weight:800;background:var(--ink);color:#fff;border-radius:999px;padding:2px 7px}
+  .pkt.more{align-items:center;justify-content:center;background:transparent;border:1.5px dashed #D8D5CA;box-shadow:none;color:var(--mut);font-size:11.5px;font-weight:800;min-height:120px}
+  /* sheets */
+  .ovl{position:absolute;inset:0;background:rgba(29,27,22,.4);display:none;align-items:flex-end;z-index:20}
+  .ovl.on{display:flex}
+  .sheet{background:#FBFAF7;border-radius:24px 24px 0 0;width:100%;max-height:90%;display:flex;flex-direction:column;padding:10px 18px calc(18px + env(safe-area-inset-bottom));animation:up .18s ease-out}
+  @keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+  @media (prefers-reduced-motion: reduce){.sheet{animation:none}}
+  .grab{width:40px;height:4px;border-radius:4px;background:#D5D2C8;margin:2px auto 13px;flex:none}
+  .shscroll{overflow-y:auto}
+  .sh-t{font-size:20px;font-weight:800;letter-spacing:-.02em}
+  .opt{width:100%;background:var(--card);border-radius:18px;padding:14px;display:flex;gap:13px;align-items:center;margin-bottom:9px;box-shadow:0 3px 10px rgba(29,27,22,.05)}
+  .opt .e{width:42px;height:42px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;font-size:21px;background:var(--bg)}
+  .opt b{font-size:14px;font-weight:800;display:block}
+  .opt i{font-style:normal;font-size:11px;color:var(--mut);font-weight:600;margin-top:1px}
+  .opt .quota{margin-left:auto;flex:none;font-size:9.5px;font-weight:800;background:var(--vioT);color:var(--vio2);border-radius:999px;padding:5px 9px;font-family:'JetBrains Mono',monospace}
+  .field{background:var(--card);border-radius:14px;padding:12px 14px;font-size:12.5px;color:var(--mut);font-weight:600;margin-bottom:8px;box-shadow:0 2px 8px rgba(29,27,22,.04)}
+  .field b{color:var(--ink);font-weight:800}
+  .btnrow{display:flex;gap:8px;margin-top:12px}
+  .btn{flex:1;border-radius:14px;padding:14px;text-align:center;font-size:13px;font-weight:800;background:var(--card);box-shadow:0 2px 8px rgba(29,27,22,.06)}
+  .btn.primary{background:var(--ink);color:#fff;box-shadow:0 8px 18px rgba(29,27,22,.25)}
+  .note{font-size:11px;color:#A87A10;font-weight:700;background:#FBF3DC;border-radius:12px;padding:10px 12px;margin-top:10px}
+  .quiet{width:100%;text-align:center;font-size:12px;font-weight:700;color:var(--mut);margin-top:13px;text-decoration:underline;text-underline-offset:3px}
+  .bigfield{background:var(--card);border-radius:16px;padding:14px;font-size:13px;color:var(--mut);font-weight:600;line-height:1.6;min-height:110px;margin-top:12px;box-shadow:0 2px 8px rgba(29,27,22,.04)}
+  .bigfield b{color:var(--ink);font-weight:800}
+  .rolechips{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .rc{font-size:11px;font-weight:800;background:var(--card);border-radius:999px;padding:7px 13px;color:var(--mut);box-shadow:0 2px 6px rgba(29,27,22,.05)}
+  .rc.on{background:var(--ink);color:#fff}
+  .ing{width:100%;display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;padding:11px 13px;margin-bottom:7px;box-shadow:0 2px 8px rgba(29,27,22,.04)}
+  .ing .q{font-family:'JetBrains Mono',monospace;font-size:12px;flex:none;width:54px;color:var(--grn2);font-weight:500}
+  .ing .n{font-size:13px;font-weight:700;flex:1}
+  .ing .x{color:var(--mut);flex:none}
+  .ing.add{background:transparent;border:1.5px dashed #D8D5CA;box-shadow:none;color:var(--mut);font-size:12px;font-weight:700;justify-content:center}
+  .stepr{width:100%;display:flex;gap:10px;margin-bottom:7px;align-items:flex-start}
+  .stepr .num{width:20px;height:20px;border-radius:50%;background:var(--grnT);color:var(--grn2);font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+  .stepr p{font-size:12.5px;font-weight:600;line-height:1.5}
+  .macro{display:flex;align-items:center;gap:8px;background:var(--grnT);border-radius:13px;padding:11px 13px;margin-top:4px}
+  .macro b{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:500;color:var(--grn2)}
+  .macro i{font-style:normal;font-size:9.5px;color:var(--grn2);font-weight:800;margin-left:auto;opacity:.8}
+  .stepper{display:flex;align-items:center;background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:9px;box-shadow:0 2px 8px rgba(29,27,22,.05)}
+  .stepper button{padding:13px 20px;font-weight:800;font-size:16px;color:var(--mut)}
+  .stepper b{flex:1;text-align:center;font-family:'JetBrains Mono',monospace;font-size:14px}
+  .units{display:flex;gap:6px;margin-bottom:10px}
+  .units .u{flex:1;text-align:center;font-size:12px;font-weight:800;background:var(--card);border-radius:12px;padding:10px 0;color:var(--mut);box-shadow:0 2px 6px rgba(29,27,22,.04)}
+  .units .u.on{background:var(--ink);color:#fff}
+  .sugg{display:flex;flex-direction:column;gap:7px}
+  .sugg .s1{width:100%;font-size:13px;font-weight:700;background:var(--card);border-radius:12px;padding:12px 13px;box-shadow:0 2px 6px rgba(29,27,22,.04)}
+  .sugg .s1 i{font-style:normal;color:var(--mut);font-weight:600;font-size:11px}
+  .ck{width:22px;height:22px;border-radius:8px;background:var(--bg);flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:transparent}
+  .ck.on{background:var(--ink);color:#fff}
+  .prog{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .prog .n{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mut)}
+  .bar{height:6px;border-radius:6px;background:#EAE8DF;margin-bottom:14px;position:relative;overflow:hidden}
+  .bar i{position:absolute;inset:0;width:33%;background:linear-gradient(90deg,var(--grn1),var(--grn2));border-radius:6px;transition:width .25s}
+  .search{background:var(--card);border-radius:14px;padding:12px 14px;font-size:13px;color:var(--mut);font-weight:600;margin-bottom:10px;box-shadow:0 2px 8px rgba(29,27,22,.04)}
+  .sigrow{width:100%;background:var(--vioT);border-radius:16px;padding:12px 13px;display:flex;align-items:center;gap:11px}
+  .sigrow .e{width:36px;height:36px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px;background:#fff}
+  .sigrow b{font-size:12.5px;font-weight:800;display:block;color:var(--vio2)}
+  .sigrow i{font-style:normal;font-size:10.5px;color:var(--vio2);opacity:.75;font-weight:600}
+  .sigrow .go{margin-left:auto;flex:none;background:var(--vio2);color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:8px 13px}
+  .scope{display:flex;gap:6px;flex-wrap:wrap}
+  .sc{font-size:11.5px;font-weight:800;background:var(--card);border-radius:999px;padding:9px 14px;color:var(--mut);box-shadow:0 2px 6px rgba(29,27,22,.05)}
+  .sc.on{background:var(--ink);color:#fff}
+  .wa{background:#E7F6DC;border-radius:16px 16px 16px 5px;padding:13px 14px;font-size:12px;line-height:1.65;font-weight:600;color:#2C3B24;margin-top:10px;white-space:pre-line;box-shadow:0 2px 8px rgba(29,27,22,.05)}
+  .wa b{font-weight:800}
+  .wa .lnk{color:#186B4F;font-weight:800;text-decoration:underline;text-underline-offset:2px}
+  .walab{font-size:10px;font-weight:800;letter-spacing:.08em;color:var(--mut);margin-top:13px}
+  .cfg{width:100%;display:flex;align-items:center;gap:11px;background:var(--card);border-radius:14px;padding:12px 13px;margin-top:10px;box-shadow:0 2px 8px rgba(29,27,22,.04)}
+  .cfg .e{width:34px;height:34px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px;background:var(--bg)}
+  .cfg b{font-size:12.5px;font-weight:800;display:block}
+  .cfg i{font-style:normal;font-size:10.5px;color:var(--mut);font-weight:600}
+  .cfg .go{margin-left:auto;font-size:11.5px;font-weight:800;flex:none;color:var(--grn2)}
+  .days{display:flex;gap:5px;margin-bottom:10px}
+  .days .d{flex:1;text-align:center;font-size:11px;font-weight:800;background:var(--card);border-radius:11px;padding:10px 0;color:var(--mut);box-shadow:0 2px 6px rgba(29,27,22,.04)}
+  .days .d.on{background:var(--ink);color:#fff}
+  .wkhead{display:flex;align-items:center;gap:8px;margin:2px 0 10px}
+  .wkhead .nav{width:32px;height:32px;border-radius:11px;background:var(--card);box-shadow:0 2px 6px rgba(29,27,22,.06);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex:none}
+  .wkhead .wt{font-size:13px;font-weight:800;flex:1;text-align:center}
+  .wkhead .wstar{width:32px;height:32px;border-radius:11px;background:var(--card);box-shadow:0 2px 6px rgba(29,27,22,.06);display:flex;align-items:center;justify-content:center;font-size:15px;flex:none;color:#D8D5CA}
+  .wkhead .wstar.on{color:#E9B60C}
+  .emptyw{background:var(--card);border-radius:20px;padding:22px 18px;text-align:center;box-shadow:0 3px 12px rgba(29,27,22,.06)}
+  .emptyw .g{font-size:40px}
+  .emptyw h4{font-size:15.5px;font-weight:800;margin-top:8px}
+  .emptyw p{font-size:12.5px;color:var(--mut);font-weight:600;margin-top:4px;line-height:1.5}
+  .emptyw .btn{margin-top:14px;display:block}
+  #toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(10px);background:var(--ink);color:#fff;font-size:12.5px;font-weight:700;border-radius:999px;padding:11px 19px;opacity:0;pointer-events:none;transition:.22s;z-index:40;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+  #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+  <!-- ============ MAISON ============ -->
+  <div class="screen on" id="scr-maison">
+    <div class="scroll">
+      <div class="hrow">
+        <div><div class="t-greet">Salam Amine 👋</div><div class="t-big">Samedi 4 juillet</div></div>
+        <button class="av" onclick="toast('Réglages — hors prototype')">A</button>
+      </div>
+
+      <div class="t-lab" style="margin-top:2px">AUJOURD'HUI</div>
+      <button class="hero" onclick="go('cuisine')">
+        <span class="halo"></span>
+        <span class="g">🥘</span>
+        <span><span class="lab">PROCHAIN · CUISINE</span><h3>Déjeuner — Kefta, riz &amp; légumes</h3><div class="sub">Pour 4 · tout est sur la page de Khadija</div></span>
+        <span class="t">12:30</span>
+      </button>
+      <div class="tl">
+        <button class="tlr past" onclick="go('nounou')"><span class="t">08:15</span><span class="e">🏫</span><h4>École — dépose</h4><span class="d"></span></button>
+        <button class="tlr" onclick="go('nounou')"><span class="t">13:00</span><span class="e">😴</span><h4>Sieste de Kenza</h4><span class="d"></span></button>
+        <button class="tlr" onclick="go('nounou')"><span class="t">20:00</span><span class="e">🌙</span><h4>Coucher</h4><span class="d"></span></button>
+      </div>
+
+      <div class="t-lab">TON ÉQUIPE</div>
+      <div class="prow" onclick="go('nounou')">
+        <span class="tav vio">🧸</span>
+        <span><h4>Fatima · Nounou</h4><div class="st" id="pst-nounou"></div></span>
+        <button class="pill" id="pill-nounou" onclick="event.stopPropagation()"></button>
+        <span class="chev hidden" id="chev-nounou">›</span>
+      </div>
+      <div class="prow" onclick="go('cuisine')">
+        <span class="tav grn">🥘</span>
+        <span><h4>Khadija · Cuisine</h4><div class="st" id="pst-cuisine"></div></span>
+        <button class="pill" id="pill-cuisine" onclick="event.stopPropagation()"></button>
+        <span class="chev hidden" id="chev-cuisine">›</span>
+      </div>
+      <button class="dashed" onclick="openSh('newpage')">＋ Une page pour quelqu'un d'autre</button>
+      <div style="height:14px"></div>
+    </div>
+  </div>
+
+  <!-- ============ PAGE NOUNOU ============ -->
+  <div class="screen" id="scr-nounou">
+    <div class="pgh vio">
+      <span class="halo"></span>
+      <div class="hrow"><button class="back" onclick="go('maison')">‹ Maison</button><button class="lang" id="lang-n" onclick="openLang('n')">الدارجة ▾</button></div>
+      <div class="who"><span class="g">🧸</span><div><h3>Fatima · Nounou</h3><div class="st" id="st-nounou"></div></div></div>
+      <div class="seg">
+        <button class="sgi on" id="sg-n-journee" onclick="seg('nounou','journee')">Journée</button>
+        <button class="sgi" id="sg-n-conduites" onclick="seg('nounou','conduites')">Conduites</button>
+        <button class="sgi" id="sg-n-urgence" onclick="seg('nounou','urgence')">Urgence</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <div id="n-journee">
+        <div class="dstrip" id="dstrip"></div>
+        <div class="dlab"><span class="t-lab" id="day-title">SAMEDI 4 JUILLET</span><button class="lnk" onclick="toast('Rythme & périodes — hors prototype')">Rythme &amp; périodes</button></div>
+        <div id="day-body"></div>
+      </div>
+      <div id="n-conduites" class="hidden">
+        <div class="t-lab" style="margin-top:2px">QUE FAIRE SI…</div>
+        <button class="mrow" onclick="toast('Ta consigne, ta voix — lecture hors prototype')"><span class="e" style="background:var(--vioT)">🚪</span><span><h4>Étranger à la porte</h4><i>Ta voix · déjà transmise</i></span></button>
+        <button class="mrow" onclick="toast('Ta consigne, ta voix — lecture hors prototype')"><span class="e" style="background:var(--vioT)">🤒</span><span><h4>Fièvre de Kenza</h4><i>Texte + ta voix</i></span></button>
+        <div class="t-lab">À COMPLÉTER — 5 MIN CHACUNE · 3</div>
+        <button class="mrow dash" onclick="toast('Gabarit prêt à remplir — hors prototype')"><span class="e">🩹</span><span><h4>Chute / blessure</h4><i>Gabarit prêt — tes mots à toi</i></span></button>
+        <button class="mrow dash" onclick="toast('Gabarit prêt à remplir — hors prototype')"><span class="e">💡</span><span><h4>Coupure d'électricité</h4><i>Gabarit prêt — tes mots à toi</i></span></button>
+      </div>
+      <div id="n-urgence" class="hidden">
+        <div class="t-lab" style="margin-top:2px">QUI APPELER</div>
+        <button class="mrow" onclick="toast('Fiche contact — hors prototype')"><span class="e" style="background:var(--vioT)">📞</span><span><h4>Maman</h4><i>À appeler en premier</i></span><span class="kv">06 60 69 96 71</span></button>
+        <button class="mrow" onclick="toast('Fiche contact — hors prototype')"><span class="e" style="background:var(--vioT)">🚑</span><span><h4>SAMU</h4><i>À vérifier</i></span><span class="kv">15</span></button>
+        <div class="t-lab">LES ENFANTS</div>
+        <button class="mrow" onclick="toast('Fiche enfant — hors prototype')"><span class="e" style="background:#FDECEC">👧</span><span><h4>Kenza · 4 ans</h4><i>⚠ Allergie arachide — toujours visible</i></span></button>
+        <div class="t-lab">RÈGLES DE LA MAISON</div>
+        <button class="mrow" onclick="toast('Règle — hors prototype')"><span class="e" style="background:var(--vioT)">📵</span><span><h4>Écrans</h4><i>Interdit</i></span></button>
+      </div>
+    </div>
+    <div class="abar">
+      <button class="plus" onclick="plusNounou()">＋</button>
+      <button class="cta" onclick="openSh('envoi-n')">Envoyer la mise à jour</button>
+    </div>
+  </div>
+
+  <!-- ============ PAGE CUISINE ============ -->
+  <div class="screen" id="scr-cuisine">
+    <div class="pgh grn">
+      <span class="halo"></span>
+      <div class="hrow"><button class="back" onclick="go('maison')">‹ Maison</button><button class="lang" id="lang-c" onclick="openLang('c')">Français ▾</button></div>
+      <div class="who"><span class="g">🥘</span><div><h3>Khadija · Cuisine</h3><div class="st" id="st-cuisine"></div></div></div>
+      <div class="seg">
+        <button class="sgi on" id="sg-c-semaine" onclick="seg('cuisine','semaine')">Semaine</button>
+        <button class="sgi" id="sg-c-biblio" onclick="seg('cuisine','biblio')">Bibliothèque</button>
+        <button class="sgi" id="sg-c-courses" onclick="seg('cuisine','courses')">Courses</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <div id="c-semaine">
+        <div class="wkhead">
+          <button class="nav" onclick="weekNav(-1)">‹</button>
+          <span class="wt" id="wk-title"></span>
+          <button class="nav" onclick="weekNav(1)">›</button>
+          <button class="wstar" id="wk-star" onclick="favWeek()">★</button>
+        </div>
+        <div id="week-body"></div>
+      </div>
+      <div id="c-biblio" class="hidden">
+        <div class="search">⌕ &nbsp;Un plat, un ingrédient…</div>
+        <div class="fchips" style="overflow-x:auto;margin-left:-18px;margin-right:-18px;padding:0 18px 4px;scrollbar-width:none">
+          <button class="fc on" id="flt-tous" onclick="setFlt('tous')">Tout</button>
+          <button class="fc" id="flt-fav" onclick="setFlt('fav')">★ Favoris</button>
+          <button class="fc" id="flt-pdj" onclick="setFlt('pdj')">Petit-déj</button>
+          <button class="fc" id="flt-entree" onclick="setFlt('entree')">Entrées</button>
+          <button class="fc" id="flt-plat" onclick="setFlt('plat')">Plats</button>
+          <button class="fc" id="flt-douceur" onclick="setFlt('douceur')">Douceurs</button>
+        </div>
+        <button class="sigrow" id="sig-relire" style="margin:0 0 12px" onclick="openRelecture()">
+          <span class="e">✦</span><span><b id="draft-label">3 brouillons IA à relire</b><i>2 minutes et c'est réglé</i></span><span class="go">Relire</span>
+        </button>
+        <div class="t-lab" style="margin-top:0">MES RECETTES · <span id="count-rec">24</span></div>
+        <button class="mrow rrow fav" data-cat="plat" data-n="Kefta de bœuf, riz &amp; légumes" data-m="Plat · Marocain du quotidien" data-k="710 kcal" onclick="openFiche(this)"><button class="star on" onclick="favTgl(event,this)">★</button><span class="e" style="background:var(--grnT)">🍲</span><span><h4>Kefta de bœuf, riz &amp; légumes</h4><i>Plat · Marocain du quotidien</i></span><span class="kv">710 kcal</span></button>
+        <button class="mrow rrow" data-cat="plat" data-n="Saumon rôti, patate douce" data-m="Plat" data-k="700 kcal" onclick="openFiche(this)"><button class="star" onclick="favTgl(event,this)">★</button><span class="e" style="background:var(--grnT)">🐟</span><span><h4>Saumon rôti, patate douce</h4><i>Plat</i></span><span class="kv">700 kcal</span></button>
+        <button class="mrow rrow" data-cat="entree" data-n="Harira traditionnelle" data-m="Entrée · Marocain du quotidien" data-k="310 kcal" onclick="openFiche(this)"><button class="star" onclick="favTgl(event,this)">★</button><span class="e" style="background:var(--grnT)">🥣</span><span><h4>Harira traditionnelle</h4><i>Entrée · Marocain du quotidien</i></span><span class="kv">310 kcal</span></button>
+        <button class="mrow rrow" data-cat="pdj" data-n="Msemen au miel" data-m="Petit-déj" data-k="320 kcal" onclick="openFiche(this)"><button class="star" onclick="favTgl(event,this)">★</button><span class="e" style="background:#FBF3DC">🥞</span><span><h4>Msemen au miel</h4><i>Petit-déj</i></span><span class="kv">320 kcal</span></button>
+        <button class="mrow rrow hidden" id="row-tajine" data-cat="plat" data-n="Tajine de poulet au citron confit" data-m="Plat · créée par toi" data-k="640 kcal" onclick="openFiche(this)"><button class="star" onclick="favTgl(event,this)">★</button><span class="e" style="background:var(--grnT)">🍋</span><span><h4>Tajine de poulet au citron confit</h4><i>Plat · créée par toi</i></span><span class="kv">640 kcal</span></button>
+        <div class="t-lab">COLLECTIONS — À COPIER, PUIS À TOI</div>
+        <div class="rail">
+          <button class="pkt" onclick="openSh('p1')"><span class="newb">NOUVEAU</span><span class="cov" style="background:#EDE9FB">🌙</span><h5>Ramadan</h5><i>14 RECETTES</i></button>
+          <button class="pkt" onclick="openSh('p1')"><span class="cov" style="background:var(--grnT)">🥗</span><h5>Léger &amp; équilibré</h5><i>10 RECETTES</i></button>
+          <button class="pkt" onclick="openSh('p1')"><span class="cov" style="background:#FBF3DC">🌾</span><h5>Sans gluten</h5><i>9 RECETTES</i></button>
+          <button class="pkt more" onclick="openSh('p2')">Tout voir →</button>
+        </div>
+      </div>
+      <div id="c-courses" class="hidden">
+        <div class="t-lab" style="margin-top:2px">SEMAINE DU 29 JUIN · 107 ARTICLES · POUR 4</div>
+        <div class="t-lab">POISSONNERIE</div>
+        <button class="mrow" onclick="toast('Cocher / détail — hors prototype')"><span class="e" style="background:#E7F0F6">🐟</span><span><h4>Sardines</h4></span><span class="kv">800 g</span></button>
+        <button class="mrow" onclick="toast('Cocher / détail — hors prototype')"><span class="e" style="background:#E7F0F6">🐟</span><span><h4>Saumon</h4></span><span class="kv">800 g</span></button>
+        <div class="t-lab">BOUCHERIE</div>
+        <button class="mrow" onclick="toast('Cocher / détail — hors prototype')"><span class="e" style="background:#FDECEC">🥩</span><span><h4>Kefta de bœuf</h4></span><span class="kv">720 g</span></button>
+      </div>
+    </div>
+    <div class="abar">
+      <button class="plus" onclick="plusCuisine()">＋</button>
+      <button class="cta" onclick="openSh('envoi-c')">Envoyer la mise à jour</button>
+    </div>
+  </div>
+
+  <!-- ============ SHEETS ============ -->
+  <div class="ovl" id="sh-newpage" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t" style="margin-bottom:12px">Une page pour…</div>
+      <button class="opt" onclick="closeSh();toast('Page Entretien — bientôt')"><span class="e">🧺</span><span><b>Entretien</b><i>Ménage, linge, les standards de ta maison</i></span></button>
+      <button class="opt" onclick="closeSh();toast('Page Chauffeur — bientôt')"><span class="e">🚗</span><span><b>Chauffeur</b><i>Trajets, écoles, véhicules</i></span></button>
+      <button class="opt" onclick="closeSh();toast('Page libre — même moteur')"><span class="e">💛</span><span><b>Quelqu'un d'autre</b><i>Grands-parents, garde du samedi… page libre</i></span></button>
+      <div class="note">Chaque page arrive déjà remplie — tu ajustes, tu n'écris pas tout.</div>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-add-journee" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t" style="margin-bottom:12px">Ajouter à la journée</div>
+      <button class="opt" onclick="closeSh();openSh('ponctuel')"><span class="e">📌</span><span><b>Ponctuel</b><i>Un seul jour — RDV, sortie, exception</i></span></button>
+      <button class="opt" onclick="closeSh();toast('Moment récurrent — hors prototype')"><span class="e">🔁</span><span><b>Moment du rythme</b><i>Chaque semaine, comme d'habitude</i></span></button>
+      <button class="opt" onclick="closeSh();toast('Période — hors prototype')"><span class="e">🏖️</span><span><b>Période</b><i>Un autre rythme le temps des vacances</i></span></button>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-ponctuel" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t">Ponctuel</div>
+      <div class="t-sm" style="margin:2px 0 12px">Déjà pré-rempli — vérifie et c'est parti</div>
+      <div class="field">Titre — <b>RDV pédiatre</b></div>
+      <div class="field">Jour — <b>Lundi 6 juillet</b> · Heure — <b>08:30</b></div>
+      <div class="field">Détail — <b>Dr Alaoui, Gauthier. Carnet de santé dans le tiroir de l'entrée.</b></div>
+      <div class="field" style="display:flex;align-items:center;gap:10px"><span style="font-size:19px">🎙</span>Ajouter ta voix (optionnel) — <b>rien ne rassure plus</b></div>
+      <div class="btnrow"><button class="btn" onclick="closeSh()">Annuler</button><button class="btn primary" onclick="addPonctuel()">Ajouter au lundi 6</button></div>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-envoi-n" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t" style="margin-bottom:2px">Envoyer à Fatima</div>
+      <div class="t-sm" style="margin-bottom:10px">L'essentiel dans WhatsApp — et toute sa page à jour, en un lien.</div>
+      <div class="t-lab" style="margin-top:0">QUOI ENVOYER</div>
+      <div class="scope">
+        <button class="sc" id="scn-semaine" onclick="setScope('n','semaine')">La semaine</button>
+        <button class="sc on" id="scn-aujourdhui" onclick="setScope('n','aujourdhui')">Aujourd'hui</button>
+        <button class="sc" id="scn-demain" onclick="setScope('n','demain')">Demain</button>
+        <button class="sc" id="scn-evenement" onclick="setScope('n','evenement')">📌 RDV pédiatre</button>
+      </div>
+      <div class="walab">SON MESSAGE — MODIFIABLE AVANT ENVOI</div>
+      <div class="wa" id="wa-n"></div>
+      <button class="cfg" onclick="toast('Relecture de la traduction — hors prototype')"><span class="e">🌐</span><span><b>Traduction الدارجة prête</b><i>1 élément à relire — n'empêche pas l'envoi</i></span><span class="go" style="color:var(--vio2)">Relire</span></button>
+      <div class="btnrow"><button class="btn" onclick="toast('Aperçu de sa page & QR — hors prototype')">Aperçu · QR</button><button class="btn primary" onclick="sendPage('nounou')">Envoyer sur WhatsApp</button></div>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-envoi-c" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t" style="margin-bottom:2px">Envoyer à Khadija</div>
+      <div class="t-sm" style="margin-bottom:10px">L'essentiel dans WhatsApp — et toute sa page à jour, en un lien.</div>
+      <div class="t-lab" style="margin-top:0">QUOI ENVOYER</div>
+      <div class="scope">
+        <button class="sc on" id="scc-semaine" onclick="setScope('c','semaine')">La semaine</button>
+        <button class="sc" id="scc-aujourdhui" onclick="setScope('c','aujourdhui')">Aujourd'hui</button>
+        <button class="sc" id="scc-demain" onclick="setScope('c','demain')">Demain</button>
+        <button class="sc" id="scc-jour" onclick="setScope('c','jour')">Un jour…</button>
+      </div>
+      <div class="walab">SON MESSAGE — MODIFIABLE AVANT ENVOI</div>
+      <div class="wa" id="wa-c"></div>
+      <button class="cfg" onclick="openSh('rappel')"><span class="e">🔔</span><span><b>Rappel d'envoi</b><i id="rappel-line"></i></span><span class="go">Modifier</span></button>
+      <div class="btnrow"><button class="btn" onclick="toast('Aperçu de sa page & QR — hors prototype')">Aperçu · QR</button><button class="btn primary" onclick="sendPage('cuisine')">Envoyer sur WhatsApp</button></div>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-rappel" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t">Rappel d'envoi</div>
+      <div class="t-sm" style="margin:2px 0 12px">On te fait signe au bon moment. Toi seul appuies sur Envoyer.</div>
+      <div class="t-lab" style="margin-top:0">CHAQUE</div>
+      <div class="days">
+        <button class="d" onclick="setDay(this,'lundi')">L</button>
+        <button class="d" onclick="setDay(this,'mardi')">M</button>
+        <button class="d" onclick="setDay(this,'mercredi')">M</button>
+        <button class="d" onclick="setDay(this,'jeudi')">J</button>
+        <button class="d" onclick="setDay(this,'vendredi')">V</button>
+        <button class="d on" onclick="setDay(this,'samedi')">S</button>
+        <button class="d" onclick="setDay(this,'dimanche')">D</button>
+      </div>
+      <div class="t-lab">À</div>
+      <div class="units">
+        <button class="u" onclick="setTime(this,'8:00')">8:00</button>
+        <button class="u on" onclick="setTime(this,'9:00')">9:00</button>
+        <button class="u" onclick="setTime(this,'18:00')">18:00</button>
+        <button class="u" onclick="setTime(this,'20:00')">20:00</button>
+      </div>
+      <div class="btnrow"><button class="btn" onclick="rappelOff()">Pas de rappel</button><button class="btn primary" onclick="rappelSave()">Enregistrer</button></div>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-relecture" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="prog"><span class="sh-t">Relecture express</span><span class="n" id="rl-n">1 / 3</span></div>
+      <div class="bar"><i id="rl-bar" style="width:33%"></i></div>
+      <div class="mrow"><span class="e" style="background:var(--grnT)">🍽️</span><span><h4 id="rl-title">Bol petit-déj sans gluten</h4><i id="rl-meta">467 kcal · 22 g P · Petit-déj</i></span></div>
+      <div class="field" id="rl-body">Œuf poché, fromage blanc, fruits rouges, sarrasin…</div>
+      <div class="field" id="rl-warn" style="color:#A87A10;background:#FBF3DC"><b>⚠ Ingrédient suspect :</b> « D'huile d'olive **Protéine :** g » — à corriger</div>
+      <div class="btnrow"><button class="btn" onclick="nextDraft('Supprimé')">Supprimer</button><button class="btn" onclick="toast('Ouvre l\u2019éditeur structuré')">Modifier</button><button class="btn primary" onclick="nextDraft('Validée')">Valider →</button></div>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-new" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t" style="margin-bottom:12px">Nouvelle recette</div>
+      <button class="opt" onclick="closeSh();openSh('p2')"><span class="e">📚</span><span><b>Depuis la bibliothèque</b><i>Pioche dans les collections, adapte en 30 secondes</i></span></button>
+      <button class="opt" onclick="closeSh();openSh('manuel')"><span class="e">✍️</span><span><b>Saisie manuelle</b><i>Pas à pas — toujours gratuit, toujours illimité</i></span></button>
+      <button class="opt" onclick="closeSh();openSh('r0')"><span class="e" style="background:var(--vioT)">✦</span><span><b>Coup de main IA</b><i>Colle ou décris — on structure pour toi</i></span><span class="quota" id="quota-lab">4 / 5 CE MOIS</span></button>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-manuel" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t">Saisie manuelle</div>
+      <div class="t-sm" style="margin:2px 0 8px">Le même éditeur sert à adapter une recette copiée.</div>
+      <div class="field">Nom — <b>Tajine de poulet au citron confit</b></div>
+      <div class="rolechips"><span class="rc">Petit-déj</span><span class="rc">Entrée</span><span class="rc on">Plat</span><span class="rc">Accomp.</span></div>
+      <div class="t-lab">INGRÉDIENTS · 1 PORTION — DEPUIS LE RÉPERTOIRE</div>
+      <button class="ing" onclick="closeSh();openSh('r2')"><span class="q">200 g</span><span class="n">Blanc de poulet</span><span class="x">✎</span></button>
+      <button class="ing" onclick="toast('Même sheet que Blanc de poulet')"><span class="q">110 g</span><span class="n">Riz cuit</span><span class="x">✎</span></button>
+      <button class="ing add" onclick="toast('Recherche dans le répertoire — hors prototype')">＋ Ajouter un ingrédient</button>
+      <div class="t-lab">ÉTAPES</div>
+      <div class="stepr"><span class="num">1</span><p>Dorer le poulet à l'huile d'olive.</p></div>
+      <button class="ing add" onclick="toast('Nouvelle étape — hors prototype')">＋ Ajouter une étape</button>
+      <div class="macro"><b>≈ 640 kcal · 35 g P</b><i>CALCULÉ TOUT SEUL — SANS IA</i></div>
+      <div class="btnrow"><button class="btn" onclick="closeSh()">Annuler</button><button class="btn primary" onclick="saveManuel()">Enregistrer</button></div>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-r0" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="hrow" style="margin-bottom:0"><span class="sh-t">✦ Coup de main IA</span><span id="quota-lab2" style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--vioT);color:var(--vio2);border-radius:999px;padding:5px 9px;font-weight:800">4 / 5 CE MOIS</span></div>
+      <div class="t-sm" style="margin-top:2px">Colle, décris ou dicte — on structure pour toi</div>
+      <div class="bigfield">« <b>Tajine de poulet léger, citron confit, pour 4</b> »</div>
+      <div class="btnrow"><button class="btn primary" onclick="aiCreate()">Créer le brouillon</button></div>
+      <button class="quiet" onclick="closeSh();openSh('manuel')">Préférer la saisie manuelle — illimitée</button>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-r1" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t">Tajine de poulet au citron confit</div>
+      <div class="t-sm" style="margin:2px 0 0">Brouillon IA — un coup d'œil et c'est à toi</div>
+      <div class="rolechips"><span class="rc">Petit-déj</span><span class="rc">Entrée</span><span class="rc on">Plat</span><span class="rc">Accomp.</span></div>
+      <div class="t-lab">INGRÉDIENTS · 1 PORTION</div>
+      <button class="ing" onclick="closeSh();openSh('r2')"><span class="q">200 g</span><span class="n">Blanc de poulet</span><span class="x">✎</span></button>
+      <button class="ing" onclick="toast('Même sheet que Blanc de poulet')"><span class="q">110 g</span><span class="n">Riz cuit</span><span class="x">✎</span></button>
+      <button class="ing" onclick="toast('Même sheet que Blanc de poulet')"><span class="q">½</span><span class="n">Citron confit</span><span class="x">✎</span></button>
+      <div class="t-lab">PRÉPARATION</div>
+      <div class="stepr"><span class="num">1</span><p>Dorer le poulet à l'huile d'olive.</p></div>
+      <div class="stepr"><span class="num">2</span><p>Ajouter citron confit et olives, mijoter 25 min.</p></div>
+      <div class="macro"><b>≈ 640 kcal · 35 g P</b><i>ESTIMATION</i></div>
+      <div class="btnrow"><button class="btn" onclick="closeSh();openSh('r0')">Corriger le texte</button><button class="btn primary" onclick="validerRecette()">Valider la recette</button></div>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-r2" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t">Blanc de poulet</div>
+      <div class="t-sm" style="margin:2px 0 12px">Ingrédient du répertoire · quantité pour 1 portion</div>
+      <div class="stepper"><button onclick="qty(-10)">−</button><b id="qv">200 g</b><button onclick="qty(10)">＋</button></div>
+      <div class="units"><button class="u on">g</button><button class="u" onclick="toast('Unité — démo')">ml</button><button class="u" onclick="toast('Unité — démo')">càs</button><button class="u" onclick="toast('Unité — démo')">càc</button><button class="u" onclick="toast('Unité — démo')">pièce</button></div>
+      <div class="t-lab">OU REMPLACER PAR</div>
+      <div class="sugg">
+        <button class="s1" onclick="toast('Remplacé — démo')">Cuisse de poulet <i>· répertoire</i></button>
+        <button class="s1" onclick="toast('Remplacé — démo')">Escalope de dinde <i>· répertoire</i></button>
+      </div>
+      <div class="btnrow"><button class="btn" onclick="closeSh();openSh('manuel');toast('Ingrédient retiré')">Retirer</button><button class="btn primary" onclick="closeSh();openSh('manuel')">OK</button></div>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-p2" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t" style="margin-bottom:2px">Collections</div>
+      <div class="t-sm" style="margin-bottom:10px">Copie, adapte, c'est à toi — sans rien retaper.</div>
+      <button class="mrow" onclick="toast('Déjà installée — rouvre-la pour reprendre des recettes')"><span class="e" style="background:var(--grnT)">🍲</span><span><h4>Marocain du quotidien</h4><i>Installée · 12 recettes</i></span><span class="kv">✓</span></button>
+      <button class="mrow" onclick="closeSh();openSh('p1')"><span class="e" style="background:#EDE9FB">🌙</span><span><h4>Ramadan</h4><i>Nouveau · 14 recettes</i></span></button>
+      <button class="mrow" onclick="closeSh();openSh('p1')"><span class="e" style="background:var(--grnT)">🥗</span><span><h4>Léger &amp; équilibré</h4><i>10 recettes</i></span></button>
+      <button class="mrow" onclick="closeSh();openSh('p1')"><span class="e" style="background:#FBF3DC">🌾</span><span><h4>Sans gluten · calcium</h4><i>9 recettes</i></span></button>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-p1" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="hrow" style="margin-bottom:2px"><span class="sh-t">Ramadan 🌙</span></div>
+      <div class="t-sm" style="margin-bottom:10px">14 recettes prêtes à cuisiner — macros comprises, modifiables à volonté.</div>
+      <button class="mrow" onclick="tgl(this)"><span class="ck on">✓</span><span><h4>Harira traditionnelle</h4><i>Entrée · 310 kcal</i></span></button>
+      <button class="mrow" onclick="tgl(this)"><span class="ck on">✓</span><span><h4>Chebakia légère</h4><i>Douceur · 180 kcal</i></span></button>
+      <button class="mrow" onclick="tgl(this)"><span class="ck on">✓</span><span><h4>Briouates au poulet</h4><i>Entrée · 260 kcal</i></span></button>
+      <button class="mrow" onclick="tgl(this)"><span class="ck on">✓</span><span><h4>Sellou</h4><i>Douceur · 210 kcal</i></span></button>
+      <div class="t-sm" style="text-align:center;margin:2px 0 6px">… et 10 autres</div>
+      <div class="btnrow"><button class="btn primary" onclick="installPack()">Ajouter les 14 recettes</button></div>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-copie" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t" style="margin-bottom:2px">Copier une semaine</div>
+      <div class="t-sm" style="margin-bottom:10px">Repars d'une semaine qui a fait ses preuves — tu ajustes après.</div>
+      <button class="mrow" onclick="copyWeek('ta semaine type')"><span class="e" style="background:#FBF3DC">⭐</span><span><h4>Ma semaine type</h4><i>Semaine du 29 juin · marquée favorite</i></span></button>
+      <button class="mrow" onclick="copyWeek('la semaine du 22')"><span class="e" style="background:var(--grnT)">🗓️</span><span><h4>Semaine dernière</h4><i>Du 22 juin · 12 repas</i></span></button>
+      <button class="mrow" onclick="copyWeek('la semaine du 15')"><span class="e" style="background:var(--grnT)">🗓️</span><span><h4>Semaine du 15 juin</h4><i>11 repas</i></span></button>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-fiche" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="hrow" style="margin-bottom:2px"><span class="sh-t" id="f-title">Recette</span><button class="star" id="f-star" style="font-size:24px;padding:4px 6px;color:#D8D5CA" onclick="ficheFav()">★</button></div>
+      <div class="t-sm" id="f-meta" style="margin-bottom:10px">—</div>
+      <div class="macro" style="margin:0 0 12px"><b id="f-k">—</b><i>PAR PORTION — CALCULÉ DU RÉPERTOIRE</i></div>
+      <button class="opt" onclick="closeSh();openSh('manuel')"><span class="e">✎</span><span><b>Modifier</b><i>Ingrédients, étapes, quantités — c'est ta recette</i></span></button>
+      <button class="opt" onclick="closeSh();toast('Choisis un jour de la semaine — hors prototype')"><span class="e">🗓️</span><span><b>Programmer dans la semaine</b><i>L'ajouter à un déjeuner ou un dîner</i></span></button>
+      <button class="opt" onclick="delRecipe()"><span class="e" style="background:#FDECEC">🗑️</span><span><b>Supprimer</b><i>La retirer de ta bibliothèque</i></span></button>
+    </div></div>
+  </div>
+
+  <div class="ovl" id="sh-lang" onclick="bgClose(event)">
+    <div class="sheet"><div class="grab"></div><div class="shscroll">
+      <div class="sh-t" id="lg-title">Langue de la page</div>
+      <div class="t-sm" style="margin:2px 0 12px">Toi, tu écris tout en français. Sa page arrive dans sa langue — traduction figée à chaque envoi, lisible hors-ligne.</div>
+      <button class="opt" onclick="pickLang('fr','Français')"><span class="e">🇫🇷</span><span><b>Français</b></span><span class="kv" id="lgck-fr"></span></button>
+      <button class="opt" onclick="pickLang('da','الدارجة')"><span class="e">🇲🇦</span><span><b>الدارجة</b><i>Marocain</i></span><span class="kv" id="lgck-da"></span></button>
+      <button class="opt" onclick="pickLang('ar','العربية')"><span class="e">ع</span><span><b>العربية</b><i>Arabe standard</i></span><span class="kv" id="lgck-ar"></span></button>
+      <button class="opt" onclick="pickLang('en','English')"><span class="e">🇬🇧</span><span><b>English</b></span><span class="kv" id="lgck-en"></span></button>
+    </div></div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+  var state = {
+    nounou:'uptodate', cuisine:'modified',
+    sigBrief:true, sigMenu:true,
+    drafts:3, count:24, aiQuota:4,
+    curScreen:'maison', nounouSeg:'journee', cuisineSeg:'semaine',
+    rappel:{on:true, day:'samedi', time:'9:00'},
+    dayIdx:0, week:0, week6:false, weekFav:true,
+    ponctuelAdded:false, flt:'tous',
+    lang:{n:'da', c:'fr'}
+  };
+  var LANG_LABELS={fr:'Français',da:'الدارجة',ar:'العربية',en:'English'};
+  var DAYS=[
+    {dw:'SAM',dn:4,title:'SAMEDI 4 JUILLET',we:true},
+    {dw:'DIM',dn:5,title:'DIMANCHE 5 JUILLET',we:true},
+    {dw:'LUN',dn:6,title:'LUNDI 6 JUILLET',we:false,rdv:true},
+    {dw:'MAR',dn:7,title:'MARDI 7 JUILLET',we:false},
+    {dw:'MER',dn:8,title:'MERCREDI 8 JUILLET',we:false},
+    {dw:'JEU',dn:9,title:'JEUDI 9 JUILLET',we:false},
+    {dw:'VEN',dn:10,title:'VENDREDI 10 JUILLET',we:false}
+  ];
+  var draftsData = [
+    {t:'Bol petit-déj sans gluten', m:'467 kcal · 22 g P · Petit-déj', b:'Œuf poché, fromage blanc, fruits rouges, sarrasin…', w:true},
+    {t:'Salade de lentilles au chèvre', m:'420 kcal · 19 g P · Entrée', b:'Lentilles vertes, chèvre frais, noix, vinaigrette citron…', w:false},
+    {t:'Poulet grillé, purée de carottes', m:'560 kcal · 42 g P · Plat', b:'Blanc de poulet mariné, carottes, cumin, huile d\u2019olive…', w:false}
+  ];
+  var draftIdx=0, qtyVal=200;
+  var WA = {
+    c:{
+      semaine:'Salam Khadija 🌙 Les menus de la semaine sont prêts :\n<b>Lun</b> — Kefta, riz &amp; légumes · Saumon\n<b>Mar</b> — Poulet grillé · Soupe\n<b>Mer</b> — Tajine de poulet · Loubia\n…\n📄 Quantités, préparation et courses — tout est sur ta page :\n<span class="lnk">manzil.ma/p/khadija</span>',
+      aujourdhui:'Salam Khadija — pour aujourd\u2019hui :\n<b>Déjeuner</b> — Kefta, riz &amp; légumes rôtis\n<b>Dîner</b> — Saumon, patate douce\n📄 Détails et quantités sur ta page :\n<span class="lnk">manzil.ma/p/khadija</span>',
+      demain:'Salam Khadija — pour demain :\n<b>Déjeuner</b> — Poulet grillé, purée de carottes\n<b>Dîner</b> — Soupe &amp; briouates\n📄 Ta page :\n<span class="lnk">manzil.ma/p/khadija</span>',
+      jour:'Salam Khadija — mercredi 8 :\n<b>Déjeuner</b> — Tajine de poulet\n<b>Dîner</b> — Loubia\n📄 Ta page :\n<span class="lnk">manzil.ma/p/khadija</span>'
+    },
+    n:{
+      semaine:'Salam Fatima 🧸 La semaine des enfants est prête.\nÉcole 08:15 · sieste 13:00 · coucher 20:00\n<b>Lundi</b> : RDV pédiatre 08:30\n📄 Le planning jour par jour, mes consignes et les numéros — tout est sur ta page :\n<span class="lnk">manzil.ma/p/fatima</span>',
+      aujourdhui:'Salam Fatima — aujourd\u2019hui :\nSieste 13:00 · bain 18:30 · coucher 20:00\n📄 Ta page :\n<span class="lnk">manzil.ma/p/fatima</span>',
+      demain:'Salam Fatima — demain dimanche :\nParc le matin · sieste 13:00 · coucher 20:00\n📄 Ta page :\n<span class="lnk">manzil.ma/p/fatima</span>',
+      evenement:'Salam Fatima — <b>lundi 08:30 : RDV pédiatre</b> (Dr Alaoui, Gauthier).\nLe carnet de santé est dans le tiroir de l\u2019entrée.\n📄 Ma consigne vocale et l\u2019adresse sont sur ta page :\n<span class="lnk">manzil.ma/p/fatima</span>'
+    }
+  };
+
+  function $(id){return document.getElementById(id)}
+  function go(s){
+    document.querySelectorAll('.screen').forEach(function(e){e.classList.remove('on')});
+    $('scr-'+s).classList.add('on');
+    state.curScreen=s;render();
+  }
+  function seg(page,s){
+    if(page==='nounou'){
+      state.nounouSeg=s;
+      ['journee','conduites','urgence'].forEach(function(k){
+        $('n-'+k).classList.toggle('hidden',k!==s);
+        $('sg-n-'+k).classList.toggle('on',k===s);
+      });
+    } else {
+      state.cuisineSeg=s;
+      ['semaine','biblio','courses'].forEach(function(k){
+        $('c-'+k).classList.toggle('hidden',k!==s);
+        $('sg-c-'+k).classList.toggle('on',k===s);
+      });
+    }
+  }
+  function openSh(id){closeSh();$('sh-'+id).classList.add('on')}
+  function closeSh(){document.querySelectorAll('.ovl').forEach(function(o){o.classList.remove('on')})}
+  function bgClose(e){if(e.target.classList.contains('ovl'))closeSh()}
+  var toastTimer;
+  function toast(msg){
+    var t=$('toast');t.textContent=msg;t.classList.add('on');
+    clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('on')},2300);
+  }
+  function setScope(p,key){
+    if(p==='c'){
+      ['semaine','aujourdhui','demain','jour'].forEach(function(k){$('scc-'+k).classList.toggle('on',k===key)});
+      $('wa-c').innerHTML=WA.c[key];
+      if(key==='jour')toast('En prod : sélecteur de jour');
+    } else {
+      ['semaine','aujourdhui','demain','evenement'].forEach(function(k){$('scn-'+k).classList.toggle('on',k===key)});
+      $('wa-n').innerHTML=WA.n[key];
+    }
+  }
+  /* ===== Journée nounou : bande de jours ===== */
+  function renderStrip(){
+    var h='';
+    DAYS.forEach(function(d,i){
+      h+='<button class="dchip'+(i===state.dayIdx?' on':'')+'" onclick="setDayIdx('+i+')">'
+        +(d.rdv&&state.ponctuelAdded?'<span class="dot"></span>':'')
+        +'<div class="dw">'+d.dw+'</div><div class="dn">'+d.dn+'</div></button>';
+    });
+    $('dstrip').innerHTML=h;
+  }
+  function setDayIdx(i){state.dayIdx=i;renderStrip();renderDay()}
+  function mrowN(e,t,h4,sub,dash){
+    return '<button class="mrow'+(dash?' dash':'')+'" onclick="toast(\u0027D\u00e9tail du moment — hors prototype\u0027)">'
+      +'<span class="e" style="background:var(--vioT)">'+e+'</span>'
+      +'<span><h4>'+h4+'</h4><i>'+sub+'</i></span><span class="t">'+t+'</span></button>';
+  }
+  function renderDay(){
+    var d=DAYS[state.dayIdx];
+    $('day-title').textContent=d.title;
+    var h='';
+    if(d.we){
+      h+=mrowN('🛝','10:30','Sortie au parc','Casquettes &amp; gourdes');
+      h+=mrowN('😴','13:00','Sieste de Kenza','Volets fermés · 1 h max');
+      h+=mrowN('🌙','20:00','Coucher','Histoire puis lumière éteinte');
+    } else {
+      h+=mrowN('🏫','08:15','École — dépose','Porte A · avec Sylvie');
+      if(d.rdv&&state.ponctuelAdded){
+        h+=mrowN('🩺','08:30','RDV pédiatre','Dr Alaoui · carnet de santé dans le tiroir',true);
+      }
+      h+=mrowN('😴','13:00','Sieste de Kenza','Volets fermés · 1 h max');
+      h+=mrowN('🌙','20:00','Coucher','Histoire puis lumière éteinte');
+    }
+    $('day-body').innerHTML=h;
+  }
+  /* ===== Semaine cuisine ===== */
+  function mrowC(e,h4,sub,kv,dash,click){
+    return '<button class="mrow'+(dash?' dash':'')+'" onclick="'+(click||'toast(\u0027Sheet du jour — hors prototype\u0027)')+'">'
+      +'<span class="e" style="background:var(--grnT)">'+e+'</span>'
+      +'<span><h4>'+h4+'</h4><i>'+sub+'</i></span>'+(kv?'<span class="kv">'+kv+'</span>':'')+'</button>';
+  }
+  function renderWeek(){
+    var star=$('wk-star');
+    if(state.week===0){
+      $('wk-title').textContent='Semaine du 29 juin · en cours';
+      star.classList.toggle('on',state.weekFav);
+      var h='';
+      h+=mrowC('🍲','Lundi','Kefta riz légumes · Saumon patate douce','1 410<br>kcal');
+      h+=mrowC('🥗','Mardi','2 repas planifiés','1 650');
+      h+=mrowC('🍽️','Mercredi','Vide — tap pour composer','',true);
+      h+='<button class="dashed" onclick="toast(\u0027Suggestions de la biblioth\u00e8que · option IA selon plan\u0027)">Compléter la semaine</button>';
+      $('week-body').innerHTML=h;
+    } else {
+      $('wk-title').textContent='Semaine du 6 juillet';
+      star.classList.remove('on');
+      if(!state.week6){
+        $('week-body').innerHTML=
+          '<div class="emptyw"><div class="g">✨</div><h4>Semaine toute neuve</h4>'
+          +'<p>Compose-la plat par plat — ou repars d\u2019une semaine que tu aimes.</p>'
+          +'<button class="btn primary" onclick="openSh(\u0027copie\u0027)">Copier une semaine</button>'
+          +'<button class="quiet" onclick="toast(\u0027Composer — sheet du jour, hors prototype\u0027)">Composer moi-même</button></div>';
+      } else {
+        var h='<div class="note" style="margin:0 0 10px">Copiée de ta semaine type — ajuste librement, rien n\u2019est figé.</div>';
+        h+=mrowC('🍲','Lundi','Kefta riz légumes · Saumon patate douce','1 410');
+        h+=mrowC('🥗','Mardi','Poulet grillé · Soupe','1 650');
+        h+=mrowC('🍋','Mercredi','Tajine de poulet · Loubia','1 580');
+        $('week-body').innerHTML=h;
+      }
+    }
+  }
+  function weekNav(d){
+    state.week=Math.max(0,Math.min(1,state.week+d));
+    renderWeek();
+  }
+  function favWeek(){
+    if(state.week===0){
+      state.weekFav=!state.weekFav;renderWeek();
+      toast(state.weekFav?'Semaine du 29 marquée « semaine type » ⭐':'Retirée des favorites');
+    } else toast('Remplis-la d\u2019abord — tu pourras la marquer ensuite');
+  }
+  function copyWeek(src){
+    closeSh();
+    state.week6=true;state.sigMenu=false;state.cuisine='modified';
+    renderWeek();render();
+    toast('Semaine copiée depuis '+src+' — plus qu\u2019à ajuster ✨');
+  }
+  /* ===== Bibliothèque : favoris, filtres, fiche ===== */
+  var curRow=null, langWho='n';
+  function favTgl(e,el){
+    e.stopPropagation();
+    el.classList.toggle('on');
+    el.closest('.rrow').classList.toggle('fav',el.classList.contains('on'));
+    applyFlt();
+    toast(el.classList.contains('on')?'Ajoutée à tes favoris ★':'Retirée des favoris');
+  }
+  function setFlt(k){
+    state.flt=k;
+    ['tous','fav','pdj','entree','plat','douceur'].forEach(function(x){
+      $('flt-'+x).classList.toggle('on',x===k);
+    });
+    applyFlt();
+  }
+  function applyFlt(){
+    document.querySelectorAll('.rrow').forEach(function(r){
+      var ok = state.flt==='tous'
+        || (state.flt==='fav' ? r.classList.contains('fav') : r.dataset.cat===state.flt);
+      r.style.display=ok?'':'none';
+    });
+  }
+  function openFiche(el){
+    curRow=el;
+    $('f-title').textContent=el.dataset.n;
+    $('f-meta').textContent=el.dataset.m;
+    $('f-k').textContent='≈ '+el.dataset.k;
+    var on=el.querySelector('.star').classList.contains('on');
+    $('f-star').style.color=on?'#E9B60C':'#D8D5CA';
+    openSh('fiche');
+  }
+  function ficheFav(){
+    var st=curRow.querySelector('.star');
+    st.classList.toggle('on');
+    curRow.classList.toggle('fav',st.classList.contains('on'));
+    $('f-star').style.color=st.classList.contains('on')?'#E9B60C':'#D8D5CA';
+    applyFlt();
+    toast(st.classList.contains('on')?'Ajoutée à tes favoris ★':'Retirée des favoris');
+  }
+  function delRecipe(){
+    closeSh();
+    curRow.classList.add('hidden');
+    state.count--;render();
+    toast('Supprimée — retirée de ta bibliothèque');
+  }
+  /* ===== Langue par destinataire ===== */
+  function openLang(who){
+    langWho=who;
+    $('lg-title').textContent = who==='n' ? 'La langue de Fatima' : 'La langue de Khadija';
+    ['fr','da','ar','en'].forEach(function(k){
+      $('lgck-'+k).textContent = (state.lang[who]===k)?'✓':'';
+    });
+    openSh('lang');
+  }
+  function pickLang(key,label){
+    var changed = state.lang[langWho]!==key;
+    state.lang[langWho]=key;
+    $('lang-'+langWho).innerHTML=label+' ▾';
+    closeSh();
+    if(changed){
+      if(langWho==='n')state.nounou='modified';else state.cuisine='modified';
+      render();
+      toast('Sa page arrivera en '+label+' dès le prochain envoi ✓');
+    }
+  }
+  /* ===== Équipe : une personne = un état = une action ===== */
+  function setPill(who,stTxt,stCls,pillLabel,pillFn){
+    $('pst-'+who).textContent=stTxt;
+    $('pst-'+who).className='st '+stCls;
+    var pill=$('pill-'+who), chev=$('chev-'+who);
+    if(pillLabel){
+      pill.classList.remove('hidden');chev.classList.add('hidden');
+      pill.textContent=pillLabel;
+      pill.onclick=function(e){e.stopPropagation();pillFn();};
+    } else {
+      pill.classList.add('hidden');chev.classList.remove('hidden');
+    }
+  }
+  function render(){
+    var sn=$('st-nounou');
+    if(state.nounou==='uptodate'){sn.innerHTML='<b>✓ Tout est transmis</b> · lue hier à 18:42';sn.className='st'}
+    else{sn.innerHTML='<b>● Du nouveau à envoyer</b> · Fatima n\u2019a pas la derni\u00e8re version';sn.className='st w'}
+    var sc=$('st-cuisine');
+    if(state.cuisine==='uptodate'){sc.innerHTML='<b>✓ Tout est transmis</b> · envoyée à l\u2019instant';sc.className='st'}
+    else{sc.innerHTML='<b>● Du nouveau à envoyer</b> · pas encore partie';sc.className='st w'}
+    if(state.nounou==='modified'){
+      setPill('nounou','Du nouveau pour Fatima — à envoyer','w','Envoyer',function(){openSh('envoi-n')});
+    } else if(state.sigBrief){
+      setPill('nounou','RDV pédiatre lundi — elle ne le sait pas encore','w','Briefer',function(){openSh('ponctuel')});
+    } else {
+      setPill('nounou','✓ À jour — lue hier à 18:42','g',null,null);
+    }
+    if(state.cuisine==='modified'){
+      var sub=state.rappel.on?('Du nouveau — ton rendez-vous du '+state.rappel.day+' '+state.rappel.time):'Du nouveau pour Khadija — à envoyer';
+      setPill('cuisine',sub,'w','Envoyer',function(){openSh('envoi-c')});
+    } else if(state.sigMenu){
+      setPill('cuisine','La semaine du 6 t\u2019attend','w','Planifier',function(){go('cuisine');seg('cuisine','semaine');state.week=1;renderWeek();});
+    } else {
+      setPill('cuisine','✓ À jour — envoyée à l\u2019instant','g',null,null);
+    }
+    $('count-rec').textContent=state.count;
+    $('sig-relire').classList.toggle('hidden',state.drafts<=0);
+    $('draft-label').textContent=state.drafts+' brouillon'+(state.drafts>1?'s':'')+' IA à relire';
+    $('rappel-line').textContent=state.rappel.on?('Chaque '+state.rappel.day+' à '+state.rappel.time+' — notification + rappel sur Maison'):'Désactivé';
+    $('quota-lab').textContent=state.aiQuota+' / 5 CE MOIS';
+    $('quota-lab2').textContent=state.aiQuota+' / 5 CE MOIS';
+  }
+  /* ===== flows ===== */
+  function addPonctuel(){
+    closeSh();
+    state.sigBrief=false;state.nounou='modified';state.ponctuelAdded=true;
+    if(state.curScreen!=='nounou'){go('nounou');seg('nounou','journee');}
+    state.dayIdx=2;renderStrip();renderDay();render();
+    toast('Ajouté au lundi ✓ — pense à l\u2019envoyer à Fatima');
+  }
+  function sendPage(p){
+    closeSh();state[p]='uptodate';render();
+    toast(p==='nounou'?'Envoyé ✓ — Fatima a tout, à jour':'Envoyé ✓ — Khadija a tout, à jour');
+  }
+  function plusNounou(){
+    if(state.nounouSeg==='journee')openSh('add-journee');
+    else toast(state.nounouSeg==='conduites'?'＋ Nouvelle conduite — hors prototype':'＋ Contact / enfant / règle — hors prototype');
+  }
+  function plusCuisine(){
+    if(state.cuisineSeg==='biblio')openSh('new');
+    else if(state.cuisineSeg==='courses')toast('＋ Article — hors prototype');
+    else toast('＋ Composer un repas — hors prototype');
+  }
+  function openRelecture(){draftIdx=0;paintDraft();openSh('relecture')}
+  function paintDraft(){
+    var d=draftsData[draftIdx];
+    $('rl-title').textContent=d.t;$('rl-meta').textContent=d.m;$('rl-body').textContent=d.b;
+    $('rl-warn').classList.toggle('hidden',!d.w);
+    $('rl-n').textContent=(draftIdx+1)+' / 3';
+    $('rl-bar').style.width=((draftIdx+1)/3*100)+'%';
+  }
+  function nextDraft(action){
+    state.drafts--;
+    if(action==='Validée'){state.count++;state.cuisine='modified';}
+    if(draftIdx<2){draftIdx++;paintDraft();toast(action+' — au suivant');}
+    else{closeSh();toast('Bibliothèque impeccable ✓');}
+    render();
+  }
+  function aiCreate(){
+    if(state.aiQuota<=0){toast('Quota du mois épuisé — la saisie manuelle reste illimitée');return;}
+    state.aiQuota--;render();
+    closeSh();openSh('r1');
+  }
+  function saveManuel(){
+    closeSh();state.count++;state.cuisine='modified';
+    $('row-tajine').classList.remove('hidden');
+    render();toast('Enregistrée ✓ — c\u2019est la tienne, sans relecture');
+  }
+  function validerRecette(){
+    closeSh();state.count++;state.cuisine='modified';
+    $('row-tajine').classList.remove('hidden');
+    render();toast('Tajine ajouté à ta bibliothèque ✓');
+  }
+  function installPack(){
+    closeSh();state.count+=14;state.cuisine='modified';
+    render();toast('14 recettes ajoutées — ta bibliothèque a grandi ✓');
+  }
+  function tgl(row){
+    var c=row.querySelector('.ck');
+    c.classList.toggle('on');
+    c.textContent=c.classList.contains('on')?'✓':'';
+  }
+  function qty(d){qtyVal=Math.max(10,qtyVal+d);$('qv').textContent=qtyVal+' g'}
+  function setDay(el,day){
+    document.querySelectorAll('#sh-rappel .days .d').forEach(function(x){x.classList.remove('on')});
+    el.classList.add('on');state.rappel.day=day;
+  }
+  function setTime(el,t){
+    document.querySelectorAll('#sh-rappel .units .u').forEach(function(x){x.classList.remove('on')});
+    el.classList.add('on');state.rappel.time=t;
+  }
+  function rappelSave(){
+    state.rappel.on=true;closeSh();openSh('envoi-c');render();
+    toast('Noté — on te fait signe chaque '+state.rappel.day+' à '+state.rappel.time);
+  }
+  function rappelOff(){
+    state.rappel.on=false;closeSh();openSh('envoi-c');render();
+    toast('Rappel désactivé');
+  }
+  setScope('c','semaine');setScope('n','aujourdhui');
+  renderStrip();renderDay();renderWeek();render();
+</script>
+</body>
+</html>
