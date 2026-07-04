@@ -4,6 +4,7 @@ import CuisineView from './cuisine/CuisineView';
 import NounouView from './nounou/NounouView';
 import SecuriteView from './views/SecuriteView';
 import EspaceView from './views/EspaceView';
+import MzDemo from './ui/MzDemo';
 import AccountSheet from './components/AccountSheet';
 import { readEspaceToken } from './lib/espace';
 import { supabaseEnabled } from './lib/supabase';
@@ -27,10 +28,19 @@ export default function App() {
   // Espace permanent d'un destinataire (#e=) : lecture seule, sans données locales.
   const espaceToken = readEspaceToken();
 
+  // Vitrine dev du design system mz- (Lot 0) : #mz-demo. Hors nav de prod.
+  const [hash, setHash] = useState(window.location.hash);
+  useEffect(() => {
+    const onHash = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
   useEffect(() => {
     if (!espaceToken) void init();
   }, [init, espaceToken]);
 
+  if (hash === '#mz-demo') return <MzDemo />;
   if (espaceToken) return <EspaceView token={espaceToken} />;
 
   const current = TABS.find((t) => t.id === tab)!;

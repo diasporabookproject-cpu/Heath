@@ -24,11 +24,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'Menu de la semaine',
-        short_name: 'Menu',
-        description: 'Composer ses menus de la semaine selon son programme nutritionnel.',
-        theme_color: '#0f766e',
-        background_color: '#f8fafc',
+        name: 'Manzil',
+        short_name: 'Manzil',
+        description: 'Organiser la maison et transmettre l’essentiel à ceux qui la font tourner.',
+        theme_color: '#F6F5F1',
+        background_color: '#F6F5F1',
         display: 'standalone',
         orientation: 'portrait',
         // relatif : fonctionne à la racine (Vercel) comme sous /heath/ (GitHub Pages)

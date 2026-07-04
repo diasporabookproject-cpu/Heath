@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import fixWebmDuration from 'fix-webm-duration';
 import { deleteAudio, loadAudio, saveAudio } from '../lib/db';
+import MzAudio from '../ui/MzAudio';
 import { IconMic, IconShareUp } from './icons';
 
 // FC7 — « Consigne vocale pour la cuisinière » : la VOIX de l'employeur (jamais
@@ -134,7 +135,7 @@ export default function ConsigneVocale({
           </span>
         </div>
         <div className="cz-voiceplay">
-          <audio src={url} controls />
+          <MzAudio src={url} />
         </div>
         <button className="cz-relink" onClick={start}>
           Réenregistrer la consigne

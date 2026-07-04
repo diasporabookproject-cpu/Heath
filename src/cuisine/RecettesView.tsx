@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { ROLE_LABEL, type Recipe } from '../types';
+import { cleanText } from '../lib/sanitize';
 import { IconSearch, IconMic, IconFav } from './icons';
 
 const CHIPS: { key: string; label: string; draft?: boolean }[] = [
@@ -103,8 +104,8 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
                   >
                     <IconFav size={16} filled={r.fav} />
                   </span>
-                  <span className="nm" style={{ flex: 1, fontWeight: 600 }}>
-                    {r.nom}
+                  <span className="nm clamp2" style={{ flex: 1, fontWeight: 600 }}>
+                    {cleanText(r.nom)}
                   </span>
                   {draft && <span className="cz-tag draft">✦ À valider</span>}
                   <span className="cz-tag role">{ROLE_LABEL[r.role]}</span>

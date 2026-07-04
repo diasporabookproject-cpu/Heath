@@ -635,3 +635,6 @@
 .cz-vbtn { margin-left: auto; border: none; background: var(--draft); color: #fff; font-family: var(--font-body); font-weight: 600; font-size: 12px; padding: 7px 12px; border-radius: 9px; cursor: pointer; flex: none; }
 
 .cz :focus-visible { outline: 2px solid var(--petrol); outline-offset: 2px; }
+
+/* Garde-fou layout (L0-3) : clamp 2 lignes + coupure propre des longs mots. */
+.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import { buildShoppingList, formatQty, formatShoppingText } from '../lib/shopping';
+import { cleanText, cleanQty } from '../lib/sanitize';
 import { IconShareUp, IconCheck } from './icons';
 
 // FC8 — Liste de courses : générée depuis la semaine, mise à l'échelle ×personnes,
@@ -91,8 +92,8 @@ export default function CoursesCuisine({ toast }: Props) {
                     <span className="cz-cobox">
                       <IconCheck size={13} />
                     </span>
-                    <span className="cz-coname">{l.name}</span>
-                    {q && <span className="cz-coqty">{q}</span>}
+                    <span className="cz-coname clamp2">{cleanText(l.name)}</span>
+                    {q && <span className="cz-coqty">{cleanQty(q)}</span>}
                   </button>
                 );
               })}
