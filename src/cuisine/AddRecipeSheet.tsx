@@ -20,10 +20,11 @@ function roleFromDraft(v: unknown): RecipeRole {
 interface Props {
   onClose: () => void;
   onCreated: (id: string) => void;
+  onCollections: () => void;
   toast: (m: string) => void;
 }
 
-type Step = 'choose' | 'dup' | 'manual' | 'ai' | 'importjson';
+type Step = 'choose' | 'manual' | 'ai' | 'importjson';
 
 /** Valeurs de départ pour la saisie manuelle (duplication « copier puis adapter »). */
 type ManualSeed = Pick<Recipe, 'nom' | 'role' | 'ingredients' | 'etapes' | 'kcal' | 'prot' | 'gluc' | 'lip' | 'calcium' | 'flag_calcium'>;
@@ -35,11 +36,11 @@ type ManualSeed = Pick<Recipe, 'nom' | 'role' | 'ingredients' | 'etapes' | 'kcal
  *  ② Saisie manuelle → naît `Validé` (c'est la recette de l'auteur)
  *  ③ ✦ Coup de main IA (colle OU décris) → brouillon `Test` (file de relecture) + quota
  */
-export default function AddRecipeSheet({ onClose, onCreated, toast }: Props) {
+export default function AddRecipeSheet({ onClose, onCreated, onCollections, toast }: Props) {
   const [step, setStep] = useState<Step>('choose');
   const [shown, setShown] = useState(false);
   const [canAi, setCanAi] = useState(false);
-  const [seed, setSeed] = useState<ManualSeed | null>(null);
+  const [seed] = useState<ManualSeed | null>(null);
   const app = useStore((s) => s.app);
   const rem = remaining(normalizeQuota(app.aiQuota, currentMonth()));
 
@@ -58,13 +59,11 @@ export default function AddRecipeSheet({ onClose, onCreated, toast }: Props) {
   const title =
     step === 'choose'
       ? 'Nouvelle recette'
-      : step === 'dup'
-        ? 'Copier une recette'
-        : step === 'manual'
-          ? 'Saisie manuelle'
-          : step === 'ai'
-            ? '✦ Coup de main IA'
-            : 'Importer (JSON)';
+      : step === 'manual'
+        ? 'Saisie manuelle'
+        : step === 'ai'
+          ? '✦ Coup de main IA'
+          : 'Importer (JSON)';
 
   return (
     <>
@@ -74,7 +73,7 @@ export default function AddRecipeSheet({ onClose, onCreated, toast }: Props) {
         <div className="cz-sheethead">
           <div className="ttl">
             {title}
-            {(step === 'manual' || step === 'dup') && <small>Les macros sont calculées, pas saisies</small>}
+            {step === 'manual' && <small>Les macros sont calculées, pas saisies</small>}
           </div>
           <button className="cz-x" onClick={onClose} aria-label="Fermer">
             ✕
@@ -83,14 +82,14 @@ export default function AddRecipeSheet({ onClose, onCreated, toast }: Props) {
         <div className="cz-sheetbody">
           {step === 'choose' && (
             <div style={{ paddingTop: 8 }}>
-              <button className="cz-opt2" onClick={() => setStep('dup')}>
+              <button className="cz-opt2" onClick={onCollections}>
                 <span className="ic imp">📚</span>
                 <span className="ot">
                   <span className="h">Depuis la bibliothèque</span>
-                  <span className="d">Pioche une recette existante et adapte-la en 30 secondes.</span>
+                  <span className="d">Pioche dans les collections, adapte en 30 secondes.</span>
                 </span>
               </button>
-              <button className="cz-opt2" onClick={() => { setSeed(null); setStep('manual'); }}>
+              <button className="cz-opt2" onClick={() => setStep('manual')}>
                 <span className="ic pen">✍️</span>
                 <span className="ot">
                   <span className="h">Saisie manuelle</span>
@@ -114,7 +113,6 @@ export default function AddRecipeSheet({ onClose, onCreated, toast }: Props) {
             </div>
           )}
 
-          {step === 'dup' && <DupPicker onPick={(s) => { setSeed(s); setStep('manual'); }} />}
           {step === 'manual' && <ManualForm seed={seed} onCreated={onCreated} toast={toast} onJson={() => setStep('importjson')} />}
           {step === 'ai' && <AiForm onCreated={onCreated} toast={toast} />}
           {step === 'importjson' && <ImportForm onClose={onClose} toast={toast} />}
@@ -132,46 +130,6 @@ function MacroPreview({ m }: { m: { kcal: number; prot: number; gluc: number; ca
       <div className="cz-dmcell"><div className="v">{m.prot}</div><div className="l">prot</div></div>
       <div className="cz-dmcell"><div className="v">{m.gluc}</div><div className="l">gluc</div></div>
       <div className="cz-dmcell ca"><div className="v">{m.calcium}</div><div className="l">calcium</div></div>
-    </div>
-  );
-}
-
-/** Porte ① (repli tant que L3-4 absent) : dupliquer une recette existante. */
-function DupPicker({ onPick }: { onPick: (seed: ManualSeed) => void }) {
-  const recipes = useStore((s) => s.recipes);
-  const list = recipes.filter((r) => r.statut !== 'Écarté').sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
-  return (
-    <div style={{ paddingTop: 6 }}>
-      <div className="cz-review" style={{ marginBottom: 10 }}>
-        La collection éditoriale arrive bientôt. En attendant, copie une de tes recettes puis adapte-la —
-        la copie est à toi, sans relecture.
-      </div>
-      {list.map((r) => (
-        <button
-          key={r.id}
-          className="cz-librow"
-          style={{ marginBottom: 8 }}
-          onClick={() =>
-            onPick({
-              nom: `${r.nom} (copie)`,
-              role: r.role,
-              ingredients: r.ingredients,
-              etapes: r.etapes,
-              kcal: r.kcal,
-              prot: r.prot,
-              gluc: r.gluc,
-              lip: r.lip,
-              calcium: r.calcium,
-              flag_calcium: r.flag_calcium,
-            })
-          }
-        >
-          <div className="cz-libtop">
-            <span className="nm" style={{ fontWeight: 600, flex: 1 }}>{r.nom}</span>
-            <span className="cz-tag role">{ROLE_LABEL[r.role]}</span>
-          </div>
-        </button>
-      ))}
     </div>
   );
 }

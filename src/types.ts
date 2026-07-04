@@ -46,6 +46,19 @@ export interface Recipe {
   etapes_ar?: string;
 }
 
+/** Recette d'un pack (L3-4) : recette complète SANS identité ni statut (copiée chez l'utilisateur à l'installation). */
+export type RecipeSeed = Omit<Recipe, 'id' | 'statut' | 'fav' | 'packId' | 'origineIA' | 'macros_estimees' | 'notes'>;
+
+/** Collection / pack éditorial de recettes prêtes (L3-4). Format réutilisable. */
+export interface Pack {
+  id: string;
+  nom: string;
+  emoji: string;
+  description: string;
+  version: number;
+  recettes: RecipeSeed[];
+}
+
 /** Jour de la semaine (clé + libellé). Plus de type de jour ni de cible (v2). */
 export interface DayConfig {
   key: string;

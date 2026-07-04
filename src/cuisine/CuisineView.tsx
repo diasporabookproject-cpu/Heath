@@ -10,6 +10,7 @@ import MealComposerSheet from './MealComposerSheet';
 import RecipePickerSheet from './RecipePickerSheet';
 import RecipeDetailSheet from './RecipeDetailSheet';
 import AddRecipeSheet from './AddRecipeSheet';
+import CollectionsSheet from './CollectionsSheet';
 import PartageSheet from './PartageSheet';
 import ObjectiveSheet from './ObjectiveSheet';
 import CopyWeekSheet from './CopyWeekSheet';
@@ -43,8 +44,14 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const [pick, setPick] = useState<Pick>(null);
   const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [collections, setCollections] = useState<{ packId?: string } | null>(null);
   const [sharing, setSharing] = useState(false);
   const [shareToken, setShareToken] = useState<string | undefined>(undefined);
+
+  const openCollections = (packId?: string) => {
+    setAdding(false);
+    setCollections({ packId });
+  };
 
   // Ouverture ciblée depuis Maison (« Envoyer ») : ouvre la feuille de partage
   // pré-sélectionnée sur le destinataire, puis consomme le jeton (une seule fois).
@@ -146,6 +153,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             filter={recFilters}
             setFilter={setRecFilters}
             onOpenRecipe={(id) => setOpenRecipeId(id)}
+            onOpenCollections={openCollections}
             toast={toast}
           />
         ) : (
@@ -204,6 +212,15 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             refreshVoice();
             setOpenRecipeId(id);
           }}
+          onCollections={() => openCollections()}
+          toast={toast}
+        />
+      )}
+
+      {collections && (
+        <CollectionsSheet
+          initialPackId={collections.packId}
+          onClose={() => setCollections(null)}
           toast={toast}
         />
       )}

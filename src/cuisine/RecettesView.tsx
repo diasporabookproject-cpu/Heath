@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { ROLE_LABEL, type Recipe } from '../types';
 import { cleanText } from '../lib/sanitize';
+import { PACKS } from '../data/packs';
+import { isPackInstalled } from '../lib/packs';
 import { IconSearch, IconMic, IconFav } from './icons';
 import RelectureSheet from './RelectureSheet';
 
@@ -20,11 +22,12 @@ interface Props {
   filter: string;
   setFilter: (f: string) => void;
   onOpenRecipe: (id: string) => void;
+  onOpenCollections: (packId?: string) => void;
   toast: (m: string) => void;
 }
 
 /** FC5/FC15/FC18 — Bibliothèque : rôles, favoris, statuts, validation 1-tap. */
-export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe, toast }: Props) {
+export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe, onOpenCollections, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const toggleFav = useStore((s) => s.toggleFav);
   const [q, setQ] = useState('');
@@ -140,6 +143,25 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
             );
           })
         )}
+      </div>
+
+      {/* Collections (L3-4) — l'anti-page-blanche : des packs à copier chez soi. */}
+      <div className="cz-collab">Collections — à copier, puis à toi</div>
+      <div className="cz-rail">
+        {PACKS.map((p) => {
+          const installed = isPackInstalled(p, recipes);
+          return (
+            <button key={p.id} className="cz-pkt" onClick={() => onOpenCollections(p.id)}>
+              {!installed && <span className="cz-newb">NOUVEAU</span>}
+              <span className="cz-cov">{p.emoji}</span>
+              <h5>{p.nom}</h5>
+              <i>{p.recettes.length} RECETTES</i>
+            </button>
+          );
+        })}
+        <button className="cz-pkt more" onClick={() => onOpenCollections()}>
+          Tout voir →
+        </button>
       </div>
 
       {relire && (

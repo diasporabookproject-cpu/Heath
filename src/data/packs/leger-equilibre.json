@@ -1,0 +1,45 @@
+{
+  "id": "leger-equilibre",
+  "nom": "Léger & équilibré",
+  "emoji": "🥗",
+  "description": "Trois recettes fraîches, sans gluten, riches en protéines — à copier puis adapter à ton goût.",
+  "version": 1,
+  "recettes": [
+    {
+      "nom": "Poêlée de crevettes, courgettes et quinoa",
+      "role": "plat",
+      "kcal": 540,
+      "prot": 42,
+      "gluc": 48,
+      "lip": 16,
+      "calcium": 180,
+      "flag_calcium": "Moyen",
+      "ingredients": "Crevettes cuites 160g · quinoa cuit 120g · courgette 150g · ail 1 gousse · huile d'olive 1 càc · citron · persil",
+      "etapes": "Cuire le quinoa.\nRevenir les crevettes et la courgette à l'ail.\nMélanger, citron et persil."
+    },
+    {
+      "nom": "Salade tiède de lentilles au chèvre frais",
+      "role": "entree",
+      "kcal": 380,
+      "prot": 22,
+      "gluc": 34,
+      "lip": 16,
+      "calcium": 210,
+      "flag_calcium": "Moyen",
+      "ingredients": "Lentilles vertes cuites 150g · chèvre frais 60g · noix 15g · roquette · vinaigrette citron 1 càs",
+      "etapes": "Tiédir les lentilles.\nÉmietter le chèvre, ajouter noix et roquette.\nAssaisonner."
+    },
+    {
+      "nom": "Omelette épinards-feta au four",
+      "role": "petitdej",
+      "kcal": 320,
+      "prot": 26,
+      "gluc": 6,
+      "lip": 21,
+      "calcium": 300,
+      "flag_calcium": "Champion",
+      "ingredients": "Œufs 3 · épinards 100g · feta 40g · lait 2 càs · huile d'olive 1 càc",
+      "etapes": "Battre les œufs avec le lait.\nAjouter épinards et feta.\nCuire au four 15 min à 180°C."
+    }
+  ]
+}
