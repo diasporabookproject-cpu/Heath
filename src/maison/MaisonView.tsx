@@ -71,7 +71,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
     () => (cuisineReady && nReady ? agendaToday(doc, week, recipesById) : []),
     [doc, week, recipesById, cuisineReady, nReady],
   );
-  const { prochain, timeline } = useMemo(() => splitProchain(agenda, nowHHMM()), [agenda]);
+  const { prochain, timeline, done } = useMemo(() => splitProchain(agenda, nowHHMM()), [agenda]);
 
   /** État de transmission d'une personne (signature courante vs dernier envoi). */
   const etat = (p: Personne): { state: EnvoiState; sub: string } => {
@@ -124,6 +124,10 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
             </span>
             <span className="t">{prochain.time}</span>
           </button>
+        ) : done ? (
+          <div className="mz-card" style={{ textAlign: 'center', color: 'var(--mz-mut)', fontWeight: 700, fontSize: 14 }}>
+            Journée terminée 🌙
+          </div>
         ) : (
           <div className="mz-card" style={{ textAlign: 'center', color: 'var(--mz-mut)', fontWeight: 600, fontSize: 13 }}>
             Rien de prévu aujourd’hui.
@@ -138,7 +142,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
                 onClick={() => onOpenPage(i.kind)}
               >
                 <span className="t">{i.time}</span>
-                <span className="e" style={i.kind === 'cuisine' ? { background: 'var(--mz-grnT)' } : undefined}>
+                <span className="e" style={{ background: i.kind === 'cuisine' ? 'var(--mz-grnT)' : 'var(--mz-vioT)' }}>
                   {i.picto}
                 </span>
                 <h4>{i.label}</h4>

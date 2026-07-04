@@ -52,19 +52,26 @@ export function agendaToday(doc: NounouDoc, week: WeekMenu, recipesById: Map<str
   return items.sort((a, b) => a.time.localeCompare(b.time));
 }
 
-/** Sépare le « Prochain » (1er élément à venir) du reste (timeline, passé marqué). */
+/**
+ * Sépare le « Prochain » (1er élément à venir) du reste (timeline, passé marqué).
+ * `done` = journée terminée : plus aucun élément à venir → pas de héros « prochain »
+ * (C1 : avant, le dernier élément passé s'affichait à tort étiqueté « PROCHAIN »).
+ */
 export function splitProchain(
   items: AgendaItem[],
   nowHHMM: string,
-): { prochain?: AgendaItem; timeline: AgendaItem[] } {
-  if (items.length === 0) return { timeline: [] };
+): { prochain?: AgendaItem; timeline: AgendaItem[]; done: boolean } {
+  if (items.length === 0) return { timeline: [], done: false };
   const idx = items.findIndex((i) => i.time >= nowHHMM);
-  const prochainIdx = idx === -1 ? items.length - 1 : idx;
-  const prochain = items[prochainIdx];
+  if (idx === -1) {
+    // Tout est passé : journée terminée, aucun « prochain ».
+    return { timeline: items.map((i) => ({ ...i, past: true })), done: true };
+  }
+  const prochain = items[idx];
   const timeline = items
-    .filter((_, i) => i !== prochainIdx)
+    .filter((_, i) => i !== idx)
     .map((i) => ({ ...i, past: i.time < nowHHMM }));
-  return { prochain, timeline };
+  return { prochain, timeline, done: false };
 }
 
 export function nowHHMM(ref: Date = new Date()): string {

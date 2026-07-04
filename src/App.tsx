@@ -119,15 +119,15 @@ export default function App() {
 
       {newPageOpen && (
         <Sheet
-          title="Une page pour quelqu’un d’autre"
-          sub="Les rôles Cuisine et Nounou existent déjà. D’autres arrivent bientôt."
+          title="Une page pour…"
+          sub="Chaque page arrive déjà remplie — tu ajustes, tu n’écris pas tout."
           onClose={() => setNewPageOpen(false)}
         >
           <div className="mz-nprow">
-            <span className="mz-tav" style={{ background: '#F1EFE8', fontSize: 20 }}>🧹</span>
+            <span className="mz-tav" style={{ background: '#F1EFE8', fontSize: 20 }}>🧺</span>
             <span>
-              <h4>Ménage / Entretien</h4>
-              <div className="st">Consignes de nettoyage, produits, zones</div>
+              <h4>Entretien</h4>
+              <div className="st">Ménage, linge, les standards de ta maison</div>
             </span>
             <span className="mz-soon">Bientôt</span>
           </div>
@@ -135,15 +135,15 @@ export default function App() {
             <span className="mz-tav" style={{ background: '#F1EFE8', fontSize: 20 }}>🚗</span>
             <span>
               <h4>Chauffeur</h4>
-              <div className="st">Trajets, horaires, contacts</div>
+              <div className="st">Trajets, écoles, véhicules</div>
             </span>
             <span className="mz-soon">Bientôt</span>
           </div>
           <div className="mz-nprow">
-            <span className="mz-tav" style={{ background: '#F1EFE8', fontSize: 20 }}>✳️</span>
+            <span className="mz-tav" style={{ background: '#F1EFE8', fontSize: 20 }}>💛</span>
             <span>
-              <h4>Autre rôle</h4>
-              <div className="st">Dis-nous ce qu’il te manque</div>
+              <h4>Quelqu’un d’autre</h4>
+              <div className="st">Grands-parents, garde du samedi… page libre</div>
             </span>
             <span className="mz-soon">Bientôt</span>
           </div>
