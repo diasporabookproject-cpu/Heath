@@ -24,16 +24,23 @@ export default function PartageNounouSheet({
   onClose,
   onTraduire,
   toast,
+  initialToken,
 }: {
   connected: boolean;
   onClose: () => void;
   onTraduire: (langue: NounouLangue) => void;
   toast: (m: string) => void;
+  /** Destinataire à pré-sélectionner (ouverture ciblée depuis « Envoyer » de Maison). */
+  initialToken?: string;
 }) {
   const doc = useNounou((s) => s.doc);
   const upsertDest = useNounou((s) => s.upsertDest);
 
-  const [selId, setSelId] = useState<string>(doc.destinataires[0]?.id ?? '');
+  const [selId, setSelId] = useState<string>(
+    (initialToken ? doc.destinataires.find((d) => d.token === initialToken)?.id : undefined) ??
+      doc.destinataires[0]?.id ??
+      '',
+  );
   const [adding, setAdding] = useState(doc.destinataires.length === 0);
   const [newName, setNewName] = useState('');
   const [qr, setQr] = useState<string | null>(null);

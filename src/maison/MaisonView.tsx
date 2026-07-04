@@ -14,7 +14,7 @@ import type { Destinataire } from '../types';
 const ROLES: PersonneKind[] = ['nounou', 'cuisine'];
 
 interface Props {
-  onOpenPage: (kind: 'cuisine' | 'nounou', person?: Personne) => void;
+  onOpenPage: (kind: 'cuisine' | 'nounou', person?: Personne, share?: boolean) => void;
   onOpenSecurite: () => void;
   onNewPage: () => void;
   onOpenAccount: () => void;
@@ -168,7 +168,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
                   className="mz-pill"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onOpenPage(p.kind, p);
+                    onOpenPage(p.kind, p, true);
                   }}
                 >
                   Envoyer

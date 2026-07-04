@@ -25,6 +25,9 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('maison');
   const [accountOpen, setAccountOpen] = useState(false);
   const [newPageOpen, setNewPageOpen] = useState(false);
+  // Jeton du destinataire à cibler quand on ouvre une page via « Envoyer »
+  // (personne = contexte) : la page ouvre sa feuille d'envoi pré-sélectionnée.
+  const [shareFor, setShareFor] = useState<string | null>(null);
   const { session } = useSession();
 
   // Espace permanent d'un destinataire (#e=) : lecture seule, sans données locales.
@@ -47,11 +50,14 @@ export default function App() {
 
   // Ouvrir une page depuis Maison. La personne est portée comme contexte (Lot 3
   // câblera l'envoi ciblé) ; pour l'instant elle ouvre la page de son rôle.
-  const openPage = (kind: 'cuisine' | 'nounou', _person?: Personne) => {
-    void _person;
+  const openPage = (kind: 'cuisine' | 'nounou', person?: Personne, share?: boolean) => {
     setScreen(kind);
+    setShareFor(share && person ? person.token : null);
   };
-  const back = () => setScreen('maison');
+  const back = () => {
+    setScreen('maison');
+    setShareFor(null);
+  };
 
   return (
     <div className="app">
@@ -72,6 +78,8 @@ export default function App() {
             connected={!!session}
             onOpenAccount={() => setAccountOpen(true)}
             onBack={back}
+            initialShareToken={shareFor ?? undefined}
+            onConsumeShare={() => setShareFor(null)}
           />
         )
       ) : screen === 'nounou' ? (
@@ -80,6 +88,8 @@ export default function App() {
           connected={!!session}
           onOpenAccount={() => setAccountOpen(true)}
           onBack={back}
+          initialShareToken={shareFor ?? undefined}
+          onConsumeShare={() => setShareFor(null)}
         />
       ) : (
         <>

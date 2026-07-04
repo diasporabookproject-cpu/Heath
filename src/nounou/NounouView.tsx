@@ -22,14 +22,18 @@ interface Props {
   connected: boolean;
   onOpenAccount: () => void;
   onBack?: () => void;
+  /** Jeton d'un destinataire à cibler à l'ouverture (depuis « Envoyer » de Maison). */
+  initialShareToken?: string;
+  onConsumeShare?: () => void;
 }
 
-export default function NounouView({ showAccount, connected, onOpenAccount, onBack }: Props) {
+export default function NounouView({ showAccount, connected, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
   const ready = useNounou((s) => s.ready);
   const init = useNounou((s) => s.init);
 
   const [seg, setSeg] = useState<Segment>('journee');
   const [sharing, setSharing] = useState(false);
+  const [shareToken, setShareToken] = useState<string | undefined>(undefined);
   const [traduire, setTraduire] = useState<NounouLangue | null>(null);
   const [toastMsg, setToastMsg] = useState('');
   const toastT = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,6 +46,16 @@ export default function NounouView({ showAccount, connected, onOpenAccount, onBa
   useEffect(() => {
     if (!ready) void init();
   }, [ready, init]);
+
+  // Ouverture ciblée depuis Maison (« Envoyer ») : ouvre le partage pré-sélectionné.
+  useEffect(() => {
+    if (initialShareToken) {
+      setShareToken(initialShareToken);
+      setSharing(true);
+      onConsumeShare?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialShareToken]);
 
   if (!ready) return <div className="spinner">Chargement…</div>;
 
@@ -61,7 +75,10 @@ export default function NounouView({ showAccount, connected, onOpenAccount, onBa
           <div className="cz-headicons">
             <button
               className="cz-headicon"
-              onClick={() => setSharing(true)}
+              onClick={() => {
+                setShareToken(undefined);
+                setSharing(true);
+              }}
               aria-label="Partager la page"
             >
               <IconShareUp size={18} />
@@ -109,6 +126,7 @@ export default function NounouView({ showAccount, connected, onOpenAccount, onBa
       {sharing && (
         <PartageNounouSheet
           connected={connected}
+          initialToken={shareToken}
           onClose={() => setSharing(false)}
           onTraduire={(l) => {
             setSharing(false);

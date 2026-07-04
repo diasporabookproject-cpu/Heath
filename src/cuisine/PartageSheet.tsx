@@ -29,10 +29,12 @@ const digits = (s?: string) => (s ?? '').replace(/\D/g, '');
 interface Props {
   onClose: () => void;
   toast: (m: string) => void;
+  /** Destinataire à pré-sélectionner (ouverture ciblée depuis « Envoyer » de Maison). */
+  initialToken?: string;
 }
 
 /** FC9 — Envoyer le menu : un seul geste (espace mis à jour + rappel WhatsApp). */
-export default function PartageSheet({ onClose, toast }: Props) {
+export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const persons = useStore((s) => s.settings.persons);
@@ -51,7 +53,14 @@ export default function PartageSheet({ onClose, toast }: Props) {
   const refresh = () =>
     loadDestinataires().then((list) => {
       setDests(list);
-      setSelId((cur) => cur ?? list.find((d) => d.role === 'Cuisinière')?.id ?? list[0]?.id ?? null);
+      setSelId(
+        (cur) =>
+          cur ??
+          (initialToken ? list.find((d) => d.token === initialToken)?.id : undefined) ??
+          list.find((d) => d.role === 'Cuisinière')?.id ??
+          list[0]?.id ??
+          null,
+      );
       if (list.length === 0) {
         setMode('edit');
         setEditing(blank());

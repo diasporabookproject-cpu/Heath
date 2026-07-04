@@ -28,9 +28,12 @@ interface Props {
   connected: boolean;
   onOpenAccount: () => void;
   onBack?: () => void;
+  /** Jeton d'un destinataire à cibler à l'ouverture (depuis « Envoyer » de Maison). */
+  initialShareToken?: string;
+  onConsumeShare?: () => void;
 }
 
-export default function CuisineView({ showAccount, connected, onOpenAccount, onBack }: Props) {
+export default function CuisineView({ showAccount, connected, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
   const recipes = useStore((s) => s.recipes);
   const objective = useStore((s) => s.settings.objective);
   const setComponent = useStore((s) => s.setComponent);
@@ -41,6 +44,18 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [shareToken, setShareToken] = useState<string | undefined>(undefined);
+
+  // Ouverture ciblée depuis Maison (« Envoyer ») : ouvre la feuille de partage
+  // pré-sélectionnée sur le destinataire, puis consomme le jeton (une seule fois).
+  useEffect(() => {
+    if (initialShareToken) {
+      setShareToken(initialShareToken);
+      setSharing(true);
+      onConsumeShare?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialShareToken]);
   const [objectiveOpen, setObjectiveOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
   const [recFilters, setRecFilters] = useState<string>('all');
@@ -84,7 +99,10 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             <button
               className="cz-headicon"
               style={{ marginLeft: 8 }}
-              onClick={() => setSharing(true)}
+              onClick={() => {
+                setShareToken(undefined);
+                setSharing(true);
+              }}
               aria-label="Partager le menu"
             >
               <IconShareUp size={18} />
@@ -168,7 +186,13 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
         />
       )}
 
-      {sharing && <PartageSheet onClose={() => setSharing(false)} toast={toast} />}
+      {sharing && (
+        <PartageSheet
+          initialToken={shareToken}
+          onClose={() => setSharing(false)}
+          toast={toast}
+        />
+      )}
       {objectiveOpen && <ObjectiveSheet onClose={() => setObjectiveOpen(false)} />}
       {copyOpen && <CopyWeekSheet onClose={() => setCopyOpen(false)} toast={toast} />}
 
