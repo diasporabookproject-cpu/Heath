@@ -100,6 +100,17 @@
 
 .mz-dashed { width: 100%; border: 1.5px dashed #d8d5ca; border-radius: 18px; padding: 13px; text-align: center; color: var(--mz-mut); font-size: 12.5px; font-weight: 700; margin-top: 4px; }
 
+/* Bloc d'envoi partagé (L3-1b) : portées + digest éditable */
+.mz-digest { --dg-accent: var(--mz-grn2); }
+.mz-digest.vio { --dg-accent: var(--mz-vio2); }
+.mz-dg-lab { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; color: var(--mz-mut); margin: 14px 0 8px; text-transform: uppercase; }
+.mz-scope { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.mz-scope::-webkit-scrollbar { height: 0; }
+.mz-sc { white-space: nowrap; flex: none; font-size: 12.5px; font-weight: 800; border-radius: 999px; padding: 8px 14px; color: var(--mz-mut); background: #f1efe8; border: 1px solid var(--mz-ln); }
+.mz-sc.on { color: #fff; background: var(--dg-accent); border-color: var(--dg-accent); }
+.mz-wa { width: 100%; border: 1px solid var(--mz-ln); border-radius: 14px; padding: 13px; font: inherit; font-size: 13.5px; line-height: 1.5; color: var(--mz-ink); background: #fbfaf7; resize: vertical; min-height: 120px; white-space: pre-wrap; }
+.mz-wa:focus { outline: none; border-color: var(--dg-accent); }
+
 /* Rangées « nouvelle page » (dans le sheet de création) */
 .mz-nprow { display: flex; align-items: center; gap: 13px; padding: 11px 4px; }
 .mz-nprow + .mz-nprow { border-top: 1px solid var(--mz-ln); }
