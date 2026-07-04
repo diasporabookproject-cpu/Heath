@@ -46,7 +46,7 @@ export default function NounouView({ showAccount, connected, onOpenAccount, onBa
   if (!ready) return <div className="spinner">Chargement…</div>;
 
   return (
-    <div className="cz">
+    <div className="cz cz-nounou">
       <header className="cz-head">
         <div className="cz-brandrow">
           <div className="cz-brand">
