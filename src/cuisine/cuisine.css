@@ -3,29 +3,32 @@
    pour ne pas entrer en collision avec le style v1 (styles.css). */
 
 .cz {
-  --paper: #f3efe7;
+  /* Retheme « Manzil » (Lot 2) — tokens repris du design system mz-.
+     Les classes cz- restent (rhabillées, pas retirées) ; le renommage viendra
+     en passe cosmétique finale. Couleurs sémantiques (feux) alignées sur mz-. */
+  --paper: #f6f5f1;
   --surface: #ffffff;
-  --surface-2: #fbf8f2;
-  --ink: #26221e;
-  --muted: #90867a;
-  --line: #e7e0d3;
-  --petrol: #1e4d45;
-  --petrol-tint: #e7efec;
-  --petrol-ink: #143733;
-  --saffron: #b6791c;
-  --saffron-tint: #f6ecd7;
-  --draft: #7a5aa6;
-  --draft-tint: #eee8f6;
-  --draft-line: #d9ccec;
-  --ok: #3f9a63;
-  --warn: #e0922e;
+  --surface-2: #f1efe8;
+  --ink: #1d1b16;
+  --muted: #8b887c;
+  --line: #ebe9e1;
+  --petrol: #136b52; /* vert cuisine profond (mz-grn2) */
+  --petrol-tint: #e6f2ed; /* mz-grnT */
+  --petrol-ink: #0f5842;
+  --saffron: #a87a10; /* ambre lisible (texte/accent) */
+  --saffron-tint: #fbf3dc;
+  --draft: #5a45c4; /* violet « à valider » (mz-vio2) */
+  --draft-tint: #eee9fb; /* mz-vioT */
+  --draft-line: #d9d2f4;
+  --ok: #1f7a4d;
+  --warn: #a87a10;
   --bad: #c8503f;
   --rec: #c0392b;
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --maxw: 480px;
-  --shadow: 0 1px 2px rgba(38, 34, 30, 0.04), 0 8px 24px rgba(38, 34, 30, 0.06);
+  --shadow: 0 3px 12px rgba(29, 27, 22, 0.06);
 
   background: var(--paper);
   color: var(--ink);
@@ -44,9 +47,37 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  background: var(--paper);
-  padding: 16px 16px 10px;
-  border-bottom: 1px solid var(--line);
+  background: linear-gradient(157deg, var(--mz-grn1, #2fa37e) 0%, var(--mz-grn2, #136b52) 100%);
+  color: #fff;
+  padding: 16px 16px 13px;
+  border-bottom: none;
+  border-radius: 0 0 22px 22px;
+  box-shadow: 0 10px 26px rgba(19, 107, 82, 0.2);
+}
+/* Héros : les éléments d'en-tête passent en blanc translucide sur le dégradé. */
+.cz-head .cz-brand { color: #fff; }
+.cz-head .cz-back,
+.cz-head .cz-headicon {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.cz-head .cz-mark { background: rgba(255, 255, 255, 0.24); }
+.cz-head .cz-mark::before { border-color: rgba(255, 255, 255, 0.9); }
+.cz-head .cz-pill {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+.cz-head .cz-segmented {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+.cz-head .cz-seg { color: rgba(255, 255, 255, 0.82); }
+.cz-head .cz-seg[aria-selected='true'] {
+  background: #fff;
+  color: var(--petrol);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
 }
 .cz-brandrow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .cz-brand {
@@ -257,13 +288,13 @@
   width: 56px; height: 56px;
   border-radius: 18px;
   border: none;
-  background: var(--petrol);
-  color: #fff;
+  background: var(--mz-amber, #ffd466);
+  color: var(--mz-amberInk, #5c4200);
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow: 0 8px 22px rgba(30, 77, 69, 0.4);
-  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 8px 22px rgba(255, 212, 102, 0.5);
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   right: max(24px, calc(50% - var(--maxw) / 2 + 16px));
 }
 .cz-fab:active { transform: scale(0.95); }
