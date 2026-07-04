@@ -1,15 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { useNounou } from '../nounou/useNounou';
-import { loadDestinataires, loadPublished, type PublishRecord } from '../lib/db';
+import { loadDestinataires, loadPublished, loadWeek, type PublishRecord } from '../lib/db';
 import { lastEspaceOpen } from '../lib/espace';
-import { cuisineSig, envoiState, type EnvoiState } from './transmission';
+import { weekId } from '../cuisine/dates';
+import { cleanText } from '../lib/sanitize';
+import { cuisineSig, envoiState, pillKind, type EnvoiState } from './transmission';
 import { nounouSig } from '../nounou/partage';
 import { personnes, KIND_LABEL, KIND_PICTO, type Personne, type PersonneKind } from './personnes';
 import { agendaToday, splitProchain, nowHHMM, type AgendaItem } from './prochain';
 import { MzScreen, MzScroll } from '../ui/primitives';
 import { dayTitleISO, todayISO } from '../nounou/dates';
 import type { Destinataire } from '../types';
+
+/** Date ISO (YYYY-MM-DD) décalée de `n` jours, en heure locale (sûr aux passages de mois). */
+function isoPlusDays(iso: string, n: number): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + n);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
 
 const ROLES: PersonneKind[] = ['nounou', 'cuisine'];
 
@@ -36,6 +45,8 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
   const persons = useStore((s) => s.settings.persons);
   const cuisineReady = useStore((s) => s.ready);
 
+  const navWeek = useStore((s) => s.navWeek);
+
   const nReady = useNounou((s) => s.ready);
   const nInit = useNounou((s) => s.init);
   const doc = useNounou((s) => s.doc);
@@ -43,6 +54,8 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
   const [cuisineDests, setCuisineDests] = useState<Destinataire[]>([]);
   const [published, setPublished] = useState<Record<string, PublishRecord>>({});
   const [opens, setOpens] = useState<Record<string, string | null>>({});
+  // Signal « Planifier » : la semaine suivante est-elle vide ? null = inconnu (⇒ pas de nudge).
+  const [nextWeekEmpty, setNextWeekEmpty] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!nReady) void nInit();
@@ -73,6 +86,33 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
   );
   const { prochain, timeline, done } = useMemo(() => splitProchain(agenda, nowHHMM()), [agenda]);
 
+  // Signal « Briefer » (nounou) : ponctuel à venir dans les 7 jours (page à jour).
+  const upcomingPonctuel = useMemo(() => {
+    const t = todayISO();
+    const max = isoPlusDays(t, 7);
+    return [...doc.ponctuels]
+      .filter((p) => p.date >= t && p.date <= max)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.heure.localeCompare(b.heure))[0];
+  }, [doc.ponctuels]);
+
+  // Signal « Planifier » (cuisine) : la semaine suivante est-elle vide ?
+  // Précaution : jamais de fausse alerte — on ne conclut « vide » que si la
+  // semaine est absente OU chargée sans aucun plat.
+  useEffect(() => {
+    let alive = true;
+    void loadWeek(weekId(1)).then((w) => {
+      if (!alive) return;
+      if (!w) return setNextWeekEmpty(true);
+      const hasAny = Object.values(w.days).some(
+        (d) => d && (d.petitdej?.plat || d.dej?.plat || d.diner?.plat),
+      );
+      setNextWeekEmpty(!hasAny);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   /** État de transmission d'une personne (signature courante vs dernier envoi). */
   const etat = (p: Personne): { state: EnvoiState; sub: string } => {
     let sig = '';
@@ -92,6 +132,48 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
           ? '● Pas encore envoyé'
           : '● Du nouveau à envoyer';
     return { state, sub };
+  };
+
+  const relDay = (iso: string) => (iso === todayISO() ? 'aujourd’hui' : dayTitleISO(iso).toLowerCase());
+
+  /**
+   * Une personne = un état = une action (proto v6.1). Priorité stricte :
+   * Envoyer (rien n'est parti / du nouveau) > Briefer (à jour, mais un ponctuel
+   * approche) > Planifier (à jour, mais la semaine suivante est vide) > ✓ chevron.
+   * Précaution : les nudges Briefer/Planifier ne s'affichent QUE sur un signal
+   * réel et sûr — sinon on retombe sur le chevron (jamais de fausse alerte).
+   */
+  const action = (p: Personne): { pill?: string; onPill: () => void; sub: string; tone: 'w' | 'g' } => {
+    const { state, sub } = etat(p);
+    const kind = pillKind({
+      state,
+      kind: p.kind,
+      hasUpcomingPonctuel: p.kind === 'nounou' && !!upcomingPonctuel,
+      nextWeekEmpty: nextWeekEmpty === true,
+    });
+    switch (kind) {
+      case 'envoyer':
+        return { pill: 'Envoyer', onPill: () => onOpenPage(p.kind, p, true), sub, tone: 'w' };
+      case 'briefer':
+        return {
+          pill: 'Briefer',
+          onPill: () => onOpenPage('nounou', p),
+          sub: `📌 ${cleanText(upcomingPonctuel!.label)} · ${relDay(upcomingPonctuel!.date)}`,
+          tone: 'w',
+        };
+      case 'planifier':
+        return {
+          pill: 'Planifier',
+          onPill: () => {
+            void navWeek(1);
+            onOpenPage('cuisine', p);
+          },
+          sub: 'La semaine prochaine t’attend',
+          tone: 'w',
+        };
+      default:
+        return { onPill: () => onOpenPage(p.kind, p), sub, tone: 'g' };
+    }
   };
 
   return (
@@ -154,8 +236,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
         {/* TON ÉQUIPE — personnes réelles + accès aux pages de rôle sans destinataire */}
         <div className="mz-lab">Ton équipe</div>
         {list.map((p) => {
-          const { state, sub } = etat(p);
-          const alert = state !== 'uptodate';
+          const a = action(p);
           return (
             <div className="mz-prow" key={p.key} onClick={() => onOpenPage(p.kind, p)} role="button" tabIndex={0}>
               <span className={'mz-tav ' + (p.kind === 'cuisine' ? 'grn' : 'vio')}>{KIND_PICTO[p.kind]}</span>
@@ -163,19 +244,19 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
                 <h4>
                   {p.prenom} · {KIND_LABEL[p.kind]}
                 </h4>
-                <div className={'st' + (alert ? ' w' : ' g')}>
-                  <b>{sub}</b>
+                <div className={'st ' + a.tone}>
+                  <b>{a.sub}</b>
                 </div>
               </span>
-              {alert ? (
+              {a.pill ? (
                 <button
                   className="mz-pill"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onOpenPage(p.kind, p, true);
+                    a.onPill();
                   }}
                 >
-                  Envoyer
+                  {a.pill}
                 </button>
               ) : (
                 <span className="chev">›</span>

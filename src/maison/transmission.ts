@@ -18,3 +18,23 @@ export function envoiState(currentSig: string, rec?: PublishRecord): EnvoiState 
   if (!rec) return 'never';
   return rec.sig === currentSig ? 'uptodate' : 'modified';
 }
+
+/** Pastille unique d'une carte-personne (proto v6.1). null = chevron (rien à signaler). */
+export type PillKind = 'envoyer' | 'briefer' | 'planifier' | null;
+
+/**
+ * Décision « une personne = un état = une action », priorité stricte
+ * Envoyer > Briefer > Planifier > (chevron). Fonction pure (testable, QA) :
+ * les nudges Briefer/Planifier ne sortent que sur un signal réel — sinon chevron.
+ */
+export function pillKind(opts: {
+  state: EnvoiState;
+  kind: 'cuisine' | 'nounou';
+  hasUpcomingPonctuel: boolean;
+  nextWeekEmpty: boolean;
+}): PillKind {
+  if (opts.state !== 'uptodate') return 'envoyer';
+  if (opts.kind === 'nounou' && opts.hasUpcomingPonctuel) return 'briefer';
+  if (opts.kind === 'cuisine' && opts.nextWeekEmpty) return 'planifier';
+  return null;
+}
