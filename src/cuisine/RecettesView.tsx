@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore';
 import { ROLE_LABEL, type Recipe } from '../types';
 import { cleanText } from '../lib/sanitize';
 import { IconSearch, IconMic, IconFav } from './icons';
+import RelectureSheet from './RelectureSheet';
 
 const CHIPS: { key: string; label: string; draft?: boolean }[] = [
   { key: 'all', label: 'Tous' },
@@ -26,8 +27,11 @@ interface Props {
 export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const toggleFav = useStore((s) => s.toggleFav);
-  const validateRecipe = useStore((s) => s.validateRecipe);
   const [q, setQ] = useState('');
+  const [relire, setRelire] = useState<{ startId?: string } | null>(null);
+
+  // File de relecture (L3-3) : périmètre = tous les brouillons `Test`.
+  const draftCount = useMemo(() => recipes.filter((r) => r.statut === 'Test').length, [recipes]);
 
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -79,6 +83,19 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
         ))}
       </div>
 
+      {draftCount > 0 && (
+        <div className="cz-pad" style={{ paddingTop: 8, paddingBottom: 0 }}>
+          <button className="cz-sigrow" onClick={() => setRelire({})}>
+            <span className="e">✦</span>
+            <span className="st">
+              <b>{draftCount} brouillon{draftCount > 1 ? 's' : ''} IA à relire</b>
+              <i>2 minutes et c’est réglé</i>
+            </span>
+            <span className="go">Relire</span>
+          </button>
+        </div>
+      )}
+
       <div className="cz-pad cz-lib">
         {list.length === 0 ? (
           <p className="cz-emptynote">Aucune recette ici.</p>
@@ -89,7 +106,7 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
               <button
                 key={r.id}
                 className={'cz-librow' + (draft ? ' draft' : '')}
-                onClick={() => onOpenRecipe(r.id)}
+                onClick={() => (draft ? setRelire({ startId: r.id }) : onOpenRecipe(r.id))}
               >
                 <div className="cz-libtop">
                   <span
@@ -118,24 +135,21 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
                       vocal
                     </span>
                   )}
-                  {draft && (
-                    <button
-                      className="cz-vbtn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        validateRecipe(r.id);
-                        toast('Recette validée');
-                      }}
-                    >
-                      Valider
-                    </button>
-                  )}
                 </div>
               </button>
             );
           })
         )}
       </div>
+
+      {relire && (
+        <RelectureSheet
+          startId={relire.startId}
+          onClose={() => setRelire(null)}
+          onOpenRecipe={onOpenRecipe}
+          toast={toast}
+        />
+      )}
     </div>
   );
 }

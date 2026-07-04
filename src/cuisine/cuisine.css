@@ -320,6 +320,22 @@
 .cz-chip.ca[aria-pressed='true'] { background: var(--saffron); border-color: var(--saffron); }
 
 .cz-quotab { margin-left: auto; flex: none; align-self: center; font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--draft); background: var(--draft-tint); border-radius: 999px; padding: 5px 9px; }
+
+/* File de relecture IA (L3-3) */
+.cz-relprog { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--draft); flex: none; }
+.cz-relbar { height: 5px; border-radius: 3px; background: var(--draft-tint); overflow: hidden; margin-top: 2px; }
+.cz-relbar i { display: block; height: 100%; background: var(--draft); border-radius: 3px; transition: width 0.25s; }
+.cz-relbody { background: var(--surface-2); border-radius: 12px; padding: 12px 13px; font-size: 13.5px; line-height: 1.5; color: var(--ink); margin-top: 10px; white-space: pre-wrap; }
+.cz-relwarn { background: var(--saffron-tint); color: var(--saffron); border-radius: 12px; padding: 11px 13px; font-size: 12.5px; font-weight: 600; margin-top: 10px; line-height: 1.4; }
+.cz-relbtns { display: flex; gap: 8px; margin-top: 16px; }
+.cz-relbtns .cz-cta { margin-top: 0; flex: 1; }
+.cz-relempty { text-align: center; padding: 40px 0 20px; color: var(--petrol); }
+.cz-sigrow { margin: 0 0 12px; width: 100%; text-align: left; display: flex; align-items: center; gap: 11px; background: var(--draft-tint); border: 1px solid var(--draft-line); border-radius: 13px; padding: 13px 14px; cursor: pointer; color: var(--draft); }
+.cz-sigrow .e { font-size: 17px; flex: none; }
+.cz-sigrow .st { flex: 1; }
+.cz-sigrow .st b { display: block; font-size: 13.5px; font-weight: 700; }
+.cz-sigrow .st i { font-size: 12px; color: #8a7ba5; }
+.cz-sigrow .go { font-size: 12px; font-weight: 700; }
 .cz-caflag { font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
 .cz-caflag.champion { background: var(--saffron-tint); color: var(--saffron); }
 .cz-caflag.moyen { background: #efeae0; color: #8a7d63; }
