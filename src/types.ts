@@ -34,6 +34,10 @@ export interface Recipe {
   notes?: string;
   /** Macros estimées automatiquement et non encore vérifiées (auto-macros). */
   macros_estimees?: boolean;
+  /** Née d'un « coup de main IA » (porte ③) → entre dans la file de relecture (L3-2/L3-3). */
+  origineIA?: boolean;
+  /** Provenance : id du pack de collections dont elle a été copiée (L3-4). */
+  packId?: string;
   /** Favori (étoile). */
   fav?: boolean;
   /** Darija marocaine (lettres arabes), pour l'espace cuisinière. */

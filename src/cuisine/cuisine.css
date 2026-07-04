@@ -319,6 +319,7 @@
 .cz-chip[aria-pressed='true'] { background: var(--petrol); color: #fff; border-color: var(--petrol); }
 .cz-chip.ca[aria-pressed='true'] { background: var(--saffron); border-color: var(--saffron); }
 
+.cz-quotab { margin-left: auto; flex: none; align-self: center; font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--draft); background: var(--draft-tint); border-radius: 999px; padding: 5px 9px; }
 .cz-caflag { font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
 .cz-caflag.champion { background: var(--saffron-tint); color: var(--saffron); }
 .cz-caflag.moyen { background: #efeae0; color: #8a7d63; }
@@ -450,12 +451,13 @@
 .cz-stepper button { width: 48px; height: 46px; border: none; background: var(--surface); font-size: 22px; color: var(--petrol); cursor: pointer; font-family: var(--font-body); }
 .cz-stepper .sv { min-width: 54px; text-align: center; font-family: var(--font-mono); font-size: 17px; font-weight: 500; border-left: 1px solid var(--line); border-right: 1px solid var(--line); height: 46px; display: grid; place-items: center; }
 .cz-opt2 { display: flex; align-items: center; gap: 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; cursor: pointer; margin-bottom: 11px; width: 100%; text-align: left; font-family: var(--font-body); color: var(--ink); }
-.cz-opt2 .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+.cz-opt2 .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; flex: none; font-size: 22px; background: var(--surface-2); }
+.cz-opt2 .ic.imp { background: var(--surface-2); }
 .cz-opt2 .ic.pen { background: var(--petrol-tint); color: var(--petrol); }
 .cz-opt2 .ic.ai { background: var(--draft-tint); color: var(--draft); }
 .cz-opt2 .ot { flex: 1; }
-.cz-opt2 .ot .h { font-weight: 600; font-size: 15.5px; }
-.cz-opt2 .ot .d { font-size: 13px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+.cz-opt2 .ot .h { display: block; font-weight: 600; font-size: 15.5px; }
+.cz-opt2 .ot .d { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
 .cz-review { display: flex; gap: 9px; align-items: flex-start; background: var(--warn-tint); border-radius: 11px; padding: 12px; margin: 16px 0 0; font-size: 13px; color: #8a6a2a; line-height: 1.4; }
 
 .cz-cta { width: 100%; border: none; cursor: pointer; background: var(--petrol); color: #fff; font-family: var(--font-body); font-weight: 600; font-size: 16px; border-radius: 13px; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 9px; box-shadow: 0 6px 18px rgba(30, 77, 69, 0.3); margin-top: 18px; }
