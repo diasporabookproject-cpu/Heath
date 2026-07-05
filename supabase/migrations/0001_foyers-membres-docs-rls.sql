@@ -103,14 +103,15 @@ create table if not exists public.ai_usage (
 );
 
 -- ─────────────────────────────────────────────────────────────
--- Tenancy sur `espaces` : on AJOUTE seulement la colonne (nullable) + index.
---   ⚠️ La LECTURE PUBLIQUE PAR JETON existante ne doit PAS bouger. Les policies
---   « côté auteur » (lister/révoquer) sont VOLONTAIREMENT reportées à une migration
---   ultérieure (0002) : il faut d'abord inspecter l'état RLS actuel de `espaces`
---   (activée ? policy anon ?) pour ne rien casser. Voir read-back §« espaces ».
+-- Tenancy sur `espaces` : ENTIÈREMENT REPORTÉ À 0002. Raisons :
+--   1. La table `espaces` n'existe qu'en PROD (le staging est vierge) → un `alter table`
+--      ici planterait sur staging. 0002 la traitera contre la vraie base prod.
+--   2. Il faut d'abord inspecter l'état RLS actuel de `espaces` pour ne PAS casser la
+--      lecture publique par jeton (le personnel n'a pas de compte).
+--   SPEC 0002 (décision Amine) : `espaces.foyer_id … on delete CASCADE` — supprimer un
+--   foyer DOIT couper tous ses liens envoyés (les lignes espaces partent → liens morts),
+--   par sécurité. + policies « côté auteur » (lister/révoquer) réservées aux membres.
 -- ─────────────────────────────────────────────────────────────
-alter table public.espaces add column if not exists foyer_id uuid references public.foyers(id) on delete set null;
-create index if not exists espaces_foyer_idx on public.espaces(foyer_id);
 
 -- ─────────────────────────────────────────────────────────────
 -- RLS  (tables nouvelles uniquement — on ne touche pas `espaces` ici)
