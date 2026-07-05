@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Sheet } from '../ui/primitives';
 import { signOut, type Session } from '../lib/supabase';
-import { sendOtp, verifyOtp, ensureFoyer, deleteAccount, createInvite, acceptInvite } from '../lib/auth';
+import { sendOtp, verifyOtp, ensureFoyer, deleteAccount, createInvite, acceptInvite, leaveFoyer } from '../lib/auth';
 import { normalizeOtp, isValidOtp, isValidEmail } from '../lib/otp';
 import { downloadExport } from '../lib/exportData';
 
@@ -25,6 +25,7 @@ export default function AccountSheet({
   const [confirmDel, setConfirmDel] = useState(false);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState('');
+  const [confirmLeave, setConfirmLeave] = useState(false);
 
   const doInvite = async () => {
     setBusy(true);
@@ -47,6 +48,18 @@ export default function AccountSheet({
     }
     // Foyer changé → on recharge pour ré-adopter/synchroniser le foyer rejoint.
     window.location.reload();
+  };
+
+  const doLeave = async () => {
+    setBusy(true);
+    setErr('');
+    const { error } = await leaveFoyer();
+    if (error) {
+      setBusy(false);
+      setErr(error);
+      return;
+    }
+    window.location.reload(); // foyer neuf recréé au rechargement
   };
 
   // Foyer paresseux : garantit qu'un utilisateur connecté a bien son foyer
@@ -155,6 +168,26 @@ export default function AccountSheet({
         <div className="mz-sm" style={{ marginTop: 6 }}>
           Rejoindre un foyer remplace le tien ; tes recettes locales le rejoignent à la synchro.
         </div>
+        {!confirmLeave ? (
+          <button className="mz-quiet" onClick={() => setConfirmLeave(true)}>
+            Quitter le foyer partagé
+          </button>
+        ) : (
+          <div style={{ marginTop: 10 }}>
+            <div className="mz-note">
+              Tu quittes ce foyer et repars sur une maison neuve. Tes données locales restent sur
+              cet appareil et rejoindront ton nouveau foyer à la synchro.
+            </div>
+            <div className="mz-btnrow">
+              <button className="mz-btn" onClick={() => setConfirmLeave(false)} disabled={busy}>
+                Annuler
+              </button>
+              <button className="mz-btn" onClick={doLeave} disabled={busy}>
+                {busy ? '…' : 'Quitter le foyer'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {!confirmDel ? (
           <button className="mz-quiet" onClick={() => setConfirmDel(true)}>

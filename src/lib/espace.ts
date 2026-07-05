@@ -1,4 +1,5 @@
 import { getSupabase } from './supabase';
+import { currentFoyerId } from './auth';
 import { getAccessToken, uploadAudios, uploadWeekAudios } from './publish';
 import { buildEspaceMenu, usedRecipeIds, type SharedMenu } from './share';
 import { loadAudio, loadSecurite, recordPublished } from './db';
@@ -140,9 +141,13 @@ export async function publishEspace(
     securite,
   };
 
+  // Tenancy (S6) : rattache l'espace au foyer → gestion/révocation côté auteur, et
+  // suppression du foyer = coupe les liens (cascade, migration 0002). Requiert 0002
+  // appliqué côté prod avant la mise en ligne de ce client.
+  const foyer_id = await currentFoyerId();
   const { error } = await supa
     .from('espaces')
-    .upsert({ token: dest.token, payload, updated_at: new Date().toISOString() });
+    .upsert({ token: dest.token, payload, updated_at: new Date().toISOString(), foyer_id });
   if (error) throw new Error('Espace : ' + error.message);
 
   // Trace de transmission (état « à envoyer », L1-4).

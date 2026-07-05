@@ -51,6 +51,26 @@ export async function ensureFoyer(): Promise<{ foyerId?: string; error?: string 
   return { foyerId: fid as string };
 }
 
+/** Id du foyer de l'utilisateur connecté (null si non connecté / pas de foyer). */
+export async function currentFoyerId(): Promise<string | null> {
+  const supa = getSupabase();
+  if (!supa) return null;
+  const { data: u } = await supa.auth.getUser();
+  if (!u.user) return null;
+  const { data } = await supa.from('membres').select('foyer_id').eq('user_id', u.user.id).limit(1);
+  return (data?.[0]?.foyer_id as string) ?? null;
+}
+
+/** Quitte le foyer courant (retire son appartenance). Au rechargement, un foyer neuf est recréé. */
+export async function leaveFoyer(): Promise<{ error?: string }> {
+  const supa = getSupabase();
+  if (!supa) return { error: 'Connexion indisponible.' };
+  const { data: u } = await supa.auth.getUser();
+  if (!u.user) return { error: 'Non connecté.' };
+  const { error } = await supa.from('membres').delete().eq('user_id', u.user.id);
+  return error ? { error: error.message } : {};
+}
+
 /** Extrait le message d'erreur renvoyé par une edge function (sinon message générique). */
 async function fnError(error: unknown): Promise<string> {
   const ctx = (error as { context?: Response })?.context;
