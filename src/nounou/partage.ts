@@ -110,7 +110,7 @@ export async function publishNounouEspace(
   const payload = buildNounouEspace(doc, dest, new Date().toISOString());
 
   // Consignes vocales des conduites (la voix du parent) → bucket public `shared`,
-  // figées dans le payload (URL) pour la lecture côté employée.
+  // figées dans le payload (URL) pour la lecture côté destinataire.
   const audioKeys = new Set(await loadAudioKeys());
   const withVoix = payload.doc.conduites.filter((c) => !c.aCompleter && audioKeys.has(c.id));
   if (withVoix.length) {
