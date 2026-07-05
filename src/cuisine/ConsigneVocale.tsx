@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import fixWebmDuration from 'fix-webm-duration';
 import { deleteAudio, loadAudio, saveAudio } from '../lib/db';
+import { backupAudio, restoreAudio } from '../lib/sync/audio';
 import MzAudio from '../ui/MzAudio';
 import { IconMic, IconShareUp } from './icons';
 
@@ -43,7 +44,8 @@ export default function ConsigneVocale({
 
   useEffect(() => {
     let revoked: string | null = null;
-    void loadAudio(recipeId).then((blob) => {
+    void loadAudio(recipeId).then(async (local) => {
+      const blob = local ?? (await restoreAudio(recipeId)) ?? undefined;
       if (blob) {
         const u = URL.createObjectURL(blob);
         revoked = u;
@@ -77,6 +79,7 @@ export default function ConsigneVocale({
           ]);
         }
         await saveAudio(recipeId, blob, blob.type || type);
+        void backupAudio(recipeId, blob, blob.type || type); // sauvegarde cloud (best-effort)
         setUrl((prev) => {
           if (prev) URL.revokeObjectURL(prev);
           return URL.createObjectURL(blob);
