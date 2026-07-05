@@ -10,7 +10,10 @@ export async function sendOtp(email: string): Promise<{ error?: string }> {
   if (!supa) return { error: 'Connexion indisponible.' };
   const { error } = await supa.auth.signInWithOtp({
     email: email.trim(),
-    options: { shouldCreateUser: true },
+    // Redirige le lien magique vers l'app (utile tant que l'e-mail n'a pas de code
+    // à 6 chiffres — nécessite un SMTP perso pour éditer le modèle). Le retour du
+    // lien ouvre la session via detectSessionInUrl.
+    options: { shouldCreateUser: true, emailRedirectTo: window.location.origin },
   });
   return error ? { error: error.message } : {};
 }
