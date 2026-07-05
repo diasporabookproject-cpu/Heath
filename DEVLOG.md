@@ -98,15 +98,17 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 > - **Retour arrière trivial** : tag **`pre-bento`** pointe sur l'état pré-refonte ; rollback = `git revert -m 1 <merge>` (sans force-push) ou reset sur `pre-bento`. Branche `refonte/bento-v1` conservée comme ancre.
 > - **QA d'Amine reportée** : à faire directement sur la prod quand il aura le temps ; le filet de retour arrière reste en place.
 >
-> **➡️ Cap store / prod (post-merge).** Décisions d'architecture **actées** dans
-> **`DECISIONS_STORE_V1.md`** (Capacitor, foyer=identité Manzil, OTP, sync complète LWW,
-> **v1 tout gratuit**, `manzil.ma`, RGPD/loi 09-08). Réflexion amont : `REFLEXION_ARCHI_STORE.md`.
-> **Cadrage implémenteur du 1ᵉʳ lot de prod** (« Comptes + Sync ») + risques + Q1–Q6 +
-> sous-lots chiffrés : **`READBACK_LOT_COMPTES_SYNC.md`**. **Brief formel v1.1** (Q1–Q6
-> tranchées, table `docs` générique, S0→S7) : **`BRIEF_COMPTES_SYNC.md`** ; **chiffrage final
-> de l'implémenteur** (≈15,5–20,5 j-idéaux, S3=🔴 le mât de tente, réponses QA/QB/QC, 3 gardes
-> techniques, cut-list) : **`CHIFFRAGE_COMPTES_SYNC.md`**. Séquence : QA→merge, puis
-> Lot Comptes+Sync (la vraie dette), puis Lot Coquille (Capacitor). Rien ne démarre avant le merge.
+> **✅ Lot « Comptes + Sync » — CODE COMPLET, REVU & CORRIGÉ sur `comptes-sync-v1`** (pas encore mergé en prod).
+> La dette **local-only → local-first synchronisé** est levée. Résumé :
+> - **S0→S7 livrés** : auth OTP + foyer (S2), moteur de sync LWW/tombstones/adoption (S3, cœur pur testé),
+>   quota IA serveur (S5), invitation 2ᵉ membre (S4), quitter/supprimer + tenancy espaces (S6), audio backup (S3′),
+>   paquet RGPD (S7). Docs de cadrage : `DECISIONS_STORE_V1.md`, `BRIEF_COMPTES_SYNC.md`, `CHIFFRAGE_COMPTES_SYNC.md`, `READBACK_LOT_COMPTES_SYNC.md`, `RGPD.md`.
+> - **Validé** : RLS/foyer/push/pull/LWW/tombstone/isolation **9/9** headless contre staging ; auth **sur appareil** (préview).
+> - **Revue qualité à froid (8 angles) → 10 findings (3 P0, 7 P1) TOUS CORRIGÉS** + P2. Voir **`REVUE_QUALITE_COMPTES_SYNC.md`**.
+> - **Préview de test connectée** : **https://manzil-staging.pages.dev** (Cloudflare Pages → Supabase **staging**). Migrations 0001+0004 appliquées staging ; 4 edge functions déployées.
+> - **Reste avant prod** : **passe de déploiement prod** (migrations 0001→0004 en prod dans l'ordre, 4 edge functions, SMTP pour le code 6 chiffres, achat `manzil.ma`) + QA appareil d'Amine. **Rien n'est mergé en prod** (la prod = Manzil UI seule, sans comptes).
+>
+> **➡️ Décisions d'archi actées** : `DECISIONS_STORE_V1.md` (Capacitor, foyer=identité Manzil, OTP, sync LWW, **v1 tout gratuit** mais coutures premium serveur, `manzil.ma`, RGPD/loi 09-08). Après le merge Comptes+Sync : **Lot Coquille** (Capacitor iOS/Android).
 
 **Fait (base, avant refonte) :**
 - P0 complet : composer, feux tricolores + moyenne semaine, vue Cuisinière (copie WhatsApp), bibliothèque, persistance, mobile-first, PWA.
@@ -125,6 +127,10 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 ---
 
 ## À faire / en cours
+
+**➡️ Prochaine grande étape : passe de déploiement PROD du lot Comptes+Sync** puis merge de `comptes-sync-v1`, puis **Lot Coquille** (Capacitor). Détail : `REVUE_QUALITE_COMPTES_SYNC.md` (§ plan) + `RECAP_COMPTES_SYNC.md`.
+
+**✅ Synchro multi-appareils — LIVRÉE** (lot Comptes+Sync sur `comptes-sync-v1`, non mergé) : remplace la ligne « ⏳ Synchro multi-appareils » ci-dessous.
 
 **✅ Lot v1 de la passation produit livré (F1→F5).**
 
