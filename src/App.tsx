@@ -11,6 +11,7 @@ import { Sheet } from './ui/primitives';
 import { readEspaceToken } from './lib/espace';
 import { supabaseEnabled } from './lib/supabase';
 import { useSession } from './lib/useSession';
+import { useSync } from './lib/sync/useSync';
 import type { Personne } from './maison/personnes';
 
 // Navigation hub (L1-2) : Maison = écran racine ; les pages de rôle s'ouvrent en
@@ -22,6 +23,7 @@ type Screen = 'maison' | 'cuisine' | 'nounou' | 'securite';
 export default function App() {
   const ready = useStore((s) => s.ready);
   const init = useStore((s) => s.init);
+  const refresh = useStore((s) => s.refresh);
   const [screen, setScreen] = useState<Screen>('maison');
   const [accountOpen, setAccountOpen] = useState(false);
   const [newPageOpen, setNewPageOpen] = useState(false);
@@ -29,6 +31,8 @@ export default function App() {
   // (personne = contexte) : la page ouvre sa feuille d'envoi pré-sélectionnée.
   const [shareFor, setShareFor] = useState<string | null>(null);
   const { session } = useSession();
+  // Sync cloud (S3) : non bloquante ; rafraîchit l'UI si un pull change le local.
+  useSync(session, refresh);
 
   // Espace permanent d'un destinataire (#e=) : lecture seule, sans données locales.
   const espaceToken = readEspaceToken();

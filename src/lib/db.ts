@@ -11,6 +11,7 @@ import {
 } from '../types';
 import { SEED_RECIPES } from '../data';
 import type { AiQuota } from './quota';
+import type { DocMeta, MetaIndex } from './sync/plan';
 
 // IndexedDB = source de vérité locale (offline-first). La synchro Supabase
 // (étape suivante) viendra se réconcilier par-dessus ce store.
@@ -32,6 +33,8 @@ interface MenuDB extends DBSchema {
   nounou: { key: string; value: NounouDoc };
   published: { key: string; value: PublishRecord };
   app: { key: string; value: AppState };
+  // v8 : méta de sync par document (hash + horodatage serveur du dernier échange).
+  syncmeta: { key: string; value: DocMeta };
 }
 
 /** Trace locale du dernier envoi par destinataire (état « à envoyer », L1-4). */
@@ -58,8 +61,9 @@ export interface Rappel {
 }
 
 const DB_NAME = 'menu-semaine';
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 const APP_KEY = 'app';
+const SYNC_CURSOR_KEY = 'syncCursor';
 
 let dbPromise: Promise<IDBPDatabase<MenuDB>> | null = null;
 
@@ -99,6 +103,10 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
         // v7 : état applicatif transverse (quota IA, rappels) — clé fixe 'app'.
         if (!db.objectStoreNames.contains('app')) {
           db.createObjectStore('app');
+        }
+        // v8 : méta de sync par document (clé = `${store}:${docId}`, hors ligne).
+        if (!db.objectStoreNames.contains('syncmeta')) {
+          db.createObjectStore('syncmeta');
         }
       },
     });
@@ -305,4 +313,56 @@ export async function loadApp(): Promise<AppState> {
 export async function saveApp(state: AppState): Promise<void> {
   const db = await getDB();
   await db.put('app', state, APP_KEY);
+}
+
+/** Drapeau « adoption faite » pour un foyer (évite de re-fusionner à chaque login). */
+export async function isFoyerAdopted(foyerId: string): Promise<boolean> {
+  const db = await getDB();
+  return !!(await db.get('meta', 'adopted:' + foyerId));
+}
+
+export async function markFoyerAdopted(foyerId: string): Promise<void> {
+  const db = await getDB();
+  await db.put('meta', true, 'adopted:' + foyerId);
+}
+
+/** Suppression locale générique par id (utilisée par la sync sur tombstone distant). */
+export async function deleteById(
+  store: 'recipes' | 'weeks' | 'destinataires' | 'securite',
+  id: string,
+): Promise<void> {
+  const db = await getDB();
+  await db.delete(store, id);
+}
+
+// ── Méta de sync (v8) ────────────────────────────────────────────────────────
+/** Toute la méta de sync, indexée par `${store}:${docId}`. */
+export async function loadAllSyncMeta(): Promise<MetaIndex> {
+  const db = await getDB();
+  const keys = (await db.getAllKeys('syncmeta')) as string[];
+  const vals = await db.getAll('syncmeta');
+  const out: MetaIndex = {};
+  keys.forEach((k, i) => (out[k] = vals[i]));
+  return out;
+}
+
+export async function putSyncMeta(key: string, meta: DocMeta): Promise<void> {
+  const db = await getDB();
+  await db.put('syncmeta', meta, key);
+}
+
+export async function delSyncMeta(key: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('syncmeta', key);
+}
+
+/** Curseur de pull (max updated_at déjà rapatrié) — stocké dans `meta`. */
+export async function loadSyncCursor(): Promise<string | null> {
+  const db = await getDB();
+  return ((await db.get('meta', SYNC_CURSOR_KEY)) as string | undefined) ?? null;
+}
+
+export async function saveSyncCursor(cursor: string): Promise<void> {
+  const db = await getDB();
+  await db.put('meta', cursor, SYNC_CURSOR_KEY);
 }

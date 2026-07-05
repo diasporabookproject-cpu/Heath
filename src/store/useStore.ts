@@ -52,6 +52,8 @@ interface State {
   settings: CuisineSettings;
   app: AppState;
   init: () => Promise<void>;
+  /** Recharge les données depuis IndexedDB (après un pull de sync), sans reset de nav. */
+  refresh: () => Promise<void>;
   navWeek: (delta: number) => Promise<void>;
   /** Consomme une génération IA (porte ③) ; borné à la limite mensuelle. */
   consumeAi: () => void;
@@ -90,6 +92,17 @@ export const useStore = create<State>((set, get) => ({
     const app: AppState = { ...loadedApp, aiQuota };
     if (loadedApp.aiQuota?.month !== aiQuota.month) void saveApp(app);
     set({ recipes, week, weekOffset: 0, settings, app, ready: true });
+  },
+
+  async refresh() {
+    const [recipes, week, settings, loadedApp] = await Promise.all([
+      loadRecipes(),
+      weekFor(weekId(get().weekOffset)),
+      loadSettings(),
+      loadApp(),
+    ]);
+    const aiQuota = normalizeQuota(loadedApp.aiQuota, currentMonth());
+    set({ recipes, week, settings, app: { ...loadedApp, aiQuota } });
   },
 
   consumeAi() {
