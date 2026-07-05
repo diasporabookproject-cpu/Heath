@@ -3,6 +3,13 @@
 // Sortie STRUCTURÉE garantie via "tool use" (le modèle remplit un schéma → toujours
 // un objet valide, jamais de "réponse illisible"). Clé serveur uniquement.
 // Secret requis : ANTHROPIC_API_KEY. Optionnel : ANTHROPIC_MODEL.
+// S5 : les modes qui GÉNÈRENT (import + génération) exigent une session et sont
+// plafonnés côté SERVEUR (table `ai_usage`, plafond généreux — couture premium ①).
+// estimate/translate restent gratuits (translate = différenciateur darija, D5).
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const AI_CAP = 100; // générations / mois / foyer (Q4). Constante serveur, ajustable.
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -111,6 +118,52 @@ async function callTool(key: string, system: string, user: string, maxTokens: nu
   return { input: block.input as Record<string, unknown> };
 }
 
+// deno-lint-ignore no-explicit-any
+type Admin = any;
+
+interface Reserved {
+  ok: true;
+  admin: Admin;
+  foyer: string;
+  month: string;
+  used: number;
+  cap: number;
+}
+interface Denied {
+  ok: false;
+  status: number;
+  error: string;
+}
+
+/** Identifie le foyer via le JWT et RÉSERVE une génération (incrémente sous le plafond). */
+async function reserveQuota(req: Request): Promise<Reserved | Denied> {
+  const url = Deno.env.get('SUPABASE_URL');
+  const svc = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!url || !svc) return { ok: false, status: 500, error: 'Config serveur manquante.' };
+  const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+  if (!jwt) return { ok: false, status: 401, error: 'Connecte-toi pour utiliser l’IA.' };
+  const admin = createClient(url, svc, { auth: { persistSession: false } });
+  const { data: u, error: uErr } = await admin.auth.getUser(jwt);
+  if (uErr || !u.user) return { ok: false, status: 401, error: 'Session invalide.' };
+  const { data: mem } = await admin.from('membres').select('foyer_id').eq('user_id', u.user.id).limit(1);
+  const foyer = mem?.[0]?.foyer_id as string | undefined;
+  if (!foyer) return { ok: false, status: 403, error: 'Foyer introuvable.' };
+  const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+  await admin.from('ai_usage').upsert({ foyer_id: foyer, month, used: 0 }, { onConflict: 'foyer_id,month', ignoreDuplicates: true });
+  const { data: cur } = await admin.from('ai_usage').select('used').eq('foyer_id', foyer).eq('month', month).single();
+  const used = (cur?.used as number) ?? 0;
+  if (used >= AI_CAP) return { ok: false, status: 429, error: `Quota IA du mois atteint (${AI_CAP}/mois).` };
+  await admin.from('ai_usage').update({ used: used + 1 }).eq('foyer_id', foyer).eq('month', month);
+  return { ok: true, admin, foyer, month, used: used + 1, cap: AI_CAP };
+}
+
+/** Rembourse une réservation si la génération a échoué (on ne fait pas payer un échec). */
+async function refund(r: Reserved): Promise<void> {
+  const { data: cur } = await r.admin.from('ai_usage').select('used').eq('foyer_id', r.foyer).eq('month', r.month).single();
+  const used = (cur?.used as number) ?? 0;
+  if (used > 0) await r.admin.from('ai_usage').update({ used: used - 1 }).eq('foyer_id', r.foyer).eq('month', r.month);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   try {
@@ -131,9 +184,11 @@ Deno.serve(async (req: Request) => {
     if (body?.mode === 'import') {
       const text = String(body.text ?? '').trim();
       if (!text) return json({ error: 'Texte manquant.' }, 400);
+      const q = await reserveQuota(req);
+      if (!q.ok) return json({ error: q.error }, q.status);
       const out = await callTool(key, SYSTEM_IMPORT, `Texte de la recette :\n${text}`, 2048, RECIPE_TOOL);
-      if (out.error) return json({ error: out.error }, 502);
-      return json({ recipe: out.input }, 200);
+      if (out.error) { await refund(q); return json({ error: out.error }, 502); }
+      return json({ recipe: out.input, quota: { used: q.used, cap: q.cap } }, 200);
     }
 
     if (body?.mode === 'translate') {
@@ -146,9 +201,11 @@ Deno.serve(async (req: Request) => {
 
     const intention = body?.intention;
     if (!intention || typeof intention !== 'string') return json({ error: 'Intention manquante.' }, 400);
+    const q = await reserveQuota(req);
+    if (!q.ok) return json({ error: q.error }, q.status);
     const out = await callTool(key, SYSTEM, `Recette voulue : ${intention}`, 2048, RECIPE_TOOL);
-    if (out.error) return json({ error: out.error }, 502);
-    return json({ recipe: out.input }, 200);
+    if (out.error) { await refund(q); return json({ error: out.error }, 502); }
+    return json({ recipe: out.input, quota: { used: q.used, cap: q.cap } }, 200);
   } catch (e) {
     return json({ error: String((e as Error).message ?? e) }, 500);
   }

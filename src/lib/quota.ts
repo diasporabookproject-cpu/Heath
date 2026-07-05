@@ -1,8 +1,9 @@
-// Quota IA mensuel (L3-2) — FRONT-ONLY : un simple garde-fou d'usage, pas un
-// péage (la saisie manuelle reste illimitée). Persisté dans le store `app`.
-// Logique pure & testable : le reset se fait au changement de mois.
+// Quota IA mensuel (L3-2/S5). Le plafond AUTHORITATIF est désormais CÔTÉ SERVEUR
+// (edge function + table `ai_usage`, couture premium ① — cf. G3 : ne transite pas
+// par la sync). Ici = **cache d'affichage** aligné sur le plafond serveur (Q4 = 100),
+// jamais un péage (la saisie manuelle reste illimitée). Reset au changement de mois.
 
-export const AI_MONTHLY_LIMIT = 5;
+export const AI_MONTHLY_LIMIT = 100;
 
 export interface AiQuota {
   /** Mois de référence, format 'YYYY-MM'. */
