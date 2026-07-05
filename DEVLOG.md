@@ -87,14 +87,16 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 32. **Page Nounou (brief FN0–FN5) — nouvelle page par rôle, sœur de Cuisine** : dossier `src/nounou/`, **modèle en couches** (`Moment` récurrent / `Periode` rythme alternatif sur plage / `Ponctuel` un jour / `Enfant`), **précédence stricte `ponctuel > période > rythme habituel`** (`projection.ts`, aligné RRULE pour un futur ICS). **Stockage = document JSON unique** (store IndexedDB `nounou`, clé `'doc'`, **DB v5**), fusion à la lecture (`mergeNounouDoc`) pour la compat ascendante ; **last-write-wins** assumé (MVP). Store dédié `useNounou` (séparé de Cuisine). **Chevauchement de périodes interdit à la création** (`periodesOverlap`). **Jours d'école = lun–ven (0–4)**, tous = 0–6. Numéros d'urgence Maroc **19/15/150** seedés « à vérifier ». Réutilise tokens + coquille Cuisine (`cz-*`), classes propres `nz-*`. Onglets **Journée · Conduites · Fiche urgence** (« Repères » banni). Construit par lots, ordre **0 → 1 → (4.1+4.3) → 5 → 2 → 3 → 4.2** (page reçue partageable tôt, traduction en dernier). ✅ Lots 0, 1, **4.1+4.3**, **5**, **2** et **3** livrés — **MVP fonctionnellement complet** (admin Journée + Conduites/voix + Fiche urgence/enfants → lien scopé → page reçue + 3 accès + RTL, réutilisant la table `espaces`). ⏳ reste : **Lot 4.2** (traduction edge function + relecture du sensible) — le seul 🔴.
 
-## État actuel (au 2026-07-04)
+## État actuel (au 2026-07-05)
 
-> **⚠️ Refonte UI/UX « Bento lumineux » → Manzil en cours sur la branche `refonte/bento-v1`.**
+> **✅ Refonte UI/UX « Bento lumineux » → Manzil FUSIONNÉE EN PROD** (`claude/jolly-wozniak-s83str`,
+> merge `--no-ff` du 2026-07-05, décision Amine « avance sans attendre la QA manuelle »).
 > Voir **`PASSATION_REFONTE_BENTO.md`** (dossier de passation complet : état, ADR, fichiers,
-> comment auditer/tester, et fonctionnalités restantes à cadrer). Résumé express :
+> comment auditer/tester). Résumé express :
 > - **Lots 0→3 COMPLETS** : socle `mz-`, hub Maison, Cuisine+Nounou rhabillées Manzil, **Lot 3 « Flux »** entier (EnvoiSheet v2, 3 portes + quota IA, file de relecture, collections/packs, rappel d'envoi). Prototype `prototype-interactif-v6-1-bento.html` committé (spec).
-> - **Prévue déployée** sur l'URL de prod via `refonte/bento-v1` ; **branche de prod `claude/jolly-wozniak-s83str` intacte** (ce n'est pas fusionné).
-> - **Reste** : test QNA global + check-list d'Amine, puis **décision de merge en prod** (retirer le déclencheur temporaire `refonte/bento-v1` du workflow au merge).
+> - **Manzil est désormais la prod** (déclencheur temporaire `refonte/bento-v1` retiré du workflow).
+> - **Retour arrière trivial** : tag **`pre-bento`** pointe sur l'état pré-refonte ; rollback = `git revert -m 1 <merge>` (sans force-push) ou reset sur `pre-bento`. Branche `refonte/bento-v1` conservée comme ancre.
+> - **QA d'Amine reportée** : à faire directement sur la prod quand il aura le temps ; le filet de retour arrière reste en place.
 >
 > **➡️ Cap store / prod (post-merge).** Décisions d'architecture **actées** dans
 > **`DECISIONS_STORE_V1.md`** (Capacitor, foyer=identité Manzil, OTP, sync complète LWW,

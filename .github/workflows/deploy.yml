@@ -2,9 +2,9 @@ name: Déploiement GitHub Pages
 
 on:
   push:
-    # `refonte/bento-v1` = prévue de la refonte sur l'URL de prod (décision Amine).
-    # La branche de prod reste intacte ; à retirer avant/au moment du merge final.
-    branches: [claude/jolly-wozniak-s83str, refonte/bento-v1]
+    # Déploiement de la prod uniquement. La refonte Bento→Manzil a été fusionnée ici
+    # (merge --no-ff, 2026-07-05) ; retour arrière trivial via le tag `pre-bento`.
+    branches: [claude/jolly-wozniak-s83str]
   workflow_dispatch:
 
 permissions:
