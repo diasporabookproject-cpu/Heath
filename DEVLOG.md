@@ -95,6 +95,13 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 > - **Lots 0→3 COMPLETS** : socle `mz-`, hub Maison, Cuisine+Nounou rhabillées Manzil, **Lot 3 « Flux »** entier (EnvoiSheet v2, 3 portes + quota IA, file de relecture, collections/packs, rappel d'envoi). Prototype `prototype-interactif-v6-1-bento.html` committé (spec).
 > - **Prévue déployée** sur l'URL de prod via `refonte/bento-v1` ; **branche de prod `claude/jolly-wozniak-s83str` intacte** (ce n'est pas fusionné).
 > - **Reste** : test QNA global + check-list d'Amine, puis **décision de merge en prod** (retirer le déclencheur temporaire `refonte/bento-v1` du workflow au merge).
+>
+> **➡️ Cap store / prod (post-merge).** Décisions d'architecture **actées** dans
+> **`DECISIONS_STORE_V1.md`** (Capacitor, foyer=identité Manzil, OTP, sync complète LWW,
+> **v1 tout gratuit**, `manzil.ma`, RGPD/loi 09-08). Réflexion amont : `REFLEXION_ARCHI_STORE.md`.
+> **Cadrage implémenteur du 1ᵉʳ lot de prod** (« Comptes + Sync ») + risques + Q1–Q6 +
+> sous-lots chiffrés : **`READBACK_LOT_COMPTES_SYNC.md`**. Séquence : QA→merge, puis
+> Lot Comptes+Sync (la vraie dette), puis Lot Coquille (Capacitor). Rien ne démarre avant le merge.
 
 **Fait (base, avant refonte) :**
 - P0 complet : composer, feux tricolores + moyenne semaine, vue Cuisinière (copie WhatsApp), bibliothèque, persistance, mobile-first, PWA.
@@ -192,6 +199,9 @@ Branche dédiée `refonte/bento-v1` (tag `pre-bento` posé sur la branche par d�
   - **O1 (décidé : option B, fidèle au prototype)** — la mention de rappel sur Maison devient **persistante** : « ● Du nouveau — ton rendez-vous du {jour} {heure} » reste tant qu'un rappel est réglé et qu'il y a du nouveau (avant : affichée une seule fois par échéance). **Simplification** : la mécanique de gating par échéance (`reminderDue`/`lastOccurrence`, `bumpReminderCheck`, `AppState.lastReminderCheck`) devenait inutile → **retirée** (les notifications natives futures, via Capacitor, sont planifiées par l'OS et ne réutiliseront pas cette logique JS). Tests passés de 90 → **86** (retrait des 4 tests d'échéance obsolètes, pas une perte de couverture). Vérifié : mention persistante au 1er **et** 2e reload.
   - **O2 (accepté tel quel)** — anti-doublon des packs par nom : renommer une recette de pack puis réinstaller peut la recréer. Cas de coin, sans danger ; à revoir au moment du **contenu éditorial** des packs (provenance `packId` stable).
 - **✅ Lot 3 « Flux » COMPLET** (C1 · C2 · #2 pastilles · L3-1b EnvoiSheet v2 · L3-2 3 portes+quota · L3-3 file de relecture · L3-4 collections · L3-5 rappel). Avec les Lots 0→2, la **refonte Bento → Manzil est fonctionnellement complète** sur `refonte/bento-v1` (prévue déployée). Reste : **test QNA global + check-list** d'Amine, puis **décision de merge en prod** (retirer le déclencheur temporaire `refonte/bento-v1` du workflow au merge).
+
+### Session 9 — 2026-07-05 (Cadrage store / prod — revue des décisions d'archi)
+Pendant la QA d'Amine, préparation du **cap store** en binôme avec l'instance de contrôle (revue, jamais de code). **Réflexion amont** `REFLEXION_ARCHI_STORE.md` (hébergement / DB / auth / paywall / comptes — sans trancher, pour nourrir sa réflexion globale). L'instance a rendu **`DECISIONS_STORE_V1.md`** (D1→D8 + séquence). **Revue de divergences : aucune de fond** — alignement fort. Notes d'implémenteur consignées dans **`READBACK_LOT_COMPTES_SYNC.md`** (ancrage codebase réelle, risques ordonnés, Q1–Q6 à trancher avant code, sous-lots S1–S7 chiffrés 🟢🟡🔴). Points relevés : (a) **D4** corrige le vocabulaire — l'app est **local-only** aujourd'hui, cible = local-first **avec sync** ; (b) **D5 « tout gratuit v1 »** = décision produit d'Amine, mon penchant freemium reporté mais la **précaution d'archi** (quota IA côté serveur) gardée ; **1 clarification ouverte** = plafond serveur *généreux* (mon avis : oui, anti-coût Anthropic) vs *aucun* (Q4) ; (c) **séquence sync-avant-coquille** validée + **ajout** d'un mini-spike build iOS très tôt en parallèle (signature Apple = poste le plus surprenant). **Rien ne démarre avant le merge de la refonte** (priorité = QA). Docs versionnés ; aucune ligne de code applicatif touchée ; aucune action Supabase.
 
 ### Session 7 — 2026-06-28 (Page Nounou)
 - **Lot 4.2 livré — traduction + relecture (dernier 🔴)** : edge function **`generate-translation`** (tool use, darija/arabe/anglais ; garde chiffres/heures/unités + **noms propres** ; lots de 40). Cache `NounouDoc.translations[langue]` (`{src:{tr,sensible,status}}`) ; `collect.ts` étiquette planning (non-sensible) vs sensible ; `translate.ts` appelle l'edge. **Figé au partage** (`payload.trans`) ; page reçue rend via `tr(src)` (repli français), RTL/Naskh en place.

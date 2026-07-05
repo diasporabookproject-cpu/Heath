@@ -7,6 +7,13 @@
 > décision) · questions ouvertes**. Objectif : que l'instance de brainstorm/QA
 > l'intègre à sa réflexion globale **avant** qu'on tranche quoi que ce soit.
 > Écrit par l'instance qui code. Base : `refonte/bento-v1`. 2026-07-05.
+>
+> **➜ Suite : les décisions sont prises dans `DECISIONS_STORE_V1.md` (répond au §8).**
+> Deux précisions à en retenir : (1) terminologie — l'app actuelle est **local-only**
+> (aucune sync), pas « local-first » au sens strict (= local **+** sync) ; la cible est
+> bien le local-first-avec-sync. (2) **v1 = tout gratuit, aucun paywall construit** ; mon
+> penchant freemium est **reporté**, mais la précaution d'archi (quota IA côté serveur)
+> est **conservée**. Cadrage technique du 1ᵉʳ lot : `READBACK_LOT_COMPTES_SYNC.md`.
 
 ---
 
