@@ -3,8 +3,8 @@ import { AI_MONTHLY_LIMIT, consume, currentMonth, normalizeQuota, remaining } fr
 
 describe('quota IA', () => {
   it('currentMonth formate YYYY-MM', () => {
-    expect(currentMonth(new Date(2026, 6, 4))).toBe('2026-07');
-    expect(currentMonth(new Date(2026, 11, 31))).toBe('2026-12');
+    expect(currentMonth(new Date(Date.UTC(2026, 6, 4)))).toBe('2026-07');
+    expect(currentMonth(new Date(Date.UTC(2026, 11, 31)))).toBe('2026-12');
   });
 
   it('normalizeQuota : absent → neuf', () => {

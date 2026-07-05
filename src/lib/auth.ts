@@ -1,4 +1,5 @@
 import { getSupabase } from './supabase';
+import { clearSyncState } from './db';
 
 // Auth OTP par e-mail (code 6 chiffres) + foyer paresseux + suppression de compte.
 // L'auth n'est JAMAIS bloquante : l'app marche sans compte ; se connecter active
@@ -12,8 +13,13 @@ export async function sendOtp(email: string): Promise<{ error?: string }> {
     email: email.trim(),
     // Redirige le lien magique vers l'app (utile tant que l'e-mail n'a pas de code
     // à 6 chiffres — nécessite un SMTP perso pour éditer le modèle). Le retour du
-    // lien ouvre la session via detectSessionInUrl.
-    options: { shouldCreateUser: true, emailRedirectTo: window.location.origin },
+    // lien ouvre la session via detectSessionInUrl. ⚠️ origin + pathname : en prod
+    // GitHub Pages l'app vit sous /Heath/ — origin seul renverrait vers un 404
+    // (FIX revue Q n°3, même valeur que l'ancien sendMagicLink).
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: window.location.origin + window.location.pathname,
+    },
   });
   return error ? { error: error.message } : {};
 }
@@ -51,24 +57,71 @@ export async function ensureFoyer(): Promise<{ foyerId?: string; error?: string 
   return { foyerId: fid as string };
 }
 
-/** Id du foyer de l'utilisateur connecté (null si non connecté / pas de foyer). */
+/**
+ * Id du foyer de l'utilisateur connecté (null si non connecté / pas de foyer).
+ * Cache par utilisateur (le foyer est stable pour une session — FIX revue Q,
+ * efficacité) ; une ERREUR de requête ne renvoie plus un faux « pas de foyer »
+ * mais laisse le cache/`null` explicite (FIX n°2, espaces non rattachés).
+ */
+let foyerCache: { userId: string; foyerId: string } | null = null;
+
+export function invalidateFoyerCache(): void {
+  foyerCache = null;
+}
+
 export async function currentFoyerId(): Promise<string | null> {
   const supa = getSupabase();
   if (!supa) return null;
   const { data: u } = await supa.auth.getUser();
   if (!u.user) return null;
-  const { data } = await supa.from('membres').select('foyer_id').eq('user_id', u.user.id).limit(1);
-  return (data?.[0]?.foyer_id as string) ?? null;
+  if (foyerCache && foyerCache.userId === u.user.id) return foyerCache.foyerId;
+  const { data, error } = await supa
+    .from('membres')
+    .select('foyer_id')
+    .eq('user_id', u.user.id)
+    .limit(1);
+  if (error) return null; // transitoire : pas de cache posé, re-tenté au prochain appel
+  const foyerId = (data?.[0]?.foyer_id as string) ?? null;
+  if (foyerId) foyerCache = { userId: u.user.id, foyerId };
+  return foyerId;
 }
 
-/** Quitte le foyer courant (retire son appartenance). Au rechargement, un foyer neuf est recréé. */
+/**
+ * Quitte le foyer courant. FIX revue Q n°1 : un OWNER ne laisse jamais un foyer
+ * orphelin — seul membre ⇒ le foyer (et son contenu cloud) est supprimé (cascade) ;
+ * d'autres membres ⇒ refus explicite (transfert de propriété = hors v1).
+ * Au rechargement, un foyer neuf est recréé.
+ */
 export async function leaveFoyer(): Promise<{ error?: string }> {
   const supa = getSupabase();
   if (!supa) return { error: 'Connexion indisponible.' };
   const { data: u } = await supa.auth.getUser();
   if (!u.user) return { error: 'Non connecté.' };
-  const { error } = await supa.from('membres').delete().eq('user_id', u.user.id);
-  return error ? { error: error.message } : {};
+  const { data: mem, error: memErr } = await supa
+    .from('membres')
+    .select('foyer_id, role')
+    .eq('user_id', u.user.id)
+    .limit(1);
+  if (memErr) return { error: memErr.message };
+  const m = mem?.[0];
+  if (!m) return {}; // déjà sans foyer
+  if (m.role === 'owner') {
+    const { count } = await supa
+      .from('membres')
+      .select('user_id', { count: 'exact', head: true })
+      .eq('foyer_id', m.foyer_id);
+    if ((count ?? 1) > 1) {
+      return { error: 'Ton foyer a d’autres membres — retire-les d’abord (ou supprime le foyer).' };
+    }
+    const { error } = await supa.from('foyers').delete().eq('id', m.foyer_id);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supa.from('membres').delete().eq('user_id', u.user.id);
+    if (error) return { error: error.message };
+  }
+  invalidateFoyerCache();
+  await clearSyncState();
+  return {};
 }
 
 /** Extrait le message d'erreur renvoyé par une edge function (sinon message générique). */
@@ -100,6 +153,10 @@ export async function acceptInvite(code: string): Promise<{ foyerId?: string; er
   if (!supa) return { error: 'Connexion indisponible.' };
   const { data, error } = await supa.functions.invoke('accept-invite', { body: { code } });
   if (error) return { error: await fnError(error) };
+  // Nouveau contexte de foyer : purge l'état de sync local (méta/curseurs) pour
+  // que le rechargement passe par une adoption propre (rituel Q1).
+  invalidateFoyerCache();
+  await clearSyncState();
   return { foyerId: data?.foyer_id };
 }
 
@@ -107,13 +164,17 @@ export async function acceptInvite(code: string): Promise<{ foyerId?: string; er
  * Suppression de compte in-app (exigence Apple 5.1.1(v)). L'opération vit côté
  * serveur (edge function `delete-account` en service_role) : selon le rôle, elle
  * fait quitter le foyer (membre) ou supprime le foyer et son contenu (owner),
- * puis efface l'utilisateur auth. On déconnecte ensuite localement.
+ * puis efface l'utilisateur auth. Localement : déconnexion + PURGE de l'état de
+ * sync (FIX revue Q n°10 — pas d'état fantôme qui re-téléverserait tout en
+ * silence après une éventuelle ré-inscription ; la copie locale, elle, reste).
  */
 export async function deleteAccount(): Promise<{ error?: string }> {
   const supa = getSupabase();
   if (!supa) return { error: 'Connexion indisponible.' };
   const { error } = await supa.functions.invoke('delete-account', { method: 'POST' });
-  if (error) return { error: error.message };
+  if (error) return { error: await fnError(error) };
+  invalidateFoyerCache();
+  await clearSyncState();
   await supa.auth.signOut();
   return {};
 }

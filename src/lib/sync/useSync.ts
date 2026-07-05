@@ -1,59 +1,109 @@
 import { useEffect, useRef } from 'react';
 import type { Session } from '../supabase';
 import { ensureFoyer } from '../auth';
-import { adopt, push, syncNow } from './engine';
-import { isFoyerAdopted, markFoyerAdopted } from '../db';
-import { useStore } from '../../store/useStore';
+import { adopt, remoteHasDocs, syncNow, push } from './engine';
+import { loadLastFoyer, saveLastFoyer, clearSyncState, onDataChanged } from '../db';
 
-// Contrôleur de sync (non bloquant, best-effort). À la connexion : résout le foyer,
-// fait l'adoption UNE fois (Q1), puis un cycle push+pull. Ensuite : sync au focus,
-// et push débouncé quand les données locales changent. Le heartbeat de fond est
-// coupé (décision QC) — focus + post-change suffisent pour un mono-éditeur.
+// Contrôleur de sync (non bloquant, best-effort).
+// Séquence par cycle (login ET focus — un échec d'adoption se retente donc) :
+//   foyer → si nouveau contexte (≠ lastFoyer) : purge méta + ADOPTION (avec
+//   consentement explicite si le foyer a déjà du contenu cloud — rituel Q1) →
+//   seulement alors le foyer devient « actif » → push/pull.
+// Le push débouncé n'écoute plus le seul store cuisine : il s'abonne au signal
+// générique de db.ts (tous les stores) et n'agit que sur un foyer ACTIF (donc
+// jamais pendant la fenêtre d'adoption — l'invariant « cloud gagne » tient).
 
 const PUSH_DEBOUNCE_MS = 2500;
 
-export function useSync(session: Session | null, onChanged: () => void): void {
-  const foyerRef = useRef<string | null>(null);
-  const busyRef = useRef(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+export interface AdoptRequest {
+  foyerId: string;
+  /** À appeler après consentement (fera l'adoption puis activera la sync). */
+  proceed: () => void;
+}
 
-  // Résolution foyer + adoption + 1er sync.
+export function useSync(
+  session: Session | null,
+  onChanged: () => void,
+  onAskAdopt: (req: AdoptRequest) => void,
+): void {
+  // Foyer ACTIF = adoption établie, push/pull autorisés. Null tant que non prêt.
+  const activeFoyer = useRef<string | null>(null);
+  const busy = useRef(false);
+  const asked = useRef<string | null>(null); // consentement déjà demandé (par foyer, par session)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // refs stables vers les callbacks (évite de re-câbler les effets).
+  const onChangedRef = useRef(onChanged);
+  onChangedRef.current = onChanged;
+  const onAskAdoptRef = useRef(onAskAdopt);
+  onAskAdoptRef.current = onAskAdopt;
+
+  const adoptInto = async (foyerId: string) => {
+    // Contexte neuf : purge la méta/curseurs de l'ancien foyer (jamais réutilisés).
+    await clearSyncState();
+    const res = await adopt(foyerId);
+    if (res.error) return false; // on ne marque RIEN : retentera au prochain cycle
+    await saveLastFoyer(foyerId);
+    if (res.changed) onChangedRef.current();
+    return true;
+  };
+
+  const fullSync = async (session: Session | null) => {
+    if (!session || busy.current) return;
+    busy.current = true;
+    try {
+      const { foyerId } = await ensureFoyer();
+      if (!foyerId) return;
+      const last = await loadLastFoyer();
+      if (last !== foyerId) {
+        activeFoyer.current = null; // fenêtre d'adoption : push interdit
+        const has = await remoteHasDocs(foyerId);
+        if (has === null) return; // indéterminable (hors-ligne) : cycle suivant
+        if (has) {
+          // Foyer déjà peuplé → consentement explicite (rituel Q1), une fois par session.
+          if (asked.current !== foyerId) {
+            asked.current = foyerId;
+            onAskAdoptRef.current({
+              foyerId,
+              proceed: () => {
+                void (async () => {
+                  if (await adoptInto(foyerId)) {
+                    activeFoyer.current = foyerId;
+                    const r = await syncNow(foyerId);
+                    if (r.changed) onChangedRef.current();
+                  }
+                })();
+              },
+            });
+          }
+          return; // pas de sync tant que non consenti
+        }
+        if (!(await adoptInto(foyerId))) return;
+      }
+      activeFoyer.current = foyerId;
+      const r = await syncNow(foyerId);
+      if (r.changed) onChangedRef.current();
+    } finally {
+      busy.current = false;
+    }
+  };
+
+  // Connexion / déconnexion.
   useEffect(() => {
-    let cancelled = false;
     if (!session) {
-      foyerRef.current = null;
+      activeFoyer.current = null;
+      asked.current = null;
       return;
     }
-    void (async () => {
-      const { foyerId } = await ensureFoyer();
-      if (cancelled || !foyerId) return;
-      foyerRef.current = foyerId;
-      if (!(await isFoyerAdopted(foyerId))) {
-        const res = await adopt(foyerId);
-        await markFoyerAdopted(foyerId);
-        if (res.changed && !cancelled) onChanged();
-      }
-      const res = await syncNow(foyerId);
-      if (res.changed && !cancelled) onChanged();
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [session, onChanged]);
+    void fullSync(session);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
-  // Sync au retour au premier plan.
+  // Retour au premier plan → cycle complet (retente aussi une adoption échouée).
   useEffect(() => {
     const onFocus = () => {
-      const foyerId = foyerRef.current;
-      if (!foyerId || busyRef.current || document.visibilityState === 'hidden') return;
-      busyRef.current = true;
-      void syncNow(foyerId)
-        .then((r) => {
-          if (r.changed) onChanged();
-        })
-        .finally(() => {
-          busyRef.current = false;
-        });
+      if (document.visibilityState === 'hidden') return;
+      void fullSync(session);
     };
     window.addEventListener('visibilitychange', onFocus);
     window.addEventListener('focus', onFocus);
@@ -61,21 +111,23 @@ export function useSync(session: Session | null, onChanged: () => void): void {
       window.removeEventListener('visibilitychange', onFocus);
       window.removeEventListener('focus', onFocus);
     };
-  }, [onChanged]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
-  // Push débouncé à chaque changement local (le store couvre Cuisine ; les autres
-  // stores partiront au prochain focus — push lit TOUS les stores de toute façon).
+  // Push débouncé sur TOUT changement de données (signal générique db.ts) —
+  // uniquement quand le foyer est actif (adoption établie).
   useEffect(() => {
-    const unsub = useStore.subscribe(() => {
-      if (!foyerRef.current) return;
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        if (foyerRef.current) void push(foyerRef.current);
+    const unsub = onDataChanged(() => {
+      if (!activeFoyer.current) return;
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        if (activeFoyer.current) void push(activeFoyer.current);
       }, PUSH_DEBOUNCE_MS);
     });
     return () => {
       unsub();
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timer.current) clearTimeout(timer.current);
     };
   }, []);
+
 }

@@ -51,6 +51,30 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   if (!already) {
     // Quitte le foyer actuel (invariant un-foyer-par-utilisateur), puis rejoint.
+    // FIX revue Q n°1 : un OWNER ne laisse jamais un foyer orphelin (docs
+    // inaccessibles + FK owner_user_id RESTRICT qui bloquerait à jamais la
+    // suppression du compte). Seul membre ⇒ son ancien foyer est supprimé
+    // (cascade) ; d'autres membres ⇒ refus explicite.
+    const { data: cur } = await admin
+      .from('membres')
+      .select('foyer_id, role')
+      .eq('user_id', uid);
+    for (const m of cur ?? []) {
+      if (m.role === 'owner') {
+        const { count } = await admin
+          .from('membres')
+          .select('user_id', { count: 'exact', head: true })
+          .eq('foyer_id', m.foyer_id);
+        if ((count ?? 1) > 1) {
+          return json(
+            { error: 'Ton foyer a d’autres membres — retire-les avant de rejoindre un autre foyer.' },
+            409,
+          );
+        }
+        const { error: delErr } = await admin.from('foyers').delete().eq('id', m.foyer_id);
+        if (delErr) return json({ error: delErr.message }, 500);
+      }
+    }
     await admin.from('membres').delete().eq('user_id', uid);
     const { error: insErr } = await admin
       .from('membres')

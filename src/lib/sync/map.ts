@@ -5,16 +5,18 @@ import {
   loadSecurite,
   loadNounou,
   loadApp,
+  loadSettings,
   saveRecipe,
   saveWeek,
   saveDestinataire,
   saveSecurite,
   saveNounou,
   saveApp,
+  saveSettings,
   deleteById,
 } from '../db';
 import type { AppState } from '../db';
-import type { Recipe, WeekMenu, Destinataire, SecuriteFiche, NounouDoc } from '../../types';
+import type { Recipe, WeekMenu, Destinataire, SecuriteFiche, NounouDoc, CuisineSettings } from '../../types';
 import type { LocalDoc, SyncStore } from './plan';
 
 // Correspondance stores IndexedDB ↔ table `docs`. Par ligne pour
@@ -33,13 +35,14 @@ function appForSync(app: AppState): AppState {
 
 /** Rassemble tous les documents locaux synchronisables. */
 export async function collectLocalDocs(): Promise<LocalDoc[]> {
-  const [recipes, weeks, dest, secu, nounou, app] = await Promise.all([
+  const [recipes, weeks, dest, secu, nounou, app, settings] = await Promise.all([
     loadRecipes(),
     loadAllWeeks(),
     loadDestinataires(),
     loadSecurite(),
     loadNounou(),
     loadApp(),
+    loadSettings(),
   ]);
   const docs: LocalDoc[] = [];
   for (const r of recipes) docs.push({ store: 'recipes', docId: r.id, payload: r });
@@ -48,6 +51,8 @@ export async function collectLocalDocs(): Promise<LocalDoc[]> {
   for (const f of secu) docs.push({ store: 'securite', docId: f.id, payload: f });
   if (nounou) docs.push({ store: 'nounou', docId: NOUNOU_DOC_ID, payload: nounou });
   docs.push({ store: 'app', docId: APP_DOC_ID, payload: appForSync(app) });
+  // Réglages Cuisine (objectif kcal, personnes) — périmètre D4 « réglages ».
+  docs.push({ store: 'settings', docId: 'settings', payload: settings });
   return docs;
 }
 
@@ -64,6 +69,8 @@ export async function applyRemote(store: SyncStore, _docId: string, payload: unk
       return saveSecurite(payload as SecuriteFiche);
     case 'nounou':
       return saveNounou(payload as NounouDoc);
+    case 'settings':
+      return saveSettings(payload as CuisineSettings);
     case 'app': {
       // G3 : on préserve l'aiQuota LOCAL (vérité serveur ailleurs), on n'adopte
       // que le reste des réglages (rappels) venus du cloud.

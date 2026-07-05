@@ -19,7 +19,7 @@ NNNN_slug.sql
 | `0001_*` | S1 | `foyers`, `membres`, `invitations`, `docs`, `ai_usage` + RLS + index (tables neuves, s'applique sur staging vierge) |
 | `0002_*` | S6/QB | `espaces.foyer_id` **on delete cascade** (suppr. foyer ⇒ liens morts) + policies auteur — contre la prod (table `espaces` préexistante) |
 | `0003_*` | S3′ | bucket privé audio par foyer + policies storage |
-| `0004_*` | S5 | RPC quota IA (vérif/incrément serveur) si non couvert par edge function |
+| `0004_*` | FIX n°9 | **RPC atomiques quota IA** (`reserve_ai_usage`/`refund_ai_usage`) — à appliquer AVANT de redéployer `generate-recipe` |
 | … | | (complété au fil des read-backs) |
 
 ## Comment on applique (staging d'abord, toujours)

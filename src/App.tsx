@@ -11,7 +11,9 @@ import { Sheet } from './ui/primitives';
 import { readEspaceToken } from './lib/espace';
 import { supabaseEnabled } from './lib/supabase';
 import { useSession } from './lib/useSession';
-import { useSync } from './lib/sync/useSync';
+import { useSync, type AdoptRequest } from './lib/sync/useSync';
+import { downloadExport } from './lib/exportData';
+import { useNounou } from './nounou/useNounou';
 import type { Personne } from './maison/personnes';
 
 // Navigation hub (L1-2) : Maison = écran racine ; les pages de rôle s'ouvrent en
@@ -31,8 +33,17 @@ export default function App() {
   // (personne = contexte) : la page ouvre sa feuille d'envoi pré-sélectionnée.
   const [shareFor, setShareFor] = useState<string | null>(null);
   const { session } = useSession();
-  // Sync cloud (S3) : non bloquante ; rafraîchit l'UI si un pull change le local.
-  useSync(session, refresh);
+  // Rituel d'adoption (Q1) : quand le foyer rejoint a déjà du contenu cloud, la
+  // fusion exige un consentement explicite (jamais silencieuse) + export préalable.
+  const [adoptReq, setAdoptReq] = useState<AdoptRequest | null>(null);
+  // Sync cloud (S3) : non bloquante ; après un pull qui change le local, recharge
+  // le store Cuisine ET le doc Nounou (sinon la vue Nounou garderait un doc
+  // périmé en mémoire et le ré-écraserait au prochain save — FIX revue Q n°6).
+  const onSynced = () => {
+    void refresh();
+    void useNounou.getState().init();
+  };
+  useSync(session, onSynced, setAdoptReq);
 
   // Espace permanent d'un destinataire (#e=) : lecture seule, sans données locales.
   const espaceToken = readEspaceToken();
@@ -157,6 +168,33 @@ export default function App() {
         </Sheet>
       )}
       {accountOpen && <AccountSheet session={session} onClose={() => setAccountOpen(false)} />}
+
+      {adoptReq && (
+        <Sheet
+          title="Rejoindre ce foyer ?"
+          sub="Ce foyer a déjà du contenu dans le cloud. Ta maison sur cet appareil va le rejoindre : on garde tout, et en cas de doublon c’est la version du foyer qui gagne."
+          onClose={() => setAdoptReq(null)}
+        >
+          <div className="mz-sm" style={{ marginBottom: 12 }}>
+            Par précaution, une sauvegarde de tes données locales est téléchargée avant la fusion.
+          </div>
+          <div className="mz-btnrow">
+            <button className="mz-btn" onClick={() => setAdoptReq(null)}>
+              Plus tard
+            </button>
+            <button
+              className="mz-btn primary"
+              onClick={() => {
+                void downloadExport(); // filet Q1 : export AVANT toute première fusion
+                adoptReq.proceed();
+                setAdoptReq(null);
+              }}
+            >
+              Fusionner nos maisons
+            </button>
+          </div>
+        </Sheet>
+      )}
     </div>
   );
 }

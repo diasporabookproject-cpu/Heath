@@ -6,6 +6,16 @@
 > traçage inter-fichiers, réutilisation, simplification, efficacité, altitude,
 > conventions CLAUDE.md), dédup 32 candidats → vérification → **10 findings retenus**.
 > 2026-07-05.
+>
+> **✅ STATUT (post-FIX, même jour) : les 10 findings P0+P1 sont CORRIGÉS**
+> (commit « fix(qa) »), plus une partie des P2 (badges quota, refund sur throw,
+> course audio + cache négatif, fuseau du mois, batching du push, toast quota FC16,
+> cache foyer, + oubli découvert : le flux Nounou ne taguait pas `foyer_id`).
+> Portes re-passées : typecheck · **101 tests** (+3 `nextCursor`) · build · smoke —
+> verts. Staging : migration **0004** (RPC quota atomiques) appliquée, 3 edge
+> functions redéployées (v2/v2/v3), préview à jour. Restent en backlog P2 :
+> dédup fnError/CORS `_shared`, boucles engine, `collectLocalDocs` multi-chargé,
+> `ensureFoyer` par ouverture de sheet, révocation d'invitation owner.
 
 ## Portes qualité (re-passées pendant la revue)
 

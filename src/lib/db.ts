@@ -187,6 +187,7 @@ export async function loadSettings(): Promise<CuisineSettings> {
 export async function saveSettings(s: CuisineSettings): Promise<void> {
   const db = await getDB();
   await db.put('meta', s, SETTINGS_KEY);
+  notifyDataChanged();
 }
 
 export async function loadRecipes(): Promise<Recipe[]> {
@@ -197,6 +198,7 @@ export async function loadRecipes(): Promise<Recipe[]> {
 export async function saveRecipe(recipe: Recipe): Promise<void> {
   const db = await getDB();
   await db.put('recipes', recipe);
+  notifyDataChanged();
 }
 
 export async function loadWeek(id: string): Promise<WeekMenu | undefined> {
@@ -213,6 +215,7 @@ export async function loadAllWeeks(): Promise<WeekMenu[]> {
 export async function saveWeek(week: WeekMenu): Promise<void> {
   const db = await getDB();
   await db.put('weeks', week);
+  notifyDataChanged();
 }
 
 // ── Notes vocales (locales pour l'instant ; synchro Supabase à venir) ────────
@@ -250,11 +253,13 @@ export async function loadDestinataires(): Promise<Destinataire[]> {
 export async function saveDestinataire(d: Destinataire): Promise<void> {
   const db = await getDB();
   await db.put('destinataires', d);
+  notifyDataChanged();
 }
 
 export async function deleteDestinataire(id: string): Promise<void> {
   const db = await getDB();
   await db.delete('destinataires', id);
+  notifyDataChanged();
 }
 
 // ── Référentiel Sécurité ─────────────────────────────────────────────────────
@@ -268,11 +273,13 @@ export async function loadSecurite(): Promise<SecuriteFiche[]> {
 export async function saveSecurite(f: SecuriteFiche): Promise<void> {
   const db = await getDB();
   await db.put('securite', f);
+  notifyDataChanged();
 }
 
 export async function deleteSecurite(id: string): Promise<void> {
   const db = await getDB();
   await db.delete('securite', id);
+  notifyDataChanged();
 }
 
 // ── Document Nounou (page par rôle, modèle en couches) ───────────────────────
@@ -287,6 +294,7 @@ export async function loadNounou(): Promise<NounouDoc | undefined> {
 export async function saveNounou(doc: NounouDoc): Promise<void> {
   const db = await getDB();
   await db.put('nounou', doc, NOUNOU_KEY);
+  notifyDataChanged();
 }
 
 // ── État de transmission (dernier envoi par destinataire, L1-4) ──────────────
@@ -313,17 +321,38 @@ export async function loadApp(): Promise<AppState> {
 export async function saveApp(state: AppState): Promise<void> {
   const db = await getDB();
   await db.put('app', state, APP_KEY);
+  notifyDataChanged();
 }
 
-/** Drapeau « adoption faite » pour un foyer (évite de re-fusionner à chaque login). */
-export async function isFoyerAdopted(foyerId: string): Promise<boolean> {
+/**
+ * Dernier foyer synchronisé sur cet appareil (FIX revue Q n°5). Remplace le flag
+ * `adopted:<foyer>` collant : un foyer ≠ lastFoyer ⇒ contexte neuf ⇒ ré-adoption
+ * (avec purge de la méta) au lieu d'un pull filtré par le curseur d'un autre foyer.
+ */
+export async function loadLastFoyer(): Promise<string | null> {
   const db = await getDB();
-  return !!(await db.get('meta', 'adopted:' + foyerId));
+  return ((await db.get('meta', 'lastFoyer')) as string | undefined) ?? null;
 }
 
-export async function markFoyerAdopted(foyerId: string): Promise<void> {
+export async function saveLastFoyer(foyerId: string): Promise<void> {
   const db = await getDB();
-  await db.put('meta', true, 'adopted:' + foyerId);
+  await db.put('meta', foyerId, 'lastFoyer');
+}
+
+/**
+ * Purge l'état de sync local (méta doc, curseurs, lastFoyer, anciens flags).
+ * Utilisée au changement de foyer (ré-adoption propre) et à la suppression de
+ * compte (FIX revue Q n°10 : pas d'état de sync fantôme après suppression).
+ */
+export async function clearSyncState(): Promise<void> {
+  const db = await getDB();
+  await db.clear('syncmeta');
+  const keys = (await db.getAllKeys('meta')) as string[];
+  for (const k of keys) {
+    if (k === 'lastFoyer' || k === SYNC_CURSOR_KEY || k.startsWith('syncCursor:') || k.startsWith('adopted:')) {
+      await db.delete('meta', k);
+    }
+  }
 }
 
 /** Suppression locale générique par id (utilisée par la sync sur tombstone distant). */
@@ -333,6 +362,7 @@ export async function deleteById(
 ): Promise<void> {
   const db = await getDB();
   await db.delete(store, id);
+  notifyDataChanged();
 }
 
 // ── Méta de sync (v8) ────────────────────────────────────────────────────────
@@ -356,13 +386,29 @@ export async function delSyncMeta(key: string): Promise<void> {
   await db.delete('syncmeta', key);
 }
 
-/** Curseur de pull (max updated_at déjà rapatrié) — stocké dans `meta`. */
-export async function loadSyncCursor(): Promise<string | null> {
+/** Curseur de pull PAR FOYER (FIX revue Q n°5 : plus jamais partagé entre foyers). */
+export async function loadSyncCursor(foyerId: string): Promise<string | null> {
   const db = await getDB();
-  return ((await db.get('meta', SYNC_CURSOR_KEY)) as string | undefined) ?? null;
+  return ((await db.get('meta', 'syncCursor:' + foyerId)) as string | undefined) ?? null;
 }
 
-export async function saveSyncCursor(cursor: string): Promise<void> {
+export async function saveSyncCursor(foyerId: string, cursor: string): Promise<void> {
   const db = await getDB();
-  await db.put('meta', cursor, SYNC_CURSOR_KEY);
+  await db.put('meta', cursor, 'syncCursor:' + foyerId);
+}
+
+// ── Signal de changement de données (FIX revue Q n°6) ───────────────────────
+// Tous les stores (cuisine, nounou, sécurité, destinataires, réglages) notifient
+// ici : le moteur de sync s'y abonne pour déclencher le push débouncé, quel que
+// soit le store — plus de dépendance au seul store zustand cuisine.
+type DataListener = () => void;
+const dataListeners = new Set<DataListener>();
+
+export function onDataChanged(l: DataListener): () => void {
+  dataListeners.add(l);
+  return () => dataListeners.delete(l);
+}
+
+function notifyDataChanged(): void {
+  for (const l of dataListeners) l();
 }

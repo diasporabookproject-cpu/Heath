@@ -12,9 +12,10 @@ export interface AiQuota {
   used: number;
 }
 
-/** Mois courant 'YYYY-MM' (heure locale). */
+/** Mois courant 'YYYY-MM' en UTC — MÊME convention que le serveur (`ai_usage.month`),
+ * sinon l'affichage et le plafond réel divergent aux frontières de mois. */
 export function currentMonth(ref: Date = new Date()): string {
-  return `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, '0')}`;
+  return ref.toISOString().slice(0, 7);
 }
 
 /** Quota normalisé pour `month` : remet à zéro si le mois a changé (ou absent). */

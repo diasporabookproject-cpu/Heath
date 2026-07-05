@@ -58,6 +58,12 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // FIX revue Q n°1 : balaye aussi les foyers dont l'utilisateur est resté
+  // propriétaire SANS ligne membre (orphelins d'anciens flux) — sinon la FK
+  // owner_user_id RESTRICT bloque définitivement deleteUser ci-dessous.
+  const { error: orphErr } = await admin.from('foyers').delete().eq('owner_user_id', uid);
+  if (orphErr) return json({ error: orphErr.message }, 500);
+
   // Efface l'utilisateur auth lui-même.
   const { error: dErr } = await admin.auth.admin.deleteUser(uid);
   if (dErr) return json({ error: dErr.message }, 500);

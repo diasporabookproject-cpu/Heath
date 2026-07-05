@@ -68,17 +68,18 @@ export default function VoiceNote({ recipeId, recipeName, lang }: { recipeId: st
 
   useEffect(() => {
     let revoked: string | null = null;
+    let cancelled = false; // la restauration réseau peut résoudre APRÈS un changement de recette
     loadAudio(recipeId).then(async (local) => {
       // Manquant en local (nouvel appareil) → restauration paresseuse depuis le bucket.
       const blob = local ?? (await restoreAudio(recipeId)) ?? undefined;
-      if (blob) {
-        blobRef.current = blob;
-        const u = URL.createObjectURL(blob);
-        revoked = u;
-        setUrl(u);
-      }
+      if (cancelled || !blob) return;
+      blobRef.current = blob;
+      const u = URL.createObjectURL(blob);
+      revoked = u;
+      setUrl(u);
     });
     return () => {
+      cancelled = true;
       if (revoked) URL.revokeObjectURL(revoked);
       if (timerRef.current) clearInterval(timerRef.current);
     };

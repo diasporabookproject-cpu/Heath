@@ -4,7 +4,14 @@ import { hashStr } from '../hash';
 // à risque : dirty par hash de contenu, LWW, tombstones, garde anti-écrasement (G2),
 // fusion d'adoption (Q1). L'IO (Supabase + IndexedDB) est dans engine.ts.
 
-export type SyncStore = 'recipes' | 'weeks' | 'destinataires' | 'securite' | 'nounou' | 'app';
+export type SyncStore =
+  | 'recipes'
+  | 'weeks'
+  | 'destinataires'
+  | 'securite'
+  | 'nounou'
+  | 'app'
+  | 'settings';
 
 /** Référence d'un document synchronisable. */
 export interface DocRef {
@@ -76,7 +83,7 @@ export function planPush(local: LocalDoc[], meta: MetaIndex): PushPlan {
 export interface PullPlan {
   applies: RemoteDoc[]; // payload distant à écrire en local
   deletes: DocRef[]; // tombstones distants à appliquer en local
-  skipped: DocRef[]; // ignorés : doc local dirty (garde anti-écrasement, G2)
+  skipped: RemoteDoc[]; // ignorés : doc local dirty (garde anti-écrasement, G2)
 }
 
 /**
@@ -92,7 +99,7 @@ export function planPull(
 ): PullPlan {
   const applies: RemoteDoc[] = [];
   const deletes: DocRef[] = [];
-  const skipped: DocRef[] = [];
+  const skipped: RemoteDoc[] = [];
   for (const r of remote) {
     const k = docKey(r);
     const m = meta[k];
@@ -110,6 +117,22 @@ export function planPull(
     }
   }
   return { applies, deletes, skipped };
+}
+
+/**
+ * Prochain curseur de pull (FIX revue Q n°8). Le curseur n'avance JAMAIS au-delà
+ * d'un doc sauté par la garde G2 : il s'arrête juste avant le plus ancien doc
+ * sauté, qui sera donc re-servi au prochain pull (jusqu'à ce que le doc local
+ * cesse d'être dirty — poussé OU revenu à l'état synchronisé).
+ */
+export function nextCursor(remote: RemoteDoc[], skipped: RemoteDoc[], cursor: string): string {
+  if (!skipped.length) {
+    return remote.reduce((mx, r) => (r.updatedAt > mx ? r.updatedAt : mx), cursor);
+  }
+  const minSkipped = skipped.reduce((mn, r) => (r.updatedAt < mn ? r.updatedAt : mn), skipped[0].updatedAt);
+  return remote
+    .filter((r) => r.updatedAt < minSkipped)
+    .reduce((mx, r) => (r.updatedAt > mx ? r.updatedAt : mx), cursor);
 }
 
 // ── ADOPTION (Q1) ────────────────────────────────────────────────────────────

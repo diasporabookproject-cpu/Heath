@@ -7,6 +7,7 @@ import {
   planPush,
   planPull,
   planAdopt,
+  nextCursor,
   type MetaIndex,
   type LocalDoc,
   type RemoteDoc,
@@ -88,6 +89,31 @@ describe('sync/plan — planPull (LWW + G2)', () => {
       m,
     );
     expect(plan.deletes.map((x) => x.docId)).toEqual(['a']);
+  });
+});
+
+describe('sync/plan — nextCursor (le curseur ne dépasse jamais un doc sauté G2)', () => {
+  const r = (docId: string, updatedAt: string): RemoteDoc => ({
+    store: 'recipes',
+    docId,
+    payload: {},
+    updatedAt,
+    deletedAt: null,
+  });
+
+  it('sans doc sauté : avance au max des updated_at', () => {
+    expect(nextCursor([r('a', '2026-01-02'), r('b', '2026-01-05')], [], '2026-01-01')).toBe('2026-01-05');
+  });
+
+  it("s'arrête juste avant le plus ancien doc sauté", () => {
+    const remote = [r('a', '2026-01-02'), r('x', '2026-01-03'), r('b', '2026-01-05')];
+    const skipped = [remote[1]]; // x sauté (dirty local)
+    expect(nextCursor(remote, skipped, '2026-01-01')).toBe('2026-01-02'); // < 03 : x re-servi au prochain pull
+  });
+
+  it('ne recule jamais sous le curseur courant', () => {
+    const remote = [r('x', '2026-01-03')];
+    expect(nextCursor(remote, [remote[0]], '2026-01-02')).toBe('2026-01-02');
   });
 });
 

@@ -135,7 +135,11 @@ interface Denied {
   error: string;
 }
 
-/** Identifie le foyer via le JWT et RÉSERVE une génération (incrémente sous le plafond). */
+/**
+ * Identifie le foyer via le JWT et RÉSERVE une génération — ATOMIQUE via le RPC
+ * `reserve_ai_usage` (migration 0004) : plus de course read-modify-write
+ * (FIX revue Q n°9). Renvoie 429 si le plafond est atteint.
+ */
 async function reserveQuota(req: Request): Promise<Reserved | Denied> {
   const url = Deno.env.get('SUPABASE_URL');
   const svc = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -148,20 +152,41 @@ async function reserveQuota(req: Request): Promise<Reserved | Denied> {
   const { data: mem } = await admin.from('membres').select('foyer_id').eq('user_id', u.user.id).limit(1);
   const foyer = mem?.[0]?.foyer_id as string | undefined;
   if (!foyer) return { ok: false, status: 403, error: 'Foyer introuvable.' };
-  const month = new Date().toISOString().slice(0, 7); // YYYY-MM
-  await admin.from('ai_usage').upsert({ foyer_id: foyer, month, used: 0 }, { onConflict: 'foyer_id,month', ignoreDuplicates: true });
-  const { data: cur } = await admin.from('ai_usage').select('used').eq('foyer_id', foyer).eq('month', month).single();
-  const used = (cur?.used as number) ?? 0;
-  if (used >= AI_CAP) return { ok: false, status: 429, error: `Quota IA du mois atteint (${AI_CAP}/mois).` };
-  await admin.from('ai_usage').update({ used: used + 1 }).eq('foyer_id', foyer).eq('month', month);
-  return { ok: true, admin, foyer, month, used: used + 1, cap: AI_CAP };
+  const month = new Date().toISOString().slice(0, 7); // YYYY-MM (UTC, aligné client)
+  const { data: used, error: rErr } = await admin.rpc('reserve_ai_usage', { f: foyer, m: month, cap: AI_CAP });
+  if (rErr) return { ok: false, status: 500, error: 'Quota indisponible : ' + rErr.message };
+  if (used === null || used === undefined) {
+    return { ok: false, status: 429, error: `Quota IA du mois atteint (${AI_CAP}/mois).` };
+  }
+  return { ok: true, admin, foyer, month, used: used as number, cap: AI_CAP };
 }
 
 /** Rembourse une réservation si la génération a échoué (on ne fait pas payer un échec). */
 async function refund(r: Reserved): Promise<void> {
-  const { data: cur } = await r.admin.from('ai_usage').select('used').eq('foyer_id', r.foyer).eq('month', r.month).single();
-  const used = (cur?.used as number) ?? 0;
-  if (used > 0) await r.admin.from('ai_usage').update({ used: used - 1 }).eq('foyer_id', r.foyer).eq('month', r.month);
+  await r.admin.rpc('refund_ai_usage', { f: r.foyer, m: r.month });
+}
+
+/**
+ * Exécute l'appel LLM sous réservation : rembourse sur `{error}` ET sur throw
+ * (réseau/timeout — FIX revue Q n°9 : avant, un fetch qui jetait sautait le refund).
+ */
+async function callToolReserved(
+  q: Reserved,
+  key: string,
+  system: string,
+  user: string,
+  maxTokens: number,
+  // deno-lint-ignore no-explicit-any
+  tool: any,
+): Promise<{ input?: Record<string, unknown>; error?: string }> {
+  try {
+    const out = await callTool(key, system, user, maxTokens, tool);
+    if (out.error) await refund(q);
+    return out;
+  } catch (e) {
+    await refund(q);
+    return { error: String((e as Error).message ?? e) };
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -186,8 +211,8 @@ Deno.serve(async (req: Request) => {
       if (!text) return json({ error: 'Texte manquant.' }, 400);
       const q = await reserveQuota(req);
       if (!q.ok) return json({ error: q.error }, q.status);
-      const out = await callTool(key, SYSTEM_IMPORT, `Texte de la recette :\n${text}`, 2048, RECIPE_TOOL);
-      if (out.error) { await refund(q); return json({ error: out.error }, 502); }
+      const out = await callToolReserved(q, key, SYSTEM_IMPORT, `Texte de la recette :\n${text}`, 2048, RECIPE_TOOL);
+      if (out.error) return json({ error: out.error }, 502);
       return json({ recipe: out.input, quota: { used: q.used, cap: q.cap } }, 200);
     }
 
@@ -203,8 +228,8 @@ Deno.serve(async (req: Request) => {
     if (!intention || typeof intention !== 'string') return json({ error: 'Intention manquante.' }, 400);
     const q = await reserveQuota(req);
     if (!q.ok) return json({ error: q.error }, q.status);
-    const out = await callTool(key, SYSTEM, `Recette voulue : ${intention}`, 2048, RECIPE_TOOL);
-    if (out.error) { await refund(q); return json({ error: out.error }, 502); }
+    const out = await callToolReserved(q, key, SYSTEM, `Recette voulue : ${intention}`, 2048, RECIPE_TOOL);
+    if (out.error) return json({ error: out.error }, 502);
     return json({ recipe: out.input, quota: { used: q.used, cap: q.cap } }, 200);
   } catch (e) {
     return json({ error: String((e as Error).message ?? e) }, 500);

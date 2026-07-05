@@ -44,15 +44,16 @@ export default function ConsigneVocale({
 
   useEffect(() => {
     let revoked: string | null = null;
+    let cancelled = false; // la restauration réseau peut résoudre APRÈS un changement de recette
     void loadAudio(recipeId).then(async (local) => {
       const blob = local ?? (await restoreAudio(recipeId)) ?? undefined;
-      if (blob) {
-        const u = URL.createObjectURL(blob);
-        revoked = u;
-        setUrl(u);
-      }
+      if (cancelled || !blob) return;
+      const u = URL.createObjectURL(blob);
+      revoked = u;
+      setUrl(u);
     });
     return () => {
+      cancelled = true;
       if (revoked) URL.revokeObjectURL(revoked);
       if (timerRef.current) clearInterval(timerRef.current);
     };

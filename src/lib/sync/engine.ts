@@ -3,6 +3,7 @@ import {
   planPush,
   planPull,
   planAdopt,
+  nextCursor,
   docKey,
   hashPayload,
   type LocalDoc,
@@ -20,7 +21,9 @@ import {
 
 // Moteur de sync (IO). Orchestration push/pull/adoption au-dessus du cœur pur
 // (plan.ts) et du mapping (map.ts). LWW porté par `updated_at` SERVEUR ; jamais
-// bloquant (best-effort, l'app marche hors-ligne).
+// bloquant (best-effort, l'app marche hors-ligne). Écritures BATCHÉES (une
+// requête pour N docs — FIX revue Q, efficacité) ; curseur PAR FOYER (FIX n°5) ;
+// le curseur n'avance jamais au-delà d'un doc sauté par G2 (FIX n°8).
 
 const EPOCH = '1970-01-01T00:00:00Z';
 
@@ -42,60 +45,58 @@ function toRemote(row: DocRow): RemoteDoc {
   };
 }
 
-function maxIso(rows: RemoteDoc[], floor: string): string {
-  return rows.reduce((mx, r) => (r.updatedAt > mx ? r.updatedAt : mx), floor);
-}
-
-/** Upsert d'un doc (payload ou tombstone) ; renvoie l'`updated_at` posé par le serveur. */
-async function upsertDoc(
+/**
+ * Upsert BATCHÉ de docs (payloads et/ou tombstones) ; renvoie les `updated_at`
+ * posés par le serveur, indexés par clé de doc.
+ */
+async function upsertDocs(
   foyerId: string,
-  d: { store: string; docId: string; payload: unknown; deletedAt: string | null },
-): Promise<{ updatedAt?: string; error?: string }> {
+  docs: { store: string; docId: string; payload: unknown; deletedAt: string | null }[],
+): Promise<{ stamps?: Record<string, string>; error?: string }> {
+  if (!docs.length) return { stamps: {} };
   const supa = getSupabase();
   if (!supa) return { error: 'hors-ligne' };
+  const rows = docs.map((d) => ({
+    foyer_id: foyerId,
+    store: d.store,
+    doc_id: d.docId,
+    payload: d.payload as Record<string, unknown> | null,
+    deleted_at: d.deletedAt,
+  }));
   const { data, error } = await supa
     .from('docs')
-    .upsert(
-      {
-        foyer_id: foyerId,
-        store: d.store,
-        doc_id: d.docId,
-        payload: d.payload as Record<string, unknown> | null,
-        deleted_at: d.deletedAt,
-      },
-      { onConflict: 'foyer_id,store,doc_id' },
-    )
-    .select('updated_at')
-    .single();
+    .upsert(rows, { onConflict: 'foyer_id,store,doc_id' })
+    .select('store,doc_id,updated_at');
   if (error) return { error: error.message };
-  return { updatedAt: (data as { updated_at: string }).updated_at };
+  const stamps: Record<string, string> = {};
+  for (const r of data as { store: string; doc_id: string; updated_at: string }[]) {
+    stamps[r.store + ':' + r.doc_id] = r.updated_at;
+  }
+  return { stamps };
 }
 
 /** Pousse les changements locaux (dirty + tombstones) vers le cloud. */
 export async function push(foyerId: string): Promise<{ pushed: number; error?: string }> {
   const [local, meta] = await Promise.all([collectLocalDocs(), loadAllSyncMeta()]);
   const plan = planPush(local, meta);
-  let pushed = 0;
+  const res = await upsertDocs(foyerId, [
+    ...plan.upserts.map((d) => ({ store: d.store, docId: d.docId, payload: d.payload, deletedAt: null })),
+    ...plan.tombstones.map((t) => ({ store: t.store, docId: t.docId, payload: null, deletedAt: new Date().toISOString() })),
+  ]);
+  if (res.error) return { pushed: 0, error: res.error };
   for (const d of plan.upserts) {
-    const res = await upsertDoc(foyerId, { store: d.store, docId: d.docId, payload: d.payload, deletedAt: null });
-    if (res.error) return { pushed, error: res.error };
-    await putSyncMeta(docKey(d), { syncedHash: hashPayload(d.payload), syncedAt: res.updatedAt! });
-    pushed++;
+    const at = res.stamps![docKey(d)];
+    if (at) await putSyncMeta(docKey(d), { syncedHash: hashPayload(d.payload), syncedAt: at });
   }
-  for (const t of plan.tombstones) {
-    const res = await upsertDoc(foyerId, { store: t.store, docId: t.docId, payload: null, deletedAt: new Date().toISOString() });
-    if (res.error) return { pushed, error: res.error };
-    await delSyncMeta(docKey(t));
-    pushed++;
-  }
-  return { pushed };
+  for (const t of plan.tombstones) await delSyncMeta(docKey(t));
+  return { pushed: plan.upserts.length + plan.tombstones.length };
 }
 
 /** Rapatrie les changements distants (delta par curseur) et les applique en local. */
 export async function pull(foyerId: string): Promise<{ applied: number; changed: boolean; error?: string }> {
   const supa = getSupabase();
   if (!supa) return { applied: 0, changed: false, error: 'hors-ligne' };
-  const cursor = (await loadSyncCursor()) ?? EPOCH;
+  const cursor = (await loadSyncCursor(foyerId)) ?? EPOCH;
   const { data, error } = await supa
     .from('docs')
     .select('store,doc_id,payload,updated_at,deleted_at')
@@ -119,15 +120,29 @@ export async function pull(foyerId: string): Promise<{ applied: number; changed:
     await applyDelete(d.store, d.docId);
     await delSyncMeta(docKey(d));
   }
-  await saveSyncCursor(maxIso(remote, cursor));
+  // FIX n°8 : ne jamais avancer le curseur au-delà d'un doc sauté (G2) — il sera
+  // re-servi au prochain pull tant que le doc local reste dirty non poussé.
+  await saveSyncCursor(foyerId, nextCursor(remote, plan.skipped, cursor));
   const changed = plan.applies.length + plan.deletes.length > 0;
   return { applied: plan.applies.length + plan.deletes.length, changed };
 }
 
+/** Le foyer a-t-il déjà des documents dans le cloud ? (null si indéterminable). */
+export async function remoteHasDocs(foyerId: string): Promise<boolean | null> {
+  const supa = getSupabase();
+  if (!supa) return null;
+  const { count, error } = await supa
+    .from('docs')
+    .select('doc_id', { count: 'exact', head: true })
+    .eq('foyer_id', foyerId)
+    .is('deleted_at', null);
+  if (error) return null;
+  return (count ?? 0) > 0;
+}
+
 /**
- * Adoption à la 1ʳᵉ connexion (Q1) : UNION local↔cloud. Adopte le cloud vivant en
- * local, téléverse le local-seul. Sur collision, le cloud gagne (filet = export S2).
- * Idempotence : à réserver au premier passage par foyer (cf. adoptIfNeeded, wiring).
+ * Adoption (Q1) : UNION local↔cloud. Adopte le cloud vivant en local, téléverse
+ * le local-seul (batché). Sur collision, le cloud gagne (filet = export S2).
  */
 export async function adopt(foyerId: string): Promise<{ changed: boolean; error?: string }> {
   const supa = getSupabase();
@@ -144,12 +159,16 @@ export async function adopt(foyerId: string): Promise<{ changed: boolean; error?
     await applyRemote(r.store, r.docId, r.payload);
     await putSyncMeta(docKey(r), { syncedHash: hashPayload(r.payload), syncedAt: r.updatedAt });
   }
+  const up = await upsertDocs(
+    foyerId,
+    plan.upload.map((d) => ({ store: d.store, docId: d.docId, payload: d.payload, deletedAt: null })),
+  );
+  if (up.error) return { changed: plan.adoptRemote.length > 0, error: up.error };
   for (const d of plan.upload) {
-    const res = await upsertDoc(foyerId, { store: d.store, docId: d.docId, payload: d.payload, deletedAt: null });
-    if (res.error) return { changed: plan.adoptRemote.length > 0, error: res.error };
-    await putSyncMeta(docKey(d), { syncedHash: hashPayload(d.payload), syncedAt: res.updatedAt! });
+    const at = up.stamps![docKey(d)];
+    if (at) await putSyncMeta(docKey(d), { syncedHash: hashPayload(d.payload), syncedAt: at });
   }
-  await saveSyncCursor(maxIso(remote, EPOCH));
+  await saveSyncCursor(foyerId, nextCursor(remote, [], EPOCH));
   return { changed: plan.adoptRemote.length > 0 };
 }
 

@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore';
 import { estimateMacros, generateRecipeDraft, importRecipeText, aiAvailable } from '../lib/ai';
 import { parseRecipesJson } from '../lib/importRecipes';
 import { nextRecipeId } from '../lib/recipeId';
-import { remaining, normalizeQuota, currentMonth } from '../lib/quota';
+import { AI_MONTHLY_LIMIT, remaining, normalizeQuota, currentMonth } from '../lib/quota';
 import { ROLE_LABEL, type CalciumFlag, type Recipe, type RecipeRole } from '../types';
 import { IconStar, IconLoader, IconCheck } from './icons';
 
@@ -108,7 +108,7 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, toas
                         : 'Quota du mois épuisé — la saisie manuelle reste illimitée.'}
                   </span>
                 </span>
-                {canAi && <span className="cz-quotab">{rem} / 5 ce mois</span>}
+                {canAi && <span className="cz-quotab">{rem} / {AI_MONTHLY_LIMIT} ce mois</span>}
               </button>
             </div>
           )}
@@ -312,7 +312,7 @@ function AiForm({ onCreated, toast }: { onCreated: (id: string) => void; toast: 
           autoFocus
         />
       </div>
-      <div className="cz-estnote" style={{ marginBottom: 10 }}>{rem} / 5 générations ce mois</div>
+      <div className="cz-estnote" style={{ marginBottom: 10 }}>{rem} / {AI_MONTHLY_LIMIT} générations ce mois</div>
       <button className="cz-cta draft" onClick={create} disabled={busy}>
         {busy ? <IconLoader size={18} className="cz-spin" /> : <IconStar size={18} />}
         {busy ? 'On structure…' : 'Créer le brouillon'}
