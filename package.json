@@ -13,6 +13,7 @@
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
+    "@sentry/react": "^8.55.2",
     "@supabase/supabase-js": "^2.108.2",
     "fix-webm-duration": "^1.0.6",
     "idb": "^8.0.0",

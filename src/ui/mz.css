@@ -193,6 +193,14 @@
 .mz-note { font-size: 11px; color: var(--mz-warn); font-weight: 700; background: #fbf3dc; border-radius: 12px; padding: 10px 12px; margin-top: 10px; line-height: 1.5; }
 .mz-quiet { width: 100%; text-align: center; font-size: 12px; font-weight: 700; color: var(--mz-mut); margin-top: 13px; text-decoration: underline; text-underline-offset: 3px; }
 
+/* ── Formulaire compte (Auth OTP) ──────────────────────────────────────── */
+.mz-lbl { font-size: 11px; font-weight: 800; color: var(--mz-mut); text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 6px 2px; }
+.mz-inp { width: 100%; border: 1px solid var(--mz-ln); border-radius: 14px; padding: 13px; font: inherit; font-size: 15px; color: var(--mz-ink); background: #fbfaf7; }
+.mz-inp:focus { outline: none; border-color: var(--mz-ink); }
+.mz-inp.code { text-align: center; letter-spacing: 0.42em; font-weight: 800; font-size: 22px; padding-left: 0.42em; }
+.mz-btn.danger { color: #b3261e; }
+.mz-acc-ok { font-size: 12.5px; font-weight: 700; color: var(--mz-warn); background: #fbf3dc; border-radius: 12px; padding: 11px 13px; line-height: 1.5; }
+
 /* ── Toast ──────────────────────────────────────────────────────────────── */
 .mz-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(10px); background: var(--mz-ink); color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 999px; padding: 11px 19px; opacity: 0; pointer-events: none; transition: 0.22s; z-index: 60; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; }
 .mz-toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }

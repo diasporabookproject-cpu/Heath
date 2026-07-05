@@ -1,9 +1,14 @@
-import { useState } from 'react';
-import { sendMagicLink, signOut, type Session } from '../lib/supabase';
+import { useEffect, useState } from 'react';
+import { Sheet } from '../ui/primitives';
+import { signOut, type Session } from '../lib/supabase';
+import { sendOtp, verifyOtp, ensureFoyer, deleteAccount } from '../lib/auth';
+import { normalizeOtp, isValidOtp, isValidEmail } from '../lib/otp';
+import { downloadExport } from '../lib/exportData';
 
-// Connexion par lien magique (e-mail). La connexion est facultative :
-// l'app marche en local sans compte ; se connecter active la synchro et
-// l'audio dans les liens partagés.
+// Écran Compte (S2). Connexion par CODE e-mail à 6 chiffres (jamais bloquante :
+// l'app marche sans compte). Se connecter = mettre sa maison à l'abri (sauvegarde,
+// multi-appareil). Inclut export JSON, déconnexion et suppression de compte
+// (exigence Apple 5.1.1(v)). Identité = compte Manzil.
 
 export default function AccountSheet({
   session,
@@ -13,89 +18,178 @@ export default function AccountSheet({
   onClose: () => void;
 }) {
   const [email, setEmail] = useState(session?.user?.email ?? '');
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  const [msg, setMsg] = useState('');
+  const [code, setCode] = useState('');
+  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [confirmDel, setConfirmDel] = useState(false);
+
+  // Foyer paresseux : garantit qu'un utilisateur connecté a bien son foyer
+  // (idempotent). Couvre aussi les anciennes sessions (lien magique) sans foyer.
+  useEffect(() => {
+    if (session) void ensureFoyer();
+  }, [session]);
 
   const send = async () => {
-    if (!email.trim()) return;
-    setStatus('sending');
-    const { error } = await sendMagicLink(email.trim());
-    if (error) {
-      setStatus('error');
-      setMsg(error);
-    } else {
-      setStatus('sent');
+    if (!isValidEmail(email)) {
+      setErr('E-mail invalide.');
+      return;
     }
+    setBusy(true);
+    setErr('');
+    const { error } = await sendOtp(email);
+    setBusy(false);
+    if (error) {
+      setErr(error);
+      return;
+    }
+    setStep('code');
   };
 
-  return (
-    <div className="sheet-backdrop" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sheet__head">
-          <div className="sheet__title">
-            <span>Compte & synchro</span>
-            <button className="sheet__close" onClick={onClose} aria-label="Fermer">
-              ×
-            </button>
-          </div>
+  const verify = async () => {
+    if (!isValidOtp(code)) {
+      setErr('Entre le code à 6 chiffres.');
+      return;
+    }
+    setBusy(true);
+    setErr('');
+    const { error } = await verifyOtp(email, code);
+    if (error) {
+      setBusy(false);
+      setErr('Code incorrect ou expiré.');
+      return;
+    }
+    await ensureFoyer(); // crée le foyer à la 1ʳᵉ connexion
+    setBusy(false);
+    // La session se met à jour globalement (onAuthStateChange) → vue « connecté ».
+  };
+
+  const remove = async () => {
+    setBusy(true);
+    setErr('');
+    const { error } = await deleteAccount();
+    setBusy(false);
+    if (error) {
+      setErr(error);
+      return;
+    }
+    onClose();
+  };
+
+  // ── Connecté ────────────────────────────────────────────────────────────
+  if (session) {
+    return (
+      <Sheet title="Ta maison est à l'abri" onClose={onClose}>
+        <div className="mz-sm" style={{ marginBottom: 14 }}>
+          Connectée en tant que <b>{session.user.email}</b>. Tes menus, recettes et pages sont
+          sauvegardés et te suivent sur tes appareils.
         </div>
-        <div className="sheet__list">
-          {session ? (
-            <>
-              <p className="hint">
-                Connecté en tant que <b>{session.user.email}</b>. Tes données peuvent se
-                synchroniser et les notes vocales s'intègrent aux liens partagés.
-              </p>
-              <button
-                className="btn btn--ghost"
-                onClick={async () => {
-                  await signOut();
-                  onClose();
-                }}
-              >
-                Se déconnecter
+
+        <div className="mz-btnrow">
+          <button className="mz-btn" onClick={() => void downloadExport()}>
+            ⬇ Exporter mes données
+          </button>
+          <button
+            className="mz-btn"
+            onClick={async () => {
+              await signOut();
+              onClose();
+            }}
+          >
+            Se déconnecter
+          </button>
+        </div>
+
+        {!confirmDel ? (
+          <button className="mz-quiet" onClick={() => setConfirmDel(true)}>
+            Supprimer mon compte
+          </button>
+        ) : (
+          <div style={{ marginTop: 14 }}>
+            <div className="mz-note">
+              Supprimer ton compte efface tes données du cloud et, si tu es propriétaire du foyer,
+              <b> coupe les pages déjà envoyées</b>. Ta copie locale reste sur cet appareil. Action
+              irréversible.
+            </div>
+            <div className="mz-btnrow">
+              <button className="mz-btn" onClick={() => setConfirmDel(false)} disabled={busy}>
+                Annuler
               </button>
-            </>
-          ) : (
-            <>
-              <p className="hint">
-                Connecte-toi avec ton e-mail (lien magique, sans mot de passe) pour synchroniser
-                tes menus entre appareils et partager les notes vocales.
-              </p>
-              <div className="field">
-                <label>E-mail</label>
-                <input
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="toi@exemple.com"
-                />
-              </div>
-              {status === 'sent' ? (
-                <div className="import-report">
-                  ✓ Lien envoyé à <b>{email}</b>. Ouvre ta boîte mail et clique le lien depuis cet
-                  appareil.
-                </div>
-              ) : (
-                <>
-                  {status === 'error' && (
-                    <div className="import-report import-report--warn">{msg}</div>
-                  )}
-                  <button
-                    className="btn"
-                    onClick={send}
-                    disabled={status === 'sending' || !email.trim()}
-                  >
-                    {status === 'sending' ? 'Envoi…' : 'Recevoir le lien de connexion'}
-                  </button>
-                </>
-              )}
-            </>
-          )}
+              <button className="mz-btn danger" onClick={remove} disabled={busy}>
+                {busy ? 'Suppression…' : 'Supprimer définitivement'}
+              </button>
+            </div>
+          </div>
+        )}
+        {err && <div className="mz-note" style={{ marginTop: 10 }}>{err}</div>}
+      </Sheet>
+    );
+  }
+
+  // ── Étape e-mail ─────────────────────────────────────────────────────────
+  if (step === 'email') {
+    return (
+      <Sheet
+        title="Mets ta maison à l'abri"
+        sub="Sauvegardée, sur tous tes appareils. Un simple e-mail, sans mot de passe."
+        onClose={onClose}
+      >
+        <div className="mz-lbl">Ton e-mail</div>
+        <input
+          className="mz-inp"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="toi@exemple.com"
+        />
+        {err && <div className="mz-note" style={{ marginTop: 10 }}>{err}</div>}
+        <div className="mz-btnrow">
+          <button className="mz-btn primary" onClick={send} disabled={busy || !email.trim()}>
+            {busy ? 'Envoi…' : 'Recevoir mon code'}
+          </button>
         </div>
+        <button className="mz-quiet" onClick={onClose}>
+          Plus tard — je continue sans compte
+        </button>
+      </Sheet>
+    );
+  }
+
+  // ── Étape code ───────────────────────────────────────────────────────────
+  return (
+    <Sheet
+      title="Entre ton code"
+      sub={`On a envoyé un code à 6 chiffres à ${email}.`}
+      onClose={onClose}
+    >
+      <input
+        className="mz-inp code"
+        type="text"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        maxLength={6}
+        value={code}
+        onChange={(e) => setCode(normalizeOtp(e.target.value))}
+        placeholder="000000"
+      />
+      {err && <div className="mz-note" style={{ marginTop: 10 }}>{err}</div>}
+      <div className="mz-btnrow">
+        <button className="mz-btn primary" onClick={verify} disabled={busy || !isValidOtp(code)}>
+          {busy ? 'Vérification…' : 'Me connecter'}
+        </button>
       </div>
-    </div>
+      <button
+        className="mz-quiet"
+        onClick={() => {
+          setStep('email');
+          setCode('');
+          setErr('');
+        }}
+      >
+        Changer d'e-mail
+      </button>
+    </Sheet>
   );
 }
