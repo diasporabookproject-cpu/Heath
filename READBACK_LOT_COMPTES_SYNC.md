@@ -14,10 +14,18 @@ correctement les forks. Trois notes seulement :
 
 - **D4 (terminologie) — d'accord** : l'app est aujourd'hui **local-only** (aucune sync),
   pas « local-first ». Cible = local-first-**avec-sync**. Je corrige le vocabulaire dans nos docs.
-- **D5 (tout gratuit v1) — c'est ta décision, je m'y range** ; mon penchant freemium est
-  **reporté**, la précaution d'archi (quota serveur) est **gardée**. ⚠️ **1 clarification à
-  trancher** (cf. §3-Q4) : en v1 « gratuit/généreux », garde-t-on un **plafond serveur généreux**
-  (mon avis : oui, protège du coût Anthropic même sans monétisation) ou **vraiment aucun plafond** ?
+- **D5 (tout gratuit v1) — clarifié par Amine (2026-07-05).** Le gratuit total est un **confort
+  de test** (ne pas avoir à jongler avec plusieurs comptes pendant la QA), **pas** le modèle
+  final : **le premium est acté** — seuls les paliers/prix restent à définir plus tard. Les
+  **leviers de gate** pressentis (à confirmer au moment de la monétisation) : **① plafonds
+  d'usage IA · ② nombre de comptes/membres du foyer · ③ certaines fonctionnalités de partage
+  avancées**. **Conséquence d'archi, à coût nul maintenant** : ces trois frontières doivent être
+  **structurellement gatables** dès le schéma — (①) quota IA **serveur** ; (②) le compteur de
+  membres passe par une **invitation serveur** (jamais purement client) ; (③) le partage avancé
+  s'appuie sur des **capacités identifiables** côté serveur. On **débloque tout** en v1, mais on
+  **pose les points d'ancrage** pour verrouiller plus tard **sans refonte**. ✅ **Q4 tranchée**
+  (cf. §3) : **plafond serveur généreux** en v1 (anti-coût Anthropic + c'est déjà le futur point
+  premium ①), **jamais illimité côté client**.
 - **Séquence (sync avant coquille) — d'accord**, c'est la vraie dette et la coquille n'en
   dépend pas. **Un seul ajout** : je ferais un **mini-spike du build iOS très tôt, en parallèle**
   (signature Apple = le poste le plus surprenant), pour ne pas le découvrir à la fin.
@@ -70,7 +78,8 @@ functions **`generate-recipe` / `generate-translation`** (Anthropic).
   (union par id, LWW sur collisions) ? *(je propose : union, LWW par document sur collision d'id)*
 - **Q2 — Granularité doc Nounou** : blob entier LWW en v1 (reco) ou éclatement en entités ?
 - **Q3 — Audio** : sauvegarde des notes vocales dans un bucket privé foyer dès v1, ou différé ?
-- **Q4 — Quota IA v1** : plafond serveur **généreux** (reco, anti-abus/coût) ou **aucun** ?
+- **Q4 — Quota IA v1** : ✅ **tranchée (2026-07-05)** → plafond serveur **généreux** (anti-coût
+  Anthropic + futur levier premium ①), **jamais illimité côté client**. Reste à fixer la valeur.
 - **Q5 — Périmètre d'adoption** (Q-c des décisions) : tout d'un coup, ou par store ? *(je
   propose : tout d'un coup, un « import » unique atomique par store, transactionnel)*
 - **Q6 — Clé de tenancy** : confirmer **`foyer_id` partout** dès le schéma (jamais `user_id`
@@ -85,11 +94,18 @@ functions **`generate-recipe` / `generate-translation`** (Anthropic).
 | S3 | **Moteur de sync** : push-on-save / pull-on-login, **LWW par document**, mapping stores IndexedDB ↔ cloud, fusion (Q1) | 🔴 | le gros morceau + le risque n°1 |
 | S4 | **Export JSON** (portabilité RGPD + invariant « contenu portable ») | 🟢 | |
 | S5 | **Invitation 2ᵉ membre** (email/code, **opération serveur**) — gratuite en v1 | 🟡 | architecturée pour devenir premium plus tard |
-| S6 | **Quota IA côté serveur** (edge function : foyer via JWT + compteur) | 🟡 | dépend de Q4 |
+| S6 | **Quota IA côté serveur** (edge function : foyer via JWT + compteur) | 🟡 | Q4 tranchée : plafond **généreux** en v1 = **levier premium ①** déjà en place |
 | S7 | **Staging** (2ᵉ projet Supabase) + **Sentry** | 🟢 | D7 |
 | — | **Paquet RGPD** (région EU, DPA, RLS, politique FR, rétention, étude PIN/expiration liens) | 🟡 | transverse, non négociable à ce lot (D8) |
 
 **Ordre d'exécution suggéré** : S1 → S2 → S3 (cœur) → S4/S5/S6 en parallèle → S7. RGPD en continu.
+
+> **Ancrages premium (D5 clarifié) — à poser en v1, à activer plus tard.** Le premium est acté
+> (paliers à définir). Les trois leviers pressentis sont déjà des **frontières serveur** dans ce
+> lot, donc gatables sans refonte : **① volume IA** = compteur serveur (S6) · **② nombre de
+> membres du foyer** = invitation serveur (S5, gratuite/ouverte en v1 mais comptabilisée) · **③
+> partage avancé** = capacités identifiables côté auteur (`espaces.foyer_id`, §2-5). On ne
+> construit **aucun** paywall maintenant ; on garde juste ces trois coutures nettes.
 
 ## 5. Ce qui NE bouge pas (garanties)
 
@@ -101,6 +117,6 @@ functions **`generate-recipe` / `generate-translation`** (Anthropic).
 
 ## 6. Ce que j'attends pour lancer
 
-Les réponses à **Q1–Q6** (surtout Q2 granularité et Q4 quota) dans le brief formel, puis je
-fais le **read-back chiffré définitif par sous-lot** et on part **S1 d'abord**, après le
-**merge de la refonte** (priorité actuelle = ta QA).
+Les réponses à **Q1–Q3, Q5–Q6** dans le brief formel (**Q4 tranchée** : plafond IA serveur
+généreux), puis je fais le **read-back chiffré définitif par sous-lot** et on part **S1
+d'abord**, après le **merge de la refonte** (priorité actuelle = ta QA).
