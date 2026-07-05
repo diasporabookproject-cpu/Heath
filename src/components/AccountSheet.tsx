@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Sheet } from '../ui/primitives';
 import { signOut, type Session } from '../lib/supabase';
-import { sendOtp, verifyOtp, ensureFoyer, deleteAccount } from '../lib/auth';
+import { sendOtp, verifyOtp, ensureFoyer, deleteAccount, createInvite, acceptInvite } from '../lib/auth';
 import { normalizeOtp, isValidOtp, isValidEmail } from '../lib/otp';
 import { downloadExport } from '../lib/exportData';
 
@@ -23,6 +23,31 @@ export default function AccountSheet({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [confirmDel, setConfirmDel] = useState(false);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [joinCode, setJoinCode] = useState('');
+
+  const doInvite = async () => {
+    setBusy(true);
+    setErr('');
+    const { code, error } = await createInvite();
+    setBusy(false);
+    if (error) setErr(error);
+    else if (code) setInviteCode(code);
+  };
+
+  const doJoin = async () => {
+    if (!joinCode.trim()) return;
+    setBusy(true);
+    setErr('');
+    const { error } = await acceptInvite(joinCode.trim());
+    if (error) {
+      setBusy(false);
+      setErr(error);
+      return;
+    }
+    // Foyer changé → on recharge pour ré-adopter/synchroniser le foyer rejoint.
+    window.location.reload();
+  };
 
   // Foyer paresseux : garantit qu'un utilisateur connecté a bien son foyer
   // (idempotent). Couvre aussi les anciennes sessions (lien magique) sans foyer.
@@ -98,6 +123,37 @@ export default function AccountSheet({
           >
             Se déconnecter
           </button>
+        </div>
+
+        {/* Foyer partagé (S4) : inviter un 2ᵉ parent / rejoindre un foyer. */}
+        <div className="mz-lbl" style={{ marginTop: 18 }}>Foyer partagé</div>
+        {inviteCode ? (
+          <div className="mz-acc-ok">
+            Code d’invitation : <b style={{ letterSpacing: '0.12em' }}>{inviteCode}</b>
+            <br />
+            Partage-le avec l’autre parent — valable 7 jours.
+          </div>
+        ) : (
+          <button className="mz-btn" onClick={doInvite} disabled={busy}>
+            ＋ Inviter quelqu’un dans mon foyer
+          </button>
+        )}
+        <div className="mz-btnrow" style={{ marginTop: 8 }}>
+          <input
+            className="mz-inp"
+            style={{ flex: 2 }}
+            type="text"
+            autoCapitalize="characters"
+            placeholder="J’ai un code…"
+            value={joinCode}
+            onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+          />
+          <button className="mz-btn" style={{ flex: 1 }} onClick={doJoin} disabled={busy || !joinCode.trim()}>
+            Rejoindre
+          </button>
+        </div>
+        <div className="mz-sm" style={{ marginTop: 6 }}>
+          Rejoindre un foyer remplace le tien ; tes recettes locales le rejoignent à la synchro.
         </div>
 
         {!confirmDel ? (

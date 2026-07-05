@@ -51,6 +51,38 @@ export async function ensureFoyer(): Promise<{ foyerId?: string; error?: string 
   return { foyerId: fid as string };
 }
 
+/** Extrait le message d'erreur renvoyé par une edge function (sinon message générique). */
+async function fnError(error: unknown): Promise<string> {
+  const ctx = (error as { context?: Response })?.context;
+  if (ctx) {
+    try {
+      const j = await ctx.json();
+      if (j?.error) return j.error as string;
+    } catch {
+      /* corps illisible */
+    }
+  }
+  return (error as Error)?.message ?? 'Erreur.';
+}
+
+/** Crée une invitation à rejoindre son foyer (couture premium ②) → renvoie un code partageable. */
+export async function createInvite(email?: string): Promise<{ code?: string; expiresAt?: string; error?: string }> {
+  const supa = getSupabase();
+  if (!supa) return { error: 'Connexion indisponible.' };
+  const { data, error } = await supa.functions.invoke('invite', { body: { email: email ?? null } });
+  if (error) return { error: await fnError(error) };
+  return { code: data?.code, expiresAt: data?.expires_at };
+}
+
+/** Rejoint un foyer via un code d'invitation (quitte le foyer actuel ; données locales fusionnées au sync). */
+export async function acceptInvite(code: string): Promise<{ foyerId?: string; error?: string }> {
+  const supa = getSupabase();
+  if (!supa) return { error: 'Connexion indisponible.' };
+  const { data, error } = await supa.functions.invoke('accept-invite', { body: { code } });
+  if (error) return { error: await fnError(error) };
+  return { foyerId: data?.foyer_id };
+}
+
 /**
  * Suppression de compte in-app (exigence Apple 5.1.1(v)). L'opération vit côté
  * serveur (edge function `delete-account` en service_role) : selon le rôle, elle
