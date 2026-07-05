@@ -4,13 +4,18 @@ import { DEFAULT_SETTINGS } from '../types';
 import { SEED_CONFIG } from '../data';
 import {
   ensureSeeded,
+  loadApp,
   loadRecipes,
   loadSettings,
   loadWeek,
+  saveApp,
   saveRecipe,
   saveSettings,
   saveWeek,
+  type AppState,
+  type Rappel,
 } from '../lib/db';
+import { consume, currentMonth, normalizeQuota } from '../lib/quota';
 import { emptyDay } from '../lib/nutrition';
 import { weekId } from '../cuisine/dates';
 
@@ -45,8 +50,13 @@ interface State {
   week: WeekMenu;
   weekOffset: number;
   settings: CuisineSettings;
+  app: AppState;
   init: () => Promise<void>;
   navWeek: (delta: number) => Promise<void>;
+  /** Consomme une génération IA (porte ③) ; borné à la limite mensuelle. */
+  consumeAi: () => void;
+  /** Règle (ou retire) le rappel d'envoi d'un rôle (L3-5). */
+  setRappel: (kind: 'cuisine' | 'nounou', r: Rappel | null) => void;
   /** Copie en profondeur les jours d'une autre semaine dans la semaine courante. */
   copyWeekInto: (srcDays: WeekMenu['days']) => void;
   setComponent: (dayKey: string, meal: MealKey, slot: Slot, value: string | AccRef | null) => void;
@@ -65,15 +75,39 @@ export const useStore = create<State>((set, get) => ({
   week: freshWeek(weekId(0)),
   weekOffset: 0,
   settings: DEFAULT_SETTINGS,
+  app: {},
 
   async init() {
     await ensureSeeded();
-    const [recipes, week, settings] = await Promise.all([
+    const [recipes, week, settings, loadedApp] = await Promise.all([
       loadRecipes(),
       weekFor(weekId(0)),
       loadSettings(),
+      loadApp(),
     ]);
-    set({ recipes, week, weekOffset: 0, settings, ready: true });
+    // Normalise le quota IA pour le mois courant (reset au changement de mois).
+    const aiQuota = normalizeQuota(loadedApp.aiQuota, currentMonth());
+    const app: AppState = { ...loadedApp, aiQuota };
+    if (loadedApp.aiQuota?.month !== aiQuota.month) void saveApp(app);
+    set({ recipes, week, weekOffset: 0, settings, app, ready: true });
+  },
+
+  consumeAi() {
+    const cur = get().app;
+    const aiQuota = consume(normalizeQuota(cur.aiQuota, currentMonth()));
+    const app: AppState = { ...cur, aiQuota };
+    void saveApp(app);
+    set({ app });
+  },
+
+  setRappel(kind, r) {
+    const cur = get().app;
+    const rappels = { ...cur.rappels };
+    if (r) rappels[kind] = r;
+    else delete rappels[kind];
+    const app: AppState = { ...cur, rappels };
+    void saveApp(app);
+    set({ app });
   },
 
   async navWeek(delta) {

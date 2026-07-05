@@ -4,6 +4,24 @@
 .nz-mark { background: var(--draft) !important; }
 .nz-mark::before { border-color: var(--saffron) !important; }
 
+/* ── Retheme Manzil — identité Nounou (violet) ───────────────────────────────
+   La page réutilise la coquille .cz (héros vert par défaut du module Cuisine).
+   On bascule le rôle en violet en surchargeant, sur le seul sous-arbre Nounou,
+   le token d'accent (--petrol → mz-vio) et le dégradé de l'en-tête héros.
+   Toutes les classes nz-/cz- accentées (jour sélectionné, icônes de moment,
+   boutons d'ajout, segment actif) suivent automatiquement. */
+.cz-nounou {
+  --petrol: var(--mz-vio2, #5a45c4);
+  --petrol-tint: var(--mz-vioT, #eee9fb);
+  --petrol-ink: #4a38b0;
+}
+.cz-nounou .cz-head {
+  background: linear-gradient(157deg, var(--mz-vio1, #8b78e8) 0%, var(--mz-vio2, #5a45c4) 100%);
+  box-shadow: 0 10px 26px rgba(90, 69, 196, 0.2);
+}
+.cz-nounou .cz-head .nz-mark { background: rgba(255, 255, 255, 0.24) !important; }
+.cz-nounou .cz-head .nz-mark::before { border-color: rgba(255, 255, 255, 0.9) !important; }
+
 /* ── Bande de jours + navigation ─────────────────────────────────────────── */
 .nz-daystrip { display: flex; gap: 7px; padding: 16px 16px 4px; align-items: stretch; }
 .nz-dsnav { width: 34px; flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 11px; display: grid; place-items: center; cursor: pointer; color: var(--ink); }

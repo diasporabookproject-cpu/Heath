@@ -1,0 +1,87 @@
+{
+  "id": "marocain-quotidien",
+  "nom": "Marocain du quotidien",
+  "emoji": "🍲",
+  "description": "Les classiques équilibrés de la semaine — déjà dans ta bibliothèque si tu pars du jeu de départ.",
+  "version": 1,
+  "recettes": [
+    {
+      "nom": "Bowl poulet-riz-pois chiches-feta",
+      "role": "plat",
+      "kcal": 790,
+      "prot": 80,
+      "gluc": 57,
+      "lip": 24,
+      "calcium": 240,
+      "flag_calcium": "Moyen",
+      "ingredients": "Poulet cuit 200g · riz cuit 110g (repos)/130-150g (sport) · pois chiches 80g · tomates cerises 60g + concombre 80g + poivron 60g + oignon rouge 30g + coriandre · feta 40g (séparé) · sauce 1 càc huile+citron+cumin+ail",
+      "nom_ar": "بول دجاج مع روز، حمّص وفيتا",
+      "ingredients_ar": "دجاج مطيّب 200g · روز مطيّب 110g (راحة)/130-150g (رياضة) · حمّص 80g · طماطم صغيرة 60g + خيار 80g + فلفلة حلوة 60g + بصلة حمرا 30g + قزبر · فيتا 40g (بوحدها) · صلصة: ملعقة صغيرة زيت + حامض + كمّون + ثوم"
+    },
+    {
+      "nom": "Kefta de bœuf froide, riz et légumes rôtis",
+      "role": "plat",
+      "kcal": 710,
+      "prot": 60,
+      "gluc": 62,
+      "lip": 24,
+      "calcium": 80,
+      "flag_calcium": "Faible",
+      "ingredients": "Kefta bœuf 5% 180g cuite · riz cuit 110g (repos)/130g (sport) · légumes rôtis 250g (aubergine+courgette+poivron) · pois chiches 70g · sauce tahini-citron-ail (séparé) · olives noires 15g (option)",
+      "nom_ar": "كفتة البڭري بّاردة مع روز وخضرة مشوية",
+      "ingredients_ar": "كفتة لحم البڭري 5% 180g مطيّبة · روز مطيّب 110g (راحة)/130g (رياضة) · خضرة مشوية فالفور 250g (دنجال + قرعة خضرا + فلفلة) · حمّص 70g · صلصة طحينة بالحامض والثوم (بوحدها) · زيتون كحل 15g (اختياري)"
+    },
+    {
+      "nom": "Salade de riz, lentilles, thon et œufs",
+      "role": "plat",
+      "kcal": 910,
+      "prot": 82,
+      "gluc": 51,
+      "lip": 39,
+      "calcium": 290,
+      "flag_calcium": "Moyen",
+      "ingredients": "Riz cuit 80g · lentilles cuites 100g · thon huile SG égoutté 180g · 2 œufs durs · tomates cerises 100g + oignon rouge 30g + persil · feta 40g · vinaigrette moutarde-citron (séparé)",
+      "nom_ar": "سلطة الروز بالعدس، التن والبيض",
+      "ingredients_ar": "روز مطيّب 80g · عدس مطيّب 100g · تن فالزيت بلا غلوتين مصفّى 180g · 2 بيضات مسلوقين · طماطم صغيرة 100g + بصلة حمرا 30g + معدنوس · فيتا 40g · صلصة موطارد بالحامض (بوحدها)"
+    },
+    {
+      "nom": "Salade de riz aux crevettes et avocat",
+      "role": "plat",
+      "kcal": 600,
+      "prot": 53,
+      "gluc": 53,
+      "lip": 19,
+      "calcium": 110,
+      "flag_calcium": "Faible",
+      "ingredients": "Crevettes cuites 180g · riz cuit 150g · avocat 40g (coupé minute) · 1 œuf dur · crudités 200g (tomates, concombre, oignon rouge, coriandre) · sauce 1 càc huile+citron+ail",
+      "nom_ar": "سلطة الروز بالقمرون والأفوكا",
+      "ingredients_ar": "قمرون مطيّب 180g · روز مطيّب 150g · أفوكا 40g (تقطّع فاللحظة) · بيضة مسلوقة · خضرة نية 200g (طماطم، خيار، بصلة حمرا، قزبر) · صلصة: ملعقة صغيرة زيت + حامض + ثوم"
+    },
+    {
+      "nom": "Sandwich batbout GF, dinde grillée chermoula",
+      "role": "plat",
+      "kcal": 900,
+      "prot": 75,
+      "gluc": 85,
+      "lip": 30,
+      "calcium": 300,
+      "flag_calcium": "Moyen",
+      "ingredients": "1 batbout GF (~100g) · dinde 180g cuite chermoula tranchée · laitue 50g + tomate 30g + concombre 50g + oignon rouge 20g + coriandre · sauce yaourt-tahini-citron · comté 30g · avocat 40g (option) · 1 fruit",
+      "nom_ar": "سندويتش بطبوط بلا غلوتين بالديك الرومي بالشرمولة",
+      "ingredients_ar": "1 بطبوط بلا غلوتين (~100g) · ديك رومي 180g مطيّب بالشرمولة مقطّع · خس 50g + طماطم 30g + خيار 50g + بصلة حمرا 20g + قزبر · صلصة ياغورت بالطحينة والحامض · جبن كومتي 30g · أفوكا 40g (اختياري) · فاكهة واحدة"
+    },
+    {
+      "nom": "Bowl poulet épinards · pois chiches · comté",
+      "role": "plat",
+      "kcal": 750,
+      "prot": 77,
+      "gluc": 51,
+      "lip": 23,
+      "calcium": 480,
+      "flag_calcium": "Champion",
+      "ingredients": "Poulet cuit 180g · épinards vapeur 150g (bien pressés) · pois chiches 70g · riz cuit 110g (repos)/130g (sport) · comté 25g en dés · tomates cerises 60g + oignon rouge 30g + coriandre · vinaigrette 1 càc huile+citron+cumin+ail",
+      "nom_ar": "بول دجاج بالسبانخ، الحمّص والجبن",
+      "ingredients_ar": "دجاج مطيّب 180g · سبانخ فالبخار 150g (معصورة مزيان) · حمّص 70g · روز مطيّب 110g (راحة)/130g (رياضة) · جبن كومتي 25g مقطّع · طماطم صغيرة 60g + بصلة حمرا 30g + قزبر · صلصة: ملعقة صغيرة زيت + حامض + كمّون + ثوم"
+    }
+  ]
+}

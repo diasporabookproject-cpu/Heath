@@ -88,8 +88,8 @@ export default function ProtocoleSheet({
 
           <div className="nz-info draft" style={{ marginTop: 14 }}>
             <span>
-              <IconShareUp size={12} /> Partagé avec le personnel. La version traduite (darija) sera
-              relue par toi avant l’envoi.
+              <IconShareUp size={12} /> Déjà transmis — ta consigne, ta voix. La version en darija
+              est relue par toi avant l’envoi.
             </span>
           </div>
 

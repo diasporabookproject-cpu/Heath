@@ -34,12 +34,29 @@ export interface Recipe {
   notes?: string;
   /** Macros estimées automatiquement et non encore vérifiées (auto-macros). */
   macros_estimees?: boolean;
+  /** Née d'un « coup de main IA » (porte ③) → entre dans la file de relecture (L3-2/L3-3). */
+  origineIA?: boolean;
+  /** Provenance : id du pack de collections dont elle a été copiée (L3-4). */
+  packId?: string;
   /** Favori (étoile). */
   fav?: boolean;
   /** Darija marocaine (lettres arabes), pour l'espace cuisinière. */
   nom_ar?: string;
   ingredients_ar?: string;
   etapes_ar?: string;
+}
+
+/** Recette d'un pack (L3-4) : recette complète SANS identité ni statut (copiée chez l'utilisateur à l'installation). */
+export type RecipeSeed = Omit<Recipe, 'id' | 'statut' | 'fav' | 'packId' | 'origineIA' | 'macros_estimees' | 'notes'>;
+
+/** Collection / pack éditorial de recettes prêtes (L3-4). Format réutilisable. */
+export interface Pack {
+  id: string;
+  nom: string;
+  emoji: string;
+  description: string;
+  version: number;
+  recettes: RecipeSeed[];
 }
 
 /** Jour de la semaine (clé + libellé). Plus de type de jour ni de cible (v2). */

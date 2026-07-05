@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { estimateMacros } from '../lib/ai';
 import { splitIngredients, splitSteps } from '../lib/ingredients';
+import { cleanText, cleanQty } from '../lib/sanitize';
 import { ROLE_LABEL, type CalciumFlag, type Recipe, type RecipeRole } from '../types';
 import ConsigneVocale from './ConsigneVocale';
 import {
@@ -108,7 +109,7 @@ function DetailBody({
     <>
       <div className="cz-sheethead">
         <div className="ttl">
-          {recipe.nom}
+          <span className="clamp2">{cleanText(recipe.nom)}</span>
           <small>{ROLE_LABEL[recipe.role]} · 100 % sans gluten</small>
         </div>
         <button className="cz-x" onClick={onClose} aria-label="Fermer">
@@ -163,8 +164,8 @@ function DetailBody({
           <div className="cz-inglist">
             {ings.map((it, i) => (
               <div className="cz-ingrow" key={i}>
-                <span>{it.name}</span>
-                {it.qty && <span className="q">{it.qty}</span>}
+                <span>{cleanText(it.name)}</span>
+                {it.qty && <span className="q">{cleanQty(it.qty)}</span>}
               </div>
             ))}
           </div>

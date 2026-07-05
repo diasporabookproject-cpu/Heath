@@ -26,7 +26,12 @@ page.on('console', (m) => {
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
 
 await page.goto(BASE, { waitUntil: 'networkidle' });
+
+// 0) Hub Maison (L1-2) : entrer dans la page Cuisine depuis « Ton équipe ».
+await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
+await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
 await page.getByText('Générer la semaine').waitFor({ timeout: 10000 });
+console.log('Hub Maison → Cuisine ✅');
 
 // 1) FC11/FC12 — composer le petit-déjeuner de Lundi via le composeur + sélecteur.
 const lundi = page.locator('.cz-daycard', { hasText: 'Lundi' });

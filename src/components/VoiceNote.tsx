@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import fixWebmDuration from 'fix-webm-duration';
 import { deleteAudio, loadAudio, saveAudio } from '../lib/db';
+import MzAudio from '../ui/MzAudio';
 
 // Note vocale par recette : enregistrement micro (offline, IndexedDB),
 // réécoute, et partage (WhatsApp via l'API Web Share, sinon téléchargement).
@@ -177,7 +178,7 @@ export default function VoiceNote({ recipeId, recipeName, lang }: { recipeId: st
           )}
           {url && !recording && (
             <>
-              <audio src={url} controls className="voice-note__audio" />
+              <MzAudio src={url} />
               <button className="btn btn--small" onClick={share}>
                 {t.share}
               </button>

@@ -6,7 +6,16 @@ import { qrSvg } from './qr';
 import { publishNounouEspace } from './partage';
 import { buildEspaceUrl, lastEspaceOpen } from '../lib/espace';
 import { supabaseEnabled } from '../lib/supabase';
-import { NOUNOU_LANGS, type NounouDest, type NounouLangue } from '../types';
+import { buildNounouDigest, type NounouScope } from '../maison/digest';
+import { DigestBlock, type ScopeOption } from '../ui/DigestBlock';
+import { rappelLabel } from '../lib/rappel';
+import RappelSheet from '../cuisine/RappelSheet';
+import { useStore } from '../store/useStore';
+import { todayISO, addDaysISO } from './dates';
+import { cleanText } from '../lib/sanitize';
+import { NOUNOU_LANGS, type NounouDest, type NounouLangue, type Ponctuel } from '../types';
+
+const digits = (s?: string) => (s ?? '').replace(/\D/g, '');
 
 // FN4.1 + FN4.3 — langue par destinataire + lien durable scopé + QR + WhatsApp + accusé.
 
@@ -24,16 +33,23 @@ export default function PartageNounouSheet({
   onClose,
   onTraduire,
   toast,
+  initialToken,
 }: {
   connected: boolean;
   onClose: () => void;
   onTraduire: (langue: NounouLangue) => void;
   toast: (m: string) => void;
+  /** Destinataire à pré-sélectionner (ouverture ciblée depuis « Envoyer » de Maison). */
+  initialToken?: string;
 }) {
   const doc = useNounou((s) => s.doc);
   const upsertDest = useNounou((s) => s.upsertDest);
 
-  const [selId, setSelId] = useState<string>(doc.destinataires[0]?.id ?? '');
+  const [selId, setSelId] = useState<string>(
+    (initialToken ? doc.destinataires.find((d) => d.token === initialToken)?.id : undefined) ??
+      doc.destinataires[0]?.id ??
+      '',
+  );
   const [adding, setAdding] = useState(doc.destinataires.length === 0);
   const [newName, setNewName] = useState('');
   const [qr, setQr] = useState<string | null>(null);
@@ -47,11 +63,43 @@ export default function PartageNounouSheet({
 
   const url = dest ? buildEspaceUrl(dest.token) : '';
 
+  // Portées + digest partagés (L3-1b). Chip « 📌 événement » seulement s'il existe
+  // un ponctuel à venir (≤ 7 j). La portée ne change QUE le message.
+  const upcoming = useMemo<Ponctuel | undefined>(() => {
+    const t = todayISO();
+    const max = addDaysISO(t, 7);
+    return [...doc.ponctuels]
+      .filter((p) => p.date >= t && p.date <= max)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.heure.localeCompare(b.heure))[0];
+  }, [doc.ponctuels]);
+
+  const scopes = useMemo<ScopeOption[]>(() => {
+    const base: ScopeOption[] = [
+      { key: 'semaine', label: 'La semaine' },
+      { key: 'aujourdhui', label: "Aujourd'hui" },
+      { key: 'demain', label: 'Demain' },
+    ];
+    if (upcoming) base.push({ key: 'evenement', label: `📌 ${cleanText(upcoming.label)}` });
+    return base;
+  }, [upcoming]);
+
+  const [scope, setScope] = useState<NounouScope>('semaine');
+  const [digest, setDigest] = useState('');
+  const [confirmEmpty, setConfirmEmpty] = useState(false);
+  const [rappelOpen, setRappelOpen] = useState(false);
+  const rappel = useStore((s) => s.app.rappels?.nounou);
+
   useEffect(() => {
     setQr(null);
     setLastOpen(null);
     if (dest) void lastEspaceOpen(dest.token).then(setLastOpen);
   }, [dest]);
+
+  useEffect(() => {
+    setConfirmEmpty(false);
+    if (!dest) return setDigest('');
+    setDigest(buildNounouDigest({ prenom: dest.prenom, scope, link: buildEspaceUrl(dest.token), doc, upcoming }));
+  }, [scope, dest?.token, dest?.prenom, doc, upcoming]);
 
   const createDest = () => {
     const n = newName.trim();
@@ -81,29 +129,42 @@ export default function PartageNounouSheet({
       : doc.enfants;
   const kidsLabel = scopedKids.map((e) => e.prenom).join(' & ') || 'tous les enfants';
 
+  // La portée ne change QUE le message ; l'envoi publie toujours la page complète.
+  const isEmptyDigest = /Rien de (particulier|prévu)|Aucun événement/.test(digest);
+  const hasPhone = digits(dest?.tel).length > 0;
+
   const send = async () => {
     if (!dest) return;
     if (!supabaseEnabled || !connected) {
       return toast('Connecte-toi (icône ☁︎) pour publier le lien');
     }
+    if (isEmptyDigest && !confirmEmpty) return setConfirmEmpty(true); // confirmation portée vide
     setBusy(true);
     try {
-      const { url: link } = await publishNounouEspace(doc, dest);
-      const text = `Bonjour ${dest.prenom} 🌿 Voici la page de ${kidsLabel} — tout y est et elle reste à jour : ${link}`;
-      const tel = (dest.tel ?? '').replace(/[^\d]/g, '');
-      const wa = `https://wa.me/${tel}?text=${encodeURIComponent(text)}`;
-      window.open(wa, '_blank');
+      await publishNounouEspace(doc, dest);
       // Rappel de relecture (non bloquant) si du sensible n'est pas encore relu.
       const cache = doc.translations?.[dest.langue] ?? {};
       const aRelire = Object.values(cache).filter((e) => e.status === 'aValider').length;
       const noTrans = dest.langue !== 'fr' && Object.keys(cache).length === 0;
+      if (hasPhone) {
+        window.open(`https://wa.me/${digits(dest.tel)}?text=${encodeURIComponent(digest)}`, '_blank');
+      } else {
+        try {
+          await navigator.clipboard.writeText(digest);
+        } catch {
+          /* quota / mode privé : on ignore */
+        }
+      }
       toast(
-        noTrans
-          ? 'Envoyé (en français — pense à générer la traduction)'
-          : aRelire
-            ? `Envoyé · ${aRelire} traduction(s) sensible(s) à relire`
-            : 'Lien publié et prêt à envoyer',
+        !hasPhone
+          ? 'Publié ✓ — message copié (pas de numéro)'
+          : noTrans
+            ? 'Envoyé (en français — pense à générer la traduction)'
+            : aRelire
+              ? `Envoyé · ${aRelire} traduction(s) sensible(s) à relire`
+              : 'Envoyé ✓',
       );
+      setConfirmEmpty(false);
       void lastEspaceOpen(dest.token).then(setLastOpen);
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Échec de la publication');
@@ -137,6 +198,7 @@ export default function PartageNounouSheet({
   };
 
   return (
+    <>
     <Sheet title="Partager la page" sub="Lecture seule, mise à jour en place" onClose={onClose}>
       {/* Sélecteur de destinataire */}
       {doc.destinataires.length > 0 && (
@@ -186,6 +248,25 @@ export default function PartageNounouSheet({
               {dest.role} · {kidsLabel}
             </div>
           </div>
+
+          {/* L3-1b — portées + digest WhatsApp partagés */}
+          <DigestBlock
+            role="nounou"
+            scopes={scopes}
+            active={scope}
+            onScope={(k) => setScope(k as NounouScope)}
+            value={digest}
+            onChange={setDigest}
+          />
+
+          <button className="cz-cfgrow" onClick={() => setRappelOpen(true)}>
+            <span className="e">🔔</span>
+            <span className="st">
+              <b>Rappel d’envoi</b>
+              <i>{rappel ? rappelLabel(rappel) : 'Désactivé'}</i>
+            </span>
+            <span className="go">{rappel ? 'Modifier' : 'Activer'}</span>
+          </button>
 
           {/* FN4.1 — langue par destinataire */}
           <div className="cz-blab">Langue de sa page</div>
@@ -288,7 +369,13 @@ export default function PartageNounouSheet({
             <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
               <path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.535-.927zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413z" />
             </svg>
-            {busy ? 'Publication…' : 'Envoyer sur WhatsApp'}
+            {busy
+              ? 'Publication…'
+              : confirmEmpty
+                ? 'Rien de prévu — envoyer quand même'
+                : hasPhone
+                  ? 'Envoyer sur WhatsApp'
+                  : 'Publier + copier le message'}
           </button>
           <button className="cz-cta ghost" onClick={showQr}>
             {qr ? 'Masquer le QR' : 'Afficher le QR code'}
@@ -310,5 +397,7 @@ export default function PartageNounouSheet({
         </>
       )}
     </Sheet>
+    {rappelOpen && <RappelSheet kind="nounou" onClose={() => setRappelOpen(false)} toast={toast} />}
+    </>
   );
 }

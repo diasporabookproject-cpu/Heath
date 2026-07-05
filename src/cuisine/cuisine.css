@@ -3,29 +3,32 @@
    pour ne pas entrer en collision avec le style v1 (styles.css). */
 
 .cz {
-  --paper: #f3efe7;
+  /* Retheme « Manzil » (Lot 2) — tokens repris du design system mz-.
+     Les classes cz- restent (rhabillées, pas retirées) ; le renommage viendra
+     en passe cosmétique finale. Couleurs sémantiques (feux) alignées sur mz-. */
+  --paper: #f6f5f1;
   --surface: #ffffff;
-  --surface-2: #fbf8f2;
-  --ink: #26221e;
-  --muted: #90867a;
-  --line: #e7e0d3;
-  --petrol: #1e4d45;
-  --petrol-tint: #e7efec;
-  --petrol-ink: #143733;
-  --saffron: #b6791c;
-  --saffron-tint: #f6ecd7;
-  --draft: #7a5aa6;
-  --draft-tint: #eee8f6;
-  --draft-line: #d9ccec;
-  --ok: #3f9a63;
-  --warn: #e0922e;
+  --surface-2: #f1efe8;
+  --ink: #1d1b16;
+  --muted: #8b887c;
+  --line: #ebe9e1;
+  --petrol: #136b52; /* vert cuisine profond (mz-grn2) */
+  --petrol-tint: #e6f2ed; /* mz-grnT */
+  --petrol-ink: #0f5842;
+  --saffron: #a87a10; /* ambre lisible (texte/accent) */
+  --saffron-tint: #fbf3dc;
+  --draft: #5a45c4; /* violet « à valider » (mz-vio2) */
+  --draft-tint: #eee9fb; /* mz-vioT */
+  --draft-line: #d9d2f4;
+  --ok: #1f7a4d;
+  --warn: #a87a10;
   --bad: #c8503f;
   --rec: #c0392b;
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --maxw: 480px;
-  --shadow: 0 1px 2px rgba(38, 34, 30, 0.04), 0 8px 24px rgba(38, 34, 30, 0.06);
+  --shadow: 0 3px 12px rgba(29, 27, 22, 0.06);
 
   background: var(--paper);
   color: var(--ink);
@@ -44,9 +47,37 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  background: var(--paper);
-  padding: 16px 16px 10px;
-  border-bottom: 1px solid var(--line);
+  background: linear-gradient(157deg, var(--mz-grn1, #2fa37e) 0%, var(--mz-grn2, #136b52) 100%);
+  color: #fff;
+  padding: 16px 16px 13px;
+  border-bottom: none;
+  border-radius: 0 0 22px 22px;
+  box-shadow: 0 10px 26px rgba(19, 107, 82, 0.2);
+}
+/* Héros : les éléments d'en-tête passent en blanc translucide sur le dégradé. */
+.cz-head .cz-brand { color: #fff; }
+.cz-head .cz-back,
+.cz-head .cz-headicon {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.cz-head .cz-mark { background: rgba(255, 255, 255, 0.24); }
+.cz-head .cz-mark::before { border-color: rgba(255, 255, 255, 0.9); }
+.cz-head .cz-pill {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+.cz-head .cz-segmented {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+.cz-head .cz-seg { color: rgba(255, 255, 255, 0.82); }
+.cz-head .cz-seg[aria-selected='true'] {
+  background: #fff;
+  color: var(--petrol);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
 }
 .cz-brandrow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .cz-brand {
@@ -57,6 +88,20 @@
   display: flex;
   align-items: center;
   gap: 9px;
+}
+.cz-back {
+  width: 34px; height: 34px;
+  margin-left: -4px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex: none;
 }
 .cz-mark { width: 27px; height: 27px; border-radius: 8px; background: var(--petrol); position: relative; flex: none; }
 .cz-mark::before {
@@ -243,13 +288,13 @@
   width: 56px; height: 56px;
   border-radius: 18px;
   border: none;
-  background: var(--petrol);
-  color: #fff;
+  background: var(--mz-amber, #ffd466);
+  color: var(--mz-amberInk, #5c4200);
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow: 0 8px 22px rgba(30, 77, 69, 0.4);
-  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 8px 22px rgba(255, 212, 102, 0.5);
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   right: max(24px, calc(50% - var(--maxw) / 2 + 16px));
 }
 .cz-fab:active { transform: scale(0.95); }
@@ -274,6 +319,50 @@
 .cz-chip[aria-pressed='true'] { background: var(--petrol); color: #fff; border-color: var(--petrol); }
 .cz-chip.ca[aria-pressed='true'] { background: var(--saffron); border-color: var(--saffron); }
 
+.cz-quotab { margin-left: auto; flex: none; align-self: center; font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--draft); background: var(--draft-tint); border-radius: 999px; padding: 5px 9px; }
+
+/* Rappel d'envoi (L3-5) */
+.cz-rappeldays { display: flex; gap: 6px; }
+.cz-rd { flex: 1; padding: 12px 0; border-radius: 11px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: 14px; color: var(--muted); cursor: pointer; }
+.cz-rd.on { background: var(--petrol); border-color: var(--petrol); color: #fff; }
+.cz-rappeltimes { display: flex; gap: 8px; }
+.cz-rt { flex: 1; padding: 12px 0; border-radius: 11px; border: 1px solid var(--line); background: var(--surface); font-family: var(--font-mono); font-weight: 500; font-size: 14px; color: var(--ink); cursor: pointer; }
+.cz-rt.on { background: var(--petrol); border-color: var(--petrol); color: #fff; }
+.cz-cfgrow { width: 100%; text-align: left; display: flex; align-items: center; gap: 11px; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 13px 14px; cursor: pointer; margin-top: 12px; color: var(--ink); }
+.cz-cfgrow .e { font-size: 17px; flex: none; }
+.cz-cfgrow .st { flex: 1; }
+.cz-cfgrow .st b { display: block; font-size: 13.5px; font-weight: 700; }
+.cz-cfgrow .st i { font-size: 12px; color: var(--muted); }
+.cz-cfgrow .go { font-size: 12px; font-weight: 700; color: var(--petrol); flex: none; }
+
+/* Collections / packs (L3-4) */
+.cz-ck { width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--line); flex: none; display: grid; place-items: center; font-size: 13px; color: #fff; font-weight: 800; }
+.cz-ck.on { background: var(--petrol); border-color: var(--petrol); }
+.cz-collab { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 20px 16px 10px; }
+.cz-rail { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 20px; scrollbar-width: none; }
+.cz-rail::-webkit-scrollbar { height: 0; }
+.cz-pkt { flex: none; width: 138px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 13px; box-shadow: var(--shadow); text-align: left; position: relative; cursor: pointer; }
+.cz-pkt .cz-cov { width: 42px; height: 42px; border-radius: 12px; background: var(--petrol-tint); display: grid; place-items: center; font-size: 22px; margin-bottom: 9px; }
+.cz-pkt h5 { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+.cz-pkt i { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 4px; letter-spacing: 0.02em; }
+.cz-newb { position: absolute; top: 10px; right: 10px; font-size: 8.5px; font-weight: 800; letter-spacing: 0.04em; color: var(--draft); background: var(--draft-tint); border-radius: 999px; padding: 3px 7px; }
+.cz-pkt.more { display: flex; align-items: center; justify-content: center; width: 108px; color: var(--petrol); font-weight: 700; font-size: 13.5px; background: var(--surface-2); box-shadow: none; }
+
+/* File de relecture IA (L3-3) */
+.cz-relprog { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--draft); flex: none; }
+.cz-relbar { height: 5px; border-radius: 3px; background: var(--draft-tint); overflow: hidden; margin-top: 2px; }
+.cz-relbar i { display: block; height: 100%; background: var(--draft); border-radius: 3px; transition: width 0.25s; }
+.cz-relbody { background: var(--surface-2); border-radius: 12px; padding: 12px 13px; font-size: 13.5px; line-height: 1.5; color: var(--ink); margin-top: 10px; white-space: pre-wrap; }
+.cz-relwarn { background: var(--saffron-tint); color: var(--saffron); border-radius: 12px; padding: 11px 13px; font-size: 12.5px; font-weight: 600; margin-top: 10px; line-height: 1.4; }
+.cz-relbtns { display: flex; gap: 8px; margin-top: 16px; }
+.cz-relbtns .cz-cta { margin-top: 0; flex: 1; }
+.cz-relempty { text-align: center; padding: 40px 0 20px; color: var(--petrol); }
+.cz-sigrow { margin: 0 0 12px; width: 100%; text-align: left; display: flex; align-items: center; gap: 11px; background: var(--draft-tint); border: 1px solid var(--draft-line); border-radius: 13px; padding: 13px 14px; cursor: pointer; color: var(--draft); }
+.cz-sigrow .e { font-size: 17px; flex: none; }
+.cz-sigrow .st { flex: 1; }
+.cz-sigrow .st b { display: block; font-size: 13.5px; font-weight: 700; }
+.cz-sigrow .st i { font-size: 12px; color: #8a7ba5; }
+.cz-sigrow .go { font-size: 12px; font-weight: 700; }
 .cz-caflag { font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
 .cz-caflag.champion { background: var(--saffron-tint); color: var(--saffron); }
 .cz-caflag.moyen { background: #efeae0; color: #8a7d63; }
@@ -405,12 +494,13 @@
 .cz-stepper button { width: 48px; height: 46px; border: none; background: var(--surface); font-size: 22px; color: var(--petrol); cursor: pointer; font-family: var(--font-body); }
 .cz-stepper .sv { min-width: 54px; text-align: center; font-family: var(--font-mono); font-size: 17px; font-weight: 500; border-left: 1px solid var(--line); border-right: 1px solid var(--line); height: 46px; display: grid; place-items: center; }
 .cz-opt2 { display: flex; align-items: center; gap: 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; cursor: pointer; margin-bottom: 11px; width: 100%; text-align: left; font-family: var(--font-body); color: var(--ink); }
-.cz-opt2 .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+.cz-opt2 .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; flex: none; font-size: 22px; background: var(--surface-2); }
+.cz-opt2 .ic.imp { background: var(--surface-2); }
 .cz-opt2 .ic.pen { background: var(--petrol-tint); color: var(--petrol); }
 .cz-opt2 .ic.ai { background: var(--draft-tint); color: var(--draft); }
 .cz-opt2 .ot { flex: 1; }
-.cz-opt2 .ot .h { font-weight: 600; font-size: 15.5px; }
-.cz-opt2 .ot .d { font-size: 13px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+.cz-opt2 .ot .h { display: block; font-weight: 600; font-size: 15.5px; }
+.cz-opt2 .ot .d { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
 .cz-review { display: flex; gap: 9px; align-items: flex-start; background: var(--warn-tint); border-radius: 11px; padding: 12px; margin: 16px 0 0; font-size: 13px; color: #8a6a2a; line-height: 1.4; }
 
 .cz-cta { width: 100%; border: none; cursor: pointer; background: var(--petrol); color: #fff; font-family: var(--font-body); font-weight: 600; font-size: 16px; border-radius: 13px; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 9px; box-shadow: 0 6px 18px rgba(30, 77, 69, 0.3); margin-top: 18px; }
@@ -635,3 +725,6 @@
 .cz-vbtn { margin-left: auto; border: none; background: var(--draft); color: #fff; font-family: var(--font-body); font-weight: 600; font-size: 12px; padding: 7px 12px; border-radius: 9px; cursor: pointer; flex: none; }
 
 .cz :focus-visible { outline: 2px solid var(--petrol); outline-offset: 2px; }
+
+/* Garde-fou layout (L0-3) : clamp 2 lignes + coupure propre des longs mots. */
+.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }

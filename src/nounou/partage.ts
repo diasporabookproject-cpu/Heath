@@ -1,7 +1,8 @@
 import { getSupabase } from '../lib/supabase';
 import { getAccessToken, uploadAudios } from '../lib/publish';
 import { buildEspaceUrl } from '../lib/espace';
-import { loadAudioKeys } from '../lib/db';
+import { loadAudioKeys, recordPublished } from '../lib/db';
+import { hashStr } from '../lib/hash';
 import { newToken } from './defaults';
 import type { Enfant, Moment, NounouDest, NounouDoc, NounouLangue, Periode } from '../types';
 
@@ -90,6 +91,13 @@ export function buildNounouEspace(doc: NounouDoc, dest: NounouDest, publishedAt:
   };
 }
 
+/** Signature du contenu Nounou scopé + traductions figées (hors horodatage), pour l'état de transmission. */
+export function nounouSig(doc: NounouDoc, dest: NounouDest): string {
+  const { publishedAt: _drop, ...rest } = buildNounouEspace(doc, dest, '');
+  void _drop;
+  return hashStr(JSON.stringify(rest));
+}
+
 /** Publie / met à jour en place l'espace d'un destinataire. */
 export async function publishNounouEspace(
   doc: NounouDoc,
@@ -102,7 +110,7 @@ export async function publishNounouEspace(
   const payload = buildNounouEspace(doc, dest, new Date().toISOString());
 
   // Consignes vocales des conduites (la voix du parent) → bucket public `shared`,
-  // figées dans le payload (URL) pour la lecture côté employée.
+  // figées dans le payload (URL) pour la lecture côté destinataire.
   const audioKeys = new Set(await loadAudioKeys());
   const withVoix = payload.doc.conduites.filter((c) => !c.aCompleter && audioKeys.has(c.id));
   if (withVoix.length) {
@@ -117,6 +125,9 @@ export async function publishNounouEspace(
     .from('espaces')
     .upsert({ token: dest.token, payload, updated_at: new Date().toISOString() });
   if (error) throw new Error('Espace : ' + error.message);
+
+  // Trace de transmission (état « à envoyer », L1-4).
+  await recordPublished(dest.token, nounouSig(doc, dest));
 
   return { url: buildEspaceUrl(dest.token) };
 }

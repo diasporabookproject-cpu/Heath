@@ -17,26 +17,38 @@ import {
   type Espace,
 } from '../lib/espace';
 import { todayKey } from './dates';
-import { scaledRows } from '../lib/ingredients';
-import { DAY_AR } from '../lib/cuisineLabels';
+import { buildCuisineDigest, type CuisineScope } from '../maison/digest';
+import { DigestBlock, type ScopeOption } from '../ui/DigestBlock';
+import { rappelLabel } from '../lib/rappel';
+import RappelSheet from './RappelSheet';
 import type { Destinataire, SecuriteFiche } from '../types';
 import EspaceCuisine from './EspaceCuisine';
 import { IconSend, IconEye, IconLoader, IconCheck } from './icons';
 
 const ROLES = ['Cuisinière', 'Femme de ménage', 'Nounou', 'Autre'];
 const digits = (s?: string) => (s ?? '').replace(/\D/g, '');
+const CUISINE_SCOPES: ScopeOption[] = [
+  { key: 'semaine', label: 'La semaine' },
+  { key: 'aujourdhui', label: "Aujourd'hui" },
+  { key: 'demain', label: 'Demain' },
+  { key: 'jour', label: 'Un jour…' },
+];
 
 interface Props {
   onClose: () => void;
   toast: (m: string) => void;
+  /** Destinataire à pré-sélectionner (ouverture ciblée depuis « Envoyer » de Maison). */
+  initialToken?: string;
 }
 
 /** FC9 — Envoyer le menu : un seul geste (espace mis à jour + rappel WhatsApp). */
-export default function PartageSheet({ onClose, toast }: Props) {
+export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const persons = useStore((s) => s.settings.persons);
+  const rappel = useStore((s) => s.app.rappels?.cuisine);
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
+  const [rappelOpen, setRappelOpen] = useState(false);
 
   const [shown, setShown] = useState(false);
   const [dests, setDests] = useState<Destinataire[]>([]);
@@ -47,11 +59,22 @@ export default function PartageSheet({ onClose, toast }: Props) {
   const [lastOpen, setLastOpen] = useState<string | null>(null);
   const [preview, setPreview] = useState<Espace | null>(null);
   const [busy, setBusy] = useState(false);
+  const [scope, setScope] = useState<CuisineScope>('semaine');
+  const [dayKey, setDayKey] = useState<string>(todayKey());
+  const [digest, setDigest] = useState('');
+  const [confirmEmpty, setConfirmEmpty] = useState(false);
 
   const refresh = () =>
     loadDestinataires().then((list) => {
       setDests(list);
-      setSelId((cur) => cur ?? list.find((d) => d.role === 'Cuisinière')?.id ?? list[0]?.id ?? null);
+      setSelId(
+        (cur) =>
+          cur ??
+          (initialToken ? list.find((d) => d.token === initialToken)?.id : undefined) ??
+          list.find((d) => d.role === 'Cuisinière')?.id ??
+          list[0]?.id ??
+          null,
+      );
       if (list.length === 0) {
         setMode('edit');
         setEditing(blank());
@@ -72,6 +95,23 @@ export default function PartageSheet({ onClose, toast }: Props) {
     if (selected) void lastEspaceOpen(selected.token).then(setLastOpen);
   }, [selId, selected?.token]);
 
+  // Digest recomposé à chaque changement de portée / jour / destinataire / menu.
+  // (L'édition manuelle prime ensuite : elle écrit directement `digest`.)
+  useEffect(() => {
+    setConfirmEmpty(false);
+    if (!selected) return setDigest('');
+    setDigest(
+      buildCuisineDigest({
+        prenom: selected.nom,
+        scope,
+        dayKey,
+        link: buildEspaceUrl(selected.token),
+        week,
+        byId,
+      }),
+    );
+  }, [scope, dayKey, selected?.token, selected?.nom, week, byId]);
+
   function blank(): Destinataire {
     return {
       id: crypto.randomUUID(),
@@ -83,63 +123,34 @@ export default function PartageSheet({ onClose, toast }: Props) {
     };
   }
 
-  // Compte des jours composés (pour la phrase de résumé).
-  const dayCount = SEED_CONFIG.jours.filter((j) => {
-    const d = week.days[j.key];
-    return !!d && (d.petitdej.plat || d.dej.plat || d.diner.plat);
-  }).length;
-
-  const waText = (d: Destinataire, url: string) =>
-    d.langue === 'ar'
-      ? `السلام ${d.nom}، هاهو منيو هاد الأسبوع 👉 ${url}`
-      : `Bonjour ${d.nom}, voici le menu de la semaine 👉 ${url}`;
+  // La portée ne change QUE le message ; l'envoi publie toujours la page complète.
+  const isEmptyDigest = /Rien de (prévu|composé)/.test(digest);
+  const hasPhone = digits(selected?.tel).length > 0;
 
   const send = async () => {
     if (!selected) return;
+    if (isEmptyDigest && !confirmEmpty) return setConfirmEmpty(true); // confirmation portée vide
     setBusy(true);
     try {
       await publishEspace(selected, SEED_CONFIG, week, byId, persons);
-      const url = buildEspaceUrl(selected.token);
-      const wa = `https://wa.me/${digits(selected.tel)}?text=${encodeURIComponent(waText(selected, url))}`;
-      window.open(wa, '_blank');
-      toast(`Menu envoyé à ${selected.nom} + rappel WhatsApp`);
+      if (hasPhone) {
+        const wa = `https://wa.me/${digits(selected.tel)}?text=${encodeURIComponent(digest)}`;
+        window.open(wa, '_blank');
+        toast(`Envoyé à ${selected.nom} ✓`);
+      } else {
+        try {
+          await navigator.clipboard.writeText(digest);
+        } catch {
+          /* quota / mode privé : on ignore */
+        }
+        toast('Publié ✓ — message copié (pas de numéro)');
+      }
+      setConfirmEmpty(false);
       void lastEspaceOpen(selected.token).then(setLastOpen);
     } catch (e) {
       toast((e as Error).message);
     } finally {
       setBusy(false);
-    }
-  };
-
-  const copyText = async () => {
-    if (!selected) return;
-    const k = todayKey();
-    const j = SEED_CONFIG.jours.find((x) => x.key === k) ?? SEED_CONFIG.jours[0];
-    const d = week.days[j.key];
-    const ar = selected.langue === 'ar';
-    const lines: string[] = [ar ? `منيو ${DAY_AR[j.key] ?? j.nom}` : `Menu ${j.nom}`];
-    const add = (label: string, id: string | null | undefined) => {
-      if (!id) return;
-      const r = byId.get(id);
-      if (!r) return;
-      const nom = ar ? r.nom_ar || r.nom : r.nom;
-      const ing = scaledRows(ar ? r.ingredients_ar || r.ingredients : r.ingredients, persons)
-        .map((x) => (x.qty ? `${x.name} ${x.qty}` : x.name))
-        .join(' · ');
-      lines.push(`\n${label} : ${nom}\n${ing}`);
-    };
-    if (d) {
-      add(ar ? 'الفطور' : 'Petit-déj', d.petitdej.plat);
-      add(ar ? 'الغدا' : 'Déjeuner', d.dej.plat);
-      if (d.dej.entree) add(ar ? 'مقبلات' : 'Entrée', d.dej.entree);
-      add(ar ? 'العشا' : 'Dîner', d.diner.plat);
-      if (d.diner.entree) add(ar ? 'مقبلات' : 'Entrée', d.diner.entree);
-    }
-    try {
-      await navigator.clipboard.writeText(lines.join('\n'));
-      toast('Menu du jour copié');
-    } catch {
-      toast('Copie impossible');
     }
   };
 
@@ -221,7 +232,10 @@ export default function PartageSheet({ onClose, toast }: Props) {
             />
           ) : selected ? (
             <div className="ck-send">
-              <h1>Envoyer le menu de la semaine</h1>
+              <h1 style={{ marginBottom: 2 }}>Envoyer à {selected.nom}</h1>
+              <div className="mz-sm" style={{ marginBottom: 10 }}>
+                L’essentiel dans WhatsApp — et toute sa page à jour, en un lien.
+              </div>
 
               <div className="ck-recip">
                 <div className="ck-ava">{selected.nom.charAt(0).toUpperCase() || '?'}</div>
@@ -237,22 +251,43 @@ export default function PartageSheet({ onClose, toast }: Props) {
                 </button>
               </div>
 
-              <div className="ck-summary">
-                <div className="big">
-                  {selected.nom} recevra le <b>menu de {dayCount} jour{dayCount > 1 ? 's' : ''}</b> avec,
-                  pour chaque plat, les ingrédients (<b>pour {persons} pers.</b>), les étapes et{' '}
-                  <b>tes notes vocales</b> — en{' '}
-                  <b>{selected.langue === 'ar' ? 'الدارجة' : 'français'}</b>.
+              <DigestBlock
+                role="cuisine"
+                scopes={CUISINE_SCOPES}
+                active={scope}
+                onScope={(k) => setScope(k as CuisineScope)}
+                value={digest}
+                onChange={setDigest}
+              />
+              {scope === 'jour' && (
+                <div className="mz-digest grn">
+                  <div className="mz-scope" style={{ marginTop: 8 }}>
+                    {SEED_CONFIG.jours.map((j) => (
+                      <button
+                        key={j.key}
+                        className={'mz-sc' + (dayKey === j.key ? ' on' : '')}
+                        onClick={() => setDayKey(j.key)}
+                      >
+                        {j.nom.slice(0, 3)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="how">
-                  <IconSend size={16} />
-                  <span>À l’envoi, son espace se met à jour et elle reçoit un rappel WhatsApp.</span>
-                </div>
-                <button className="ck-prev" onClick={openPreview} disabled={busy}>
-                  <IconEye size={16} />
-                  Voir l’aperçu
-                </button>
-              </div>
+              )}
+
+              <button className="cz-cfgrow" onClick={() => setRappelOpen(true)}>
+                <span className="e">🔔</span>
+                <span className="st">
+                  <b>Rappel d’envoi</b>
+                  <i>{rappel ? rappelLabel(rappel) : 'Désactivé'}</i>
+                </span>
+                <span className="go">{rappel ? 'Modifier' : 'Activer'}</span>
+              </button>
+
+              <button className="ck-prev" onClick={openPreview} disabled={busy} style={{ marginTop: 12 }}>
+                <IconEye size={16} />
+                Aperçu · QR
+              </button>
 
               <div className="ck-receipt">
                 <IconEye size={15} />
@@ -263,10 +298,13 @@ export default function PartageSheet({ onClose, toast }: Props) {
 
               <button className="cz-cta" onClick={send} disabled={busy}>
                 {busy ? <IconLoader size={18} className="cz-spin" /> : <IconSend size={18} />}
-                {busy ? 'Envoi…' : `Envoyer à ${selected.nom}`}
-              </button>
-              <button className="ck-copyl" onClick={copyText} disabled={busy}>
-                Ou copier le menu du jour en texte
+                {busy
+                  ? 'Envoi…'
+                  : confirmEmpty
+                    ? 'Rien de prévu — envoyer quand même'
+                    : hasPhone
+                      ? `Envoyer à ${selected.nom}`
+                      : 'Publier + copier le message'}
               </button>
             </div>
           ) : (
@@ -274,6 +312,8 @@ export default function PartageSheet({ onClose, toast }: Props) {
           )}
         </div>
       </div>
+
+      {rappelOpen && <RappelSheet kind="cuisine" onClose={() => setRappelOpen(false)} toast={toast} />}
 
       {preview && (
         <div className="cz-preview-overlay">

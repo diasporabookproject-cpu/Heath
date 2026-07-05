@@ -21,14 +21,19 @@ interface Props {
   showAccount: boolean;
   connected: boolean;
   onOpenAccount: () => void;
+  onBack?: () => void;
+  /** Jeton d'un destinataire à cibler à l'ouverture (depuis « Envoyer » de Maison). */
+  initialShareToken?: string;
+  onConsumeShare?: () => void;
 }
 
-export default function NounouView({ showAccount, connected, onOpenAccount }: Props) {
+export default function NounouView({ showAccount, connected, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
   const ready = useNounou((s) => s.ready);
   const init = useNounou((s) => s.init);
 
   const [seg, setSeg] = useState<Segment>('journee');
   const [sharing, setSharing] = useState(false);
+  const [shareToken, setShareToken] = useState<string | undefined>(undefined);
   const [traduire, setTraduire] = useState<NounouLangue | null>(null);
   const [toastMsg, setToastMsg] = useState('');
   const toastT = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,20 +47,38 @@ export default function NounouView({ showAccount, connected, onOpenAccount }: Pr
     if (!ready) void init();
   }, [ready, init]);
 
+  // Ouverture ciblée depuis Maison (« Envoyer ») : ouvre le partage pré-sélectionné.
+  useEffect(() => {
+    if (initialShareToken) {
+      setShareToken(initialShareToken);
+      setSharing(true);
+      onConsumeShare?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialShareToken]);
+
   if (!ready) return <div className="spinner">Chargement…</div>;
 
   return (
-    <div className="cz">
+    <div className="cz cz-nounou">
       <header className="cz-head">
         <div className="cz-brandrow">
           <div className="cz-brand">
+            {onBack && (
+              <button className="cz-back" onClick={onBack} aria-label="Retour à Maison">
+                ‹
+              </button>
+            )}
             <span className="cz-mark nz-mark" />
             Nounou
           </div>
           <div className="cz-headicons">
             <button
               className="cz-headicon"
-              onClick={() => setSharing(true)}
+              onClick={() => {
+                setShareToken(undefined);
+                setSharing(true);
+              }}
               aria-label="Partager la page"
             >
               <IconShareUp size={18} />
@@ -103,6 +126,7 @@ export default function NounouView({ showAccount, connected, onOpenAccount }: Pr
       {sharing && (
         <PartageNounouSheet
           connected={connected}
+          initialToken={shareToken}
           onClose={() => setSharing(false)}
           onTraduire={(l) => {
             setSharing(false);

@@ -2,6 +2,8 @@ name: Déploiement GitHub Pages
 
 on:
   push:
+    # Déploiement de la prod uniquement. La refonte Bento→Manzil a été fusionnée ici
+    # (merge --no-ff, 2026-07-05) ; retour arrière trivial via le tag `pre-bento`.
     branches: [claude/jolly-wozniak-s83str]
   workflow_dispatch:
 
@@ -16,7 +18,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Garde-fou qualité BLOQUANT (E1) : aucun déploiement si types ou tests cassent.
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test
+
   build:
+    needs: quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

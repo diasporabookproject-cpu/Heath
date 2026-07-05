@@ -1,7 +1,8 @@
 import { getSupabase } from './supabase';
 import { getAccessToken, uploadAudios, uploadWeekAudios } from './publish';
 import { buildEspaceMenu, usedRecipeIds, type SharedMenu } from './share';
-import { loadAudio, loadSecurite } from './db';
+import { loadAudio, loadSecurite, recordPublished } from './db';
+import { cuisineSig } from '../maison/transmission';
 import { translateToDarija } from './ai';
 import { DEFAULT_SETTINGS, type AppConfig, type Destinataire, type Recipe, type SecuriteType, type WeekMenu } from '../types';
 
@@ -143,6 +144,9 @@ export async function publishEspace(
     .from('espaces')
     .upsert({ token: dest.token, payload, updated_at: new Date().toISOString() });
   if (error) throw new Error('Espace : ' + error.message);
+
+  // Trace de transmission (état « à envoyer », L1-4).
+  await recordPublished(dest.token, cuisineSig(week, persons, dest));
 
   return { url: buildEspaceUrl(dest.token), audioCount: audioUrls.size };
 }

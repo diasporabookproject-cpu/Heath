@@ -10,6 +10,7 @@ import {
   type WeekMenu,
 } from '../types';
 import { SEED_RECIPES } from '../data';
+import type { AiQuota } from './quota';
 
 // IndexedDB = source de vérité locale (offline-first). La synchro Supabase
 // (étape suivante) viendra se réconcilier par-dessus ce store.
@@ -29,10 +30,36 @@ interface MenuDB extends DBSchema {
   destinataires: { key: string; value: Destinataire };
   securite: { key: string; value: SecuriteFiche };
   nounou: { key: string; value: NounouDoc };
+  published: { key: string; value: PublishRecord };
+  app: { key: string; value: AppState };
+}
+
+/** Trace locale du dernier envoi par destinataire (état « à envoyer », L1-4). */
+export interface PublishRecord {
+  token: string;
+  sig: string;
+  at: string;
+}
+
+/**
+ * État applicatif transverse (L3) — réglages qui ne sont ni des recettes, ni du
+ * menu, ni un destinataire : quota IA (L3-2), rappels d'envoi (L3-5). Store dédié
+ * `app` (clé fixe 'app') plutôt que d'étendre `CuisineSettings` (transverse aux rôles).
+ */
+export interface AppState {
+  aiQuota?: AiQuota;
+  /** Rappels d'envoi par rôle (L3-5). */
+  rappels?: { cuisine?: Rappel; nounou?: Rappel };
+}
+
+export interface Rappel {
+  day: number; // 0 = lundi … 6 = dimanche
+  time: string; // 'HH:MM'
 }
 
 const DB_NAME = 'menu-semaine';
-const DB_VERSION = 5;
+const DB_VERSION = 7;
+const APP_KEY = 'app';
 
 let dbPromise: Promise<IDBPDatabase<MenuDB>> | null = null;
 
@@ -64,6 +91,14 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
         // v5 : document Nounou unique (modèle en couches, clé fixe 'doc').
         if (!db.objectStoreNames.contains('nounou')) {
           db.createObjectStore('nounou');
+        }
+        // v6 : trace du dernier envoi par destinataire (état de transmission).
+        if (!db.objectStoreNames.contains('published')) {
+          db.createObjectStore('published', { keyPath: 'token' });
+        }
+        // v7 : état applicatif transverse (quota IA, rappels) — clé fixe 'app'.
+        if (!db.objectStoreNames.contains('app')) {
+          db.createObjectStore('app');
         }
       },
     });
@@ -244,4 +279,30 @@ export async function loadNounou(): Promise<NounouDoc | undefined> {
 export async function saveNounou(doc: NounouDoc): Promise<void> {
   const db = await getDB();
   await db.put('nounou', doc, NOUNOU_KEY);
+}
+
+// ── État de transmission (dernier envoi par destinataire, L1-4) ──────────────
+
+export async function loadPublished(): Promise<Record<string, PublishRecord>> {
+  const db = await getDB();
+  const all = await db.getAll('published');
+  const map: Record<string, PublishRecord> = {};
+  for (const r of all) map[r.token] = r;
+  return map;
+}
+
+export async function recordPublished(token: string, sig: string): Promise<void> {
+  const db = await getDB();
+  await db.put('published', { token, sig, at: new Date().toISOString() });
+}
+
+/** État applicatif transverse (quota IA, rappels). */
+export async function loadApp(): Promise<AppState> {
+  const db = await getDB();
+  return (await db.get('app', APP_KEY)) ?? {};
+}
+
+export async function saveApp(state: AppState): Promise<void> {
+  const db = await getDB();
+  await db.put('app', state, APP_KEY);
 }

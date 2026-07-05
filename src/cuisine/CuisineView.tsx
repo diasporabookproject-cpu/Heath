@@ -10,6 +10,7 @@ import MealComposerSheet from './MealComposerSheet';
 import RecipePickerSheet from './RecipePickerSheet';
 import RecipeDetailSheet from './RecipeDetailSheet';
 import AddRecipeSheet from './AddRecipeSheet';
+import CollectionsSheet from './CollectionsSheet';
 import PartageSheet from './PartageSheet';
 import ObjectiveSheet from './ObjectiveSheet';
 import CopyWeekSheet from './CopyWeekSheet';
@@ -27,9 +28,13 @@ interface Props {
   showAccount: boolean;
   connected: boolean;
   onOpenAccount: () => void;
+  onBack?: () => void;
+  /** Jeton d'un destinataire à cibler à l'ouverture (depuis « Envoyer » de Maison). */
+  initialShareToken?: string;
+  onConsumeShare?: () => void;
 }
 
-export default function CuisineView({ showAccount, connected, onOpenAccount }: Props) {
+export default function CuisineView({ showAccount, connected, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
   const recipes = useStore((s) => s.recipes);
   const objective = useStore((s) => s.settings.objective);
   const setComponent = useStore((s) => s.setComponent);
@@ -39,7 +44,25 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
   const [pick, setPick] = useState<Pick>(null);
   const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [collections, setCollections] = useState<{ packId?: string } | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [shareToken, setShareToken] = useState<string | undefined>(undefined);
+
+  const openCollections = (packId?: string) => {
+    setAdding(false);
+    setCollections({ packId });
+  };
+
+  // Ouverture ciblée depuis Maison (« Envoyer ») : ouvre la feuille de partage
+  // pré-sélectionnée sur le destinataire, puis consomme le jeton (une seule fois).
+  useEffect(() => {
+    if (initialShareToken) {
+      setShareToken(initialShareToken);
+      setSharing(true);
+      onConsumeShare?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialShareToken]);
   const [objectiveOpen, setObjectiveOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
   const [recFilters, setRecFilters] = useState<string>('all');
@@ -68,6 +91,11 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
       <header className="cz-head">
         <div className="cz-brandrow">
           <div className="cz-brand">
+            {onBack && (
+              <button className="cz-back" onClick={onBack} aria-label="Retour à Maison">
+                ‹
+              </button>
+            )}
             <span className="cz-mark" />
             Cuisine
           </div>
@@ -78,7 +106,10 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
             <button
               className="cz-headicon"
               style={{ marginLeft: 8 }}
-              onClick={() => setSharing(true)}
+              onClick={() => {
+                setShareToken(undefined);
+                setSharing(true);
+              }}
               aria-label="Partager le menu"
             >
               <IconShareUp size={18} />
@@ -122,6 +153,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
             filter={recFilters}
             setFilter={setRecFilters}
             onOpenRecipe={(id) => setOpenRecipeId(id)}
+            onOpenCollections={openCollections}
             toast={toast}
           />
         ) : (
@@ -162,7 +194,13 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
         />
       )}
 
-      {sharing && <PartageSheet onClose={() => setSharing(false)} toast={toast} />}
+      {sharing && (
+        <PartageSheet
+          initialToken={shareToken}
+          onClose={() => setSharing(false)}
+          toast={toast}
+        />
+      )}
       {objectiveOpen && <ObjectiveSheet onClose={() => setObjectiveOpen(false)} />}
       {copyOpen && <CopyWeekSheet onClose={() => setCopyOpen(false)} toast={toast} />}
 
@@ -174,6 +212,15 @@ export default function CuisineView({ showAccount, connected, onOpenAccount }: P
             refreshVoice();
             setOpenRecipeId(id);
           }}
+          onCollections={() => openCollections()}
+          toast={toast}
+        />
+      )}
+
+      {collections && (
+        <CollectionsSheet
+          initialPackId={collections.packId}
+          onClose={() => setCollections(null)}
           toast={toast}
         />
       )}
