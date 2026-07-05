@@ -50,8 +50,6 @@ export interface AppState {
   aiQuota?: AiQuota;
   /** Rappels d'envoi par rôle (L3-5). */
   rappels?: { cuisine?: Rappel; nounou?: Rappel };
-  /** Dernier passage vérifié pour les échéances de rappel (L3-5). */
-  lastReminderCheck?: string;
 }
 
 export interface Rappel {

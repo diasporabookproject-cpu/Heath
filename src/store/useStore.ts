@@ -57,8 +57,6 @@ interface State {
   consumeAi: () => void;
   /** Règle (ou retire) le rappel d'envoi d'un rôle (L3-5). */
   setRappel: (kind: 'cuisine' | 'nounou', r: Rappel | null) => void;
-  /** Marque « vu » les échéances de rappel jusqu'à maintenant. */
-  bumpReminderCheck: () => void;
   /** Copie en profondeur les jours d'une autre semaine dans la semaine courante. */
   copyWeekInto: (srcDays: WeekMenu['days']) => void;
   setComponent: (dayKey: string, meal: MealKey, slot: Slot, value: string | AccRef | null) => void;
@@ -108,12 +106,6 @@ export const useStore = create<State>((set, get) => ({
     if (r) rappels[kind] = r;
     else delete rappels[kind];
     const app: AppState = { ...cur, rappels };
-    void saveApp(app);
-    set({ app });
-  },
-
-  bumpReminderCheck() {
-    const app: AppState = { ...get().app, lastReminderCheck: new Date().toISOString() };
     void saveApp(app);
     set({ app });
   },

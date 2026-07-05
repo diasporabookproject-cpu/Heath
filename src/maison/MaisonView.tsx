@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { useNounou } from '../nounou/useNounou';
 import { loadDestinataires, loadPublished, loadWeek, type PublishRecord } from '../lib/db';
 import { lastEspaceOpen } from '../lib/espace';
 import { weekId } from '../cuisine/dates';
 import { cleanText } from '../lib/sanitize';
-import { reminderDue, DAY_LABELS } from '../lib/rappel';
+import { DAY_LABELS } from '../lib/rappel';
 import { cuisineSig, envoiState, pillKind, type EnvoiState } from './transmission';
 import { nounouSig } from '../nounou/partage';
 import { personnes, KIND_LABEL, KIND_PICTO, type Personne, type PersonneKind } from './personnes';
@@ -48,8 +48,6 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
 
   const navWeek = useStore((s) => s.navWeek);
   const rappels = useStore((s) => s.app.rappels);
-  const lastReminderCheck = useStore((s) => s.app.lastReminderCheck);
-  const bumpReminderCheck = useStore((s) => s.bumpReminderCheck);
 
   const nReady = useNounou((s) => s.ready);
   const nInit = useNounou((s) => s.init);
@@ -60,22 +58,6 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
   const [opens, setOpens] = useState<Record<string, string | null>>({});
   // Signal « Planifier » : la semaine suivante est-elle vide ? null = inconnu (⇒ pas de nudge).
   const [nextWeekEmpty, setNextWeekEmpty] = useState<boolean | null>(null);
-  // Rôles dont le rappel d'envoi est « dû » à l'ouverture (L3-5, v1 pastille only).
-  const [dueRoles, setDueRoles] = useState<Set<PersonneKind>>(new Set());
-  const reminderChecked = useRef(false);
-
-  useEffect(() => {
-    if (reminderChecked.current || !cuisineReady) return; // attend le chargement du store `app`
-    reminderChecked.current = true;
-    const now = new Date();
-    const due = new Set<PersonneKind>();
-    (['cuisine', 'nounou'] as PersonneKind[]).forEach((k) => {
-      const r = rappels?.[k];
-      if (r && reminderDue(r, lastReminderCheck, now)) due.add(k);
-    });
-    setDueRoles(due);
-    if (due.size) bumpReminderCheck(); // marque les échéances vues jusqu'à maintenant
-  }, [cuisineReady, rappels, lastReminderCheck, bumpReminderCheck]);
 
   useEffect(() => {
     if (!nReady) void nInit();
@@ -173,11 +155,11 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
     });
     switch (kind) {
       case 'envoyer': {
-        // L3-5 : si un rappel est réglé ET son échéance est passée, la mention
-        // rappelle le rendez-vous d'envoi (pastille in-app, aucune notification).
+        // L3-5 (option B, fidèle au prototype) : tant qu'un rappel est réglé et
+        // qu'il y a du nouveau, la mention rappelle le rendez-vous d'envoi —
+        // PERSISTANTE jusqu'à l'envoi (pastille in-app, aucune notification).
         const r = rappels?.[p.kind];
-        const enriched =
-          r && dueRoles.has(p.kind) ? `● Du nouveau — ton rendez-vous du ${DAY_LABELS[r.day]} ${r.time}` : sub;
+        const enriched = r ? `● Du nouveau — ton rendez-vous du ${DAY_LABELS[r.day]} ${r.time}` : sub;
         return { pill: 'Envoyer', onPill: () => onOpenPage(p.kind, p, true), sub: enriched, tone: 'w' };
       }
       case 'briefer':
