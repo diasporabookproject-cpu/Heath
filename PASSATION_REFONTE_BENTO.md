@@ -1,9 +1,9 @@
 # Passation — Refonte UI/UX « Bento lumineux » → **Manzil**
 
 > Document d'audit + de reprise pour une nouvelle session. Objectif : permettre
-> d'**auditer ce qui existe** puis de **spécifier/écrire les prochaines
-> fonctionnalités** (fin du Lot 3) sans casser les invariants.
-> Dernière mise à jour : **2026-07-04**. Écrit à la main (pas d'auto-génération).
+> d'**auditer ce qui existe** et de mener une **Q&A / QA approfondie** sans casser les invariants.
+> **Refonte fonctionnellement COMPLÈTE (Lots 0→3).** Voir aussi **`QA_REFONTE_BENTO.md`** (guide de session Q&A : scénarios, check-list, limites, questions ouvertes).
+> Dernière mise à jour : **2026-07-05**. Écrit à la main (pas d'auto-génération).
 
 ---
 
@@ -15,12 +15,14 @@
   (« rhabiller, pas retirer »).
 - **Branche** : tout le travail est sur **`refonte/bento-v1`** (tag local `pre-bento` sur la base).
   La **branche de prod = `claude/jolly-wozniak-s83str`** (c'est elle que déploie GitHub Pages). **Non fusionnée.**
-- **Livré** : Lot 0 (socle `mz-`), Lot 1 (hub Maison + navigation + état de transmission),
-  Lot 2 (Cuisine + Nounou rhabillées Manzil, feuilles incluses), **L3-1** (câblage « personne → envoi ciblé »).
+- **Livré — Lots 0→3 COMPLETS** : Lot 0 (socle `mz-`), Lot 1 (hub Maison + navigation + état de
+  transmission), Lot 2 (Cuisine + Nounou rhabillées Manzil, feuilles incluses), **Lot 3 « Flux »**
+  (EnvoiSheet v2 · pastilles Envoyer/Briefer/Planifier · 3 portes + quota IA · file de relecture ·
+  collections/packs · rappel d'envoi). Prototype `prototype-interactif-v6-1-bento.html` committé (spec).
 - **Déployé en PRÉVUE** sur l'URL de prod : **https://diasporabookproject-cpu.github.io/Heath/**
   (voir §6 pour le mécanisme ; la branche de prod reste intacte).
-- **Reste (Lot 3)** : fonctionnalités **nouvelles** → §7. Elles ont besoin du **prototype/spec**.
-- **Qualité à chaque commit** : `typecheck` + `test` (55) + `build` + `smoke` **verts**. Aucune action Supabase pendant la refonte.
+- **Reste** : **test QNA global + check-list** d'Amine (voir `QA_REFONTE_BENTO.md`), puis **décision de merge**.
+- **Qualité à chaque commit** : `typecheck` + `test` (**90**) + `build` + `smoke` **verts**. Aucune action Supabase pendant la refonte.
 
 ---
 
@@ -30,7 +32,7 @@
 git fetch origin refonte/bento-v1 && git checkout refonte/bento-v1
 npm ci
 npm run typecheck      # tsc -b --noEmit
-npm run test           # Vitest — 55 tests
+npm run test           # Vitest — 90 tests
 npm run build          # tsc + vite build
 npm run preview &      # sert le build sur http://localhost:4173
 npm run smoke          # Playwright bout-en-bout (parcours Cuisine via le hub Maison)
@@ -57,6 +59,14 @@ npm run smoke          # Playwright bout-en-bout (parcours Cuisine via le hub Ma
 | `4f81beb` | **Clôture Lot 2** — décisions : espaces reçus gardés en Manzil ; renommage `cz-/nz-` reporté. |
 | `6d71f27` | **L3-1** — câblage « personne = contexte → envoi ciblé » (pastille Envoyer → feuille pré-sélectionnée). |
 | `2a403d8`, `cac7fbe` | **CI** — déclencheur temporaire de prévue sur l'URL de prod (à retirer au merge). |
+| `897d2f3` | **Lot 3 kickoff** — prototype v6.1 committé (spec) + cadrage (décisions Amine). |
+| `9be3099` | **C1 + C2** — correctifs Maison (fin de journée « Journée terminée » ; teinte timeline par rôle) + libellés « nouvelle page ». |
+| `b30a6a2` | **#2** — pastilles Maison **Envoyer / Briefer / Planifier** (fonction pure `pillKind`, signaux réels). |
+| `876b2d5` | **L3-1b** — **EnvoiSheet v2** : composeur de digest partagé (`digest.ts`) + `DigestBlock`, portées, corps par rôle. |
+| `a58af7e` | **L3-2** — création **3 portes** + **quota IA** (store `app` **DB v7**, `quota.ts`) ; ADR store `app`. |
+| `7d8d9b2` | **L3-3** — **file de relecture** des brouillons IA (`RelectureSheet`) ; suppression des « Valider » par ligne. |
+| `0d75f12` | **L3-4** — **collections/packs** (`packs/*.json`, `lib/packs.ts`, `CollectionsSheet` + rail). |
+| `ecd913e` | **L3-5** — **rappel d'envoi** (v1 pastille only, `rappel.ts`, `RappelSheet`) → **Lot 3 complet**. |
 
 ---
 
@@ -89,6 +99,18 @@ npm run smoke          # Playwright bout-en-bout (parcours Cuisine via le hub Ma
 8. **L3-1 backbone** : `App` porte `shareFor` (jeton) → `openPage(kind, person, share)` ; les vues
    consomment le jeton une fois (`shareToken` + `onConsumeShare`) ; `PartageSheet`/`PartageNounouSheet`
    acceptent `initialToken` → amorcent `selId`. **Survit** à un futur EnvoiSheet v2.
+9. **EnvoiSheet v2 — « la portée ne change QUE le message ».** L'envoi publie **toujours** la page
+   complète et à jour (`publishEspace`/`publishNounouEspace` inchangés) ; les portées (semaine/jour/…)
+   ne modifient que le **digest WhatsApp** (`src/maison/digest.ts`, pur). Modèle « page vivante », jamais
+   d'instantané partiel. Coquille + composeur partagés (`src/ui/DigestBlock.tsx`), corps par rôle.
+10. **Store transverse `app` (DB v7).** Réglages ni recette/menu/destinataire (quota IA, rappels) → store
+    dédié `app` (clé `'app'`, `loadApp`/`saveApp`), **pas** d'extension de `CuisineSettings`. `DB_VERSION 6→7`.
+11. **IA = accélérateur, jamais péage.** Saisie manuelle **toujours gratuite/illimitée** et **née `Validé`**.
+    Quota IA **front-only** (`src/lib/quota.ts`, 5/mois, reset mensuel) sur la seule porte ③ (« coup de main IA »).
+12. **Anti-doublon des packs par NOM** (`src/lib/packs.ts`) — raffinement de la question Q4 : `packId+nom`
+    seul laisserait dupliquer le pack « seed » déjà en bibliothèque ; la dédup par nom couvre aussi la réinstallation.
+13. **Rappel d'envoi v1 = pastille only.** **Aucune notification système** ; mention in-app à l'ouverture
+    (échéance pure `src/lib/rappel.ts`, testée). Microcopy honnête. « Rappel sans ouvrir l'app » = backlog.
 
 ---
 
@@ -101,19 +123,32 @@ npm run smoke          # Playwright bout-en-bout (parcours Cuisine via le hub Ma
 - `src/maison/MaisonView.tsx` — écran racine (Aujourd'hui + Ton équipe + Sécurité + nouvelle page).
 - `src/maison/personnes.ts` — adaptateur Personne (Cuisine+Nounou). `KIND_LABEL`/`KIND_PICTO`.
 - `src/maison/prochain.ts` — agenda cross-rôles du jour (moments Nounou projetés + repas Cuisine).
-- `src/maison/transmission.ts` — `cuisineSig` + `envoiState`. `src/lib/hash.ts` — `hashStr`.
-- `src/lib/sanitize.ts` (+ `.test.ts`) — nettoyage au rendu.
+- `src/maison/transmission.ts` — `cuisineSig` + `envoiState` + **`pillKind`** (pastille Maison, testée).
+- `src/lib/hash.ts` — `hashStr`. `src/lib/sanitize.ts` (+ `.test.ts`) — nettoyage au rendu.
+
+**Nouveau (Lot 3 « Flux »)**
+- `prototype-interactif-v6-1-bento.html` — **le prototype v6.1** (spec de comportement : objets `WA`, `state`/`render`, sheets `sh-*`).
+- `src/maison/digest.ts` (+ `.test.ts`) — composeur de digest WhatsApp partagé (cuisine/nounou).
+- `src/ui/DigestBlock.tsx` — coquille partagée portées + bulle éditable (EnvoiSheet v2).
+- `src/lib/quota.ts` (+ `.test.ts`) — quota IA mensuel (pur). `src/lib/packs.ts` (+ `.test.ts`) — install des packs (pur).
+- `src/lib/rappel.ts` (+ `.test.ts`) — échéance des rappels (pur).
+- `src/data/packs.ts` + `src/data/packs/*.json` — collections (format versionné).
+- `src/cuisine/RelectureSheet.tsx` — file de relecture IA. `src/cuisine/CollectionsSheet.tsx` — collections.
+- `src/cuisine/RappelSheet.tsx` — réglage rappel (partagé cuisine+nounou).
 
 **Modifié (convergence)**
 - `src/App.tsx` — routeur hub (screen: maison|cuisine|nounou|securite), sheet « nouvelle page »,
   plomberie `shareFor`. `index.html`, `vite.config.ts` — branding + polices.
-- `src/lib/db.ts` — store `published` (DB v6), `recordPublished`/`loadPublished`.
+- `src/lib/db.ts` — store `published` (DB v6) + **store `app` (DB v7)** (`AppState`/`Rappel`, `loadApp`/`saveApp`).
+- `src/store/useStore.ts` — `app` state + `consumeAi`/`setRappel`/`bumpReminderCheck`.
 - `src/lib/espace.ts` — `publishEspace` appelle `recordPublished(cuisineSig)`.
 - `src/nounou/partage.ts` — `nounouSig`, `publishNounouEspace` appelle `recordPublished`.
-- `src/cuisine/cuisine.css` — **retheme tokens `.cz` → Manzil** + héros vert + FAB ambre.
+- `src/cuisine/cuisine.css` — **retheme tokens `.cz` → Manzil** + héros vert + FAB ambre + styles L3.
 - `src/nounou/nounou.css` — scope `.cz-nounou` (héros violet + accents).
-- `src/cuisine/CuisineView.tsx`, `src/nounou/NounouView.tsx` — retour `‹ Maison`, `initialShareToken`/`onConsumeShare`.
-- `src/cuisine/PartageSheet.tsx`, `src/nounou/PartageNounouSheet.tsx` — prop `initialToken` (pré-sélection).
+- `src/cuisine/CuisineView.tsx`, `src/nounou/NounouView.tsx` — retour `‹ Maison`, `initialShareToken`, host collections.
+- `src/cuisine/PartageSheet.tsx`, `src/nounou/PartageNounouSheet.tsx` — **EnvoiSheet v2** (portées + digest + ligne rappel) sur le backbone `initialToken`.
+- `src/cuisine/AddRecipeSheet.tsx` — **3 portes** + quota. `src/cuisine/RecettesView.tsx` — bannière relecture + rail collections (plus de « Valider » par ligne).
+- `src/maison/MaisonView.tsx` — pastilles Envoyer/Briefer/Planifier + mention rappel. `src/types.ts` — `origineIA`/`packId`/`RecipeSeed`/`Pack`.
 - `src/styles.css` — `.topbar__back`. `scripts/smoke.mjs` — entrée Cuisine via le hub.
 
 **Hors périmètre (ne pas restyler sans accord)** : espaces reçus `src/cuisine/EspaceCuisine.tsx`,
@@ -149,27 +184,29 @@ npm run smoke          # Playwright bout-en-bout (parcours Cuisine via le hub Ma
 
 ---
 
-## 7. Reste à faire — Lot 3 (fonctionnalités NOUVELLES → besoin de spec/prototype)
+## 7. Lot 3 « Flux » — LIVRÉ (récap)
 
-Ce ne sont plus des rhabillages : à cadrer avec le **prototype v6.1** ou des maquettes avant de coder.
-
-1. **EnvoiSheet v2** — refonte visuelle de la feuille d'envoi (le **backbone L3-1** est déjà là : la feuille
-   s'ouvre pré-sélectionnée par personne ; il « suffit » de refaire l'intérieur en `mz-`).
-   *Manque : la maquette de la feuille.*
-2. **Création « 3 portes » + quota IA** — les 3 façons de créer une page/du contenu + compteur d'usage IA.
-   *Manque : les 3 portes exactes, le comportement du quota, l'emplacement.*
-3. **File de relecture IA** — écran pour relire/valider les traductions (le sensible est un **rappel non
-   bloquant**, décidé au Lot 4.2 Nounou). *Manque : la maquette + le workflow de validation.*
-4. **Collections / packs** — regrouper des recettes/consignes réutilisables. *Manque : modèle de données + UX.*
-5. **Rappels** — relances d'envoi. **Décision Lot 1** : rappel **éteint par défaut**, invitation à l'activer
-   dans le sheet Envoyer, **repli pastille in-app** (pas de notification système). *Manque : déclencheurs + UI.*
+| Fiche | Livré |
+|---|---|
+| **C1 / C2** | Fin de journée « Journée terminée 🌙 » (plus de faux « prochain ») ; teinte de timeline par rôle. |
+| **#2** | Pastilles Maison **Envoyer > Briefer > Planifier > ✓** sur signaux réels (fonction pure `pillKind`, testée ; Briefer = ponctuel ≤ 7 j, Planifier = semaine suivante vide). |
+| **L3-1b** | **EnvoiSheet v2** : composeur de digest partagé depuis les données réelles, portées (semaine/jour/📌…), bulle éditable ; portée = message uniquement ; corps par rôle ; digest vide → confirmation ; sans tél → « Publier + copier ». |
+| **L3-2** | Création **3 portes** (bibliothèque/collections · saisie manuelle **née `Validé`** · ✦ IA un seul champ) + **quota IA** front-only (5/mois, reset mensuel) ; store `app` DB v7. |
+| **L3-3** | **File de relecture** des brouillons `Test` (1/N, avertissement sanitizer, Supprimer/Modifier/Valider) ; bannière biblio ; **plus de « Valider » par ligne**. |
+| **L3-4** | **Collections/packs** (`packs/*.json`, rail + sheet, install = copie `Validé`+`packId`, **anti-doublon par nom**). |
+| **L3-5** | **Rappel d'envoi** v1 **pastille only** (aucune notif système) ; réglage par rôle ; mention Maison à échéance. |
 
 **Points d'attention / dette connue**
-- Noms `cz-/nz-/ck-` conservés (voir ADR 1) — assumé, pas une régression.
+- Noms `cz-/nz-/ck-` conservés (ADR 1) — assumé, pas une régression. Renommage littéral abandonné.
 - Déclencheur de déploiement `refonte/bento-v1` **temporaire** (à retirer au merge).
-- Vérif **visuelle** de la page reçue (`#e=`) à faire sur un **lien publié réel** (non reproductible headless).
-- Dette pré-refonte encore valable (voir « À faire / en cours » du DEVLOG) : synchro multi-appareils,
-  QR imprimable + accusé lu/ouvert, module Entretien, P1/P2 Cuisine, nettoyage bucket `shared`.
+- **Non vérifiable en headless (→ à cocher au QNA manuel, session Supabase requise)** : envois réels
+  (publication + `wa.me` + retour ✓ transmission + accusé) ; rendu **visuel** de la page reçue (`#e=`) ;
+  pastilles **Briefer/Planifier** (exigent un état `uptodate` = publication réelle). Voir `QA_REFONTE_BENTO.md`.
+- Dette pré-refonte (voir « À faire / en cours » du DEVLOG) : synchro multi-appareils, QR imprimable +
+  accusé lu/ouvert, module Entretien, P1/P2 Cuisine, nettoyage bucket `shared`.
+
+**Backlog issu du Lot 3** : rappel « sans ouvrir l'app » (notification/push) ; contenu éditorial riche
+des collections ; sélecteur de jour avancé pour la portée « Un jour… ».
 
 ---
 
