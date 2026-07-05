@@ -19,6 +19,8 @@ import {
 import { todayKey } from './dates';
 import { buildCuisineDigest, type CuisineScope } from '../maison/digest';
 import { DigestBlock, type ScopeOption } from '../ui/DigestBlock';
+import { rappelLabel } from '../lib/rappel';
+import RappelSheet from './RappelSheet';
 import type { Destinataire, SecuriteFiche } from '../types';
 import EspaceCuisine from './EspaceCuisine';
 import { IconSend, IconEye, IconLoader, IconCheck } from './icons';
@@ -44,7 +46,9 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const persons = useStore((s) => s.settings.persons);
+  const rappel = useStore((s) => s.app.rappels?.cuisine);
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
+  const [rappelOpen, setRappelOpen] = useState(false);
 
   const [shown, setShown] = useState(false);
   const [dests, setDests] = useState<Destinataire[]>([]);
@@ -271,6 +275,15 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
                 </div>
               )}
 
+              <button className="cz-cfgrow" onClick={() => setRappelOpen(true)}>
+                <span className="e">🔔</span>
+                <span className="st">
+                  <b>Rappel d’envoi</b>
+                  <i>{rappel ? rappelLabel(rappel) : 'Désactivé'}</i>
+                </span>
+                <span className="go">{rappel ? 'Modifier' : 'Activer'}</span>
+              </button>
+
               <button className="ck-prev" onClick={openPreview} disabled={busy} style={{ marginTop: 12 }}>
                 <IconEye size={16} />
                 Aperçu · QR
@@ -299,6 +312,8 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
           )}
         </div>
       </div>
+
+      {rappelOpen && <RappelSheet kind="cuisine" onClose={() => setRappelOpen(false)} toast={toast} />}
 
       {preview && (
         <div className="cz-preview-overlay">

@@ -8,6 +8,9 @@ import { buildEspaceUrl, lastEspaceOpen } from '../lib/espace';
 import { supabaseEnabled } from '../lib/supabase';
 import { buildNounouDigest, type NounouScope } from '../maison/digest';
 import { DigestBlock, type ScopeOption } from '../ui/DigestBlock';
+import { rappelLabel } from '../lib/rappel';
+import RappelSheet from '../cuisine/RappelSheet';
+import { useStore } from '../store/useStore';
 import { todayISO, addDaysISO } from './dates';
 import { cleanText } from '../lib/sanitize';
 import { NOUNOU_LANGS, type NounouDest, type NounouLangue, type Ponctuel } from '../types';
@@ -83,6 +86,8 @@ export default function PartageNounouSheet({
   const [scope, setScope] = useState<NounouScope>('semaine');
   const [digest, setDigest] = useState('');
   const [confirmEmpty, setConfirmEmpty] = useState(false);
+  const [rappelOpen, setRappelOpen] = useState(false);
+  const rappel = useStore((s) => s.app.rappels?.nounou);
 
   useEffect(() => {
     setQr(null);
@@ -193,6 +198,7 @@ export default function PartageNounouSheet({
   };
 
   return (
+    <>
     <Sheet title="Partager la page" sub="Lecture seule, mise à jour en place" onClose={onClose}>
       {/* Sélecteur de destinataire */}
       {doc.destinataires.length > 0 && (
@@ -252,6 +258,15 @@ export default function PartageNounouSheet({
             value={digest}
             onChange={setDigest}
           />
+
+          <button className="cz-cfgrow" onClick={() => setRappelOpen(true)}>
+            <span className="e">🔔</span>
+            <span className="st">
+              <b>Rappel d’envoi</b>
+              <i>{rappel ? rappelLabel(rappel) : 'Désactivé'}</i>
+            </span>
+            <span className="go">{rappel ? 'Modifier' : 'Activer'}</span>
+          </button>
 
           {/* FN4.1 — langue par destinataire */}
           <div className="cz-blab">Langue de sa page</div>
@@ -382,5 +397,7 @@ export default function PartageNounouSheet({
         </>
       )}
     </Sheet>
+    {rappelOpen && <RappelSheet kind="nounou" onClose={() => setRappelOpen(false)} toast={toast} />}
+    </>
   );
 }

@@ -13,6 +13,7 @@ import {
   saveSettings,
   saveWeek,
   type AppState,
+  type Rappel,
 } from '../lib/db';
 import { consume, currentMonth, normalizeQuota } from '../lib/quota';
 import { emptyDay } from '../lib/nutrition';
@@ -54,6 +55,10 @@ interface State {
   navWeek: (delta: number) => Promise<void>;
   /** Consomme une génération IA (porte ③) ; borné à la limite mensuelle. */
   consumeAi: () => void;
+  /** Règle (ou retire) le rappel d'envoi d'un rôle (L3-5). */
+  setRappel: (kind: 'cuisine' | 'nounou', r: Rappel | null) => void;
+  /** Marque « vu » les échéances de rappel jusqu'à maintenant. */
+  bumpReminderCheck: () => void;
   /** Copie en profondeur les jours d'une autre semaine dans la semaine courante. */
   copyWeekInto: (srcDays: WeekMenu['days']) => void;
   setComponent: (dayKey: string, meal: MealKey, slot: Slot, value: string | AccRef | null) => void;
@@ -93,6 +98,22 @@ export const useStore = create<State>((set, get) => ({
     const cur = get().app;
     const aiQuota = consume(normalizeQuota(cur.aiQuota, currentMonth()));
     const app: AppState = { ...cur, aiQuota };
+    void saveApp(app);
+    set({ app });
+  },
+
+  setRappel(kind, r) {
+    const cur = get().app;
+    const rappels = { ...cur.rappels };
+    if (r) rappels[kind] = r;
+    else delete rappels[kind];
+    const app: AppState = { ...cur, rappels };
+    void saveApp(app);
+    set({ app });
+  },
+
+  bumpReminderCheck() {
+    const app: AppState = { ...get().app, lastReminderCheck: new Date().toISOString() };
     void saveApp(app);
     set({ app });
   },
