@@ -164,7 +164,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
-### Session 9 — 2026-07-07 (Revue globale + HOTFIX PROD sécurité RPC/relais LLM)
+### Session 11 — 2026-07-07 (Revue globale + HOTFIX PROD sécurité RPC/relais LLM)
 Revue à froid des lots Comptes+Sync + Coquille (9 dimensions, vérif manuelle des P0/P1 — voir `REVUE_GLOBALE_2026-07-07.md`). **Aucun P0 sur la prod web** ; risques P1 concentrés sur sécurité/coût backend, robustesse sync multi-appareils, coquille native, dérive doc. Contre-vérification QA → tout confirmé avec aggravations. Plan re-priorisé : **HOTFIX PROD immédiat** (A1+A2) puis lot Assainissement, puis C2, puis passe doc.
 - **HOTFIX (branche `hotfix/rpc-lockdown`, depuis le défaut prod) — DÉPLOYÉ STAGING+PROD & VÉRIFIÉ** :
   - **A1** `0005_lockdown_rpc.sql` : `revoke execute … from public/anon/authenticated` + `grant … to service_role` sur `reserve_ai_usage`/`refund_ai_usage`. Ferme l'aggravation « épuiser le quota d'un AUTRE foyer » (param `f` libre). Périmètre STRICT 2 RPC — `create_foyer` (appelée client) et `is_foyer_member`/`is_foyer_owner` (policies RLS) **volontairement intouchés** (les verrouiller = login + lectures cassés). Spam `create_foyer` → Assainissement.
@@ -174,6 +174,11 @@ Revue à froid des lots Comptes+Sync + Coquille (9 dimensions, vérif manuelle d
   - **Aucun changement client** (les 4 appelants exigeaient déjà une session ; estimate/translate retombent local/null sur erreur).
   - **Rollback** : `0005` = pur grant/revoke (inverse trivial) ; fonctions = versions précédentes redéployables (recipe v10, translation v1).
   - **Reste** : test positif « génération avec session » sur appareil (logique inchangée + `service_role=X` prouvé) ; merge de la branche dans le défaut prod + report dans `coquille-v1` (décision Amine) ; lot **Assainissement** ensuite.
+
+### Session 10 — 2026-07-06 (Lot Finitions + Coquille Capacitor — read-back)
+Brief reçu de l'instance QA (`BRIEF_FINITIONS_COQUILLE.md`) + **D6 amendée** (naming non arrêté : rien d'irréversible — appId/domaine — avant la décision ; gel = premier upload store). Branche **`coquille-v1`** créée depuis la prod. **Read-back chiffré rendu** (`READBACK_COQUILLE.md`), ancré dans un audit 4 axes de la codebase (build/base path, pièges WebView, auth/session, CI/smoke — références fichier:ligne). Points saillants : (a) **8ᵉ piège découvert, absent du brief** : `buildEspaceUrl` (`espace.ts:46`) fabriquerait des liens publiés `https://localhost/#e=…` **morts** depuis l'app native → intégré à C0 (`VITE_WEB_BASE_URL`) + vérif C2 ; (b) **correction d'un présupposé du brief** : le spike signature iOS n'a jamais été exécuté → C3 l'absorbe ; (c) F3 = zéro migration (policy `invitations_rw` couvre déjà SELECT+DELETE) ; (d) F1 = zéro code (UI OTP complète — tout est config Resend/Supabase, actions Amine : compte+domaine+DNS+clé SMTP) ; (e) chiffrage F1→C2 ≈ **3,5–4,5 j**, appId provisoire proposé `com.dbp.foyer` (Q-c1, domaine SAS demandé). Cut-list Q-c5 : fonts natives, plugin Keyboard si nécessaire seulement, storage adapter iOS différé à C3, back-button mini-sheets backlog. **STOP — en attente du GO d'Amine** (+ option : démarrer C0 immédiatement, pur code).
+
+>>>>>>> 0636be7 (docs(coquille): read-back chiffré du lot Finitions+Coquille (audit 4 axes, Q-c1→Q-c5))
 
 ### Session 8 — 2026-07-04 (Refonte UI « Bento lumineux » → Manzil — Lots 0 & 1)
 Branche dédiée `refonte/bento-v1` (tag `pre-bento` posé sur la branche par défaut pour retour arrière trivial). Convergence vers le prototype v6.1 ; le merge/déploiement reste une décision explicite d'Amine. **Décisions actées au read-back** : (1) page = contenu, personne = contexte (langue/scope/état/cible d'envoi) — les cartes de Maison listeront les **personnes**, ouvrir une personne = ouvrir sa page dans son contexte, multi-destinataire préservé ; (2) Sécurité → entrée « La maison » depuis Maison (mêmes fiches/moteur, pas de migration) ; (3) heures d'affichage petit-déj 8:00 / déj 12:30 / dîner 20:00 (non réglables) ; (4) rappel d'envoi éteint par défaut, repli pastille in-app.
