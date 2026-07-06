@@ -72,13 +72,18 @@ pour mémoire, non implémenté.
 **Exclut :** construire un paywall, RevenueCat ou de l'IAP en v1 ; figer un prix ici ; gater
 quoi que ce soit maintenant.
 
-## D6 ☐ — Hébergement : **domaine `manzil.ma` MAINTENANT ; Cloudflare Pages à la coquille**
-Achat/vérification du domaine **cette semaine** (les digests le citent déjà ; il conditionne
-la crédibilité Apple, la confiance des liens reçus, et supprime le base-path `/Heath/` qui
-compliquerait Capacitor). Migration GitHub Pages → **Cloudflare Pages** dans le lot coquille :
-previews par branche (règle au passage « la préview vit sur l'URL de prod »), analytics,
-edge disponible. Région/UE pour tout ce qui héberge de la donnée (cf. D8).
-**Exclut :** rester durablement sur `github.io` pour des liens envoyés à de vraies familles.
+## D6 ☐ — Hébergement & domaine : **suspendu à la décision de NAMING**
+⚠️ Amendé le 5 juillet : **le nom de marque n'est pas arrêté** (« Manzil » = nom de travail,
+identité différée — cf. doc projet). L'achat du domaine est la **première conséquence de la
+décision de naming**, pas un préalable technique : la coquille embarque ses assets, le web
+vit sur Pages, et le domaine d'envoi e-mail transactionnel utilise un domaine existant
+d'Amine en attendant. **Deadline dure du naming = premier upload sur les stores** (gel de
+l'appId — lequel portera de toute façon le domaine inversé de l'ENTITÉ, jamais le nom
+produit). À la décision : domaine, Cloudflare Pages (previews par branche), redirects,
+Site URL Supabase, domaine Resend. Région/UE pour tout ce qui héberge de la donnée (D8).
+**Exclut :** graver « manzil » dans quoi que ce soit d'irréversible (appId, domaine acheté,
+identité store) avant la décision ; rester durablement sur `github.io` pour des liens
+envoyés à de vraies familles une fois le lancement large engagé.
 
 ## D7 ☐ — Observabilité & environnements : **le minimum pro**
 Sentry (crash reporting) dès la coquille ; **staging séparé** (2ᵉ projet Supabase + preview)
