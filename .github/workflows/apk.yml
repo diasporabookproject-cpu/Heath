@@ -14,13 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # JDK 17 requis par l'AGP de Capacitor (le SDK Android est préinstallé
-      # sur les runners GitHub ; le keystore DEBUG est auto-généré par Gradle —
-      # aucun secret nécessaire).
+      # JDK 21 requis par Capacitor 8 (sourceCompatibility VERSION_21). Le SDK
+      # Android est préinstallé sur les runners ; keystore DEBUG auto-généré —
+      # aucun secret nécessaire.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - uses: actions/setup-node@v4
         with:
           # Capacitor 8 (CLI) exige Node >= 22 — ne pas redescendre à 20.

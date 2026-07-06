@@ -11,7 +11,7 @@ npm run build:native        # dist en base './', service worker désactivé
 npx cap sync android        # copie le dist dans la coquille + plugins
 (cd android && ./gradlew assembleDebug)   # → android/app/build/outputs/apk/debug/app-debug.apk
 ```
-Prérequis locaux : JDK 17 + Android SDK (ou Android Studio). Le keystore **debug** est
+Prérequis locaux : JDK 21 (Capacitor 8) + Android SDK (ou Android Studio). Le keystore **debug** est
 auto-généré — aucun secret.
 
 Variables utiles au build natif (défauts corrects sinon) :
