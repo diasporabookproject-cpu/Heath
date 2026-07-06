@@ -1,5 +1,6 @@
 import { getSupabase } from './supabase';
 import { clearSyncState } from './db';
+import { webBaseUrl } from './platform';
 
 // Auth OTP par e-mail (code 6 chiffres) + foyer paresseux + suppression de compte.
 // L'auth n'est JAMAIS bloquante : l'app marche sans compte ; se connecter active
@@ -13,12 +14,12 @@ export async function sendOtp(email: string): Promise<{ error?: string }> {
     email: email.trim(),
     // Redirige le lien magique vers l'app (utile tant que l'e-mail n'a pas de code
     // à 6 chiffres — nécessite un SMTP perso pour éditer le modèle). Le retour du
-    // lien ouvre la session via detectSessionInUrl. ⚠️ origin + pathname : en prod
-    // GitHub Pages l'app vit sous /Heath/ — origin seul renverrait vers un 404
-    // (FIX revue Q n°3, même valeur que l'ancien sendMagicLink).
+    // lien ouvre la session via detectSessionInUrl. URL WEB publique via platform.ts :
+    // couvre le base path /Heath/ en prod (FIX revue Q n°3) ET le natif (origin =
+    // https://localhost serait un lien mort — le lien renvoie alors au web).
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: window.location.origin + window.location.pathname,
+      emailRedirectTo: webBaseUrl(),
     },
   });
   return error ? { error: error.message } : {};

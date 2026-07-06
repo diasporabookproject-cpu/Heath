@@ -5,7 +5,11 @@ import { VitePWA } from 'vite-plugin-pwa';
 // PWA minimale dès le P0 pour pouvoir tester l'installation sur le téléphone.
 // Le travail offline/icônes soigné (cache fin, écran de démarrage) sera approfondi en P1.
 // `base` : '/' en local, '/heath/' sur GitHub Pages (project pages) via BASE_PATH.
-const base = process.env.BASE_PATH || '/';
+// C0 (coquille Capacitor) : BUILD_TARGET=native ⇒ base RELATIVE './' (les assets sont
+// servis localement par la WebView) + service worker & manifest DÉSACTIVÉS (le SW est
+// l'affaire du web ; en natif il est inutile et nuisible).
+const isNative = process.env.BUILD_TARGET === 'native';
+const base = isNative ? './' : process.env.BASE_PATH || '/';
 
 export default defineConfig({
   base,
@@ -17,10 +21,15 @@ export default defineConfig({
     'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(
       process.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
     ),
+    // Cible de build (Q-c2) : détection natif/web à la COMPILATION, pas au runtime —
+    // les deux dist diffèrent de toute façon. Consommé par src/lib/platform.ts.
+    'import.meta.env.VITE_BUILD_TARGET': JSON.stringify(isNative ? 'native' : 'web'),
   },
   plugins: [
     react(),
     VitePWA({
+      // Natif : ni SW, ni script d'enregistrement, ni manifest.webmanifest.
+      disable: isNative,
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {

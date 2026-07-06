@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "build:native": "tsc -b && BUILD_TARGET=native vite build"
   },
   "dependencies": {
     "@sentry/react": "^8.55.2",
