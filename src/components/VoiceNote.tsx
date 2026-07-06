@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import fixWebmDuration from 'fix-webm-duration';
 import { deleteAudio, loadAudio, saveAudio } from '../lib/db';
+import { backupAudio, restoreAudio } from '../lib/sync/audio';
 import MzAudio from '../ui/MzAudio';
 
 // Note vocale par recette : enregistrement micro (offline, IndexedDB),
@@ -67,15 +68,18 @@ export default function VoiceNote({ recipeId, recipeName, lang }: { recipeId: st
 
   useEffect(() => {
     let revoked: string | null = null;
-    loadAudio(recipeId).then((blob) => {
-      if (blob) {
-        blobRef.current = blob;
-        const u = URL.createObjectURL(blob);
-        revoked = u;
-        setUrl(u);
-      }
+    let cancelled = false; // la restauration réseau peut résoudre APRÈS un changement de recette
+    loadAudio(recipeId).then(async (local) => {
+      // Manquant en local (nouvel appareil) → restauration paresseuse depuis le bucket.
+      const blob = local ?? (await restoreAudio(recipeId)) ?? undefined;
+      if (cancelled || !blob) return;
+      blobRef.current = blob;
+      const u = URL.createObjectURL(blob);
+      revoked = u;
+      setUrl(u);
     });
     return () => {
+      cancelled = true;
       if (revoked) URL.revokeObjectURL(revoked);
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -107,6 +111,7 @@ export default function VoiceNote({ recipeId, recipeName, lang }: { recipeId: st
         }
         blobRef.current = blob;
         await saveAudio(recipeId, blob, blob.type || type);
+        void backupAudio(recipeId, blob, blob.type || type); // sauvegarde cloud (best-effort)
         if (url) URL.revokeObjectURL(url);
         setUrl(URL.createObjectURL(blob));
         stream.getTracks().forEach((tr) => tr.stop());

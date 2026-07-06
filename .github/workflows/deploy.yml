@@ -48,6 +48,8 @@ jobs:
           # Clés Supabase côté client (la publishable key est publique par design).
           VITE_SUPABASE_URL: https://pqeilsuqglmrvijndrwa.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Gvhm9PdeleoilZGoeFiAtg_mGATsr1v
+          # Sentry crash-reporting (DSN = clé d'ingestion publique, sans secret).
+          VITE_SENTRY_DSN: https://0939a564afb426996c27804b976e4222@o4511683754983424.ingest.de.sentry.io/4511683834282064
       - uses: actions/configure-pages@v5
         with:
           # active automatiquement GitHub Pages (source = Actions) si pas déjà fait

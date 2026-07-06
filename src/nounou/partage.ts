@@ -1,4 +1,5 @@
 import { getSupabase } from '../lib/supabase';
+import { currentFoyerId } from '../lib/auth';
 import { getAccessToken, uploadAudios } from '../lib/publish';
 import { buildEspaceUrl } from '../lib/espace';
 import { loadAudioKeys, recordPublished } from '../lib/db';
@@ -121,9 +122,14 @@ export async function publishNounouEspace(
     );
   }
 
-  const { error } = await supa
-    .from('espaces')
-    .upsert({ token: dest.token, payload, updated_at: new Date().toISOString() });
+  // Tenancy (S6/FIX revue Q) : même rattachement au foyer que côté Cuisine —
+  // tolérant à la colonne absente tant que la migration 0002 n'est pas jouée.
+  const foyer_id = await currentFoyerId();
+  const base = { token: dest.token, payload, updated_at: new Date().toISOString() };
+  let { error } = await supa.from('espaces').upsert({ ...base, foyer_id });
+  if (error && /foyer_id/i.test(error.message)) {
+    ({ error } = await supa.from('espaces').upsert(base));
+  }
   if (error) throw new Error('Espace : ' + error.message);
 
   // Trace de transmission (état « à envoyer », L1-4).

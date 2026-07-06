@@ -121,6 +121,9 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, toas
       return;
     }
     setBusy(true);
+    // FIX revue Q (P2) : le générateur consomme le quota IA SERVEUR — un 429
+    // « quota atteint » doit se dire clairement, pas en « indisponible » générique.
+    let quotaHit = false;
     try {
       const drafts = await runPool(
         tasks,
@@ -128,7 +131,8 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, toas
           try {
             const intention = `${ROLE_LABEL[t.role]} équilibré, sans gluten, ~${t.target} kcal pour 1 portion`;
             return { t, d: await generateRecipeDraft(intention) };
-          } catch {
+          } catch (e) {
+            if (/quota/i.test((e as Error)?.message ?? '')) quotaHit = true;
             return null;
           }
         },
@@ -145,7 +149,13 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, toas
         setComponent(r.t.dayKey, r.t.mealKey, 'plat', id);
         n++;
       }
-      toast(n ? `${n} repas complété${n > 1 ? 's' : ''} par l’IA — à valider` : 'Génération indisponible');
+      toast(
+        n
+          ? `${n} repas complété${n > 1 ? 's' : ''} par l’IA — à valider`
+          : quotaHit
+            ? 'Quota IA du mois atteint — réessaie le mois prochain'
+            : 'Génération indisponible',
+      );
     } finally {
       setBusy(false);
     }

@@ -1,4 +1,5 @@
 import { getSupabase } from './supabase';
+import { currentFoyerId } from './auth';
 import { getAccessToken, uploadAudios, uploadWeekAudios } from './publish';
 import { buildEspaceMenu, usedRecipeIds, type SharedMenu } from './share';
 import { loadAudio, loadSecurite, recordPublished } from './db';
@@ -140,9 +141,18 @@ export async function publishEspace(
     securite,
   };
 
-  const { error } = await supa
-    .from('espaces')
-    .upsert({ token: dest.token, payload, updated_at: new Date().toISOString() });
+  // Tenancy (S6) : rattache l'espace au foyer → gestion/révocation côté auteur, et
+  // suppression du foyer = coupe les liens (cascade, migration 0002).
+  // FIX revue Q n°2 : TOLÉRANT à la colonne absente (0002 pas encore appliquée en
+  // prod) — on retente sans `foyer_id` plutôt que de casser toute publication.
+  // Un foyer_id manquant (null / colonne absente) se répare au prochain publish
+  // (upsert) une fois 0002 jouée et le foyer résolu.
+  const foyer_id = await currentFoyerId();
+  const base = { token: dest.token, payload, updated_at: new Date().toISOString() };
+  let { error } = await supa.from('espaces').upsert({ ...base, foyer_id });
+  if (error && /foyer_id/i.test(error.message)) {
+    ({ error } = await supa.from('espaces').upsert(base));
+  }
   if (error) throw new Error('Espace : ' + error.message);
 
   // Trace de transmission (état « à envoyer », L1-4).
