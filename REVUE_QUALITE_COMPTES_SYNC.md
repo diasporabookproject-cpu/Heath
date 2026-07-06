@@ -16,6 +16,11 @@
 > functions redéployées (v2/v2/v3), préview à jour. Restent en backlog P2 :
 > dédup fnError/CORS `_shared`, boucles engine, `collectLocalDocs` multi-chargé,
 > `ensureFoyer` par ouverture de sheet, révocation d'invitation owner.
+>
+> **➡️ Audit externe (instance QA) le même jour → `RESTITUTION_A1_ET_PLAN_PROD.md`** : P0-1/2/3
+> vérifiés conformes ; **1 bloquant résiduel A1** (flux « Rejoindre » sans filet avant la
+> suppression serveur du foyer possédé) + A2/A3/A4 → **tous corrigés** (pull+export+consentement
+> avant `acceptInvite` ; libellé Quitter ; TTL invitation 72 h ; RGPD Resend/Sentry). Re-audit en cours.
 
 ## Portes qualité (re-passées pendant la revue)
 

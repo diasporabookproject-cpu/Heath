@@ -26,11 +26,12 @@ Pour les foyers de l'UE, [représentant UE si requis].
 pas de profilage publicitaire. (Crash-reporting technique via Sentry, sans donnée de contenu.)
 
 **Hébergement & sous-traitants.**
-- **Supabase** (base + auth + stockage) — région **UE** (à confirmer / migrer, cf. `DECISIONS` QA).
+- **Supabase** (base + auth + stockage) — région **UE** (confirmée par Amine).
 - **Cloudflare Pages** (hébergement web).
 - **Anthropic** (génération/traduction IA) — appelée **serveur**, sur le texte de recette soumis.
-- **Sentry** (crash-reporting technique).
-→ Prévoir un **DPA** (accord de sous-traitance) signé avec chacun (Supabase & Cloudflare & Sentry & Anthropic proposent des DPA standard).
+- **Sentry** (crash-reporting technique) — **rétention à régler à 30 jours**.
+- **Resend** (SMTP transactionnel — envoi des codes de connexion) — **à ajouter au branchement SMTP** (passe prod, étape 4).
+→ Prévoir un **DPA** (accord de sous-traitance) signé avec chacun (Supabase, Cloudflare, Sentry, Anthropic, Resend proposent des DPA standard).
 
 **Sécurité.** Cloisonnement par foyer (**RLS** stricte, vérifiée), chiffrement **au repos** et
 **en transit** (fourni par Supabase/Cloudflare), quotas/écritures sensibles côté **serveur**.

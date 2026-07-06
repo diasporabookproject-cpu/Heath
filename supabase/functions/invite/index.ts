@@ -13,7 +13,7 @@ const CORS = {
 const json = (b: unknown, s: number) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...CORS, 'content-type': 'application/json' } });
 
-const INVITE_TTL_DAYS = 7;
+const INVITE_TTL_HOURS = 72; // A3 : un code circule sur WhatsApp → fenêtre courte (single-use en plus)
 
 /** Code lisible (sans caractères ambigus) de 8 signes. */
 function makeCode(): string {
@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
   const email = typeof body?.email === 'string' && body.email.trim() ? body.email.trim() : null;
 
   const code = makeCode();
-  const expires_at = new Date(Date.now() + INVITE_TTL_DAYS * 86400_000).toISOString();
+  const expires_at = new Date(Date.now() + INVITE_TTL_HOURS * 3600_000).toISOString();
   const { error } = await admin
     .from('invitations')
     .insert({ foyer_id: foyer, email, code, expires_at });

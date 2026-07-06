@@ -1,9 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Sheet } from '../ui/primitives';
 import { signOut, type Session } from '../lib/supabase';
-import { sendOtp, verifyOtp, ensureFoyer, deleteAccount, createInvite, acceptInvite, leaveFoyer } from '../lib/auth';
+import {
+  sendOtp,
+  verifyOtp,
+  ensureFoyer,
+  deleteAccount,
+  createInvite,
+  acceptInvite,
+  leaveFoyer,
+  currentFoyerId,
+} from '../lib/auth';
 import { normalizeOtp, isValidOtp, isValidEmail } from '../lib/otp';
 import { downloadExport } from '../lib/exportData';
+import { pull } from '../lib/sync/engine';
 
 // Écran Compte (S2). Connexion par CODE e-mail à 6 chiffres (jamais bloquante :
 // l'app marche sans compte). Se connecter = mettre sa maison à l'abri (sauvegarde,
@@ -25,6 +35,7 @@ export default function AccountSheet({
   const [confirmDel, setConfirmDel] = useState(false);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState('');
+  const [confirmJoin, setConfirmJoin] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
 
   const doInvite = async () => {
@@ -36,10 +47,28 @@ export default function AccountSheet({
     else if (code) setInviteCode(code);
   };
 
-  const doJoin = async () => {
+  // 1ᵉʳ tap : on n'appelle PAS encore le serveur (opération destructive) → confirmation.
+  const doJoin = () => {
     if (!joinCode.trim()) return;
+    setErr('');
+    setConfirmJoin(true);
+  };
+
+  // Confirmé : FILET avant l'opération destructive (A1). Le serveur supprimera le
+  // foyer possédé ET sa sauvegarde cloud → on rapatrie d'abord les éventuels docs
+  // cloud-only (pull final), puis on exporte en local (filet), puis on rejoint.
+  const confirmedJoin = async () => {
     setBusy(true);
     setErr('');
+    const fid = await currentFoyerId();
+    if (fid) {
+      try {
+        await pull(fid); // rapatrie les docs cloud-only avant que le foyer ne soit supprimé
+      } catch {
+        /* best-effort : l'export ci-dessous reste le filet */
+      }
+    }
+    await downloadExport(); // export JSON local AVANT toute suppression (filet Q1)
     const { error } = await acceptInvite(joinCode.trim());
     if (error) {
       setBusy(false);
@@ -144,30 +173,50 @@ export default function AccountSheet({
           <div className="mz-acc-ok">
             Code d’invitation : <b style={{ letterSpacing: '0.12em' }}>{inviteCode}</b>
             <br />
-            Partage-le avec l’autre parent — valable 7 jours.
+            Partage-le avec l’autre parent — valable 72 h.
           </div>
         ) : (
           <button className="mz-btn" onClick={doInvite} disabled={busy}>
             ＋ Inviter quelqu’un dans mon foyer
           </button>
         )}
-        <div className="mz-btnrow" style={{ marginTop: 8 }}>
-          <input
-            className="mz-inp"
-            style={{ flex: 2 }}
-            type="text"
-            autoCapitalize="characters"
-            placeholder="J’ai un code…"
-            value={joinCode}
-            onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-          />
-          <button className="mz-btn" style={{ flex: 1 }} onClick={doJoin} disabled={busy || !joinCode.trim()}>
-            Rejoindre
-          </button>
-        </div>
-        <div className="mz-sm" style={{ marginTop: 6 }}>
-          Rejoindre un foyer remplace le tien ; tes recettes locales le rejoignent à la synchro.
-        </div>
+        {!confirmJoin ? (
+          <>
+            <div className="mz-btnrow" style={{ marginTop: 8 }}>
+              <input
+                className="mz-inp"
+                style={{ flex: 2 }}
+                type="text"
+                autoCapitalize="characters"
+                placeholder="J’ai un code…"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+              />
+              <button className="mz-btn" style={{ flex: 1 }} onClick={doJoin} disabled={busy || !joinCode.trim()}>
+                Rejoindre
+              </button>
+            </div>
+            <div className="mz-sm" style={{ marginTop: 6 }}>
+              Rejoindre un foyer remplace le tien ; tes recettes locales le rejoignent à la synchro.
+            </div>
+          </>
+        ) : (
+          <div style={{ marginTop: 10 }}>
+            <div className="mz-note">
+              Ton foyer actuel et sa <b>sauvegarde en ligne seront supprimés</b>. Tes données sur
+              cet appareil rejoindront le foyer partagé. Une copie de tes données va être
+              téléchargée avant, par sécurité.
+            </div>
+            <div className="mz-btnrow">
+              <button className="mz-btn" onClick={() => setConfirmJoin(false)} disabled={busy}>
+                Annuler
+              </button>
+              <button className="mz-btn primary" onClick={confirmedJoin} disabled={busy}>
+                {busy ? 'Fusion…' : 'Rejoindre le foyer'}
+              </button>
+            </div>
+          </div>
+        )}
         {!confirmLeave ? (
           <button className="mz-quiet" onClick={() => setConfirmLeave(true)}>
             Quitter le foyer partagé
@@ -176,7 +225,8 @@ export default function AccountSheet({
           <div style={{ marginTop: 10 }}>
             <div className="mz-note">
               Tu quittes ce foyer et repars sur une maison neuve. Tes données locales restent sur
-              cet appareil et rejoindront ton nouveau foyer à la synchro.
+              cet appareil et rejoindront ton nouveau foyer à la synchro. <b>Si tu es le
+              propriétaire de ce foyer, sa sauvegarde en ligne est aussi supprimée.</b>
             </div>
             <div className="mz-btnrow">
               <button className="mz-btn" onClick={() => setConfirmLeave(false)} disabled={busy}>
