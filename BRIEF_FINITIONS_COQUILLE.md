@@ -18,11 +18,9 @@ complète Q1–Q10 sur prod. Ne bloque pas F1/C0, bloque la fin du lot.
 
 ### F1 — SMTP Resend + OTP 6 chiffres 🟢→🟡 (EN PREMIER : débloque l'onboarding ET la coquille)
 - ⚠️ **Le nom de marque n'est pas décidé** (« Manzil » = nom de travail) → **pas de domaine
-  produit**. Domaine d'expédition Resend : utiliser un **domaine existant d'Amine** (SAS /
-  apps précédentes, sous-domaine transactionnel type `mail.<domaine>.com`) — à lui de le
-  fournir au read-back ; à défaut, petit domaine neutre dédié à l'envoi. L'adresse d'envoi
-  est un détail remplaçable après naming (changer de domaine Resend = re-vérification, sans
-  impact code).
+  produit**. Domaine d'expédition Resend : **`elysia.studio` (domaine d'Amine) — sous-domaine
+  transactionnel `send.elysia.studio`**. L'adresse d'envoi est un détail remplaçable après
+  naming (changer de domaine Resend = re-vérification, sans impact code).
 - **Staging d'abord** : brancher le SMTP custom Supabase, passer le template au **code
   6 chiffres** (`{{ .Token }}`), écran de saisie déjà prêt côté client — vérifier le parcours
   complet, les spams, le rate-limit levé. Puis **prod** (mêmes étapes).
@@ -110,11 +108,10 @@ calme + Q1–Q10 passés. Entrée DEVLOG.
   redirigés, domaine d'envoi Resend basculé.
 
 ### Questions au read-back (partie 2)
-- **Q-c1** : `appId` — ⚠️ **le nom de marque n'est pas décidé**. Best practice : l'appId
-  porte le **domaine inversé de l'entité** (la SAS d'Amine), jamais le nom du produit
-  (les produits se renomment). Propose un appId **provisoire neutre** sur cette base pour
-  toute la phase APK debug ; **gel définitif = au premier upload store, pas avant** — c'est
-  la vraie deadline de la décision de naming, à inscrire au DEVLOG.
+- **Q-c1** : `appId` — **TRANCHÉ : `studio.elysia.foyer`** (domaine inversé de l'entité
+  d'Amine `elysia.studio` + segment produit-neutre `foyer` — remplace le provisoire
+  `com.dbp.foyer`). Conforme à la règle « entité, jamais le produit » : cet appId peut même
+  **survivre au naming**. Gel définitif = au premier upload store (deadline naming au DEVLOG).
 - **Q-c2** : stratégie de détection natif/web dans le code (`Capacitor.isNativePlatform()`
   centralisé où ?).
 - **Q-c3** : la session Supabase persiste-t-elle correctement dans la WebView (storage) —

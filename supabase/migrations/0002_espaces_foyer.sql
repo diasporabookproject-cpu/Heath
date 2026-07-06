@@ -1,7 +1,7 @@
 -- 0002_espaces_foyer.sql
 -- Sous-lot S6 — tenancy sur `espaces` : rattache les pages publiées au foyer.
 --
--- ⚠️ ARTEFACT DE READ-BACK — **NON APPLIQUÉ**. À jouer **EN PROD** (la table `espaces`
+-- ✅ APPLIQUÉE en STAGING et en PROD le 2026-07-05 (via API Management). À jouer **EN PROD** (la table `espaces`
 -- n'existe qu'en prod ; le staging est vierge), à la passe prod, après relecture.
 --
 -- DÉCISION AMINE : supprimer un foyer DOIT couper TOUS ses liens envoyés (sécurité)
