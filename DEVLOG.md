@@ -89,6 +89,17 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## État actuel (au 2026-07-05)
 
+> ## 🚀 Lot « Comptes + Sync » — **MERGÉ & DÉPLOYÉ EN PROD** (2026-07-05, `e21d0ec`)
+> **Passe de déploiement prod exécutée** (via API Management Supabase + Pages) :
+> - **Backup préalable** : `espaces_bak_20260705` (4 lignes) + `espace_opens_bak_20260705` (66) + snapshot des policies `espaces`.
+> - **Migrations appliquées (prod `pqeilsuqglmrvijndrwa`)** : **0001** (schéma foyers/membres/invitations/docs/ai_usage + RLS + `create_foyer`) → **0004** (RPC quota atomiques) → **0002** (`espaces.foyer_id` on delete cascade — **non-régression vérifiée** : lecture publique d'un jeton réel toujours 200) → **0003** (bucket privé `foyer-audio` + RLS storage).
+> - **Edge functions prod déployées + gardées (401 sans session)** : `delete-account`, `invite`, `accept-invite`, **`generate-recipe` v10** (gate quota, déployée APRÈS le client live pour ne pas casser l'IA existante). Secret `ANTHROPIC_API_KEY` prod inchangé.
+> - **Client mergé** (`--no-ff`) → Pages run #87 **vert** → **prod en ligne** avec comptes. Auth config prod déjà correcte (Site URL/redirect `/Heath/` — le fix P0-3 y renvoie).
+> - **Rollback** : tag **`pre-comptes-sync`** (`0bd5863`) + `git revert -m 1 e21d0ec`. Backups en base à conserver quelques jours.
+> - **⏳ Reste (non bloquant, actions Amine)** : **SMTP Resend** (code 6 chiffres + lève le rate-limit e-mail ; login par **lien** marche en attendant) · QA appareil (2 comptes : invite/quitter/fusion/suppression/IA) · rétention Sentry 30 j · dropper les tables `*_bak` après vérif · lot **Coquille** (Capacitor) ensuite.
+
+
+
 > **✅ Refonte UI/UX « Bento lumineux » → Manzil FUSIONNÉE EN PROD** (`claude/jolly-wozniak-s83str`,
 > merge `--no-ff` du 2026-07-05, décision Amine « avance sans attendre la QA manuelle »).
 > Voir **`PASSATION_REFONTE_BENTO.md`** (dossier de passation complet : état, ADR, fichiers,
