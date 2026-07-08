@@ -16,8 +16,8 @@ jobs:
   qualite:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -29,20 +29,21 @@ jobs:
     needs: qualite
     runs-on: ubuntu-latest
     env:
-      SB_REF: pqeilsuqglmrvijndrwa
+      # base /Heath/ pour LE BUILD ET LE PREVIEW : sinon le preview sert en base '/'
+      # et /Heath/assets/* tombe sur le fallback SPA (text/html) → l'app ne démarre pas.
+      BASE_PATH: /Heath/
       BASE_URL: http://localhost:4173/Heath/
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
       - run: npm ci
-      # Build web (base /Heath/) AVEC Supabase configuré : le smoke comptes a besoin
-      # de supabaseEnabled=true (clés PUBLIQUES par design). Pas de session réelle.
+      # Build web réel : a besoin des VITE_SUPABASE_* (clés PUBLIQUES par design ;
+      # jamais de secret) — supabaseEnabled=true pour que l'écran Compte s'affiche.
       - run: npm run build
         env:
-          BASE_PATH: /Heath/
           VITE_SUPABASE_URL: https://pqeilsuqglmrvijndrwa.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Gvhm9PdeleoilZGoeFiAtg_mGATsr1v
       # Playwright global (le script a un fallback vers `npm root -g`), version alignée
@@ -58,5 +59,5 @@ jobs:
           done
           set -e
           npm run smoke                         # parcours Cuisine (produit)
-          node scripts/smoke-comptes.mjs        # UI compte, session mockée
+          node scripts/smoke-comptes.mjs        # parcours Compte DÉCONNECTÉ (invariant sans-compte)
           kill $PREV 2>/dev/null || true
