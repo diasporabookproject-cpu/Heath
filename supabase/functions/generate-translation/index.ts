@@ -2,6 +2,45 @@
 // Relais vers l'API Claude (Anthropic), sortie STRUCTURÉE via "tool use"
 // (tableau de traductions, même ordre/longueur que l'entrée). Clé serveur.
 // Secret requis : ANTHROPIC_API_KEY. Optionnel : ANTHROPIC_MODEL.
+// Hotfix 2026-07-07 : cette fonction, héritée de l'ère anonyme, n'avait AUCUN
+// contrôle → relais Anthropic ouvert. Elle exige désormais une SESSION (JWT) et
+// passe par le garde anti-abus (`reserve_abuse_guard`, plafond 1000, clé
+// 'abuse-YYYY-MM') — HORS du quota produit (D5). Env auto : SUPABASE_URL,
+// SUPABASE_SERVICE_ROLE_KEY.
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const ABUSE_CAP = 1000; // appels utilitaires / mois / foyer — plafond anti-script (hors quota produit).
+
+interface Denied {
+  ok: false;
+  status: number;
+  error: string;
+}
+
+/**
+ * Exige une session (JWT) et incrémente le garde anti-abus namespacé du foyer.
+ * Renvoie 401/403 sans session, 429 au plafond. Aucun appel LLM ne se fait sans
+ * passer par là. Pas de refund (un script qui échoue en boucle plafonne plus vite).
+ */
+async function reserveAbuse(req: Request): Promise<{ ok: true } | Denied> {
+  const url = Deno.env.get('SUPABASE_URL');
+  const svc = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!url || !svc) return { ok: false, status: 500, error: 'Config serveur manquante.' };
+  const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+  if (!jwt) return { ok: false, status: 401, error: 'Connecte-toi pour utiliser la traduction.' };
+  const admin = createClient(url, svc, { auth: { persistSession: false } });
+  const { data: u, error: uErr } = await admin.auth.getUser(jwt);
+  if (uErr || !u.user) return { ok: false, status: 401, error: 'Session invalide.' };
+  const { data: mem } = await admin.from('membres').select('foyer_id').eq('user_id', u.user.id).limit(1);
+  const foyer = mem?.[0]?.foyer_id as string | undefined;
+  if (!foyer) return { ok: false, status: 403, error: 'Foyer introuvable.' };
+  const month = 'abuse-' + new Date().toISOString().slice(0, 7);
+  const { data: used, error } = await admin.rpc('reserve_abuse_guard', { f: foyer, m: month, cap: ABUSE_CAP });
+  if (error) return { ok: false, status: 500, error: 'Service indisponible : ' + error.message };
+  if (used === null || used === undefined) return { ok: false, status: 429, error: 'Trop de requêtes ce mois-ci.' };
+  return { ok: true };
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -81,6 +120,9 @@ Deno.serve(async (req: Request) => {
     const targetLabel = TARGETS[String(body?.target ?? '')];
     if (!texts.length) return json({ error: 'Aucun texte à traduire.' }, 400);
     if (!targetLabel) return json({ error: 'Langue cible inconnue.' }, 400);
+
+    const guard = await reserveAbuse(req); // session exigée + garde anti-abus (hors quota produit)
+    if (!guard.ok) return json({ error: guard.error }, guard.status);
 
     // Numérotation pour fiabiliser l'alignement entrée/sortie.
     const user =
