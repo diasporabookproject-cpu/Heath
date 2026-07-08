@@ -1,0 +1,62 @@
+name: CI (qualité + smoke)
+
+# Leçon E1 portée EN CI : types + tests + build + parcours Playwright sur CHAQUE
+# push et PR (toutes branches) — attraper les régressions AVANT le merge/déploiement.
+# (deploy.yml garde son propre garde-fou bloquant pour la prod.)
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test
+
+  smoke:
+    needs: qualite
+    runs-on: ubuntu-latest
+    env:
+      SB_REF: pqeilsuqglmrvijndrwa
+      BASE_URL: http://localhost:4173/Heath/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Build web (base /Heath/) AVEC Supabase configuré : le smoke comptes a besoin
+      # de supabaseEnabled=true (clés PUBLIQUES par design). Pas de session réelle.
+      - run: npm run build
+        env:
+          BASE_PATH: /Heath/
+          VITE_SUPABASE_URL: https://pqeilsuqglmrvijndrwa.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Gvhm9PdeleoilZGoeFiAtg_mGATsr1v
+      # Playwright global (le script a un fallback vers `npm root -g`), version alignée
+      # sur l'environnement de dev ; le navigateur est téléchargé pour cette version.
+      - run: npm i -g playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - name: Preview + smokes
+        run: |
+          npx vite preview --port 4173 &
+          PREV=$!
+          for i in $(seq 1 30); do
+            curl -sf "$BASE_URL" >/dev/null && break || sleep 1
+          done
+          set -e
+          npm run smoke                         # parcours Cuisine (produit)
+          node scripts/smoke-comptes.mjs        # UI compte, session mockée
+          kill $PREV 2>/dev/null || true

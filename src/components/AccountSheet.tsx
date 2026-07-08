@@ -82,6 +82,18 @@ export default function AccountSheet({
   const doLeave = async () => {
     setBusy(true);
     setErr('');
+    // FILET (symétrie avec « Rejoindre »/A1) : si tu es owner seul, quitter supprime
+    // le foyer ET sa sauvegarde cloud (cascade). On rapatrie d'abord les docs
+    // cloud-only (pull) puis on exporte en local AVANT toute suppression.
+    const fid = await currentFoyerId();
+    if (fid) {
+      try {
+        await pull(fid);
+      } catch {
+        /* best-effort : l'export ci-dessous reste le filet */
+      }
+    }
+    await downloadExport();
     const { error } = await leaveFoyer();
     if (error) {
       setBusy(false);
@@ -226,7 +238,8 @@ export default function AccountSheet({
             <div className="mz-note">
               Tu quittes ce foyer et repars sur une maison neuve. Tes données locales restent sur
               cet appareil et rejoindront ton nouveau foyer à la synchro. <b>Si tu es le
-              propriétaire de ce foyer, sa sauvegarde en ligne est aussi supprimée.</b>
+              propriétaire de ce foyer, sa sauvegarde en ligne est aussi supprimée.</b> Une copie de
+              tes données va être téléchargée avant, par sécurité.
             </div>
             <div className="mz-btnrow">
               <button className="mz-btn" onClick={() => setConfirmLeave(false)} disabled={busy}>
