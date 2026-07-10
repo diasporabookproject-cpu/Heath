@@ -1,8 +1,14 @@
--- 0006_espaces_legacy.sql
+-- 0001b_espaces_legacy.sql
 -- Lot « Environnements propres » — E1. RATTRAPE dans le repo les objets legacy
 -- créés en prod HORS migration (ère pré-comptes) : table `espaces`, table
 -- `espace_opens`, bucket public `shared`. Reproduit l'état PROD **À L'IDENTIQUE**
 -- (relevé E0 — `RAPPORT_ECART_ENVS.md`).
+--
+-- ⚠️ NUMÉRO 0001b (trie entre 0001 foyers et 0002) : sur un rebuild frais, `espaces`
+-- doit exister AVANT `0002` (qui fait `alter table espaces add foyer_id`). Cette
+-- migration crée donc `espaces` dans son état **PRÉ-0002** (SANS `foyer_id` ni index
+-- `espaces_foyer_idx`) — c'est **0002 (inchangé)** qui les ajoute ensuite, fidèle à
+-- l'histoire réelle. Le FK `foyer_id → foyers` impose aussi d'être APRÈS 0001.
 --
 -- ⚠️ CE FICHIER NE CORRIGE RIEN. Les règles d'écriture ouvertes (`espaces`
 -- insert/update/delete `using/check = true`, `espace_opens read auth using true`)
@@ -22,14 +28,13 @@
 -- (même session prod que la fermeture des policies espaces).
 
 -- ── Table espaces (capability : une page publiée = une ligne à jeton) ──────────
+-- État PRÉ-0002 : PAS de `foyer_id` ici (0002 l'ajoute + son index, cascade incluse).
 create table if not exists public.espaces (
   token      text primary key,
   payload    jsonb,
   owner      text,                                   -- legacy pré-comptes (non utilisé par le code actuel)
-  updated_at timestamptz not null default now(),
-  foyer_id   uuid references public.foyers(id) on delete cascade  -- ajouté par 0002 (cascade = suppr. foyer coupe les liens)
+  updated_at timestamptz not null default now()
 );
-create index if not exists espaces_foyer_idx on public.espaces(foyer_id);
 alter table public.espaces enable row level security;
 
 -- Policies espaces — AS-IS (état prod E0). ⚠️ écriture OUVERTE (Fiche 3 fermera).
