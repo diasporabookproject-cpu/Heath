@@ -93,7 +93,10 @@ Décision : **migrer** (migration rétro idempotente, E1) · **checklist** (`CON
    `espace_opens` + ses 2 policies AS-IS ; bucket `shared` (public) + policy `shared write` ;
    RLS enable. → rejouable sur prod (existe) comme staging (n'existe pas).
 2. **0003** (foyer-audio) : déjà versionné → **rien à écrire**, juste s'assurer qu'il est rejoué en E2.
-3. **`*_bak`** : **non migrées** ; notées au backlog « drop en fenêtre d'écriture prod (AS-2) ».
+3. **`*_bak`** : **non migrées**. Leur DROP est **rattaché explicitement à la fenêtre d'écriture
+   prod de la Fiche 3 d'AS-2** — le drop des `espaces_bak_20260705` / `espace_opens_bak_20260705`
+   se fera **dans la même session prod** que la fermeture des policies `espaces`. (Pas un item de
+   backlog flottant : il vit dans le plan de la Fiche 3.)
 4. **`generate-translation`** : sa source est déjà dans le repo → **déployée en E2** (pas une migration).
 5. **`CONFIG_CHECKLIST.md`** / **`SECRETS.md`** : capturent SMTP, templates, URLs, OTP, sender_name,
    verify_jwt, secrets requis (noms).

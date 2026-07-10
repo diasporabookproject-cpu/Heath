@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "seed:staging": "node scripts/seed-staging.mjs"
   },
   "dependencies": {
     "@sentry/react": "^8.55.2",
