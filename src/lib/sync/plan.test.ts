@@ -32,6 +32,30 @@ describe('sync/plan — clés & dirty', () => {
   });
 });
 
+describe('sync/plan — hashPayload canonique (B3)', () => {
+  it('indifférent à l’ordre des clés (récursif) — ferme le ping-pong settings/app', () => {
+    expect(hashPayload({ a: 1, b: 2 })).toBe(hashPayload({ b: 2, a: 1 }));
+    expect(hashPayload({ x: { p: 1, q: 2 }, y: [1, 2] })).toBe(hashPayload({ y: [1, 2], x: { q: 2, p: 1 } }));
+  });
+
+  it('sensible au contenu et à l’ordre des tableaux', () => {
+    expect(hashPayload({ a: 1 })).not.toBe(hashPayload({ a: 2 }));
+    expect(hashPayload([1, 2])).not.toBe(hashPayload([2, 1]));
+  });
+
+  it('undefined ignoré comme JSON.stringify', () => {
+    expect(hashPayload({ a: 1, b: undefined })).toBe(hashPayload({ a: 1 }));
+  });
+
+  it('un doc pulled puis re-collecté (clés réordonnées) n’est plus dirty', () => {
+    // Simule : payload distant (ordre jsonb) synchronisé, puis relu par spread (autre ordre).
+    const remoteOrder: LocalDoc = { store: 'settings', docId: 'settings', payload: { objectif: 2000, personnes: 4 } };
+    const m = meta(remoteOrder);
+    const localReconstructed: LocalDoc = { store: 'settings', docId: 'settings', payload: { personnes: 4, objectif: 2000 } };
+    expect(isDirty(localReconstructed, m)).toBe(false);
+  });
+});
+
 describe('sync/plan — planPush', () => {
   it('pousse les dirty, ignore les à-jour, tombstone les disparus', () => {
     const a: LocalDoc = { store: 'recipes', docId: 'a', payload: { v: 1 } };

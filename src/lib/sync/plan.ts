@@ -1,5 +1,3 @@
-import { hashStr } from '../hash';
-
 // Cœur PUR du moteur de sync (aucun IO, entièrement testable). Porte les décisions
 // à risque : dirty par hash de contenu, LWW, tombstones, garde anti-écrasement (G2),
 // fusion d'adoption (Q1). L'IO (Supabase + IndexedDB) est dans engine.ts.
@@ -49,9 +47,36 @@ export function refFromKey(key: string): DocRef {
   return { store: key.slice(0, i) as SyncStore, docId: key.slice(i + 1) };
 }
 
-/** Hash stable d'un payload (djb2 sur JSON). */
+/**
+ * Sérialisation CANONIQUE : clés d'objets triées récursivement. Le hash ne dépend
+ * plus de l'ordre des clés — Postgres `jsonb` réordonne au stockage et
+ * `loadSettings`/`loadApp` reconstruisent par spread, ce qui faisait ressortir
+ * `settings`/`app` faussement « dirty » après chaque pull (ping-pong entre appareils).
+ * `undefined` est ignoré comme le fait `JSON.stringify`.
+ */
+function canonical(v: unknown): string {
+  if (v === null || typeof v !== 'object') return JSON.stringify(v ?? null);
+  if (Array.isArray(v)) return '[' + v.map(canonical).join(',') + ']';
+  const o = v as Record<string, unknown>;
+  const keys = Object.keys(o).filter((k) => o[k] !== undefined).sort();
+  return '{' + keys.map((k) => JSON.stringify(k) + ':' + canonical(o[k])).join(',') + '}';
+}
+
+/**
+ * Hash stable d'un payload : FNV-1a **64 bits** sur la forme canonique. 64 bits
+ * (vs djb2 32 bits) réduit le risque de collision qui laisserait une édition réelle
+ * passer pour « propre » et jamais poussée (divergence silencieuse — finding revue).
+ * ⚠️ Changer d'algo invalide les `syncedHash` déjà persistés ⇒ UNE vague de re-push
+ * au déploiement (contenu identique, converge après un push ; documenté au DEVLOG).
+ */
 export function hashPayload(payload: unknown): string {
-  return hashStr(JSON.stringify(payload ?? null));
+  const s = canonical(payload);
+  let h = 0xcbf29ce484222325n;
+  for (let i = 0; i < s.length; i++) {
+    h ^= BigInt(s.charCodeAt(i));
+    h = (h * 0x100000001b3n) & 0xffffffffffffffffn;
+  }
+  return h.toString(36);
 }
 
 /** Un doc local est « dirty » si son contenu diffère du dernier état synchronisé. */
