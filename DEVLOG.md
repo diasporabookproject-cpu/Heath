@@ -164,6 +164,17 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### F1 — Connexion par code 6 chiffres (SMTP Resend) — 2026-07-08 (staging + prod)
+**PROUVÉ (testé bout-en-bout staging PUIS prod)** : e-mail → **code 6 chiffres** reçu → saisi → connecté → foyer créé. La classe de bug « lien magique » est éliminée.
+- **Infra (actions Amine, hors code)** : domaine d'envoi **`send.elysia.studio`** créé sur **Resend** + 3 DNS chez IONOS (DKIM/MX/SPF) → **Verified** ; **SMTP custom** posé dans Supabase **staging ET prod** (host `smtp.resend.com`, user `resend`, sender **`login@send.elysia.studio`**, name Manzil). Clé SMTP jamais passée par le chat/repo.
+- **Templates** : **Magic Link** ET **Confirm signup** (le 1ᵉʳ login d'un nouveau compte passe par *Confirm signup*) basculés sur **`{{ .Token }}`** (code), plus aucun `{{ .ConfirmationURL }}`. OTP length **6** (doit matcher l'UI), expiration 600 s, rate-limit e-mail remonté (le plafond intégré nous bloquait).
+- **Côté code : AUCUN changement** — `sendOtp`/`verifyOtp` (`type:'email'`, `AccountSheet`) géraient déjà le code. Nettoyage optionnel plus tard : retirer `emailRedirectTo` devenu inutile.
+- **Résolution du bug de connexion prod** (diagnostiqué ensemble) : le flux lien renvoyait bien `…/Heath/?code=…` (redirect/P0-3 OK) mais **l'échange code→session PKCE échouait silencieusement** sur hébergement statique. Cause probable : **`code_verifier` absent à l'échange** (PAS React StrictMode — son double-invoke est **dev-only**, absent du build prod). On **n'a pas réparé** ce flux : l'OTP 6 chiffres n'a ni redirect ni PKCE ni capture d'URL → il supprime la classe de bug. **Flux lien abandonné.**
+- **Limite honnête** : je n'ai pas lu les logs serveur (pas de token cette session) — la validation est le parcours **applicatif** réussi (connexion + foyer) + le dashboard Resend côté Amine.
+
+### AS-1 — statut CI (rappel) — 2026-07-07/08
+Livré sur `assainissement-v1` (**`6c567e6`**). 1ᵉʳ run `ci.yml` **rouge** — cause racine : `vite preview` sans `BASE_PATH` → base `/`, `/Heath/assets/*` en fallback SPA `text/html`, **l'app ne bootait pas** (les DEUX smokes cassaient). **Corrigé** dans `6c567e6` : `BASE_PATH=/Heath/` au preview, smoke Comptes **recadré sur le parcours déconnecté** (mock retiré), `VITE_*` au build, `checkout`/`setup-node` v5. **FAIT mais NON VÉRIFIÉ par moi** (connecteur GitHub déconnecté) : le vert du run sur `6c567e6` est à confirmer par Amine (onglet Actions) **avant tout merge**.
+
 ### Session 9 — 2026-07-07 (Revue globale + HOTFIX PROD sécurité RPC/relais LLM)
 Revue à froid des lots Comptes+Sync + Coquille (9 dimensions, vérif manuelle des P0/P1 — voir `REVUE_GLOBALE_2026-07-07.md`). **Aucun P0 sur la prod web** ; risques P1 concentrés sur sécurité/coût backend, robustesse sync multi-appareils, coquille native, dérive doc. Contre-vérification QA → tout confirmé avec aggravations. Plan re-priorisé : **HOTFIX PROD immédiat** (A1+A2) puis lot Assainissement, puis C2, puis passe doc.
 - **HOTFIX (branche `hotfix/rpc-lockdown`, depuis le défaut prod) — DÉPLOYÉ STAGING+PROD & VÉRIFIÉ** :
