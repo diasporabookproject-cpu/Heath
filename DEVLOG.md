@@ -164,6 +164,13 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### Lot « Environnements propres » — read-back — 2026-07-08 (AS-2 en pause)
+Déclencheur : **trois contournements du même problème** (P0 invisibles sur staging au déploiement Comptes+Sync ; table `espaces` hors-migration ; Fiche 3 d'AS-2 impossible à répéter sur staging) → traiter la cause. Décision Amine : solder la dette de divergence **tant que la prod n'a que des comptes de test**. Branche `envs-propres-v1`. Read-back complet + chiffrage : `READBACK_ENVIRONNEMENTS.md`.
+- **PRINCIPE GRAVÉ — PROD EN LECTURE SEULE SUR TOUT LE LOT** : la prod se **lit** (E0 inventaire) et s'**égale** (E3 parité), elle ne s'**écrit jamais** ici. Toute écriture SQL/policy/fonction va **sur staging uniquement**. **Première écriture prod = Fiche 3 d'AS-2**, après ce lot. C'est le garde-fou central du lot.
+- **Objectif** : tout environnement **reconstructible depuis le repo** (migrations rétroactives idempotentes espaces/`espace_opens` & co, `CONFIG_CHECKLIST.md` + `SECRETS.md`, seed staging **absorbant F2** = compte smoke par mot de passe, reconstruction staging à blanc via DB-wipe, `parity:check` prouvé, RUNBOOK). Étapes **E0→E4, STOP entre chaque**.
+- **Décisions actées** : reset staging = **DB-wipe** (garde ref/clés/SMTP), pas re-création ; idempotence policies = `drop if exists`+`create` **en transaction**, prouvée par double rejeu **staging** ; parité = **requêtes catalogue** (`information_schema`/`pg_policies`/`pg_proc`+**`proacl`**/buckets), pas `pg_dump` ; **`proacl` incontournable** (prouve le hotfix A1) ; « **testé autrement, pas diffé** » = SMTP par l'effet, templates par réception réelle, base-path jusqu'à C4 (`verify_jwt`, lui, diffable) ; coupes = `espace_opens` migration légère sans seed, `parity:check` = discipline RUNBOOK (**pas** fausse garantie auto), seed **minimal**. Token **jetable par étape** (E0/E2/E3), révoqué entre.
+- **Ce lot REPRODUIT l'existant, il ne le change PAS** (la fermeture d'écriture `espaces` reste en AS-2 Fiche 3). Re-priorisation AS-2 si mise en ligne imminente.
+
 ### F1 — Connexion par code 6 chiffres (SMTP Resend) — 2026-07-08 (staging + prod)
 **PROUVÉ (testé bout-en-bout staging PUIS prod)** : e-mail → **code 6 chiffres** reçu → saisi → connecté → foyer créé. La classe de bug « lien magique » est éliminée.
 - **Infra (actions Amine, hors code)** : domaine d'envoi **`send.elysia.studio`** créé sur **Resend** + 3 DNS chez IONOS (DKIM/MX/SPF) → **Verified** ; **SMTP custom** posé dans Supabase **staging ET prod** (host `smtp.resend.com`, user `resend`, sender **`login@send.elysia.studio`**, name Manzil). Clé SMTP jamais passée par le chat/repo.
