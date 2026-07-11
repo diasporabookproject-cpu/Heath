@@ -87,7 +87,13 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 32. **Page Nounou (brief FN0–FN5) — nouvelle page par rôle, sœur de Cuisine** : dossier `src/nounou/`, **modèle en couches** (`Moment` récurrent / `Periode` rythme alternatif sur plage / `Ponctuel` un jour / `Enfant`), **précédence stricte `ponctuel > période > rythme habituel`** (`projection.ts`, aligné RRULE pour un futur ICS). **Stockage = document JSON unique** (store IndexedDB `nounou`, clé `'doc'`, **DB v5**), fusion à la lecture (`mergeNounouDoc`) pour la compat ascendante ; **last-write-wins** assumé (MVP). Store dédié `useNounou` (séparé de Cuisine). **Chevauchement de périodes interdit à la création** (`periodesOverlap`). **Jours d'école = lun–ven (0–4)**, tous = 0–6. Numéros d'urgence Maroc **19/15/150** seedés « à vérifier ». Réutilise tokens + coquille Cuisine (`cz-*`), classes propres `nz-*`. Onglets **Journée · Conduites · Fiche urgence** (« Repères » banni). Construit par lots, ordre **0 → 1 → (4.1+4.3) → 5 → 2 → 3 → 4.2** (page reçue partageable tôt, traduction en dernier). ✅ Lots 0, 1, **4.1+4.3**, **5**, **2** et **3** livrés — **MVP fonctionnellement complet** (admin Journée + Conduites/voix + Fiche urgence/enfants → lien scopé → page reçue + 3 accès + RTL, réutilisant la table `espaces`). ⏳ reste : **Lot 4.2** (traduction edge function + relecture du sensible) — le seul 🔴.
 
-## État actuel (au 2026-07-05)
+## État actuel (au 2026-07-11)
+
+> ## ✅ AS-2 CLOS — isolation & tenancy durcies (2026-07-11)
+> **Toutes les fiches livrées, backend en prod + volet client mergé.**
+> - **Fiche 3** (fuite d'isolation `espaces`/`espace_opens` fermée, lecture publique préservée), **Fiches 1·2·4** backend (accept transactionnel anti-TOCTOU + rate-limit persistant, transfert de propriété au plus ancien membre à la suppression du compte owner, entropie invitation + caps), **AS-2b** volet client (accept via RPC, bandeau « nouveau propriétaire » `owner_notice`, copie suppression corrigée). Migrations `0006`→`0009` en prod (`Health`/`pqeilsuqglmrvijndrwa`).
+> - **Lot « Environnements propres »** soldé en amont : staging reconstructible depuis le repo, parité prouvée (`npm run parity:check`), prod tenue en lecture seule sur tout le lot. Voir `RUNBOOK_ENVIRONNEMENTS.md`.
+> - **Reste hors-AS-2** : **C2** (pièges natifs Capacitor — branche `coquille-v1`, à rebaser sur le défaut).
 
 > ## 🚀 Lot « Comptes + Sync » — **MERGÉ & DÉPLOYÉ EN PROD** (2026-07-05, `e21d0ec`)
 > **Passe de déploiement prod exécutée** (via API Management Supabase + Pages) :
@@ -163,6 +169,17 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 ---
 
 ## Journal des sessions
+
+### AS-2b — Volet client (accept via RPC, bandeau nouveau propriétaire, copie suppression) — 2026-07-11
+Branche `as2b-client-v1` (depuis le défaut aligné `3f6d64a`, post-merge des 3 lots). **Volet visible d'AS-2** : câble le client sur le backend AS-2a. Pas de read-back (mécanique), relecture ciblée sur la **copie affichée** (seule surface utilisateur).
+- **① `acceptInvite`** : bascule de l'edge `accept-invite` vers le **RPC `accept_invite`** appelé directement (`supa.rpc`). Comme le RPC **ne lève pas** (statut jsonb, cf. bug rate-limit AS-2a), l'erreur métier arrive dans `data.error` (pas `error`) → lecture `data.ok` / `data.foyer_id` / `data.error`.
+- **② Bandeau « nouveau propriétaire »** : `App.tsx` lit `membres.owner_notice` (`checkOwnerNotice`, via la policy select existante) à l'ouverture connectée ; si vrai → `Sheet` « Ce foyer est désormais le tien » (explique la cause, rassure sur la continuité, énonce la responsabilité). Acquittement → `ackOwnerNotice`.
+- **⚠️ AS-2b n'est PAS 100 % client** : effacer `owner_notice` exige un mini-RPC **`ack_owner_notice`** (migration `0009`, `security definer` scopé `auth.uid()`) — `membres` n'a **pas de policy update**, le client ne peut pas le remettre à `false`. **Nécessite une fenêtre prod (token) pour `0009`** avant que le bandeau soit fonctionnel (sinon il se réafficherait sans jamais s'acquitter).
+- **③ Copie suppression de compte** (`AccountSheet`) : l'ancien texte « coupe les pages déjà envoyées » était **faux depuis le transfert** (Fiche 2). Nouveau : bifurcation explicite — **d'autres membres → transfert** (contenu conservé pour eux) / **seule → suppression** des pages envoyées.
+- **Portes vertes** : `typecheck` ✓ · Vitest **105/105** ✓ · `build` (BASE_PATH=/Heath/) ✓ · smoke Cuisine ✓ · smoke Comptes (flux déconnecté) ✓. **Edge `accept-invite` = code mort** (plus appelée) — dépose possible plus tard, pas bloquant.
+- **Copie — correction de fond (invariant produit)** : « propriétaire / seule / toi seule » violaient l'invariant **« ne pas présumer un employeur féminin »** (maîtres ET maîtresses de maison) → neutralisés en **« responsable / toi seul·e »** + reformulations sans accord genré, dans le bandeau ET la confirmation. Bandeau réordonné : **rassure (« rien n'est perdu ») AVANT** d'annoncer la disparition. « il leur revient » → « il leur est transféré ». `« le tien »` gardé (accord grammatical avec *foyer*, pas le genre de la personne). Copie **validée** par Amine.
+- **Fenêtre prod `0009` — 2026-07-11 (PROD)** : `ack_owner_notice` appliquée sur `Health`/`pqeilsuqglmrvijndrwa`. Vérif catalogue : `security definer` + `search_path=public` + ACL `{postgres, authenticated, service_role}` — **identique au moule `accept_invite`** (`public`/`anon` bien révoqués). Token jetable révoqué après. **AS-2b fonctionnel de bout en bout.**
+- **➡️ AS-2 est CLOS** (Fiches 1·2·3·4 backend + volet client). Reste hors-AS-2 : C2 (pièges natifs, branche `coquille-v1` à rebaser sur le défaut).
 
 ### AS-2a backend — Fiches 1, 2, 4 (accept transactionnel, transfert owner, entropie+caps) — 2026-07-08 (PROD)
 Branche `as2-backend-v1`. Read-back : `READBACK_AS2_BACKEND.md`. Migrations `0007`/`0008`. Périmètre interne (comptes/invitations) — **aucune lecture publique touchée**. Client **inchangé** en AS-2a (edge `accept-invite` gardée jusqu'à AS-2b ; volet client = AS-2b).

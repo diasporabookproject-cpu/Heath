@@ -10,6 +10,7 @@ import AccountSheet from './components/AccountSheet';
 import { Sheet } from './ui/primitives';
 import { readEspaceToken } from './lib/espace';
 import { supabaseEnabled } from './lib/supabase';
+import { checkOwnerNotice, ackOwnerNotice } from './lib/auth';
 import { useSession } from './lib/useSession';
 import { useSync, type AdoptRequest } from './lib/sync/useSync';
 import { downloadExport } from './lib/exportData';
@@ -36,6 +37,13 @@ export default function App() {
   // Rituel d'adoption (Q1) : quand le foyer rejoint a déjà du contenu cloud, la
   // fusion exige un consentement explicite (jamais silencieuse) + export préalable.
   const [adoptReq, setAdoptReq] = useState<AdoptRequest | null>(null);
+  // AS-2b : bandeau « tu as hérité du foyer » (l'ancien owner a supprimé son compte,
+  // la propriété a été transférée à cet utilisateur). Affiché une fois, puis acquitté.
+  const [ownerNotice, setOwnerNotice] = useState(false);
+  useEffect(() => {
+    if (!session) return;
+    void checkOwnerNotice().then(setOwnerNotice);
+  }, [session]);
   // Sync cloud (S3) : non bloquante ; après un pull qui change le local, recharge
   // le store Cuisine ET le doc Nounou (sinon la vue Nounou garderait un doc
   // périmé en mémoire et le ré-écraserait au prochain save — FIX revue Q n°6).
@@ -168,6 +176,34 @@ export default function App() {
         </Sheet>
       )}
       {accountOpen && <AccountSheet session={session} onClose={() => setAccountOpen(false)} />}
+
+      {ownerNotice && (
+        <Sheet
+          title="Ce foyer est désormais le tien"
+          onClose={() => {
+            void ackOwnerNotice();
+            setOwnerNotice(false);
+          }}
+        >
+          <div className="mz-sm" style={{ marginBottom: 14 }}>
+            Tu es désormais responsable de ce foyer. La personne qui le gérait a supprimé son
+            compte ; rien n’est perdu — tes menus, tes pages et tes réglages sont intacts et
+            continuent normalement. C’est simplement toi qui veilles dessus à présent, et toi
+            seul·e peux désormais le supprimer.
+          </div>
+          <div className="mz-btnrow">
+            <button
+              className="mz-btn primary"
+              onClick={() => {
+                void ackOwnerNotice();
+                setOwnerNotice(false);
+              }}
+            >
+              J’ai compris
+            </button>
+          </div>
+        </Sheet>
+      )}
 
       {adoptReq && (
         <Sheet

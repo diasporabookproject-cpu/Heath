@@ -147,17 +147,47 @@ export async function createInvite(email?: string): Promise<{ code?: string; exp
   return { code: data?.code, expiresAt: data?.expires_at };
 }
 
-/** Rejoint un foyer via un code d'invitation (quitte le foyer actuel ; données locales fusionnées au sync). */
+/** Rejoint un foyer via un code d'invitation (quitte le foyer actuel ; données locales fusionnées au sync).
+ * AS-2b : appelle le RPC transactionnel `accept_invite` DIRECTEMENT (remplace l'edge
+ * `accept-invite`). Le RPC RETOURNE un statut jsonb {ok, foyer_id, error} — il NE LÈVE
+ * PAS sur les erreurs métier (sinon le rollback effacerait le compteur de rate-limit),
+ * donc une erreur applicative arrive dans `data.error`, pas dans `error`. */
 export async function acceptInvite(code: string): Promise<{ foyerId?: string; error?: string }> {
   const supa = getSupabase();
   if (!supa) return { error: 'Connexion indisponible.' };
-  const { data, error } = await supa.functions.invoke('accept-invite', { body: { code } });
-  if (error) return { error: await fnError(error) };
+  const { data, error } = await supa.rpc('accept_invite', { p_code: code });
+  if (error) return { error: error.message };            // erreur transport / permission
+  if (!data?.ok) return { error: data?.error ?? 'Code invalide.' };  // erreur métier (statut)
   // Nouveau contexte de foyer : purge l'état de sync local (méta/curseurs) pour
   // que le rechargement passe par une adoption propre (rituel Q1).
   invalidateFoyerCache();
   await clearSyncState();
-  return { foyerId: data?.foyer_id };
+  return { foyerId: data.foyer_id as string };
+}
+
+/** AS-2b : `true` si l'utilisateur connecté vient d'hériter d'un foyer (transfert de
+ * propriété suite à la suppression du compte de l'ancien owner — drapeau `owner_notice`
+ * posé par `dispose_foyer_for_deletion`). Lu via la policy select de `membres`. */
+export async function checkOwnerNotice(): Promise<boolean> {
+  const supa = getSupabase();
+  if (!supa) return false;
+  const { data: u } = await supa.auth.getUser();
+  if (!u.user) return false;
+  const { data, error } = await supa
+    .from('membres')
+    .select('owner_notice')
+    .eq('user_id', u.user.id)
+    .limit(1);
+  if (error) return false;
+  return data?.[0]?.owner_notice === true;
+}
+
+/** AS-2b : efface le drapeau `owner_notice` une fois le bandeau vu. Passe par un RPC
+ * (`membres` n'a pas de policy update → le client ne peut pas le remettre à false lui-même). */
+export async function ackOwnerNotice(): Promise<void> {
+  const supa = getSupabase();
+  if (!supa) return;
+  await supa.rpc('ack_owner_notice');
 }
 
 /**
