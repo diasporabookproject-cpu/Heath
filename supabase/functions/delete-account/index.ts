@@ -1,7 +1,8 @@
 // Edge function Supabase — suppression de compte in-app (exigence Apple 5.1.1(v)).
-// Opération SERVEUR en service_role : selon le rôle, elle supprime le foyer (owner,
-// cascade sur membres/docs/ai_usage/invitations — et espaces dès 0002) ou fait
-// quitter le foyer (membre), puis efface l'utilisateur auth.
+// Opération SERVEUR en service_role : la disposition du foyer est transactionnelle
+// (RPC `dispose_foyer_for_deletion`, AS-2 Fiche 2) — owner SEUL → suppression du foyer
+// (cascade) ; owner AVEC d'autres membres → TRANSFERT au plus ancien (le foyer et son
+// contenu survivent) ; membre → simple retrait — puis l'utilisateur auth est effacé.
 // Aucune donnée de contenu n'est lue/loggée. Env auto : SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -36,27 +37,12 @@ Deno.serve(async (req: Request) => {
   if (uErr || !userData.user) return json({ error: 'Session invalide.' }, 401);
   const uid = userData.user.id;
 
-  // Foyer(s) de l'utilisateur (un seul en v1).
-  const { data: mem, error: mErr } = await admin
-    .from('membres')
-    .select('foyer_id, role')
-    .eq('user_id', uid);
-  if (mErr) return json({ error: mErr.message }, 500);
-
-  for (const m of mem ?? []) {
-    if (m.role === 'owner') {
-      // Cascade : membres, docs, ai_usage, invitations (et espaces dès 0002) partent avec le foyer.
-      const { error } = await admin.from('foyers').delete().eq('id', m.foyer_id);
-      if (error) return json({ error: error.message }, 500);
-    } else {
-      const { error } = await admin
-        .from('membres')
-        .delete()
-        .eq('foyer_id', m.foyer_id)
-        .eq('user_id', uid);
-      if (error) return json({ error: error.message }, 500);
-    }
-  }
+  // AS-2 Fiche 2 : disposition du foyer AVANT d'effacer l'utilisateur, de façon
+  // TRANSACTIONNELLE (RPC `dispose_foyer_for_deletion`) : owner seul → suppression
+  // (cascade) ; owner AVEC d'autres membres → TRANSFERT au plus ancien (promu owner
+  // + owner_notice), le foyer et son contenu SURVIVENT ; membre → simple retrait.
+  const { error: dispErr } = await admin.rpc('dispose_foyer_for_deletion', { p_uid: uid });
+  if (dispErr) return json({ error: dispErr.message }, 500);
 
   // FIX revue Q n°1 : balaye aussi les foyers dont l'utilisateur est resté
   // propriétaire SANS ligne membre (orphelins d'anciens flux) — sinon la FK
