@@ -186,10 +186,10 @@ export default function App() {
           }}
         >
           <div className="mz-sm" style={{ marginBottom: 14 }}>
-            La personne qui gérait ce foyer a supprimé son compte. Tu en deviens la
-            propriétaire : tes menus, tes pages et tes réglages sont intacts et continuent
-            normalement. C’est simplement toi qui veilles dessus à présent — et toi seule
-            peux désormais le supprimer.
+            Tu es désormais responsable de ce foyer. La personne qui le gérait a supprimé son
+            compte ; rien n’est perdu — tes menus, tes pages et tes réglages sont intacts et
+            continuent normalement. C’est simplement toi qui veilles dessus à présent, et toi
+            seul·e peux désormais le supprimer.
           </div>
           <div className="mz-btnrow">
             <button

@@ -260,10 +260,10 @@ export default function AccountSheet({
           <div style={{ marginTop: 14 }}>
             <div className="mz-note">
               Supprimer ton compte efface tes données du cloud. <b>Si ton foyer a d’autres
-              membres, il leur revient</b> — la propriété passe au plus ancien, et son contenu
-              (menus, pages envoyées) reste en ligne pour eux. <b>Si tu es seule dessus, le foyer
-              et ses pages envoyées sont supprimés.</b> Ta copie locale reste sur cet appareil.
-              Action irréversible.
+              membres, il leur est transféré</b> — la propriété passe au plus ancien, et son
+              contenu (menus, pages envoyées) reste en ligne pour eux. <b>Si tu es seul·e dessus,
+              le foyer et ses pages envoyées sont supprimés.</b> Ta copie locale reste sur cet
+              appareil. Action irréversible.
             </div>
             <div className="mz-btnrow">
               <button className="mz-btn" onClick={() => setConfirmDel(false)} disabled={busy}>
