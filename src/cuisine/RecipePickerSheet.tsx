@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { ROLE_LABEL, type Recipe, type RecipeRole } from '../types';
 import { IconSearch, IconMic, IconFav } from './icons';
@@ -17,6 +18,7 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onClose
   const toggleFav = useStore((s) => s.toggleFav);
   const [q, setQ] = useState('');
   const [shown, setShown] = useState(false);
+  useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setShown(true));

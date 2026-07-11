@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import {
@@ -51,6 +52,7 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const [rappelOpen, setRappelOpen] = useState(false);
 
   const [shown, setShown] = useState(false);
+  useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
   const [dests, setDests] = useState<Destinataire[]>([]);
   const [selId, setSelId] = useState<string | null>(null);
   const [mode, setMode] = useState<'send' | 'list' | 'edit'>('send');

@@ -38,4 +38,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- B1 (C2) : notes vocales — getUserMedia dans la WebView exige la permission
+         app ; le Bridge Capacitor relaie la demande runtime à la 1ʳᵉ capture. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 </manifest>

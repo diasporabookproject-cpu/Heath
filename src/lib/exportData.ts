@@ -8,6 +8,7 @@ import {
   loadSettings,
   loadAudioKeys,
 } from './db';
+import { isNative, saveAndShareFile } from './platform';
 
 // Export complet de la donnée locale (invariant « contenu portable » + portabilité
 // RGPD + FILET DE SÉCURITÉ Q1 : on exporte AVANT toute première fusion cloud).
@@ -63,10 +64,17 @@ export function exportFilename(now = new Date()): string {
   return `manzil-sauvegarde-${d}.json`;
 }
 
-/** Déclenche le téléchargement du JSON d'export dans le navigateur. */
+/** Déclenche le téléchargement du JSON d'export — navigateur : `<a download>` ;
+ * natif (B2 coquille) : fichier en cache + feuille de partage système, car le
+ * `<a download>` est un no-op en WebView (le filet A1 serait absent de l'APK). */
 export async function downloadExport(): Promise<void> {
   const data = await collectExport();
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const json = JSON.stringify(data, null, 2);
+  if (isNative) {
+    await saveAndShareFile(exportFilename(), json);
+    return;
+  }
+  const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

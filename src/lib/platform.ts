@@ -17,3 +17,39 @@ export function webBaseUrl(): string {
   }
   return window.location.origin + window.location.pathname;
 }
+
+// ── C2 — les APIs natives passent TOUTES par ici (imports DYNAMIQUES : le build
+// web les met dans des chunks jamais chargés ; la WebView les charge à la demande).
+
+/** B2 : écrit un fichier texte en cache et ouvre la feuille de PARTAGE système.
+ * Remplace le `<a download>` (no-op en WebView) — le filet d'export vit aussi sur l'APK. */
+export async function saveAndShareFile(filename: string, content: string): Promise<void> {
+  const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+  const { Share } = await import('@capacitor/share');
+  const res = await Filesystem.writeFile({
+    path: filename,
+    data: content,
+    directory: Directory.Cache,
+    encoding: Encoding.UTF8,
+  });
+  await Share.share({ title: filename, url: res.uri, dialogTitle: 'Enregistrer ta sauvegarde' });
+}
+
+/** B3 : branche le bouton retour Android (natif seulement). Renvoie le désabonnement.
+ * ⚠️ Dès qu'un listener existe, Capacitor NE ferme PLUS l'app tout seul — le handler
+ * décide (fermer une feuille / revenir à Maison / minimiser). */
+export function onBackButton(handler: () => void): () => void {
+  let remove: () => void = () => {};
+  void import('@capacitor/app').then(({ App }) =>
+    App.addListener('backButton', handler).then((h) => {
+      remove = () => void h.remove();
+    }),
+  );
+  return () => remove();
+}
+
+/** B3 : minimise l'app (retour depuis Maison = on passe en arrière-plan, jamais de kill). */
+export async function minimizeApp(): Promise<void> {
+  const { App } = await import('@capacitor/app');
+  await App.minimizeApp();
+}

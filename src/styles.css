@@ -57,7 +57,8 @@ button {
   z-index: 10;
   background: var(--brand);
   color: var(--brand-ink);
-  padding: 14px 16px;
+  /* B4 (coquille) : inset top porté par l'en-tête sticky (edge-to-edge) ; 0 sur desktop. */
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 14px;
   font-weight: 700;
   font-size: 18px;
   display: flex;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { cleanText } from '../lib/sanitize';
 import { ROLE_LABEL } from '../types';
@@ -22,6 +23,7 @@ export default function RelectureSheet({ startId, onClose, onOpenRecipe, toast }
   const setStatut = useStore((s) => s.setStatut);
 
   const [shown, setShown] = useState(false);
+  useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
   // File figée au montage (ordre stable) — les actions font avancer l'index.
   const [queue] = useState<string[]>(() => recipes.filter((r) => r.statut === 'Test').map((r) => r.id));
   const [idx, setIdx] = useState(() => {

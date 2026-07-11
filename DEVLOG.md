@@ -170,6 +170,16 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### Coquille v2 — Volet B (C2 : micro, export natif, bouton retour, safe-areas) — 2026-07-11
+Suite du volet A sur `coquille-v2` (STOP 1 validé : porte A6 + CI #24 + APK #8 verts). Les 4 pièges natifs :
+- **B1 micro** : `RECORD_AUDIO` + `MODIFY_AUDIO_SETTINGS` au manifest ; le Bridge Capacitor relaie la demande runtime à la 1ʳᵉ capture. Code web INCHANGÉ (VoiceNote/ConsigneVocale gardent leur getUserMedia + messages de refus existants).
+- **B2 export natif** : `downloadExport` → si natif, `platform.saveAndShareFile()` (Filesystem cache + feuille de partage système) au lieu du `<a download>` (no-op WebView). **Le filet A1 vit désormais aussi sur l'APK** (P2 revue 07/07 soldé). `platform.ts` reste le SEUL module qui importe Capacitor (imports dynamiques).
+- **B3 bouton retour** : pile GLOBALE des feuilles ouvertes (`primitives.ts` : `closeTopSheet`/`useSheetBack`) — le composant `Sheet` s'enregistre seul ; les 11 feuilles maison (10 cz Cuisine + 1 Nounou) = **une ligne chacune** (Q-1 : la couverture totale a tenu dans le budget, pas de finding UX nécessaire). `App.tsx` : ① fermer la feuille la plus haute, ② écran ≠ Maison → Maison, ③ Maison → `minimizeApp()` (jamais de kill).
+- **B4 safe-areas** : inset TOP porté par chaque surface de fond — `.cz-head` (sticky Cuisine/Nounou), `.topbar` (sticky Sécurité), `.mz` (racine Maison). `env()` vaut 0 sur desktop → web intact. Insets bottom déjà en place, `viewport-fit=cover` déjà posé.
+- **Plugins épinglés** : `@capacitor/app` 8.1.0, `filesystem` 8.1.2, `share` 8.0.1 (cap sync : 3 plugins enregistrés côté gradle).
+- **Bonus DCE vérifié** : `isNative=false` étant une constante de compilation, le bundle **web** contient **zéro octet Capacitor** (grep = 0 occurrence) — les chunks plugins n'existent que dans `dist-native/`.
+- **Portes** : typecheck ✓ · Vitest 105/105 ✓ · build web ✓ · build:native ✓ · smokes Cuisine+Comptes ✓ (le smoke Cuisine exerce les cz-sheets modifiées). ⏳ STOP 2 : checklist appareil (micro/export/retour/insets) — seule vraie validation de B1/B3/B4.
+
 ### Coquille v2 — Volet A (C0′ : coquille recréée, dettes soldées d'entrée) — 2026-07-11
 Branche `coquille-v2` (depuis le défaut `0cc3538`, post-AS-2). **Décision « recréer, pas réaligner »**
 (analyse mesurée : merge simulé = 2 conflits seulement, mais docs datés + dette dist + historique) —
