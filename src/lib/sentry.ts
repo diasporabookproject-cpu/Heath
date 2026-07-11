@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react';
+import { isNative } from './platform';
 
 // Crash-reporting (S0). Désactivé tant qu'il n'y a pas de DSN — l'app reste
 // parfaitement fonctionnelle sans Sentry. Le DSN est une clé d'ingestion publique
@@ -11,6 +12,7 @@ export function initSentry(): void {
   if (!DSN) return; // pas de DSN => aucun réseau, aucun bruit
   Sentry.init({
     dsn: DSN,
+    environment: isNative ? 'native' : 'web',
     // Contexte minimal ; JAMAIS de données de contenu (D7 : rien sur les données d'enfants).
     tracesSampleRate: 0, // pas de tracing perf en v1
     sendDefaultPii: false,

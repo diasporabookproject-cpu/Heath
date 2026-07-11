@@ -1,0 +1,48 @@
+name: APK Android (debug)
+
+# C1 (coquille) : build l'APK debug et l'attache en ARTIFACT — la distribution
+# multi-appareils d'Amine (onglet Actions → run → Artifacts → app-debug).
+# Déclenchement : push sur coquille-v2 (phase de dev) + manuel (workflow_dispatch,
+# utilisable une fois le fichier sur la branche par défaut).
+on:
+  workflow_dispatch:
+  push:
+    branches: [coquille-v2]
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # JDK 21 requis par Capacitor 8 (sourceCompatibility VERSION_21). Le SDK
+      # Android est préinstallé sur les runners ; keystore DEBUG auto-généré —
+      # aucun secret nécessaire.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          # Capacitor 8 (CLI) exige Node >= 22 — ne pas redescendre à 20.
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Leçon E1 : pas d'artefact si la qualité casse.
+      - run: npm run typecheck
+      - run: npm run test
+      # Build NATIF (base './', SW off) — mêmes clés publiques que deploy.yml.
+      - run: npm run build:native
+        env:
+          VITE_SUPABASE_URL: https://pqeilsuqglmrvijndrwa.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Gvhm9PdeleoilZGoeFiAtg_mGATsr1v
+          VITE_SENTRY_DSN: https://0939a564afb426996c27804b976e4222@o4511683754983424.ingest.de.sentry.io/4511683834282064
+          VITE_WEB_BASE_URL: https://diasporabookproject-cpu.github.io/Heath/
+      - run: npx cap sync android
+      - run: chmod +x android/gradlew
+      - run: ./gradlew assembleDebug
+        working-directory: android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14

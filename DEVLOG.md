@@ -170,6 +170,17 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### Coquille v2 — Volet A (C0′ : coquille recréée, dettes soldées d'entrée) — 2026-07-11
+Branche `coquille-v2` (depuis le défaut `0cc3538`, post-AS-2). **Décision « recréer, pas réaligner »**
+(analyse mesurée : merge simulé = 2 conflits seulement, mais docs datés + dette dist + historique) —
+`coquille-v1` reste INTACTE (référence + preuve CI APK) jusqu'à clôture C2. Read-back : `READBACK_COQUILLE_V2.md`.
+- **Deps** : `@capacitor/{core,android,cli}` **épinglés exacts 8.4.1** (toujours la dernière version npm — zéro dérive ; v1 avait `^`).
+- **Dette v1 soldée** : `capacitor.config.ts` → **`webDir: 'dist-native'`** + `vite.config.ts` → `outDir` séparé. Les builds web (`dist/`) et natif (`dist-native/`, base `./`, SW off) **coexistent sans s'écraser**. `.gitignore` couvre `dist-native`.
+- **Finding 8 (revue 07/07) soldé** : `define` lit les clés via **`loadEnv()`** (fusion `.env(.local)` + shell, shell prioritaire → CI inchangée). Un build natif LOCAL n'embarque plus des clés vides. Les 4 variables `VITE_*` passent par le même canal.
+- **Greffes portées** depuis le diff relu de v1 : `platform.ts` (verbatim), `auth.ts` (sendOtp→`webBaseUrl()`), `espace.ts` (`buildEspaceUrl`), `supabase.ts` (`sendMagicLink`), `sentry.ts` (`environment`), `vite-env.d.ts` (types).
+- **Scaffold** : `npx cap add android` régénéré (`studio.elysia.foyer`/Manzil, INTERNET seul — le micro = C2/B1). `apk.yml` porté (JDK 21, Node 22, portes typecheck+tests avant artifact, déclencheur `coquille-v2`).
+- **Portes** : typecheck ✓ · Vitest 105/105 ✓ · build web ✓ · build:native ✓ (base `./`, `sw.js` absent ; web : `sw.js` présent) · smokes Cuisine+Comptes ✓ · porte **A6** (diff de contrôle v1↔v2, deltas voulus uniquement) au STOP 1.
+
 ### AS-2b — Volet client (accept via RPC, bandeau nouveau propriétaire, copie suppression) — 2026-07-11
 Branche `as2b-client-v1` (depuis le défaut aligné `3f6d64a`, post-merge des 3 lots). **Volet visible d'AS-2** : câble le client sur le backend AS-2a. Pas de read-back (mécanique), relecture ciblée sur la **copie affichée** (seule surface utilisateur).
 - **① `acceptInvite`** : bascule de l'edge `accept-invite` vers le **RPC `accept_invite`** appelé directement (`supa.rpc`). Comme le RPC **ne lève pas** (statut jsonb, cf. bug rate-limit AS-2a), l'erreur métier arrive dans `data.error` (pas `error`) → lecture `data.ok` / `data.foyer_id` / `data.error`.
