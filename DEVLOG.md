@@ -164,6 +164,17 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### AS-2 Fiche 3 — Fermeture de la fuite d'isolation `espaces`/`espace_opens` — 2026-07-08 (PROD)
+**Première écriture prod post-lot Environnements.** Ferme la fuite inter-foyers (E0). Read-back : `READBACK_AS2_FICHE3.md`. Migration `0006_espaces_close_write.sql`. Branche `as2-fiche3-v1`.
+- **Répétition à blanc STAGING (token 1, révoqué)** : `0006` appliqué → **lien anonyme 200** (invariant) + **preuve d'isolation RLS réellement enforcée** (`set role authenticated`+`request.jwt.claims`) : membre écrit ✓, non-membre update **0 ligne** ✓, non-membre insert (foyer_id en dur) → **`new row violates row-level security policy`** ✓, `espace_opens` lu par le membre (1) pas par le tiers (0) ✓.
+- **Fenêtre PROD (token 2, révoqué après)** — protocole snapshot→décision→go→bascule→vérif :
+  - **Snapshot** `pg_policies` (référence rollback) + **compte `foyer_id NULL` = 4/4**. Décision (b) « le chiffre décide » : **>0 → STOP**. Investigation : les 4 pages ont le même `owner` (`c979af3f` = **amine.berrada.fathi.92@gmail.com**, compte perso) qui **a un foyer** (`0e6e8ca5`). Identités **confirmées en lecture** avant écriture (go explicite d'Amine).
+  - **Rattrapage de DONNÉES (pas une migration)** : `update espaces set foyer_id=<foyer perso> where owner=<perso> and foyer_id is null` → **4 lignes** ; 0 NULL restant. Les 4 pages familles restent **révocables** par leur propriétaire + scopées.
+  - **Bascule `0006`** → **lien anonyme (2 jetons réels) = 200 + contenu** (critère de fini : lecture publique **intacte**). Policies vérifiées : `espaces read public`=`true` (inchangée), écriture = `is_foyer_member(foyer_id)`, `espace_opens read`=`EXISTS(… is_foyer_member …)`, `espace_opens insert anon` inchangée.
+  - **Drop `*_bak`** (`espaces_bak_20260705` + `espace_opens_bak_20260705`) dans la même fenêtre → count 0.
+  - **Rollback** non nécessaire (tout vert). Tokens (staging+prod) effacés + snapshot détruit.
+- **La fuite d'isolation inter-foyers est FERMÉE en prod, lecture publique préservée.** ⏳ Reste AS-2 : Fiches 1 (`accept-invite` TOCTOU), 2 (`deleteAccount` owner + `owner_notice`), 4 (invitation entropie+rate-limit), AS-2b (client).
+
 ### Lot « Environnements propres » — read-back — 2026-07-08 (AS-2 en pause)
 Déclencheur : **trois contournements du même problème** (P0 invisibles sur staging au déploiement Comptes+Sync ; table `espaces` hors-migration ; Fiche 3 d'AS-2 impossible à répéter sur staging) → traiter la cause. Décision Amine : solder la dette de divergence **tant que la prod n'a que des comptes de test**. Branche `envs-propres-v1`. Read-back complet + chiffrage : `READBACK_ENVIRONNEMENTS.md`.
 - **PRINCIPE GRAVÉ — PROD EN LECTURE SEULE SUR TOUT LE LOT** : la prod se **lit** (E0 inventaire) et s'**égale** (E3 parité), elle ne s'**écrit jamais** ici. Toute écriture SQL/policy/fonction va **sur staging uniquement**. **Première écriture prod = Fiche 3 d'AS-2**, après ce lot. C'est le garde-fou central du lot.
