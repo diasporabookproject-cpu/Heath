@@ -164,6 +164,15 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### AS-2a backend — Fiches 1, 2, 4 (accept transactionnel, transfert owner, entropie+caps) — 2026-07-08 (PROD)
+Branche `as2-backend-v1`. Read-back : `READBACK_AS2_BACKEND.md`. Migrations `0007`/`0008`. Périmètre interne (comptes/invitations) — **aucune lecture publique touchée**. Client **inchangé** en AS-2a (edge `accept-invite` gardée jusqu'à AS-2b ; volet client = AS-2b).
+- **Fiche 1** — RPC `accept_invite` transactionnel (`for update` = fin du TOCTOU ; quitter/insérer dans la même transaction), appelé **directement par le client** (`authenticated`, scopé `auth.uid()`) → edge `accept-invite` retirée en AS-2b.
+- **Fiche 2** — RPC `dispose_foyer_for_deletion` + colonne `membres.owner_notice` : owner **avec d'autres membres** → **transfert** au plus ancien (promu owner + `owner_notice`), foyer+contenu **survivent** ; owner seul → suppression ; `delete-account` edge l'appelle.
+- **Fiche 4** — `invite` : `makeCode` rejection-sampling (fin du biais modulo) + **10 signes** + **cap 5 invitations actives/foyer** ; **rate-limit 5 acceptations/h** dans `accept_invite`.
+- **⚠️ BUG ATTRAPÉ AU DRY-RUN (sécurité de façade) → CORRIGÉ** : `accept_invite` **levait** une exception sur erreur métier → la transaction atomique **annulait l'incrément du rate-limit** → chaque tentative ratée effaçait son compteur → **rate-limit inerte contre le brute-force** (le cas même qu'il couvre). **Fix** : `accept_invite` **retourne un statut jsonb** `{ok, foyer_id, error}` (ne lève plus) → la transaction commit, le compteur persiste. Re-testé staging : **6ᵉ tentative bloquée**. (Conséquence : AS-2b lira `data.ok/foyer_id/error`.)
+- **Dry-run STAGING (token, révoqué)** — preuves : accept transactionnel (réutilisé/expiré/inconnu → `{ok:false}` ; positif → swap foyer) ; **transfert à 2 membres noir sur blanc** (foyer survit, 2ᵉ membre owner, `owner_notice=true`, ancien retiré, **3 docs survivants**) + owner-seul → suppression ; cap 5 ; rate-limit 6ᵉ bloquée.
+- **PROD (token, révoqué)** : `0007`(jsonb)+`0008` appliquées + `invite`/`delete-account` déployées. **Vérif post-bascule** : `accept_invite` (jsonb, grant `authenticated`), `dispose_foyer_for_deletion` (service_role only), `membres.owner_notice` (bool default false), **A1 toujours verrouillé** (reserve/refund/abuse = service_role only). **STOP avant AS-2b** (client, sans token).
+
 ### AS-2 Fiche 3 — Fermeture de la fuite d'isolation `espaces`/`espace_opens` — 2026-07-08 (PROD)
 **Première écriture prod post-lot Environnements.** Ferme la fuite inter-foyers (E0). Read-back : `READBACK_AS2_FICHE3.md`. Migration `0006_espaces_close_write.sql`. Branche `as2-fiche3-v1`.
 - **Répétition à blanc STAGING (token 1, révoqué)** : `0006` appliqué → **lien anonyme 200** (invariant) + **preuve d'isolation RLS réellement enforcée** (`set role authenticated`+`request.jwt.claims`) : membre écrit ✓, non-membre update **0 ligne** ✓, non-membre insert (foyer_id en dur) → **`new row violates row-level security policy`** ✓, `espace_opens` lu par le membre (1) pas par le tiers (0) ✓.
