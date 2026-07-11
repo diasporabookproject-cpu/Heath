@@ -123,24 +123,32 @@ alter table public.docs        enable row level security;
 alter table public.ai_usage    enable row level security;
 
 -- foyers : lecture/suppression par membres/owner ; création via create_foyer() (definer), pas d'insert client.
+-- `drop if exists`+`create` sur chaque policy → migration REJOUABLE (idempotence prouvée en E2).
+drop policy if exists foyers_select on public.foyers;
 create policy foyers_select on public.foyers for select using (public.is_foyer_member(id));
+drop policy if exists foyers_delete on public.foyers;
 create policy foyers_delete on public.foyers for delete using (public.is_foyer_owner(id));
 
 -- membres : lecture par co-membres ; quitter = self-delete ; l'owner peut retirer un membre.
 --   (insert géré par create_foyer()/RPC d'invitation en definer — pas de policy insert client.)
+drop policy if exists membres_select on public.membres;
 create policy membres_select on public.membres for select using (public.is_foyer_member(foyer_id));
+drop policy if exists membres_delete on public.membres;
 create policy membres_delete on public.membres for delete
   using (user_id = auth.uid() or public.is_foyer_owner(foyer_id));
 
 -- invitations : gérées par les membres du foyer (l'acceptation par un invité = RPC serveur, S4).
+drop policy if exists invitations_rw on public.invitations;
 create policy invitations_rw on public.invitations for all
   using (public.is_foyer_member(foyer_id)) with check (public.is_foyer_member(foyer_id));
 
 -- docs : tout le CRUD si membre du foyer (le cœur du miroir de sync).
+drop policy if exists docs_rw on public.docs;
 create policy docs_rw on public.docs for all
   using (public.is_foyer_member(foyer_id)) with check (public.is_foyer_member(foyer_id));
 
 -- ai_usage : LECTURE seule côté client (l'écriture passe par l'edge function en service_role, qui bypass la RLS).
+drop policy if exists ai_usage_select on public.ai_usage;
 create policy ai_usage_select on public.ai_usage for select using (public.is_foyer_member(foyer_id));
 
 -- Fin 0001. Tests RLS à écrire avant application prod (accès inter-foyer refusé, self-delete OK, etc.).
