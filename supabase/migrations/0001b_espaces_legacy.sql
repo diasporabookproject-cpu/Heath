@@ -29,11 +29,12 @@
 
 -- ── Table espaces (capability : une page publiée = une ligne à jeton) ──────────
 -- État PRÉ-0002 : PAS de `foyer_id` ici (0002 l'ajoute + son index, cascade incluse).
+-- Types EXACTS relevés en prod (parity:check E3) — reproduction fidèle.
 create table if not exists public.espaces (
   token      text primary key,
-  payload    jsonb,
-  owner      text,                                   -- legacy pré-comptes (non utilisé par le code actuel)
-  updated_at timestamptz not null default now()
+  payload    jsonb not null,
+  owner      uuid default auth.uid(),               -- legacy pré-comptes (non utilisé par le code actuel)
+  updated_at timestamptz default now()
 );
 alter table public.espaces enable row level security;
 
