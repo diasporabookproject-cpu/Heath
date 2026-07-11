@@ -15,11 +15,20 @@ const json = (b: unknown, s: number) =>
 
 const INVITE_TTL_HOURS = 72; // A3 : un code circule sur WhatsApp → fenêtre courte (single-use en plus)
 
-/** Code lisible (sans caractères ambigus) de 8 signes. */
+/** Code lisible (sans caractères ambigus) de 10 signes.
+ * AS-2 Fiche 4 : rejection sampling — on rejette les octets >= 248 (le plus grand
+ * multiple de 31 sous 256) pour éliminer le BIAIS MODULO de `byte % 31`, et 10
+ * signes (vs 8) → ~2^49 de combinaisons, hors de portée d'un brute-force en ligne. */
 function makeCode(): string {
-  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  const bytes = crypto.getRandomValues(new Uint8Array(8));
-  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 31 caractères
+  const out: string[] = [];
+  const buf = new Uint8Array(1);
+  while (out.length < 10) {
+    crypto.getRandomValues(buf);
+    if (buf[0] >= 248) continue; // 248 = 31*8 ; au-delà = biais → on retire
+    out.push(alphabet[buf[0] % 31]);
+  }
+  return out.join('');
 }
 
 Deno.serve(async (req: Request) => {
@@ -42,6 +51,17 @@ Deno.serve(async (req: Request) => {
 
   const body = await req.json().catch(() => ({}));
   const email = typeof body?.email === 'string' && body.email.trim() ? body.email.trim() : null;
+
+  // AS-2 Fiche 4 : cap 5 invitations ACTIVES (non acceptées, non expirées) / foyer.
+  const { count } = await admin
+    .from('invitations')
+    .select('id', { count: 'exact', head: true })
+    .eq('foyer_id', foyer)
+    .is('accepted_by', null)
+    .gt('expires_at', new Date().toISOString());
+  if ((count ?? 0) >= 5) {
+    return json({ error: 'Trop d’invitations actives (max 5). Attends qu’elles soient utilisées ou expirent.' }, 429);
+  }
 
   const code = makeCode();
   const expires_at = new Date(Date.now() + INVITE_TTL_HOURS * 3600_000).toISOString();
