@@ -164,6 +164,14 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### AS-2b — Volet client (accept via RPC, bandeau nouveau propriétaire, copie suppression) — 2026-07-11
+Branche `as2b-client-v1` (depuis le défaut aligné `3f6d64a`, post-merge des 3 lots). **Volet visible d'AS-2** : câble le client sur le backend AS-2a. Pas de read-back (mécanique), relecture ciblée sur la **copie affichée** (seule surface utilisateur).
+- **① `acceptInvite`** : bascule de l'edge `accept-invite` vers le **RPC `accept_invite`** appelé directement (`supa.rpc`). Comme le RPC **ne lève pas** (statut jsonb, cf. bug rate-limit AS-2a), l'erreur métier arrive dans `data.error` (pas `error`) → lecture `data.ok` / `data.foyer_id` / `data.error`.
+- **② Bandeau « nouveau propriétaire »** : `App.tsx` lit `membres.owner_notice` (`checkOwnerNotice`, via la policy select existante) à l'ouverture connectée ; si vrai → `Sheet` « Ce foyer est désormais le tien » (explique la cause, rassure sur la continuité, énonce la responsabilité). Acquittement → `ackOwnerNotice`.
+- **⚠️ AS-2b n'est PAS 100 % client** : effacer `owner_notice` exige un mini-RPC **`ack_owner_notice`** (migration `0009`, `security definer` scopé `auth.uid()`) — `membres` n'a **pas de policy update**, le client ne peut pas le remettre à `false`. **Nécessite une fenêtre prod (token) pour `0009`** avant que le bandeau soit fonctionnel (sinon il se réafficherait sans jamais s'acquitter).
+- **③ Copie suppression de compte** (`AccountSheet`) : l'ancien texte « coupe les pages déjà envoyées » était **faux depuis le transfert** (Fiche 2). Nouveau : bifurcation explicite — **d'autres membres → transfert** (contenu conservé pour eux) / **seule → suppression** des pages envoyées.
+- **Portes vertes** : `typecheck` ✓ · Vitest **105/105** ✓ · `build` (BASE_PATH=/Heath/) ✓ · smoke Cuisine ✓ · smoke Comptes (flux déconnecté) ✓. **Edge `accept-invite` = code mort** (plus appelée) — dépose possible plus tard, pas bloquant.
+
 ### AS-2a backend — Fiches 1, 2, 4 (accept transactionnel, transfert owner, entropie+caps) — 2026-07-08 (PROD)
 Branche `as2-backend-v1`. Read-back : `READBACK_AS2_BACKEND.md`. Migrations `0007`/`0008`. Périmètre interne (comptes/invitations) — **aucune lecture publique touchée**. Client **inchangé** en AS-2a (edge `accept-invite` gardée jusqu'à AS-2b ; volet client = AS-2b).
 - **Fiche 1** — RPC `accept_invite` transactionnel (`for update` = fin du TOCTOU ; quitter/insérer dans la même transaction), appelé **directement par le client** (`authenticated`, scopé `auth.uid()`) → edge `accept-invite` retirée en AS-2b.
