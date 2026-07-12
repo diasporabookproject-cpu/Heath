@@ -194,6 +194,13 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### F4-bis — Fiches A + C + B (retours device APK #13) — 2026-07-12
+Branche `f4bis-v1` (défaut post-lot FTUE `3c38955`). Read-back : `READBACK_F4BIS.md`. Fiche D après validation PO de la copie B.
+- **A (bloquant) — moment sans enfant** : blocage dur levé (`MomentSheet` : « Choisis au moins un enfant » ×2 supprimé) — `enfants: []` = « pour tous » (convention déjà portée par tout le modèle : levée de contrainte UI, pas de changement de modèle). + raccourci « ＋ Ajouter un enfant » inline dans la rangée des puces (upsertEnfant, auto-coché, **saisie du moment préservée** — même feuille) + libellé « Personne de coché = pour tous ».
+- **C — partage natif** : diagnostic = AUCUNE branche native dans les chemins d'envoi (héritage web : wa.me + presse-papiers seuls). `platform.shareText()` ajouté (plugin Share déjà embarqué depuis B2). **C-1 (décision PO)** : numéro connu → wa.me direct (chemin court, WhatsApp pré-ciblé) ; sans numéro, en natif → **feuille de partage système** (choix du canal) ; web inchangé. Branché dans les DEUX feuilles (Cuisine + Nounou).
+- **B — « Sécuriser sa page » (Lecture 1)** : la rupture (`publish.ts:29` jetait « Connecte-toi (☁︎)… », Nounou toastait pareil) remplacée par le volet inline `SecuriserVolet` (composant partagé) DANS la feuille de partage : e-mail → code 6 chiffres (briques OTP existantes + `ensureFoyer`) → **l'envoi repart tout seul** (état de la feuille intact). Garde de session **LIVE** (`auth.getSession()` au moment du geste — pas l'état React, qui peut ne pas être propagé au retour du volet). Vocabulaire « sécuriser », jamais « compte/connexion ». Connecté → strictement rien ne change ; hors-partage l'app ne demande toujours rien (smoke Comptes vert). ⏳ **STOP copie** : validation PO sur rendu.
+- **Portes A+C+B** : typecheck ✓ · 115/115 ✓ · build web+natif ✓ · 3 smokes ✓.
+
 ### Flow FTUE — Tranche 3 (F5a : PREUVE anti-fuite vers un foyer rejoint) — 2026-07-12
 Dernière tranche du lot. Q-3 confirmée par le PO : **option (b)** — dédup ciblée du contenu de pack à l'adoption.
 - **Chemin ① (appareil vierge qui rejoint via FTUE #join) — PREUVE PAR CONSTRUCTION, tracée ici** :
