@@ -79,7 +79,7 @@ export default function SecuriserVolet({ onDone, onCancel }: { onDone: () => voi
         </button>
       ) : (
         <button className="cz-cta" onClick={() => void verify()} disabled={busy || !isValidOtp(code)}>
-          {busy ? 'Vérification…' : 'Sécuriser ma page et envoyer'}
+          {busy ? 'Vérification…' : 'Valider et envoyer'}
         </button>
       )}
       <button

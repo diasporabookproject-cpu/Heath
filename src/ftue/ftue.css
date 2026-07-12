@@ -139,6 +139,19 @@
 .ftue .num.plus { background: rgba(255, 255, 255, 0.92); color: var(--olive-d); }
 .ftue .step p { font-size: 13.5px; line-height: 1.42; opacity: 0.93; padding-top: 4px; }
 
+/* Name-sheet (#people, fiche D F4-bis) — port de la maquette (overlay + sheet). */
+.ftue .nsheet-ovl { position: absolute; inset: 0; background: rgba(41, 36, 32, 0.5); display: flex; align-items: flex-end; z-index: 20; animation: ftue-fade 0.25s; }
+@keyframes ftue-fade { from { opacity: 0; } to { opacity: 1; } }
+.ftue .nsheet { background: var(--sand); width: 100%; border-radius: 26px 26px 0 0; padding: 22px 22px calc(24px + env(safe-area-inset-bottom, 0px)); animation: ftue-up 0.3s cubic-bezier(0.22, 0.61, 0.36, 1); }
+@keyframes ftue-up { from { transform: translateY(100%); } to { transform: none; } }
+.ftue .nsheet h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 20px; margin-bottom: 15px; }
+.ftue .flabel { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; margin: 0 3px 8px; }
+.ftue .langrow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.ftue .lchip { font-size: 13.5px; border: 1px solid var(--line); border-radius: 999px; padding: 9px 14px; color: var(--ink-soft); cursor: pointer; background: var(--card); font-weight: 600; font-family: inherit; }
+.ftue .lchip.ar { font-family: 'Noto Naskh Arabic', serif; }
+.ftue .lchip.sel { background: var(--olive-bg); border-color: var(--olive-soft); color: var(--olive); }
+.ftue .opt .named { font-size: 11.5px; color: var(--olive); font-weight: 600; margin-top: 2px; display: block; }
+
 @media (prefers-reduced-motion: reduce) {
   .ftue *, .ftue { animation: none !important; transition: none !important; }
 }

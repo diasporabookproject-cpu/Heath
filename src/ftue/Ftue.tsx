@@ -3,8 +3,9 @@ import './ftue.css';
 import { PACKS } from '../data/packs';
 import { buildInstall } from '../lib/packs';
 import { importSecuriteSeed } from '../lib/securiteSeed';
-import { loadNounou, saveNounou, loadRecipes, saveRecipe, saveFtueDone, saveRolesActifs, type RoleActif } from '../lib/db';
-import { mergeNounouDoc, missingConduiteModeles, uid } from '../nounou/defaults';
+import { loadNounou, saveNounou, loadRecipes, saveRecipe, saveDestinataire, saveFtueDone, saveRolesActifs, type RoleActif } from '../lib/db';
+import { mergeNounouDoc, missingConduiteModeles, newToken, uid } from '../nounou/defaults';
+import type { NounouLangue } from '../types';
 import { sendOtp, verifyOtp, acceptInvite } from '../lib/auth';
 import { isValidEmail, isValidOtp, normalizeOtp } from '../lib/otp';
 import { isNative, onBackButton, minimizeApp } from '../lib/platform';
@@ -21,9 +22,27 @@ type Domain = 'cuisine' | 'enfants' | 'securite';
 
 const ORDER: Screen[] = ['entry', 'domain', 'memory', 'people', 'send', 'welcome'];
 
+/** Fiche D : nom + langue donnés à la FTUE (name-sheet de la maquette). */
+export interface PersonNaming {
+  prenom: string;
+  langue: NounouLangue; // fr | dr | ar | en
+}
+const LANGS: { code: NounouLangue; label: string; ar?: boolean }[] = [
+  { code: 'dr', label: 'الدارجة', ar: true },
+  { code: 'fr', label: 'Français' },
+  { code: 'ar', label: 'العربية', ar: true },
+  { code: 'en', label: 'English' },
+];
+const langLabel = (c: NounouLangue) => LANGS.find((l) => l.code === c)?.label ?? c;
+
 /** Peuplement réel (jamais appelé en démo) — ÉCRIT DIRECTEMENT en IndexedDB,
- * sans initialiser les stores (App n'est pas monté pendant la FTUE). */
-async function populate(domains: Set<Domain>, roles: Set<RoleActif>): Promise<void> {
+ * sans initialiser les stores (App n'est pas monté pendant la FTUE). Tout est
+ * committé ICI, d'un bloc (fiche D comprise) : kill avant le #welcome = zéro trace. */
+async function populate(
+  domains: Set<Domain>,
+  roles: Set<RoleActif>,
+  names: Partial<Record<RoleActif, PersonNaming>>,
+): Promise<void> {
   if (domains.has('cuisine')) {
     const fonds = PACKS.find((p) => p.id === 'fonds-de-depart');
     if (fonds) {
@@ -32,10 +51,25 @@ async function populate(domains: Set<Domain>, roles: Set<RoleActif>): Promise<vo
       for (const r of toAdd) await saveRecipe(r);
     }
   }
-  if (domains.has('enfants')) {
+  // Fiche D — Cuisine nommée : destinataire réel (le modèle cuisine ne connaît que
+  // fr|ar, et son « ar » S'AFFICHE darija partout — dr/ar → 'ar', en → 'fr').
+  const cook = names.cuisine;
+  if (roles.has('cuisine') && cook) {
+    await saveDestinataire({
+      id: crypto.randomUUID(),
+      nom: cook.prenom,
+      role: 'Cuisinière',
+      langue: cook.langue === 'dr' || cook.langue === 'ar' ? 'ar' : 'fr',
+      token: newToken(),
+      createdAt: Date.now(),
+    });
+  }
+  // Doc nounou : gabarits (F3) et/ou destinataire nommé (fiche D) — une seule écriture.
+  const nounouName = roles.has('nounou') ? names.nounou : undefined;
+  if (domains.has('enfants') || nounouName) {
     const doc = mergeNounouDoc((await loadNounou()) ?? undefined);
-    const missing = missingConduiteModeles(doc.conduites);
-    if (missing.length > 0) {
+    if (domains.has('enfants')) {
+      const missing = missingConduiteModeles(doc.conduites);
       doc.conduites = [
         ...doc.conduites,
         ...missing.map((m, i) => ({
@@ -49,6 +83,20 @@ async function populate(domains: Set<Domain>, roles: Set<RoleActif>): Promise<vo
         })),
       ];
     }
+    if (nounouName) {
+      doc.destinataires = [
+        ...doc.destinataires,
+        {
+          id: uid(),
+          prenom: nounouName.prenom,
+          role: 'Nounou',
+          langue: nounouName.langue,
+          enfants: [],
+          token: newToken(),
+          createdAt: Date.now(),
+        },
+      ];
+    }
     await saveNounou(doc);
   }
   if (domains.has('securite')) await importSecuriteSeed();
@@ -60,6 +108,11 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
   const [screen, setScreen] = useState<Screen>('entry');
   const [domains, setDomains] = useState<Set<Domain>>(new Set());
   const [roles, setRoles] = useState<Set<RoleActif>>(new Set());
+  // Fiche D : prénom + langue par rôle (name-sheet). Absent = carte SANS nom.
+  const [names, setNames] = useState<Partial<Record<RoleActif, PersonNaming>>>({});
+  const [nameSheet, setNameSheet] = useState<RoleActif | null>(null);
+  const [nameInput, setNameInput] = useState('');
+  const [nameLang, setNameLang] = useState<NounouLangue>('dr');
   const [busy, setBusy] = useState(false);
   const [soonMsg, setSoonMsg] = useState<string | null>(null);
 
@@ -76,6 +129,7 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
   };
 
   const back = () => {
+    if (nameSheet) return setNameSheet(null); // la feuille d'abord (retour Android compris)
     if (screen === 'join') return setScreen('entry');
     const i = ORDER.indexOf(screen);
     if (i > 0) return setScreen(ORDER[i - 1]);
@@ -99,13 +153,28 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
       else n.add(d);
       return n;
     });
-  const toggleRole = (r: RoleActif) =>
-    setRoles((prev) => {
-      const n = new Set(prev);
-      if (n.has(r)) n.delete(r);
-      else n.add(r);
-      return n;
-    });
+  // Fiche D : tap sur un rôle NON posé → name-sheet (prénom + langue) ; tap sur un
+  // rôle déjà posé → on le retire (nom compris). « Annuler » sur la feuille = carte
+  // SANS nom (le cas turnover reste premier — nommage au premier partage).
+  const tapRole = (r: RoleActif) => {
+    if (roles.has(r)) {
+      setRoles((prev) => {
+        const n = new Set(prev);
+        n.delete(r);
+        return n;
+      });
+      setNames((prev) => ({ ...prev, [r]: undefined }));
+      return;
+    }
+    setNameInput('');
+    setNameLang('dr');
+    setNameSheet(r);
+  };
+  const activateRole = (r: RoleActif, naming?: PersonNaming) => {
+    setRoles((prev) => new Set(prev).add(r));
+    if (naming) setNames((prev) => ({ ...prev, [r]: naming }));
+    setNameSheet(null);
+  };
 
   // #welcome → « Entrer » : COMMIT unique du peuplement, puis l'app.
   const finish = async () => {
@@ -113,7 +182,7 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
     if (demo) return onDone();
     setBusy(true);
     try {
-      await populate(domains, roles);
+      await populate(domains, roles, names);
       onDone();
     } finally {
       setBusy(false);
@@ -362,26 +431,27 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
           </div>
           <h1>Qui vous aide au quotidien&nbsp;?</h1>
           <p className="sub">
-            Briefez chaque personne via sa page, dans sa langue, sur WhatsApp. Un tap pour poser sa page —
-            son prénom viendra au premier envoi.
+            Briefez chaque personne via sa page, dans sa langue, sur WhatsApp. Un tap pour l’ajouter.
           </p>
 
           <DomainOpt
             sel={roles.has('cuisine')}
-            onTap={() => toggleRole('cuisine')}
+            onTap={() => tapRole('cuisine')}
             bg="var(--olive-bg)"
             icon={<IconCuisine />}
             t="Cuisine"
             s="Menus de la semaine, quantités, liste de courses"
+            named={names.cuisine && `✓ ${names.cuisine.prenom} · ${langLabel(names.cuisine.langue)}`}
             plus
           />
           <DomainOpt
             sel={roles.has('nounou')}
-            onTap={() => toggleRole('nounou')}
+            onTap={() => tapRole('nounou')}
             bg="var(--majorelle-bg)"
             icon={<IconEnfants />}
             t="Nounou"
             s="Planning des enfants, consignes, qui les récupère"
+            named={names.nounou && `✓ ${names.nounou.prenom} · ${langLabel(names.nounou.langue)}`}
             plus
           />
           <DomainOpt soon onTap={() => toastSoon('Le chauffeur arrive bientôt')} bg="var(--ochre-bg)" icon={<IconChauffeur />} t="Chauffeur" s="Trajets, horaires, adresses de rendez-vous" plus />
@@ -417,6 +487,47 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
             </button>
           </div>
         </section>
+      )}
+
+      {/* Fiche D — name-sheet (#people) : prénom + langue, port de la maquette.
+          « Annuler » = carte SANS nom (nommage au premier partage — turnover). */}
+      {nameSheet && (
+        <div className="nsheet-ovl" onClick={(e) => e.target === e.currentTarget && setNameSheet(null)}>
+          <div className="nsheet">
+            <h2>Comment s’appelle {nameSheet === 'cuisine' ? 'votre cuisinière' : 'votre nounou'}&nbsp;?</h2>
+            <div className="flabel">Son prénom</div>
+            <input
+              className="tf"
+              type="text"
+              autoFocus
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="Ex. Fatima"
+            />
+            <div className="flabel">Sa langue</div>
+            <div className="langrow">
+              {LANGS.map((l) => (
+                <button
+                  key={l.code}
+                  className={'lchip' + (l.ar ? ' ar' : '') + (nameLang === l.code ? ' sel' : '')}
+                  onClick={() => setNameLang(l.code)}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+            <button
+              className="btn olive"
+              disabled={!nameInput.trim()}
+              onClick={() => activateRole(nameSheet, { prenom: nameInput.trim(), langue: nameLang })}
+            >
+              Ajouter
+            </button>
+            <button className="skip" onClick={() => activateRole(nameSheet)}>
+              Plus tard — poser la page sans nom
+            </button>
+          </div>
+        </div>
       )}
 
       {screen === 'welcome' && (
@@ -463,6 +574,7 @@ function DomainOpt({
   icon,
   t,
   s,
+  named,
 }: {
   sel?: boolean;
   soon?: boolean;
@@ -472,6 +584,8 @@ function DomainOpt({
   icon: React.ReactNode;
   t: string;
   s: string;
+  /** Fiche D : « ✓ prénom · langue » une fois la personne nommée. */
+  named?: string | false;
 }) {
   return (
     <button className={'opt' + (sel ? ' sel' : '') + (soon ? ' soon' : '')} onClick={onTap} aria-pressed={sel} aria-disabled={soon}>
@@ -479,6 +593,7 @@ function DomainOpt({
       <span className="lab">
         <span className="t" style={{ display: 'block' }}>{t}</span>
         <span className="s" style={{ display: 'block' }}>{s}</span>
+        {named && <span className="named">{named}</span>}
       </span>
       {soon ? <span className="soonbadge">Bientôt</span> : <span className="mark">{sel ? '✓' : plus ? '+' : '✓'}</span>}
     </button>
