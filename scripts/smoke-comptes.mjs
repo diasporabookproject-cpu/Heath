@@ -33,6 +33,26 @@ page.on('pageerror', (e) => { if (!IGNORE.test(e.message)) errors.push('pageerro
 
 await page.goto(BASE, { waitUntil: 'networkidle' });
 
+// F4 (Flow FTUE) : court-circuit PROPRE du gate — méta posées puis reload
+// (même préambule que smoke.mjs ; la FTUE a son smoke dédié : smoke-ftue.mjs).
+await page.getByText('Manzil vous aide', { exact: false }).waitFor({ timeout: 10000 });
+await page.evaluate(
+  () =>
+    new Promise((resolve, reject) => {
+      const req = indexedDB.open('menu-semaine');
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('meta', 'readwrite');
+        tx.objectStore('meta').put(true, 'ftueDone');
+        tx.objectStore('meta').put(['cuisine', 'nounou'], 'rolesActifs');
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => reject(tx.error);
+      };
+      req.onerror = () => reject(req.error);
+    }),
+);
+await page.reload({ waitUntil: 'networkidle' });
+
 // 1) L'app démarre SANS compte : le hub Maison s'affiche.
 await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
 console.log('Hub Maison (sans compte) ✅');

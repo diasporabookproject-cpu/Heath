@@ -14,6 +14,7 @@ import {
 import { normalizeOtp, isValidOtp, isValidEmail } from '../lib/otp';
 import { downloadExport } from '../lib/exportData';
 import { pull } from '../lib/sync/engine';
+import Ftue from '../ftue/Ftue';
 
 // Écran Compte (S2). Connexion par CODE e-mail à 6 chiffres (jamais bloquante :
 // l'app marche sans compte). Se connecter = mettre sa maison à l'abri (sauvegarde,
@@ -37,6 +38,9 @@ export default function AccountSheet({
   const [joinCode, setJoinCode] = useState('');
   const [confirmJoin, setConfirmJoin] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  // F4 : replay de la FTUE en mode DÉMO (strictement visuel — aucun peuplement,
+  // #join sauté) — pour montrer l'app à un tiers sans vider le stockage.
+  const [replay, setReplay] = useState(false);
 
   const doInvite = async () => {
     setBusy(true);
@@ -155,6 +159,9 @@ export default function AccountSheet({
     onClose();
   };
 
+  // F4 : replay démo plein écran (recouvre la feuille ; fermer → retour ici).
+  if (replay) return <Ftue demo onDone={() => setReplay(false)} />;
+
   // ── Connecté ────────────────────────────────────────────────────────────
   if (session) {
     return (
@@ -252,6 +259,9 @@ export default function AccountSheet({
           </div>
         )}
 
+        <button className="mz-quiet" onClick={() => setReplay(true)}>
+          Revoir l’introduction
+        </button>
         {!confirmDel ? (
           <button className="mz-quiet" onClick={() => setConfirmDel(true)}>
             Supprimer mon compte
@@ -306,6 +316,9 @@ export default function AccountSheet({
         </div>
         <button className="mz-quiet" onClick={onClose}>
           Plus tard — je continue sans compte
+        </button>
+        <button className="mz-quiet" onClick={() => setReplay(true)}>
+          Revoir l’introduction
         </button>
       </Sheet>
     );

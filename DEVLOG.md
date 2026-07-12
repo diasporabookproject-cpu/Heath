@@ -187,6 +187,18 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### Flow FTUE — Tranche 2 (F4 : la FTUE v4, gate pré-boot, rôles activés, replay) — 2026-07-12
+Le cœur du lot, sur `flow-ftue-v1` (T1 mergée en amont, `6af1906`).
+- **Gate pré-boot `Boot`** (`src/ftue/Boot.tsx`, monté par `main.tsx` AU-DESSUS d'App — un early return DANS App laisserait tourner ses hooks) : ① `#e=`/`#mz-demo` court-circuitent vers App (un destinataire ne voit JAMAIS la FTUE) ; ② `ftueDone` → App ; ③ **migration one-shot** (méta `seedVersion`/`seeded` lues AVANT tout init de store — la course est éliminée par construction) : appareil existant → `ftueDone` + rôles `['cuisine','nounou']` rétroactifs, JAMAIS la FTUE ; ④ vierge → FTUE. App non monté pendant la FTUE ⇒ rien ne s'initialise/persiste/pousse (**F5a-① par construction**).
+- **Les 7 écrans** (`src/ftue/Ftue.tsx` + `ftue.css`, port fidèle de `docs/maquettes/ftue-v4.html`) : **polices EMBARQUÉES** (Q-2 — Fraunces/Jakarta/JetBrains/Noto Naskh, 4 woff2 variables, 224 Ko, zéro fetch), sans-scroll, safe-areas natives. #people active les rôles **SANS nom** (décision brief — nommage au premier partage ; la name-sheet de la maquette n'est pas portée).
+- **Peuplement COMMITTÉ D'UN BLOC au #welcome** (kill mi-parcours = zéro trace, la FTUE se re-présente) — écrit DIRECTEMENT en IndexedDB (aucun store initialisé) : cuisine → collection F2 ; enfants → gabarits F3 ; sécurité → `importSecuriteSeed` (EXTRAIT de SecuriteView en `lib/securiteSeed.ts` — vue et FTUE appellent la même fonction).
+- **#join réel** : code foyer → OTP e-mail (briques existantes `sendOtp`/`verifyOtp`) → RPC `accept_invite` → `ftueDone` + RELOAD (adoption/pull standard au reboot, fenêtre d'adoption = push interdit). Erreurs métier affichées, retour possible.
+- **Rôles activés** : méta locale `rolesActifs` — `MaisonView` ne pose les cartes de rôle sans destinataire QUE si activées ; le « ＋ Une page pour… » gagne deux entrées réelles Cuisine/Nounou (chemin d'activation post-FTUE — « rien coché » n'est pas un cul-de-sac).
+- **Replay « Revoir l'introduction »** (feuille Compte, connecté ou non) : mode `demo` strictement VISUEL — aucun install/import, #join masqué.
+- **Retour Android** : la FTUE branche son PROPRE `onBackButton` (App absent) — écran précédent ; sur #entry → minimise (démo : ferme).
+- **Smokes** : les 2 existants court-circuitent PROPREMENT (visite → méta posées → reload — pas de backdoor produit) ; **`smoke-ftue.mjs` dédié en CI** : gate actif ✓ traversée réelle ✓ carte Cuisine posée / Nounou non posée ✓ collection installée (30) ✓ ftueDone au reload ✓ **migration one-shot prouvée** (contexte `seedVersion`-seul → hub direct, rôles rétroactifs) ✓.
+- **Portes** : typecheck ✓ · Vitest 111/111 ✓ · build web+natif ✓ (4 woff2 dans les assets) · 3 smokes ✓. Liens CGU inertes (URLs inexistantes — signalé). ⏳ test device PO en fin de lot (protocole brief : foyer neuf, scénario mise à jour, Rejoindre réel).
+
 ### Flow FTUE — Tranche 1 (F1+F2+F3+F5b : seed retiré, collection, gabarits, garde-fou) — 2026-07-12
 Branche `flow-ftue-v1` (défaut post-merge coquille-v2 `18eda5b`). Brief v1.2 + maquette `docs/maquettes/ftue-v4.html` + `READBACK_FLOW_FTUE.md` committés. Décisions PO : collection « **Fonds de départ** » · polices embarquées (T2) · direction (b) dédup pack à l'adoption (T3, à confirmer).
 - **F1 — seed personnel Nounou RETIRÉ** : `seedNounouDoc()` = `emptyNounouDoc()` (plus de Yasmine/Adam, rythme, Khadija, gabarits). Numéros Maroc « à vérifier » conservés (info pays, dans `emptyNounouDoc`). Appareils existants intouchés (doc présent → jamais re-seedé).

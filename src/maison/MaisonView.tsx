@@ -29,6 +29,9 @@ interface Props {
   onNewPage: () => void;
   onOpenAccount: () => void;
   showAccount: boolean;
+  /** F4 (Flow FTUE) : rôles dont la carte est posée sur le hub (les PERSONNES réelles
+   * s'affichent toujours ; seules les cartes de rôle SANS destinataire sont filtrées). */
+  rolesActifs: PersonneKind[];
 }
 
 function timeAgo(iso: string | null): string {
@@ -40,7 +43,7 @@ function timeAgo(iso: string | null): string {
   return d === 1 ? 'lu hier' : `lu il y a ${d} j`;
 }
 
-export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOpenAccount, showAccount }: Props) {
+export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOpenAccount, showAccount, rolesActifs }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const persons = useStore((s) => s.settings.persons);
@@ -272,8 +275,9 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
             </div>
           );
         })}
-        {/* Pages de rôle sans destinataire encore : rester accessibles pour préparer le contenu. */}
-        {ROLES.filter((k) => !list.some((p) => p.kind === k)).map((k) => (
+        {/* Pages de rôle sans destinataire : accessibles pour préparer le contenu —
+            mais seulement si le rôle est ACTIVÉ (F4 : FTUE ou « ＋ Une page pour… »). */}
+        {ROLES.filter((k) => rolesActifs.includes(k) && !list.some((p) => p.kind === k)).map((k) => (
           <div
             className="mz-prow"
             key={'role:' + k}

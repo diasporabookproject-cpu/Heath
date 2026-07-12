@@ -27,6 +27,30 @@ page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
 
 await page.goto(BASE, { waitUntil: 'networkidle' });
 
+// F4 (Flow FTUE) : le gate pré-boot affiche la FTUE sur stockage vierge. Ce smoke
+// teste le PRODUIT (la FTUE a son smoke dédié : smoke-ftue.mjs) → on la court-circuite
+// PROPREMENT : visite (le gate a créé la base), pose des méta (ftueDone + rôles
+// activés) puis RELOAD — écrire avant le boot serait une course, écrire-puis-recharger
+// est déterministe. Zéro backdoor dans le code produit.
+await page.getByText('Manzil vous aide', { exact: false }).waitFor({ timeout: 10000 });
+await page.evaluate(
+  () =>
+    new Promise((resolve, reject) => {
+      const req = indexedDB.open('menu-semaine');
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('meta', 'readwrite');
+        tx.objectStore('meta').put(true, 'ftueDone');
+        tx.objectStore('meta').put(['cuisine', 'nounou'], 'rolesActifs');
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => reject(tx.error);
+      };
+      req.onerror = () => reject(req.error);
+    }),
+);
+await page.reload({ waitUntil: 'networkidle' });
+console.log('FTUE court-circuitée (méta posées + reload) ✅');
+
 // 0) Hub Maison (L1-2) : entrer dans la page Cuisine depuis « Ton équipe ».
 await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
 await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
