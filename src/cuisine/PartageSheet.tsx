@@ -17,6 +17,9 @@ import {
   lastEspaceOpen,
   type Espace,
 } from '../lib/espace';
+import { isNative, shareText } from '../lib/platform';
+import { getSupabase, supabaseEnabled } from '../lib/supabase';
+import SecuriserVolet from '../components/SecuriserVolet';
 import { todayKey } from './dates';
 import { buildCuisineDigest, type CuisineScope } from '../maison/digest';
 import { DigestBlock, type ScopeOption } from '../ui/DigestBlock';
@@ -61,6 +64,8 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const [lastOpen, setLastOpen] = useState<string | null>(null);
   const [preview, setPreview] = useState<Espace | null>(null);
   const [busy, setBusy] = useState(false);
+  // F4-bis fiche B : volet « Sécuriser » inline (création de compte transparente).
+  const [securiser, setSecuriser] = useState(false);
   const [scope, setScope] = useState<CuisineScope>('semaine');
   const [dayKey, setDayKey] = useState<string>(todayKey());
   const [digest, setDigest] = useState('');
@@ -131,14 +136,31 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
 
   const send = async () => {
     if (!selected) return;
+    // F4-bis fiche B (Lecture 1) : sans session, l'envoi ne casse plus le geste par
+    // un toast « Connecte-toi ailleurs » — la feuille bascule sur le volet
+    // « Sécuriser » (e-mail + code), puis l'envoi REPART TOUT SEUL (état intact).
+    // Garde LIVE (pas l'état React) : au retour du volet, la session vient d'être
+    // ouverte — un état pas encore propagé ne doit pas re-déclencher le volet.
+    if (supabaseEnabled) {
+      const live = await getSupabase()?.auth.getSession();
+      if (!live?.data.session) return setSecuriser(true);
+    }
     if (isEmptyDigest && !confirmEmpty) return setConfirmEmpty(true); // confirmation portée vide
     setBusy(true);
     try {
       await publishEspace(selected, SEED_CONFIG, week, byId, persons);
       if (hasPhone) {
+        // C-1 : numéro connu → chemin COURT (WhatsApp pré-ciblé), web comme natif
+        // (en natif, Capacitor délègue l'URL externe au système).
         const wa = `https://wa.me/${digits(selected.tel)}?text=${encodeURIComponent(digest)}`;
         window.open(wa, '_blank');
         toast(`Envoyé à ${selected.nom} ✓`);
+      } else if (isNative) {
+        // F4-bis fiche C : sans numéro, en natif → FEUILLE DE PARTAGE système
+        // (l'utilisateur choisit le canal). Le presse-papiers seul était un
+        // héritage web : sur l'APK, rien ne « partait » nulle part.
+        await shareText(digest, `Page de ${selected.nom}`);
+        toast('Publié ✓');
       } else {
         try {
           await navigator.clipboard.writeText(digest);
@@ -202,7 +224,15 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
           </button>
         </div>
         <div className="cz-sheetbody">
-          {mode === 'edit' && editing ? (
+          {securiser ? (
+            <SecuriserVolet
+              onDone={() => {
+                setSecuriser(false);
+                void send(); // reprend l'envoi exactement où il s'était arrêté
+              }}
+              onCancel={() => setSecuriser(false)}
+            />
+          ) : mode === 'edit' && editing ? (
             <EditForm
               editing={editing}
               setEditing={setEditing}

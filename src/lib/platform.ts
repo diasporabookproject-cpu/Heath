@@ -53,3 +53,11 @@ export async function minimizeApp(): Promise<void> {
   const { App } = await import('@capacitor/app');
   await App.minimizeApp();
 }
+
+/** F4-bis fiche C : ouvre la FEUILLE DE PARTAGE système avec un texte (natif).
+ * Les chemins d'envoi étaient 100 % web (wa.me / presse-papiers) — en natif,
+ * sans numéro connu, c'est la feuille qui laisse choisir le canal. */
+export async function shareText(text: string, title?: string): Promise<void> {
+  const { Share } = await import('@capacitor/share');
+  await Share.share({ text, dialogTitle: title ?? 'Envoyer la page' });
+}

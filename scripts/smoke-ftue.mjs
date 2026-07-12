@@ -46,7 +46,14 @@ await page.getByRole('button', { name: 'Continuer' }).click();
 await page.getByText('La mémoire de votre maison', { exact: false }).waitFor({ timeout: 5000 });
 await page.getByRole('button', { name: 'Continuer' }).click();
 await page.getByText('Qui vous aide au quotidien', { exact: false }).waitFor({ timeout: 5000 });
+// Fiche D (F4-bis) : tap → name-sheet (prénom + langue) → « Ajouter » → carte nommée.
 await page.locator('.ftue .opt', { hasText: 'Cuisine' }).first().click();
+await page.getByText('Comment s’appelle votre cuisinière', { exact: false }).waitFor({ timeout: 5000 });
+await page.locator('.ftue .nsheet input').fill('Fatima');
+await page.locator('.ftue .nsheet .lchip', { hasText: 'Français' }).click();
+await page.locator('.ftue .nsheet .btn').click(); // Ajouter
+await page.getByText('✓ Fatima · Français').waitFor({ timeout: 4000 });
+console.log('Name-sheet : « ✓ Fatima · Français » posé sur la carte ✅');
 await page.getByRole('button', { name: 'Continuer' }).click();
 
 // 4) #send (planche) → #welcome → Entrer (COMMIT du peuplement).
@@ -57,11 +64,12 @@ await page.getByText('Bienvenue', { exact: false }).waitFor({ timeout: 5000 });
 await page.getByRole('button', { name: 'Entrer', exact: true }).click();
 console.log('Traversée entry → domaines → personnes → welcome ✅');
 
-// 5) Hub : carte Cuisine posée, Nounou NON posée (pas cochée).
+// 5) Hub : « Fatima · Cuisine » (destinataire RÉEL créé au #welcome, fiche D),
+// Nounou NON posée (pas touchée à la FTUE).
 await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
-if ((await page.locator('.mz-prow', { hasText: 'Cuisine' }).count()) === 0) throw new Error('Carte Cuisine absente');
+if ((await page.locator('.mz-prow', { hasText: 'Fatima' }).count()) === 0) throw new Error('Destinataire nommé absent du hub');
 if ((await page.locator('.mz-prow', { hasText: 'Nounou' }).count()) !== 0) throw new Error('Carte Nounou posée à tort');
-console.log('Hub : carte Cuisine posée, Nounou non posée ✅');
+console.log('Hub : « Fatima · Cuisine » posée (destinataire réel), Nounou non posée ✅');
 
 // 6) Le peuplement a suivi le choix : bibliothèque = 30 recettes de la collection.
 await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();

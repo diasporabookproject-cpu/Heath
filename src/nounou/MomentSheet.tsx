@@ -40,6 +40,7 @@ export default function MomentSheet({ periodeId, periodeNom, edit, onClose, toas
   const enfants = useNounou((s) => s.doc.enfants);
   const addMoment = useNounou((s) => s.addMoment);
   const updateMoment = useNounou((s) => s.updateMoment);
+  const upsertEnfant = useNounou((s) => s.upsertEnfant);
 
   const defaultJours = periodeId ? [0, 1, 2, 3, 4, 5, 6] : [0, 1, 2, 3, 4];
   const [label, setLabel] = useState(edit?.label ?? '');
@@ -53,6 +54,20 @@ export default function MomentSheet({ periodeId, periodeNom, edit, onClose, toas
   );
   const [who, setWho] = useState(edit?.qui ?? '');
   const [lieu, setLieu] = useState(edit?.lieu ?? '');
+  // F4-bis fiche A : raccourci « ＋ ajouter un enfant » SANS quitter la feuille
+  // (la saisie du moment — intitulé/heure/jours — reste intacte, même état React).
+  const [addingKid, setAddingKid] = useState(false);
+  const [kidName, setKidName] = useState('');
+
+  const addKid = () => {
+    const p = kidName.trim();
+    if (!p) return;
+    const id = upsertEnfant({ prenom: p });
+    setKids((prev) => new Set(prev).add(id)); // créé → auto-coché
+    setKidName('');
+    setAddingKid(false);
+    toast(`${p} ajouté(e)`);
+  };
 
   const toggle = <T,>(set: Set<T>, v: T) => {
     const n = new Set(set);
@@ -61,11 +76,11 @@ export default function MomentSheet({ periodeId, periodeNom, edit, onClose, toas
     return n;
   };
 
+  // F4-bis fiche A : l'association d'enfant est OPTIONNELLE — `enfants: []` signifie
+  // déjà « tous les enfants » dans tout le modèle (JourneeView, MomentBrick, projection).
+  // L'ancienne exigence (« Choisis au moins un enfant ») bloquait DUR un foyer neuf
+  // post-F1 (zéro enfant seedé) : levée de contrainte UI, pas de changement de modèle.
   const applySugg = (s: Sugg) => {
-    if (kids.size === 0) {
-      toast('Choisis au moins un enfant');
-      return;
-    }
     addMoment(
       {
         label: s.label,
@@ -85,7 +100,6 @@ export default function MomentSheet({ periodeId, periodeNom, edit, onClose, toas
     const l = label.trim();
     if (!l) return toast('Donne un intitulé');
     if (jours.size === 0) return toast('Choisis au moins un jour');
-    if (kids.size === 0) return toast('Choisis au moins un enfant');
     const payload = {
       label: l,
       heure: time || '12:00',
@@ -178,7 +192,7 @@ export default function MomentSheet({ periodeId, periodeNom, edit, onClose, toas
       </div>
 
       <div className="cz-blab" style={{ marginTop: 16 }}>
-        Enfant(s)
+        Enfant(s) — optionnel
       </div>
       <div className="nz-kidsel">
         {enfants.map((e) => (
@@ -194,6 +208,29 @@ export default function MomentSheet({ periodeId, periodeNom, edit, onClose, toas
             {e.prenom}
           </button>
         ))}
+        {!addingKid ? (
+          <button className="nz-kbtn" onClick={() => setAddingKid(true)}>
+            ＋ Ajouter un enfant
+          </button>
+        ) : (
+          <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+            <input
+              className="cz-inp"
+              style={{ width: 150, margin: 0 }}
+              autoFocus
+              value={kidName}
+              onChange={(e) => setKidName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addKid()}
+              placeholder="Prénom"
+            />
+            <button className="nz-kbtn" onClick={addKid} disabled={!kidName.trim()}>
+              OK
+            </button>
+          </span>
+        )}
+      </div>
+      <div className="nz-emptyline" style={{ padding: '4px 2px', textAlign: 'left' }}>
+        Personne de coché = le moment vaut pour tous les enfants.
       </div>
 
       <div className="cz-blab" style={{ marginTop: 16 }}>

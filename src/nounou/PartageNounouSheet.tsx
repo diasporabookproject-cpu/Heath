@@ -5,7 +5,8 @@ import { IconPlusThin } from './icons';
 import { qrSvg } from './qr';
 import { publishNounouEspace } from './partage';
 import { buildEspaceUrl, lastEspaceOpen } from '../lib/espace';
-import { supabaseEnabled } from '../lib/supabase';
+import { getSupabase, supabaseEnabled } from '../lib/supabase';
+import SecuriserVolet from '../components/SecuriserVolet';
 import { buildNounouDigest, type NounouScope } from '../maison/digest';
 import { DigestBlock, type ScopeOption } from '../ui/DigestBlock';
 import { rappelLabel } from '../lib/rappel';
@@ -13,6 +14,7 @@ import RappelSheet from '../cuisine/RappelSheet';
 import { useStore } from '../store/useStore';
 import { todayISO, addDaysISO } from './dates';
 import { cleanText } from '../lib/sanitize';
+import { isNative, shareText } from '../lib/platform';
 import { NOUNOU_LANGS, type NounouDest, type NounouLangue, type Ponctuel } from '../types';
 
 const digits = (s?: string) => (s ?? '').replace(/\D/g, '');
@@ -55,6 +57,8 @@ export default function PartageNounouSheet({
   const [qr, setQr] = useState<string | null>(null);
   const [lastOpen, setLastOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // F4-bis fiche B : volet « Sécuriser » inline (création de compte transparente).
+  const [securiser, setSecuriser] = useState(false);
 
   const dest = useMemo<NounouDest | undefined>(
     () => doc.destinataires.find((d) => d.id === selId),
@@ -135,8 +139,13 @@ export default function PartageNounouSheet({
 
   const send = async () => {
     if (!dest) return;
-    if (!supabaseEnabled || !connected) {
-      return toast('Connecte-toi (icône ☁︎) pour publier le lien');
+    if (!supabaseEnabled) return toast('Connexion indisponible.');
+    // F4-bis fiche B (Lecture 1) : sans session → volet « Sécuriser » inline (plus
+    // de renvoi vers le nuage), puis l'envoi repart tout seul. Garde LIVE (cf.
+    // PartageSheet — l'état `connected` peut ne pas être encore propagé au retour).
+    {
+      const live = await getSupabase()?.auth.getSession();
+      if (!live?.data.session) return setSecuriser(true);
     }
     if (isEmptyDigest && !confirmEmpty) return setConfirmEmpty(true); // confirmation portée vide
     setBusy(true);
@@ -147,7 +156,12 @@ export default function PartageNounouSheet({
       const aRelire = Object.values(cache).filter((e) => e.status === 'aValider').length;
       const noTrans = dest.langue !== 'fr' && Object.keys(cache).length === 0;
       if (hasPhone) {
+        // C-1 : numéro connu → chemin court (WhatsApp pré-ciblé), web comme natif.
         window.open(`https://wa.me/${digits(dest.tel)}?text=${encodeURIComponent(digest)}`, '_blank');
+      } else if (isNative) {
+        // F4-bis fiche C : sans numéro, en natif → feuille de partage système
+        // (le presse-papiers seul était un héritage web — rien ne « partait »).
+        await shareText(digest, `Page de ${dest.prenom}`);
       } else {
         try {
           await navigator.clipboard.writeText(digest);
@@ -157,7 +171,9 @@ export default function PartageNounouSheet({
       }
       toast(
         !hasPhone
-          ? 'Publié ✓ — message copié (pas de numéro)'
+          ? isNative
+            ? 'Publié ✓'
+            : 'Publié ✓ — message copié (pas de numéro)'
           : noTrans
             ? 'Envoyé (en français — pense à générer la traduction)'
             : aRelire
@@ -200,6 +216,17 @@ export default function PartageNounouSheet({
   return (
     <>
     <Sheet title="Partager la page" sub="Lecture seule, mise à jour en place" onClose={onClose}>
+      {securiser && (
+        <SecuriserVolet
+          onDone={() => {
+            setSecuriser(false);
+            void send(); // reprend l'envoi exactement où il s'était arrêté
+          }}
+          onCancel={() => setSecuriser(false)}
+        />
+      )}
+      {!securiser && (
+        <>
       {/* Sélecteur de destinataire */}
       {doc.destinataires.length > 0 && (
         <div className="nz-destsel">
@@ -394,6 +421,8 @@ export default function PartageNounouSheet({
             <span className="dot" />
             {lastOpen ? `Ouvert ${timeAgo(lastOpen)} · mise à jour en place` : 'Pas encore ouvert'}
           </div>
+        </>
+      )}
         </>
       )}
     </Sheet>
