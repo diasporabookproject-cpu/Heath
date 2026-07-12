@@ -1,0 +1,798 @@
+INVENTAIRE DES ÉCRANS — 2026-07-12T08:21:36.028Z
+Viewport 390×844 @2x — build de prod servi par vite preview.
+========================================================================
+
+### 01-maison-hub.png
+Rôle   : Écran racine (hub) — Aujourd’hui, Ton équipe, La maison
+Accès  : Écran d’accueil de l’app
+Texte visible :
+Salam 👋
+Dimanche 12 juillet
+☁︎
+AUJOURD’HUI
+🍽️
+PROCHAIN · NOUNOU
+Déjeuner
+12:30
+14:00
+😴
+Sieste
+16:30
+🍎
+Goûter
+20:30
+🌙
+Coucher
+TON ÉQUIPE
+🧸
+Khadija · Nounou
+● Pas encore envoyé
+Envoyer
+🥘
+Cuisine
+Prépare la page — personne à qui l’envoyer pour l’instant
+›
+🛡️
+La maison
+Numéros, procédures, gestes — à assigner à qui tu veux
+›
+＋ Une page pour quelqu’un d’autre
+------------------------------------------------------------------------
+
+### 02-maison-nouvelle-page.png
+Rôle   : Feuille : ajouter une page de rôle (Entretien/Chauffeur/…)
+Accès  : Hub → bouton « ＋ Une page pour quelqu’un d’autre »
+Texte visible :
+Une page pour…
+Chaque page arrive déjà remplie — tu ajustes, tu n’écris pas tout.
+🧺
+Entretien
+Ménage, linge, les standards de ta maison
+Bientôt
+🚗
+Chauffeur
+Trajets, écoles, véhicules
+Bientôt
+💛
+Quelqu’un d’autre
+Grands-parents, garde du samedi… page libre
+Bientôt
+En attendant, ouvre une page Cuisine ou Nounou depuis Maison.
+------------------------------------------------------------------------
+
+### 03-compte-reglages.png
+Rôle   : Feuille : Compte & synchro (Supabase), export, réglages
+Accès  : Hub → avatar ☁︎ en haut à droite
+Texte visible :
+Mets ta maison à l'abri
+Sauvegardée, sur tous tes appareils. Un simple e-mail, sans mot de passe.
+TON E-MAIL
+Recevoir mon code
+Plus tard — je continue sans compte
+------------------------------------------------------------------------
+
+### 10-cuisine-semaine.png
+Rôle   : Cuisine › onglet Semaine — planning des repas + jauges kcal
+Accès  : Hub → carte « Cuisine »
+Texte visible :
+‹
+Cuisine
+Objectif 1 800 kcal/pers.
+☁︎
+Semaine
+Recettes
+Courses
+Semaine du 6 juillet
+cette semaine
+CETTE SEMAINE
+—
+Semaine vide — compose tes repas ou lance une génération.
+Générer la semaine
+Copier une semaine précédente
+Lundi
+6 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Mardi
+7 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Mercredi
+8 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Jeudi
+9 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Vendredi
+10 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Samedi
+11 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Dimanche
+12 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+------------------------------------------------------------------------
+
+### 11-cuisine-composeur-repas.png
+Rôle   : Feuille : composeur d’un repas (entrée/plat/accompagnement + total)
+Accès  : Cuisine › Semaine → tap sur un créneau de repas
+Texte visible :
+Petit-déj
+Lundi
+✕
+Total du repas
+0kcal · 0g P
+PETIT-DÉJ
+Choisir
+Les macros du repas = somme des composants. La quantité d’un accompagnement ajuste ses macros.
+------------------------------------------------------------------------
+
+### 12-cuisine-choix-recette.png
+Rôle   : Feuille : sélecteur de recette (liste filtrée par rôle)
+Accès  : Composeur → « Choisir » un composant
+NB     : le dump texte ci-dessous a capté la feuille « composeur » sous-jacente ;
+         l'IMAGE, elle, montre bien le sélecteur (« Choisir : Petit-déj » + liste
+         de recettes filtrées : Msemmen SG, Œufs brouillés SG, Yaourt grec…).
+Texte visible (feuille sous-jacente) :
+Petit-déj
+Lundi
+✕
+Total du repas
+0kcal · 0g P
+PETIT-DÉJ
+Choisir
+Les macros du repas = somme des composants. La quantité d’un accompagnement ajuste ses macros.
+------------------------------------------------------------------------
+
+### 13-cuisine-bibliotheque.png
+Rôle   : Cuisine › onglet Recettes — bibliothèque (chips de rôle, favoris, macros)
+Accès  : Cuisine → onglet « Recettes »
+Texte visible :
+‹
+Cuisine
+Objectif 1 800 kcal/pers.
+☁︎
+Semaine
+Recettes
+Courses
+Tous
+★ Favoris
+Petit-déj
+Entrée
+Plat
+Accomp.
+✦ À valider
+Assiette mezze, houmous maison, poulet chermoula
+PLAT
+725 kcal · 70g P
+Boat de concombre (batch 2 jours)
+ENTRÉE
+200 kcal · 26g P
+Bowl poulet épinards · pois chiches · comté
+PLAT
+750 kcal · 77g P
+Bowl poulet-riz-pois chiches-feta
+PLAT
+790 kcal · 80g P
+Brochettes de poulet marinées grillées
+PLAT
+780 kcal · 84g P
+Chakchouka à la kefta et feta
+PLAT
+750 kcal · 62g P
+Creami chocolat récup (whey)
+ENTRÉE
+225 kcal · 30g P
+Creami fruits rouges (whey)
+ENTRÉE
+215 kcal · 30g P
+Creami vanille (whey)
+ENTRÉE
+195 kcal · 30g P
+Dip yaourt-ail + crudités
+ENTRÉE
+85 kcal · 12g P
+Dorade rôtie au four · légumes méditerranéens
+PLAT
+665 kcal · 71g P
+Frittata courgettes-oignons-comté (épinards)
+PLAT
+720 kcal · 53g P
+Kefta de bœuf froide, riz et légumes rôtis
+PLAT
+710 kcal · 60g P
+Légumes vapeur
+ACCOMPAGNEMENT
+60 kcal/100g
+Msemmen SG, œufs & fromage
+PETIT-DÉJ
+460 kcal · 22g P
+Œufs brouillés & pain SG
+PETIT-DÉJ
+420 kcal · 26g P
+Pommes de terre rôties
+ACCOMPAGNEMENT
+150 kcal/100g
+Riz blanc
+ACCOMPAGNEMENT
+130 kcal/100g
+Rôti de bœuf festif aux herbes
+PLAT
+910 kcal · 82g P
+Salade de riz aux crevettes et avocat
+PLAT
+600 kcal · 53g P
+Salade de riz, lentilles, thon et œufs
+PLAT
+910 kcal · 82g P
+Salade riz dorade grillée · haricots verts · feta
+PLAT
+630 kcal · 63g P
+Sandwich batbout GF, dinde grillée chermoula
+PLAT
+900 kcal · 75g P
+Sardines fraîches grillées en chermoula
+PLAT
+785 kcal · 71g P
+Saumon rôti au four, brocolis, patate douce
+PLAT
+700 kcal · 68g P
+Semoule sans gluten
+ACCOMPAGNEMENT
+120 kcal/100g
+Tagine de lotte aux légumes
+PLAT
+770 kcal · 77g P
+Tagine de poulet citron confit · olives vertes
+PLAT
+790 kcal · 79g P
+Tagine kefta-œuf de bœuf
+PLAT
+900 kcal · 78g P
+Yaourt grec, avoine & fruits
+PETIT-DÉJ
+400 kcal · 24g P
+COLLECTIONS — À COPIER, PUIS À TOI
+🍲
+Marocain du quotidien
+6 RECETTES
+NOUVEAU
+🥗
+Léger & équilibré
+3 RECETTES
+Tout voir →
+------------------------------------------------------------------------
+
+### 14-cuisine-fiche-recette.png
+Rôle   : Feuille : détail d’une recette (ingrédients, macros, calcium, voix)
+Accès  : Bibliothèque → tap sur une recette
+Texte visible :
+Assiette mezze, houmous maison, poulet chermoula
+Plat · 100 % sans gluten
+✕
+PLAT
+◆ moyen
+VALIDÉ
+725
+KCAL
+70
+PROT
+50
+GLUC
+390
+CALCIUM
+CONSIGNE VOCALE POUR LA CUISINIÈRE
+partagée
+Enregistrer une consigne vocale
+Ta voix sera partagée avec la cuisinière dans le brief
+INGRÉDIENTS · UNE PORTION
+Houmous maison : pois chiches cuits
+70 g
+tahini
+12 g
+1 càc huile
+citron
+ail
+cumin
+sel
+poulet chermoula grillé froid tranché
+150 g
+1 œuf dur
+légumes grillés à sec froids 150g (courgette
+poivron
+aubergine)
+concombre
+tomates cerises
+80 g
+sésame torréfié
+1 càc
+feta
+20 g
+PRÉPARATION
+Aucune étape renseignée (modifie la recette pour en ajouter).
+Modifier la recette
+Écarter
+------------------------------------------------------------------------
+
+### 15-cuisine-ajout-recette.png
+Rôle   : Feuille : ajouter une recette (saisie manuelle / JSON / import)
+Accès  : Cuisine › Recettes → bouton flottant ＋
+Texte visible :
+Nouvelle recette
+✕
+📚
+Depuis la bibliothèque
+Pioche dans les collections, adapte en 30 secondes.
+✍️
+Saisie manuelle
+Pas à pas — toujours gratuit, toujours illimité.
+✦
+Coup de main IA
+Indisponible hors-ligne / sans connexion.
+------------------------------------------------------------------------
+
+### 16-cuisine-collections.png
+Rôle   : Feuille : Collections (packs de recettes à copier chez soi)
+Accès  : Feuille d’ajout → « Collections » (aussi accessible via le rail en bas des Recettes)
+Texte visible :
+Collections
+Copie, adapte, c’est à toi — sans rien retaper
+✕
+🍲
+Marocain du quotidien
+INSTALLÉE ✓
+Les classiques équilibrés de la semaine — déjà dans ta bibliothèque si tu pars du jeu de départ.
+🥗
+Léger & équilibré
+NOUVEAU · 3
+Trois recettes fraîches, sans gluten, riches en protéines — à copier puis adapter à ton goût.
+------------------------------------------------------------------------
+
+### 17-cuisine-courses.png
+Rôle   : Cuisine › onglet Courses — liste de courses agrégée depuis la semaine
+Accès  : Cuisine → onglet « Courses »
+Texte visible :
+‹
+Cuisine
+Objectif 1 800 kcal/pers.
+☁︎
+Semaine
+Recettes
+Courses
+Compose un menu dans l’onglet « Semaine » : la liste de courses se génère toute seule.
+------------------------------------------------------------------------
+
+### 18-cuisine-objectif.png
+Rôle   : Feuille : réglage de l’objectif kcal/personne
+Accès  : Cuisine → pastille « Objectif … kcal/pers. »
+Texte visible :
+Objectif calorique
+Individuel · par jour
+✕
+OBJECTIF PAR PERSONNE
+−
+1 800
+kcal / personne / jour
++
+NOMBRE DE PERSONNES
+−
+4
+au foyer
++
+L’objectif est
+individuel
+. Les quantités des recettes sont ajustées au nombre de personnes et à cet objectif — l’IA génère et analyse chaque journée sur cette base.
+OK
+------------------------------------------------------------------------
+
+### 19-cuisine-partage.png
+Rôle   : Feuille : partager le menu (créer une page/lien pour un destinataire)
+Accès  : Cuisine → icône ⤴ « Partager le menu »
+Texte visible :
+Nouvelle personne
+✕
+NOM
+RÔLE
+Cuisinière
+Femme de ménage
+Nounou
+Autre
+LANGUE DE LECTURE
+Français
+الدارجة
+TÉLÉPHONE WHATSAPP (OPTIONNEL)
+Enregistrer
+Annuler
+------------------------------------------------------------------------
+
+### 20-cuisine-copier-semaine.png
+Rôle   : Feuille : copier une semaine passée vers la semaine courante
+Accès  : Cuisine › Semaine → « Copier une semaine »
+Texte visible :
+Copier une semaine
+Réutilise un menu déjà composé
+✕
+Aucune semaine composée à copier pour l’instant.
+------------------------------------------------------------------------
+
+### 21-cuisine-semaine-vide.png
+Rôle   : État vide : semaine sans repas (message « Semaine vide »)
+Accès  : Cuisine › Semaine → chevron « Suivante »
+Texte visible :
+‹
+Cuisine
+Objectif 1 800 kcal/pers.
+☁︎
+Semaine
+Recettes
+Courses
+Semaine du 13 juillet
+semaine prochaine
+CETTE SEMAINE
+—
+Semaine vide — compose tes repas ou lance une génération.
+Générer la semaine
+Copier une semaine précédente
+Lundi
+13 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Mardi
+14 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Mercredi
+15 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Jeudi
+16 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Vendredi
+17 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Samedi
+18 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+Dimanche
+19 juillet
+PETIT-DÉJ
+Ajouter
+DÉJEUNER
+Ajouter
+DÎNER
+Ajouter
+Ajoute au moins un repas pour voir l’équilibre.
+------------------------------------------------------------------------
+
+### 30-nounou-journee.png
+Rôle   : Nounou › onglet Journée — déroulé horaire (bandeau période, événements)
+Accès  : Hub → carte « Khadija · Nounou »
+Texte visible :
+‹
+Nounou
+☁︎
+Journée
+Conduites
+Fiche urgence
+LUN
+6
+MAR
+7
+MER
+8
+JEU
+9
+VEN
+10
+SAM
+11
+DIM
+12
+Aujourd’hui
+Dimanche 12 juillet
+12:30
+Déjeuner
+14:00
+Sieste
+A
+16:30
+Goûter
+20:30
+Coucher
+Ajouter
+Rythme & périodes
+------------------------------------------------------------------------
+
+### 31-nounou-conduites.png
+Rôle   : Nounou › onglet Conduites — protocoles/règles (chips, à compléter)
+Accès  : Nounou → onglet « Conduites »
+Texte visible :
+‹
+Nounou
+☁︎
+Journée
+Conduites
+Fiche urgence
+Tes consignes, écrites une fois et partagées. Les modèles violets sont à compléter.
+Tous
+Santé
+Sécurité
+Quotidien
+✦ À compléter
+Fièvre
+SANTÉ
+✦ À COMPLÉTER
+Petite blessure / chute
+SANTÉ
+✦ À COMPLÉTER
+Étouffement
+SANTÉ
+URGENT
+✦ À COMPLÉTER
+Réaction allergique
+SANTÉ
+URGENT
+✦ À COMPLÉTER
+Refus de manger
+QUOTIDIEN
+✦ À COMPLÉTER
+Étranger à la porte
+SÉCURITÉ
+✦ À COMPLÉTER
+------------------------------------------------------------------------
+
+### 32-nounou-fiche-urgence.png
+Rôle   : Nounou › onglet Fiche urgence — numéros, contacts, enfants
+Accès  : Nounou → onglet « Fiche urgence »
+Texte visible :
+‹
+Nounou
+☁︎
+Journée
+Conduites
+Fiche urgence
+EN CAS D’URGENCE
+Ajouter
+19
+Police
+À vérifier
+15
+SAMU
+À vérifier
+150
+Pompiers
+À vérifier
+Numéros pré-remplis pour le Maroc — à vérifier. Ajoute aussi ta clinique habituelle.
+CONTACTS
+Ajouter
+Ajoute Maman, Papa, le pédiatre, une voisine de confiance…
+RÈGLES & AUTORISATIONS
+Ajouter
+Ce qui est autorisé ou interdit (écrans, sorties, qui récupère…).
+FICHES ENFANTS
+Ajouter
+Y
+Yasmine
+Fiche à compléter
+A
+Adam
+Fiche à compléter
+------------------------------------------------------------------------
+
+### 33-nounou-partage.png
+Rôle   : Feuille : partager la page Nounou (destinataire, langue/traduction)
+Accès  : Nounou → icône ⤴ « Partager la page »
+Texte visible :
+Partager la page
+Lecture seule, mise à jour en place
+✕
+Khadija
+Nouveau
+DESTINATAIRE
+Khadija
+Nounou · Yasmine & Adam
+QUOI ENVOYER
+La semaine
+Aujourd'hui
+Demain
+SON MESSAGE — MODIFIABLE AVANT ENVOI
+🔔
+Rappel d’envoi
+Désactivé
+Activer
+LANGUE DE SA PAGE
+Français
+Auteur
+الدارجة
+Marocain
+العربية
+Standard
+English
+À activer si besoin
+ENFANTS CONCERNÉS
+Y
+Yasmine
+A
+Adam
+Aucun sélectionné = tous les enfants.
+TÉLÉPHONE (OPTIONNEL)
+CE QU’ELLE REÇOIT
+📅 La journée, jour après jour (vacances comprises)
+👶 La fiche de chaque enfant
+🧭 Conduites · 🚨 contacts & urgences — à venir (lots 2-3)
+S’ouvre dans son navigateur et marche hors-ligne — rien à installer. Le même lien reste à jour à chaque envoi.
+Publier + copier le message
+Afficher le QR code
+Copier le lien
+Pas encore ouvert
+------------------------------------------------------------------------
+
+### 50-espace-destinataire-vide.png
+Rôle   : Vue destinataire (#e=) — état vide/indisponible (lien reçu par un tiers)
+Accès  : Ouverture d’un lien « Mon espace » avec un jeton invalide
+Texte visible :
+Mon espace
+Cet espace est vide ou n’est plus disponible.
+------------------------------------------------------------------------
+
+
+### 40-securite-vide.png
+Rôle   : La maison / Sécurité — référentiel (état initial, avant import)
+Accès  : Hub → carte « La maison »
+Texte visible :
+‹ Maison
+Sécurité du foyer
+☁︎ Connexion
+Référentiel des consignes de sécurité du foyer. Le contenu est saisi par les parents (aucune génération par IA). Seules les fiches Validé apparaissent dans l'espace du personnel à qui elles sont assignées.
+⇪ Importer le pack de démarrage
+NUMÉROS D'URGENCE
+Aucune fiche.
++ Ajouter (Numéros d'urgence)
+PROCÉDURES
+Aucune fiche.
++ Ajouter (Procédures)
+GESTES PERMIS / INTERDITS
+Aucune fiche.
++ Ajouter (Gestes permis / interdits)
+------------------------------------------------------------------------
+
+### 41-securite-rempli.png
+Rôle   : La maison / Sécurité — référentiel rempli (fiches par section, statuts Validé/Test)
+Accès  : La maison → « ⇪ Importer le pack de démarrage »
+Texte visible :
+‹ Maison
+Sécurité du foyer
+☁︎ Connexion
+Référentiel des consignes de sécurité du foyer. Le contenu est saisi par les parents (aucune génération par IA). Seules les fiches Validé apparaissent dans l'espace du personnel à qui elles sont assignées.
+⇪ Importer le pack de démarrage
+4 fiche(s) importée(s) en statut Test — à relire et valider.
+NUMÉROS D'URGENCE
+Numéros d'urgence
+Test · الدارجة ✓
+Valider
++ Ajouter (Numéros d'urgence)
+PROCÉDURES
+Étouffement (enfant) — que faire
+Test · الدارجة ✓
+Valider
+Fièvre — premiers gestes
+Test · الدارجة ✓
+Valider
++ Ajouter (Procédures)
+GESTES PERMIS / INTERDITS
+Gestes permis / interdits
+Test · الدارجة ✓
+Valider
++ Ajouter (Gestes permis / interdits)
+------------------------------------------------------------------------
+
+========================================================================
+RÉSUMÉ
+  22 captures — tous les écrans, feuilles et principaux états vides.
+  Build de prod (clés Supabase « publishable » factices) servi par vite preview,
+  viewport 390×844 @2x, args caméra factices. App en lecture seule (src intact).
+
+ÉTATS VIDES CAPTURÉS
+  17-cuisine-courses.png ........ Courses sans menu composé
+  20-cuisine-copier-semaine.png . Aucune semaine passée à copier
+  21-cuisine-semaine-vide.png ... Semaine (suivante) sans repas
+  40-securite-vide.png .......... Sécurité avant import du pack
+  50-espace-destinataire-vide.png Espace destinataire (jeton invalide)
+
+FEUILLES OUVERTES SUR UN 1er ÉTAT « CRÉATION » (aucune donnée encore)
+  19-cuisine-partage.png ........ Partage → éditeur « Nouvelle personne »
+                                  (aucun destinataire enregistré au départ).
+  33-nounou-partage.png ......... Partage Nounou déjà pré-rempli (destinataire
+                                  Khadija présent dans le doc de démo).
+
+REMARQUES
+  - La semaine courante est vide au 1er lancement (pas de seed de menu) : c'est
+    l'état réel « fresh install ». « Générer la semaine » nécessite le quota IA
+    serveur (Supabase réel) — non déclenché ici, volontairement.
+  - 12-cuisine-choix-recette : image correcte, dump texte = feuille sous-jacente.
+  - Aucune capture n'a échoué. Aucune erreur console applicative (hors réseau).
+
+NON CAPTURÉ (nécessite données/parcours réels — à compléter par lecture de code)
+  - Espace destinataire REMPLI (#e=<jeton valide>) : exige une publication réelle
+    via Supabase (menu/nounou effectivement envoyés). L'écran #50 montre l'état
+    vide/révoqué ; le rendu « plein » (semaine + fiches enfants côté nounou) se lit
+    dans src/views/EspaceView.tsx.
+  - Feuilles Nounou de saisie (Ajouter période / protocole / événement / contact /
+    numéro / enfant) : accessibles mais non déroulées ici ; formulaires dans
+    src/nounou/*Sheet.tsx.
+  - QR code de partage (bouton « Afficher le QR code » des feuilles de partage).

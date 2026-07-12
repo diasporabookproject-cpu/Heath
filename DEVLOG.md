@@ -170,6 +170,9 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### Inventaire visuel des écrans (captures Playwright) — 2026-07-12
+Branche `claude/mobile-screenshot-inventory-s83rzd`. **Livrable non-produit** : 22 captures mobile (390×844 @2x) de tous les écrans/feuilles, sur le build de prod servi par `vite preview`, rangées dans `screens-inventory/` (isolées de `src`, aucune modif applicative). `legende.txt` associe chaque PNG à son rôle/accès + dump `innerText` pour légender. Scripts de reproduction inclus (`capture*.mjs`, Playwright résolu en global comme `npm run smoke`). Couvre Maison/Cuisine/Nounou/Sécurité/Espace + états vides (courses, semaine, sécurité avant import, espace révoqué). Non capturés (nécessitent données réelles) : espace destinataire *rempli* (`#e=` valide, publication Supabase), feuilles de saisie Nounou, QR de partage.
+
 ### AS-2b — Volet client (accept via RPC, bandeau nouveau propriétaire, copie suppression) — 2026-07-11
 Branche `as2b-client-v1` (depuis le défaut aligné `3f6d64a`, post-merge des 3 lots). **Volet visible d'AS-2** : câble le client sur le backend AS-2a. Pas de read-back (mécanique), relecture ciblée sur la **copie affichée** (seule surface utilisateur).
 - **① `acceptInvite`** : bascule de l'edge `accept-invite` vers le **RPC `accept_invite`** appelé directement (`supa.rpc`). Comme le RPC **ne lève pas** (statut jsonb, cf. bug rate-limit AS-2a), l'erreur métier arrive dans `data.error` (pas `error`) → lecture `data.ok` / `data.foyer_id` / `data.error`.
