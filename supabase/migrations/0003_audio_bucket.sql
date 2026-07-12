@@ -1,8 +1,8 @@
 -- 0003_audio_bucket.sql
 -- Sous-lot S3′ — sauvegarde des notes vocales : bucket PRIVÉ par foyer.
 --
--- ⚠️ ARTEFACT DE READ-BACK — **NON APPLIQUÉ**. Applicable en STAGING (ne dépend
--- pas de la prod) puis en prod. À jouer dans le SQL Editor après relecture.
+-- ✅ APPLIQUÉE en PROD le 2026-07-05 et REJOUÉE sur le staging reconstruit (lot
+-- Environnements, 2026-07-08 — leçon F-c : le bucket se crée en SQL, ses objets non). Idempotente.
 -- Objets préfixés par `foyer_id/…` ; accès réservé aux membres du foyer (RLS storage).
 
 -- Bucket privé (non public).

@@ -1,8 +1,8 @@
 -- 0001_foyers-membres-docs-rls.sql
 -- Sous-lot S1 — schéma foyers/membres + miroir de sync (docs) + quota IA + tenancy espaces.
 --
--- ⚠️ ARTEFACT DE READ-BACK — **NON APPLIQUÉ**. À relire (Amine) puis à jouer en **STAGING d'abord**
--- (SQL Editor), tests RLS, et seulement ensuite en prod après GO. Idempotent autant que possible.
+-- ✅ APPLIQUÉE en PROD le 2026-07-05 (passe de déploiement Comptes+Sync, via API Management)
+-- et REJOUÉE sur le staging reconstruit (lot Environnements, 2026-07-08). Idempotente (drop+create).
 -- Invariants : tenancy = `foyer_id` partout ; RLS stricte ; le local reste la source, le cloud = miroir.
 
 create extension if not exists pgcrypto;   -- gen_random_uuid()
