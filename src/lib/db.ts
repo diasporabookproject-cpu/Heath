@@ -121,10 +121,11 @@ const SETTINGS_KEY = 'settings';
 const SEED_VERSION = 4;
 
 /**
- * Au premier lancement : importe le jeu de données de départ.
- * Aux lancements suivants : applique les migrations sans écraser les recettes
- * ajoutées/modifiées par l'utilisateur. v4 : migration vers le modèle v2
- * (Recipe.type → Recipe.role ; ajout petit-déj/accompagnements ; reset semaines).
+ * F2 (Flow FTUE) : PLUS D'IMPORT AUTOMATIQUE au premier lancement — une bibliothèque
+ * neuve démarre VIDE ; l'ancien seed vit dans la collection installable « Fonds de
+ * départ » (`data/packs/fonds-de-depart.json`, opt-in via Collections ou FTUE).
+ * Le tampon SEED_VERSION et les MIGRATIONS des appareils EXISTANTS (version 1..3 :
+ * type→role, complément darija, recettes seed manquantes) restent inchangés.
  */
 export async function ensureSeeded(): Promise<void> {
   const db = await getDB();
@@ -135,9 +136,8 @@ export async function ensureSeeded(): Promise<void> {
   }
 
   if (version === 0) {
-    const tx = db.transaction('recipes', 'readwrite');
-    for (const r of SEED_RECIPES) await tx.store.put(r);
-    await tx.done;
+    // Premier lancement : RIEN à importer (bibliothèque vide voulue) — on tamponne
+    // seulement la version ci-dessous, point de départ des migrations futures.
   } else if (version < SEED_VERSION) {
     // a) Migrer les recettes existantes (type → role) si besoin.
     if (version < 4) {

@@ -187,6 +187,15 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### Flow FTUE — Tranche 1 (F1+F2+F3+F5b : seed retiré, collection, gabarits, garde-fou) — 2026-07-12
+Branche `flow-ftue-v1` (défaut post-merge coquille-v2 `18eda5b`). Brief v1.2 + maquette `docs/maquettes/ftue-v4.html` + `READBACK_FLOW_FTUE.md` committés. Décisions PO : collection « **Fonds de départ** » · polices embarquées (T2) · direction (b) dédup pack à l'adoption (T3, à confirmer).
+- **F1 — seed personnel Nounou RETIRÉ** : `seedNounouDoc()` = `emptyNounouDoc()` (plus de Yasmine/Adam, rythme, Khadija, gabarits). Numéros Maroc « à vérifier » conservés (info pays, dans `emptyNounouDoc`). Appareils existants intouchés (doc présent → jamais re-seedé).
+- **F2 — collection « Fonds de départ »** : `data/packs/fonds-de-depart.json` généré one-shot depuis `SEED_RECIPES` (30 recettes, **l'Écartée sortie**, darija complète) ; au registre `PACKS` (marocain/léger conservés — banc d'essai dédup) ; `ensureSeeded()` n'importe **plus rien** en version 0 (tampon + migrations 1..3 inchangés — `SEED_CONFIG` intouché).
+- **F3 — gabarits installables** : `missingConduiteModeles()` (pur, anti-doublon par titre, casse/espaces) + action store `installConduiteModeles()` + bouton « ✦ Importer les gabarits » dans l'état vide de Conduites (pattern import Sécurité). La FTUE l'appellera en T2.
+- **F5b — garde-fou générateur** : biblio vide → « Générer la semaine » toaste sobrement et ouvre la collection (pré-sélection Fonds de départ) au lieu de partir en IA intégrale ; biblio non vide → inchangé.
+- **Smoke Cuisine adapté** : préambule qui INSTALLE la collection (la porte teste F2 de bout en bout) puis parcours habituel — « Bibliothèque (30 recettes) » désormais prouvé par l'installation, plus par le seed.
+- **Portes** : typecheck ✓ · Vitest **111/111** (+6 : 3 pack Fonds, 3 seed/gabarits) ✓ · build web+natif ✓ · smokes Cuisine (avec préambule) + Comptes ✓ · **preuves des critères de fini** rejouées sur stockage vierge : hub sans Khadija ✓ · journée Nounou vide ✓ · Générer-sur-vide → collection ✓ · import gabarits → 6 ✓.
+
 ### Coquille v2 — Volet C (curation : docs portés, findings re-domiciliés, en-têtes vrais) — 2026-07-12
 Dernier volet du lot (STOP 2 validé sur appareil). Zéro code produit — dette documentaire soldée :
 - **C-1 docs portés** depuis `coquille-v1` : `GO_COQUILLE_DECISIONS.md` + `READBACK_COQUILLE.md` (bannière 📦 ARCHIVE — décisions Q-c1→Q-c5 et « 8 pièges » valables, implémentation v1 obsolète), `BRIEF_FINITIONS_COQUILLE.md` tel quel, **`BUILD_NATIF.md` RÉÉCRIT** (dist-native, `.env.local` lu par loadEnv, pièges C2 soldés).

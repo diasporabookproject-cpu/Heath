@@ -145,6 +145,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
               setRecFilters('draft');
               switchSeg('recettes');
             }}
+            onOpenCollections={openCollections}
             toast={toast}
           />
         ) : seg === 'recettes' ? (

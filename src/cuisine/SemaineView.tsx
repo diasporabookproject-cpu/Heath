@@ -63,10 +63,12 @@ interface Props {
   onOpenMeal: (dayKey: string, meal: MealKey) => void;
   onCopyWeek: () => void;
   onGoValidate: () => void;
+  /** F5b (Flow FTUE) : biblio vide → proposer d'installer une collection au lieu de partir en IA. */
+  onOpenCollections: (packId?: string) => void;
   toast: (msg: string) => void;
 }
 
-export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, toast }: Props) {
+export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, onOpenCollections, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const weekOffset = useStore((s) => s.weekOffset);
@@ -102,6 +104,13 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, toas
   // FC16 — complète UNIQUEMENT les repas vides par IA, dimensionnés sous l'objectif.
   const generate = async () => {
     if (busy) return;
+    // F5b (Flow FTUE) : bibliothèque VIDE → générer partirait TOUT en IA (connexion +
+    // quota). On propose d'abord la collection — copie sobre, pas de blocage sec.
+    if (recipes.length === 0) {
+      toast('Ta bibliothèque est vide — installe d’abord une collection de recettes');
+      onOpenCollections('fonds-de-depart');
+      return;
+    }
     if (!(await aiAvailable())) {
       toast('Génération IA indisponible (hors-ligne / non connecté)');
       return;
