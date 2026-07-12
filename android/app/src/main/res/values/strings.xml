@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Manzil</string>
+    <string name="title_activity_main">Manzil</string>
+    <string name="package_name">studio.elysia.foyer</string>
+    <string name="custom_url_scheme">studio.elysia.foyer</string>
+</resources>

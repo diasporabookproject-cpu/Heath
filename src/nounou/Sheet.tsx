@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { useSheetBack } from '../ui/primitives';
 
 // Bottom-sheet réutilisable (réutilise la coquille Cuisine cz-sheet/cz-overlay).
 
@@ -14,6 +15,7 @@ export default function Sheet({
   children: ReactNode;
 }) {
   const [shown, setShown] = useState(false);
+  useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
   useEffect(() => {
     const t = requestAnimationFrame(() => setShown(true));
     return () => cancelAnimationFrame(t);

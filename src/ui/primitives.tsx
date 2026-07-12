@@ -7,6 +7,36 @@ import './mz.css';
 export type Role = 'cuisine' | 'nounou';
 const ROLE_CLASS: Record<Role, string> = { cuisine: 'grn', nounou: 'vio' };
 
+// ── Pile GLOBALE des feuilles ouvertes (B3 coquille) ──────────────────────────
+// Le bouton retour Android doit fermer la feuille LA PLUS HAUTE avant toute
+// navigation. Chaque feuille montée s'enregistre (le composant `Sheet` le fait
+// tout seul ; les feuilles maison type `cz-sheet` appellent `useSheetBack`).
+// Sur le web la pile existe mais personne ne la consomme — inerte, zéro coût.
+const sheetStack: Array<() => void> = [];
+
+/** Ferme la feuille la plus haute. `false` si aucune feuille n'est ouverte. */
+export function closeTopSheet(): boolean {
+  const top = sheetStack[sheetStack.length - 1];
+  if (!top) return false;
+  top();
+  return true;
+}
+
+/** Enregistre la feuille montée dans la pile (montage = ouverture — toutes nos
+ * feuilles sont montées conditionnellement). Une ligne par feuille maison. */
+export function useSheetBack(onClose: () => void): void {
+  const ref = useRef(onClose);
+  ref.current = onClose;
+  useEffect(() => {
+    const close = () => ref.current();
+    sheetStack.push(close);
+    return () => {
+      const i = sheetStack.indexOf(close);
+      if (i >= 0) sheetStack.splice(i, 1);
+    };
+  }, []);
+}
+
 /** Racine d'un écran mz (gère le sens RTL). */
 export function MzScreen({ rtl = false, children }: { rtl?: boolean; children: ReactNode }) {
   return (
@@ -159,6 +189,7 @@ export function Sheet({
   children: ReactNode;
 }) {
   const [shown, setShown] = useState(false);
+  useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
   useEffect(() => {
     const t = requestAnimationFrame(() => setShown(true));
     return () => cancelAnimationFrame(t);

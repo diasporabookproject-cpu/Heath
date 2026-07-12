@@ -44,6 +44,9 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  /* B4 (coquille) : inset top — Maison n'a pas d'en-tête sticky, la racine (qui
+     porte le fond) décale le contenu sous la status bar ; env() vaut 0 sur desktop. */
+  padding-top: env(safe-area-inset-top, 0px);
 }
 .mz * { box-sizing: border-box; }
 .mz button { font: inherit; color: inherit; background: none; border: none; text-align: left; cursor: pointer; }

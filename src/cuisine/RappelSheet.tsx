@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { DAY_LABELS, DAY_SHORT, RAPPEL_TIMES } from '../lib/rappel';
 
@@ -18,6 +19,7 @@ export default function RappelSheet({ kind, onClose, toast }: Props) {
   const [day, setDay] = useState<number>(cur?.day ?? 5); // samedi par défaut
   const [time, setTime] = useState<string>(cur?.time ?? '9:00');
   const [shown, setShown] = useState(false);
+  useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setShown(true));

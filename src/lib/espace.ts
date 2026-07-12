@@ -1,5 +1,6 @@
 import { getSupabase } from './supabase';
 import { currentFoyerId } from './auth';
+import { webBaseUrl } from './platform';
 import { getAccessToken, uploadAudios, uploadWeekAudios } from './publish';
 import { buildEspaceMenu, usedRecipeIds, type SharedMenu } from './share';
 import { loadAudio, loadSecurite, recordPublished } from './db';
@@ -43,7 +44,9 @@ export function newToken(): string {
 }
 
 export function buildEspaceUrl(token: string): string {
-  return window.location.origin + window.location.pathname + ESPACE_PREFIX + token;
+  // URL WEB publique (via platform.ts) : en natif, origin serait https://localhost
+  // → lien mort pour le destinataire (8ᵉ piège, read-back C0).
+  return webBaseUrl() + ESPACE_PREFIX + token;
 }
 
 /**

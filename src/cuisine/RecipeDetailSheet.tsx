@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { estimateMacros } from '../lib/ai';
 import { splitIngredients, splitSteps } from '../lib/ingredients';
@@ -33,6 +34,7 @@ export default function RecipeDetailSheet({ recipeId, voiceIds, onClose, onVoice
 
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [shown, setShown] = useState(false);
+  useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
   useEffect(() => {
     const t = requestAnimationFrame(() => setShown(true));
     return () => cancelAnimationFrame(t);

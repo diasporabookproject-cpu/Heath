@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { estimateMacros, generateRecipeDraft, importRecipeText, aiAvailable } from '../lib/ai';
 import { parseRecipesJson } from '../lib/importRecipes';
@@ -39,6 +40,7 @@ type ManualSeed = Pick<Recipe, 'nom' | 'role' | 'ingredients' | 'etapes' | 'kcal
 export default function AddRecipeSheet({ onClose, onCreated, onCollections, toast }: Props) {
   const [step, setStep] = useState<Step>('choose');
   const [shown, setShown] = useState(false);
+  useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
   const [canAi, setCanAi] = useState(false);
   const [seed] = useState<ManualSeed | null>(null);
   const app = useStore((s) => s.app);

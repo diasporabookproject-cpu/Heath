@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { PACKS } from '../data/packs';
 import { buildInstall, isPackInstalled, missingSeeds, seedExists } from '../lib/packs';
@@ -18,6 +19,7 @@ export default function CollectionsSheet({ initialPackId, onClose, toast }: Prop
   const recipes = useStore((s) => s.recipes);
   const upsertRecipe = useStore((s) => s.upsertRecipe);
   const [shown, setShown] = useState(false);
+  useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
   const [sel, setSel] = useState<Pack | null>(() => PACKS.find((p) => p.id === initialPackId) ?? null);
   const [chosen, setChosen] = useState<Set<string>>(
     () => new Set((PACKS.find((p) => p.id === initialPackId) ?? { recettes: [] }).recettes.map((r) => r.nom)),

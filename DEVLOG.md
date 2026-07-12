@@ -87,13 +87,16 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 32. **Page Nounou (brief FN0–FN5) — nouvelle page par rôle, sœur de Cuisine** : dossier `src/nounou/`, **modèle en couches** (`Moment` récurrent / `Periode` rythme alternatif sur plage / `Ponctuel` un jour / `Enfant`), **précédence stricte `ponctuel > période > rythme habituel`** (`projection.ts`, aligné RRULE pour un futur ICS). **Stockage = document JSON unique** (store IndexedDB `nounou`, clé `'doc'`, **DB v5**), fusion à la lecture (`mergeNounouDoc`) pour la compat ascendante ; **last-write-wins** assumé (MVP). Store dédié `useNounou` (séparé de Cuisine). **Chevauchement de périodes interdit à la création** (`periodesOverlap`). **Jours d'école = lun–ven (0–4)**, tous = 0–6. Numéros d'urgence Maroc **19/15/150** seedés « à vérifier ». Réutilise tokens + coquille Cuisine (`cz-*`), classes propres `nz-*`. Onglets **Journée · Conduites · Fiche urgence** (« Repères » banni). Construit par lots, ordre **0 → 1 → (4.1+4.3) → 5 → 2 → 3 → 4.2** (page reçue partageable tôt, traduction en dernier). ✅ Lots 0, 1, **4.1+4.3**, **5**, **2** et **3** livrés — **MVP fonctionnellement complet** (admin Journée + Conduites/voix + Fiche urgence/enfants → lien scopé → page reçue + 3 accès + RTL, réutilisant la table `espaces`). ⏳ reste : **Lot 4.2** (traduction edge function + relecture du sensible) — le seul 🔴.
 
-## État actuel (au 2026-07-11)
+## État actuel (au 2026-07-12)
+
+> ## ✅ COQUILLE v2 LIVRÉE & VALIDÉE SUR APPAREIL (2026-07-12)
+> **Coquille native recréée sur le défaut durci** (décision « recréer, pas réaligner » — `coquille-v1` archivée comme référence). Volet A (dist-native séparé, `.env.local` via loadEnv, greffes portées, porte diff-de-contrôle A6) · Volet B (micro, export natif via feuille de partage, bouton retour à pile de feuilles, safe-areas top) · Volet C (curation docs + findings). **STOP 2 validé sur appareil réel** : 4/4 verdicts ✓. APK debug en artifact CI (`apk.yml`). Voir `READBACK_COQUILLE_V2.md` + `BUILD_NATIF.md`.
+> **➡️ Prochain lot : « Flow FTUE »** (brief v1.2) — seed personnel retiré, collection-témoin, FTUE gate pré-boot, verrous sync/générateur.
 
 > ## ✅ AS-2 CLOS — isolation & tenancy durcies (2026-07-11)
 > **Toutes les fiches livrées, backend en prod + volet client mergé.**
 > - **Fiche 3** (fuite d'isolation `espaces`/`espace_opens` fermée, lecture publique préservée), **Fiches 1·2·4** backend (accept transactionnel anti-TOCTOU + rate-limit persistant, transfert de propriété au plus ancien membre à la suppression du compte owner, entropie invitation + caps), **AS-2b** volet client (accept via RPC, bandeau « nouveau propriétaire » `owner_notice`, copie suppression corrigée). Migrations `0006`→`0009` en prod (`Health`/`pqeilsuqglmrvijndrwa`).
 > - **Lot « Environnements propres »** soldé en amont : staging reconstructible depuis le repo, parité prouvée (`npm run parity:check`), prod tenue en lecture seule sur tout le lot. Voir `RUNBOOK_ENVIRONNEMENTS.md`.
-> - **Reste hors-AS-2** : **C2** (pièges natifs Capacitor — branche `coquille-v1`, à rebaser sur le défaut).
 
 > ## 🚀 Lot « Comptes + Sync » — **MERGÉ & DÉPLOYÉ EN PROD** (2026-07-05, `e21d0ec`)
 > **Passe de déploiement prod exécutée** (via API Management Supabase + Pages) :
@@ -145,7 +148,21 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## À faire / en cours
 
-**➡️ Prochaine grande étape : passe de déploiement PROD du lot Comptes+Sync** puis merge de `comptes-sync-v1`, puis **Lot Coquille** (Capacitor). Détail : `REVUE_QUALITE_COMPTES_SYNC.md` (§ plan) + `RECAP_COMPTES_SYNC.md`.
+**➡️ Prochaine grande étape : lot « Flow FTUE »** (brief v1.2 — seed personnel retiré, collection-témoin 30 recettes, gabarits installables, FTUE gate pré-boot, verrous sync/générateur). Read-back formel puis tranches F1+F2+F3+F5b → F4 → F5a, base = défaut post-merge `coquille-v2`.
+
+### 🩺 Backlog qualité — findings de la revue du 07/07 encore ouverts (vérifiés sur code le 2026-07-12, curation coquille-v2)
+| Finding | Gravité | Constat vérifié |
+|---|---|---|
+| `revokeEspace` silencieux | **Haute (confiance)** | `espace.ts:237` ignore l'erreur du delete → un lien annoncé « révoqué » peut rester vivant. Fix : vérifier l'erreur. Candidat **mini-lot correctifs** |
+| Cache audio négatif | **Moyenne-haute** | `sync/audio.ts:44` : `missing.add()` sur TOUT échec (réseau inclus) → une note vocale présente au cloud paraît perdue toute la session. Fix ~3 lignes (404-only). Candidat **mini-lot correctifs** |
+| Faux « Envoyé ✓ » WhatsApp | Moyenne (confiance) | `PartageSheet.tsx:140` : `window.open(wa.me)` APRÈS un await (contexte de geste perdu → popup bloquable) mais le toast affirme l'envoi |
+| Adoption échouée sans retry | Moyenne | `useSync.ts:64-65` : `asked.current = foyerId` posé AVANT `proceed` ; si `adoptInto` échoue, plus d'invite de la session (reset seulement à la déconnexion) |
+| `confirmedJoin` busy bloqué | Basse-moyenne | `AccountSheet.tsx` : `downloadExport`/`acceptInvite` hors try/finally → une exception laisse `busy=true` (contournement : recharger) |
+| Compteur IA barrière locale | Basse | `AddRecipeSheet.tsx:57` : `rem <= 0` (compteur LOCAL) bloque l'entrée IA alors que le vrai quota est serveur → blocage possible à tort après changement de foyer |
+| Couverture tests `engine`/`map`/`useSync` | Moyenne (dette) | Orchestration sync non testée (le cœur pur `plan.ts` l'est) ; partiellement mitigé par AS-1 (smoke Comptes CI) |
+
+### 📱 Parking UX (avec la refonte de l'écran d'accueil)
+- Contenu qui passe derrière les **touches de navigation Android** en bas d'écran (constat device STOP 2 coquille-v2, non bloquant).
 
 **✅ Synchro multi-appareils — LIVRÉE** (lot Comptes+Sync sur `comptes-sync-v1`, non mergé) : remplace la ligne « ⏳ Synchro multi-appareils » ci-dessous.
 
@@ -169,6 +186,36 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 ---
 
 ## Journal des sessions
+
+### Coquille v2 — Volet C (curation : docs portés, findings re-domiciliés, en-têtes vrais) — 2026-07-12
+Dernier volet du lot (STOP 2 validé sur appareil). Zéro code produit — dette documentaire soldée :
+- **C-1 docs portés** depuis `coquille-v1` : `GO_COQUILLE_DECISIONS.md` + `READBACK_COQUILLE.md` (bannière 📦 ARCHIVE — décisions Q-c1→Q-c5 et « 8 pièges » valables, implémentation v1 obsolète), `BRIEF_FINITIONS_COQUILLE.md` tel quel, **`BUILD_NATIF.md` RÉÉCRIT** (dist-native, `.env.local` lu par loadEnv, pièges C2 soldés).
+- **C-2 instantanés distillés** : `REVUE_GLOBALE_2026-07-07.md` / `UPDATE_QA_2026-07-07.md` **non portés** (datés, partiellement faux au présent) — bilan au passé inséré dans l'entrée Session 11 (soldés vs ouverts), archive lisible sur `coquille-v1`. **La référence pendante du DEVLOG est réparée.**
+- **C-3 en-têtes migrations** : `0001`/`0002`/`0003` disaient encore « ⚠️ NON APPLIQUÉ » (faux depuis le 05/07) → « ✅ APPLIQUÉE prod 05/07 + rejouée staging (lot Environnements) ». Repo seul, aucun SQL exécutable modifié.
+- **C-4 findings re-domiciliés** : les 4 « à re-vérifier » de la revue **vérifiés sur code** (tous confirmés ouverts : `PartageSheet.tsx:140`, `useSync.ts:64`, `AccountSheet` busy, `AddRecipeSheet.tsx:57`) → tableau classé par gravité dans « À faire / en cours », avec 2 candidats mini-lot correctifs (`revokeEspace`, cache audio négatif).
+- **➡️ Lot Coquille v2 CLOS après merge** (STOP 3 : relecture DEVLOG → merge --no-ff → sortie de `coquille-v1`).
+
+### Coquille v2 — Volet B (C2 : micro, export natif, bouton retour, safe-areas) — 2026-07-11
+Suite du volet A sur `coquille-v2` (STOP 1 validé : porte A6 + CI #24 + APK #8 verts). Les 4 pièges natifs :
+- **B1 micro** : `RECORD_AUDIO` + `MODIFY_AUDIO_SETTINGS` au manifest ; le Bridge Capacitor relaie la demande runtime à la 1ʳᵉ capture. Code web INCHANGÉ (VoiceNote/ConsigneVocale gardent leur getUserMedia + messages de refus existants).
+- **B2 export natif** : `downloadExport` → si natif, `platform.saveAndShareFile()` (Filesystem cache + feuille de partage système) au lieu du `<a download>` (no-op WebView). **Le filet A1 vit désormais aussi sur l'APK** (P2 revue 07/07 soldé). `platform.ts` reste le SEUL module qui importe Capacitor (imports dynamiques).
+- **B3 bouton retour** : pile GLOBALE des feuilles ouvertes (`primitives.ts` : `closeTopSheet`/`useSheetBack`) — le composant `Sheet` s'enregistre seul ; les 11 feuilles maison (10 cz Cuisine + 1 Nounou) = **une ligne chacune** (Q-1 : la couverture totale a tenu dans le budget, pas de finding UX nécessaire). `App.tsx` : ① fermer la feuille la plus haute, ② écran ≠ Maison → Maison, ③ Maison → `minimizeApp()` (jamais de kill).
+- **B4 safe-areas** : inset TOP porté par chaque surface de fond — `.cz-head` (sticky Cuisine/Nounou), `.topbar` (sticky Sécurité), `.mz` (racine Maison). `env()` vaut 0 sur desktop → web intact. Insets bottom déjà en place, `viewport-fit=cover` déjà posé.
+- **Plugins épinglés** : `@capacitor/app` 8.1.0, `filesystem` 8.1.2, `share` 8.0.1 (cap sync : 3 plugins enregistrés côté gradle).
+- **Bonus DCE vérifié** : `isNative=false` étant une constante de compilation, le bundle **web** contient **zéro octet Capacitor** (grep = 0 occurrence) — les chunks plugins n'existent que dans `dist-native/`.
+- **Portes** : typecheck ✓ · Vitest 105/105 ✓ · build web ✓ · build:native ✓ · smokes Cuisine+Comptes ✓ (le smoke Cuisine exerce les cz-sheets modifiées).
+- **✅ STOP 2 VALIDÉ sur appareil réel (2026-07-12, Amine)** — les 4 verdicts : ① micro (permission demandée à la 1ʳᵉ capture, note enregistrée+relue) ✓ ② export (feuille de partage système, JSON lisible) ✓ ③ retour (feuille → Maison → minimise, jamais de kill) ✓ ④ safe-areas (contenu dégagé de la status bar, fond bord-à-bord — Sécurité/Maison/Cuisine) ✓. **Parqué UX (non bloquant)** : contenu derrière les touches de navigation en bas → refonte écran d'accueil.
+
+### Coquille v2 — Volet A (C0′ : coquille recréée, dettes soldées d'entrée) — 2026-07-11
+Branche `coquille-v2` (depuis le défaut `0cc3538`, post-AS-2). **Décision « recréer, pas réaligner »**
+(analyse mesurée : merge simulé = 2 conflits seulement, mais docs datés + dette dist + historique) —
+`coquille-v1` reste INTACTE (référence + preuve CI APK) jusqu'à clôture C2. Read-back : `READBACK_COQUILLE_V2.md`.
+- **Deps** : `@capacitor/{core,android,cli}` **épinglés exacts 8.4.1** (toujours la dernière version npm — zéro dérive ; v1 avait `^`).
+- **Dette v1 soldée** : `capacitor.config.ts` → **`webDir: 'dist-native'`** + `vite.config.ts` → `outDir` séparé. Les builds web (`dist/`) et natif (`dist-native/`, base `./`, SW off) **coexistent sans s'écraser**. `.gitignore` couvre `dist-native`.
+- **Finding 8 (revue 07/07) soldé** : `define` lit les clés via **`loadEnv()`** (fusion `.env(.local)` + shell, shell prioritaire → CI inchangée). Un build natif LOCAL n'embarque plus des clés vides. Les 4 variables `VITE_*` passent par le même canal.
+- **Greffes portées** depuis le diff relu de v1 : `platform.ts` (verbatim), `auth.ts` (sendOtp→`webBaseUrl()`), `espace.ts` (`buildEspaceUrl`), `supabase.ts` (`sendMagicLink`), `sentry.ts` (`environment`), `vite-env.d.ts` (types).
+- **Scaffold** : `npx cap add android` régénéré (`studio.elysia.foyer`/Manzil, INTERNET seul — le micro = C2/B1). `apk.yml` porté (JDK 21, Node 22, portes typecheck+tests avant artifact, déclencheur `coquille-v2`).
+- **Portes** : typecheck ✓ · Vitest 105/105 ✓ · build web ✓ · build:native ✓ (base `./`, `sw.js` absent ; web : `sw.js` présent) · smokes Cuisine+Comptes ✓ · porte **A6** (diff de contrôle v1↔v2, deltas voulus uniquement) au STOP 1.
 
 ### AS-2b — Volet client (accept via RPC, bandeau nouveau propriétaire, copie suppression) — 2026-07-11
 Branche `as2b-client-v1` (depuis le défaut aligné `3f6d64a`, post-merge des 3 lots). **Volet visible d'AS-2** : câble le client sur le backend AS-2a. Pas de read-back (mécanique), relecture ciblée sur la **copie affichée** (seule surface utilisateur).
@@ -232,7 +279,8 @@ Branche `assainissement-v1` (depuis le défaut prod, hotfix inclus). Sous-lot **
 - **Qualité** : typecheck · **105 tests** (+4) · build web+natif · smoke Cuisine **et** Comptes (déconnecté) verts en local. **1ᵉʳ run CI rouge** (preview sans `BASE_PATH` → app ne bootait pas ; corrigé dans `6c567e6`) → **CI verte sur `6c567e6`** → **mergé en prod**. **Aucune action Supabase** (part par merge → Pages ; ⚠️ la vague de re-push B3 s'exécutera au 1ᵉʳ chargement du build prod).
 
 ### Session 11 — 2026-07-07 (Revue globale + HOTFIX PROD sécurité RPC/relais LLM)
-Revue à froid des lots Comptes+Sync + Coquille (9 dimensions, vérif manuelle des P0/P1 — voir `REVUE_GLOBALE_2026-07-07.md`). **Aucun P0 sur la prod web** ; risques P1 concentrés sur sécurité/coût backend, robustesse sync multi-appareils, coquille native, dérive doc. Contre-vérification QA → tout confirmé avec aggravations. Plan re-priorisé : **HOTFIX PROD immédiat** (A1+A2) puis lot Assainissement, puis C2, puis passe doc.
+Revue à froid des lots Comptes+Sync + Coquille (9 dimensions, vérif manuelle des P0/P1). **Aucun P0 sur la prod web** ; risques P1 concentrés sur sécurité/coût backend, robustesse sync multi-appareils, coquille native, dérive doc. Contre-vérification QA → tout confirmé avec aggravations. Plan re-priorisé : **HOTFIX PROD immédiat** (A1+A2) puis lot Assainissement, puis C2, puis passe doc.
+> **📦 Distillation (2026-07-12)** — les fichiers `REVUE_GLOBALE_2026-07-07.md` et `UPDATE_QA_2026-07-07.md` ne sont **pas portés** sur le défaut (instantanés datés, partiellement faux au présent) ; ils restent lisibles sur la branche d'archive `coquille-v1`. **Bilan au passé** : la revue avait produit 10 findings P1 + 6 P2 + 2 angles nus. **Soldés depuis** : sécurité/coût backend (hotfix A1/A2 + AS-2 complet), hash canonique + filet + CI smoke (AS-1), erreurs de push avalées (`useSync` retente), pièges natifs 7 (micro) et 8 (`.env.local`) + `downloadExport`-WebView (coquille-v2 B1/A2/B2), smoke Comptes en CI. **Encore ouverts** : cache audio négatif, `revokeEspace` silencieux, adoption sans retry, `confirmedJoin` sans `try/finally`, faux « Envoyé ✓ », compteur IA barrière locale, couverture tests `engine`/`map`/`useSync` — tous re-domiciliés avec gravité dans « À faire / en cours » (curation coquille-v2, volet C).
 - **HOTFIX (branche `hotfix/rpc-lockdown`, depuis le défaut prod) — DÉPLOYÉ STAGING+PROD & VÉRIFIÉ** :
   - **A1** `0005_lockdown_rpc.sql` : `revoke execute … from public/anon/authenticated` + `grant … to service_role` sur `reserve_ai_usage`/`refund_ai_usage`. Ferme l'aggravation « épuiser le quota d'un AUTRE foyer » (param `f` libre). Périmètre STRICT 2 RPC — `create_foyer` (appelée client) et `is_foyer_member`/`is_foyer_owner` (policies RLS) **volontairement intouchés** (les verrouiller = login + lectures cassés). Spam `create_foyer` → Assainissement.
   - **A2** garde anti-abus `reserve_abuse_guard` (plafond **1000**/mois/foyer, clé namespacée `abuse-YYYY-MM` → **hors quota produit**, D5) ; `estimate`/`translate` (generate-recipe) + `generate-translation` exigent désormais une **session** + le garde. Ferme le relais Anthropic anonyme (héritée de l'ère sans compte).

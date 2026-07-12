@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from './store/useStore';
 import MaisonView from './maison/MaisonView';
 import CuisineView from './cuisine/CuisineView';
@@ -11,6 +11,8 @@ import { Sheet } from './ui/primitives';
 import { readEspaceToken } from './lib/espace';
 import { supabaseEnabled } from './lib/supabase';
 import { checkOwnerNotice, ackOwnerNotice } from './lib/auth';
+import { isNative, onBackButton, minimizeApp } from './lib/platform';
+import { closeTopSheet } from './ui/primitives';
 import { useSession } from './lib/useSession';
 import { useSync, type AdoptRequest } from './lib/sync/useSync';
 import { downloadExport } from './lib/exportData';
@@ -67,6 +69,24 @@ export default function App() {
   useEffect(() => {
     if (!espaceToken) void init();
   }, [init, espaceToken]);
+
+  // B3 (coquille) : bouton retour Android — priorité ① fermer la feuille la plus
+  // haute (pile globale, cf. primitives), ② écran de rôle → revenir à Maison,
+  // ③ déjà sur Maison → MINIMISER (jamais de kill : l'app reste chaude).
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
+  useEffect(() => {
+    if (!isNative) return;
+    return onBackButton(() => {
+      if (closeTopSheet()) return;
+      if (screenRef.current !== 'maison') {
+        setScreen('maison');
+        setShareFor(null);
+        return;
+      }
+      void minimizeApp();
+    });
+  }, []);
 
   if (hash === '#mz-demo') return <MzDemo />;
   if (espaceToken) return <EspaceView token={espaceToken} />;

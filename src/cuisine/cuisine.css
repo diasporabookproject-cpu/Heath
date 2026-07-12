@@ -49,7 +49,9 @@
   z-index: 30;
   background: linear-gradient(157deg, var(--mz-grn1, #2fa37e) 0%, var(--mz-grn2, #136b52) 100%);
   color: #fff;
-  padding: 16px 16px 13px;
+  /* B4 (coquille) : inset top — l'en-tête STICKY porte lui-même la zone status bar
+     (edge-to-edge) ; env() vaut 0 sur navigateur desktop, donc web inchangé. */
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 13px;
   border-bottom: none;
   border-radius: 0 0 22px 22px;
   box-shadow: 0 10px 26px rgba(19, 107, 82, 0.2);

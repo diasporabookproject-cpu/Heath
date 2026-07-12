@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { mealMacros, componentMacros } from '../lib/nutrition';
 import type { MealKey, Recipe, RecipeRole } from '../types';
@@ -28,6 +29,7 @@ export default function MealComposerSheet({ dayKey, dayNom, mealKey, onPickSlot,
   const full = mealKey !== 'petitdej';
 
   const [shown, setShown] = useState(false);
+  useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
   useEffect(() => {
     const t = requestAnimationFrame(() => setShown(true));
     return () => cancelAnimationFrame(t);
