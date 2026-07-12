@@ -1,7 +1,9 @@
-# Instructions projet — Menu de la semaine
+# Instructions projet — Manzil (nom de travail)
 
-App PWA mobile-first (React + Vite + TS) pour composer des menus hebdo. Voir
-`BRIEF_PRODUIT.md` (produit) et **`DEVLOG.md`** (architecture, décisions, journal).
+App PWA mobile-first (React + Vite + TS) + coquille native Capacitor : organiser le foyer
+et briefer chaque personne de maison dans sa langue. Voir **`DEVLOG.md`** (état actuel,
+architecture, décisions, journal — LA référence), `BRIEF_FLOW_FTUE.md`/`READBACK_*.md`
+(lots récents) ; `BRIEF_PRODUIT.md` = brief d'ORIGINE (« Menu de la semaine », historique).
 
 ## Règle n°1 — tenir le DEVLOG
 - **Au début de chaque session** : lire `DEVLOG.md` (état actuel + décisions).
@@ -13,16 +15,21 @@ App PWA mobile-first (React + Vite + TS) pour composer des menus hebdo. Voir
 ## Conventions
 - **Langue de l'UI : français** (darija en lettres arabes pour la vue Cuisinière).
 - **Local-first** : IndexedDB = source de vérité (`src/lib/db.ts`), migrations via `SEED_VERSION`.
-- **Tests** : logique métier couverte par Vitest (`npm run test`) ; parcours bout-en-bout via `npm run smoke` (Playwright). Lancer `npm run typecheck` avant de committer.
+- **Tests** : logique métier couverte par Vitest (`npm run test`) ; parcours bout-en-bout via **3 smokes Playwright** (Cuisine `npm run smoke` · Comptes `node scripts/smoke-comptes.mjs` · FTUE `node scripts/smoke-ftue.mjs`) — tous en CI. Lancer `npm run typecheck` avant de committer.
 - **Déploiement** : push sur la branche par défaut → GitHub Actions → Pages. Vérifier le run, puis l'URL de prod.
 - **Secrets** : ne jamais committer la clé Supabase `secret`/`service_role`. La `publishable` (publique) et l'URL vivent dans `.github/workflows/deploy.yml`.
 - Ne pas « normaliser » les mesures à la cuillère (càc/càs) ; le calcium doit rester visible partout.
 
 ## Commandes utiles
 ```
-npm run dev          # dev local
-npm run typecheck    # types
-npm run test         # tests unitaires (Vitest)
-npm run smoke        # parcours Playwright (préviser un build + preview d'abord)
-npm run build        # build prod
+npm run dev            # dev local
+npm run typecheck      # types
+npm run test           # tests unitaires (Vitest)
+npm run smoke          # smoke Cuisine (prévoir un build + preview d'abord)
+node scripts/smoke-comptes.mjs   # smoke Comptes (flux déconnecté)
+node scripts/smoke-ftue.mjs      # smoke FTUE (gate + peuplement + migration)
+npm run build          # build web (dist/, base BASE_PATH)
+npm run build:native   # build coquille (dist-native/, base './') — cf. BUILD_NATIF.md
+npm run seed:staging   # (re)peupler le staging Supabase — cf. RUNBOOK_ENVIRONNEMENTS.md
+npm run parity:check   # parité staging ↔ prod (catalogue + edge functions)
 ```

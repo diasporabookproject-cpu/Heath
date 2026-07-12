@@ -1,38 +1,44 @@
-# Migrations SQL — Lot « Comptes + Sync »
+# Migrations SQL
 
 Toute évolution de schéma Supabase passe par un **fichier de migration versionné** ici,
-**relu au read-back** du sous-lot concerné, **appliqué après GO** — jamais de SQL manuel non tracé
-(règle du `BRIEF_COMPTES_SYNC.md`).
+**relu au read-back** du lot concerné, **appliqué après GO** — jamais de SQL manuel non tracé.
 
 ## Convention de nommage
 ```
 NNNN_slug.sql
 ```
-- `NNNN` = numéro croissant sur 4 chiffres (`0001`, `0002`, …) = ordre d'application.
-- `slug` = objet du changement en kebab-case (`0001_foyers-membres-rls`).
-- **Idempotence encouragée** (`create table if not exists`, `create policy … ` gardé) pour rejouer sans casse en staging.
-- Chaque fichier = **une intention** (un sous-lot / un thème), pas un fourre-tout.
+- `NNNN` = numéro croissant sur 4 chiffres = ordre d'application (`0001b` s'intercale : cas legacy).
+- `slug` = objet du changement en kebab-case.
+- Chaque fichier = **une intention** (un lot / un thème), pas un fourre-tout.
+- **IDEMPOTENCE OBLIGATOIRE** (leçon E2, lot Environnements) : `create table if not exists`,
+  **`drop policy if exists` + `create`** (jamais `create policy` nu), `create or replace function`,
+  `add column if not exists`, `on conflict do nothing`, revoke/grant rejouables. Un fichier doit
+  se REJOUER sans casse (rebuild staging) comme s'appliquer sur la prod où tout existe.
 
-## Ordre d'application (prévu, à confirmer sous-lot par sous-lot)
-| Fichier | Sous-lot | Contenu |
+## État — appliquées STAGING + PROD (parité prouvée, `npm run parity:check`)
+| Fichier | Lot | Contenu |
 |---|---|---|
-| `0001_*` | S1 | `foyers`, `membres`, `invitations`, `docs`, `ai_usage` + RLS + index (tables neuves, s'applique sur staging vierge) |
-| `0002_*` | S6/QB | `espaces.foyer_id` **on delete cascade** (suppr. foyer ⇒ liens morts) + policies auteur — contre la prod (table `espaces` préexistante) |
-| `0003_*` | S3′ | bucket privé audio par foyer + policies storage |
-| `0004_*` | FIX n°9 | **RPC atomiques quota IA** (`reserve_ai_usage`/`refund_ai_usage`) — à appliquer AVANT de redéployer `generate-recipe` |
-| … | | (complété au fil des read-backs) |
+| `0001` | Comptes+Sync S1 | `foyers`/`membres`/`invitations`/`docs`/`ai_usage` + RLS + `create_foyer` |
+| `0001b` | Environnements E1 | legacy pré-comptes reproduit : `espaces`, `espace_opens`, bucket `shared` (état PRÉ-0002) |
+| `0002` | Comptes+Sync S6 | `espaces.foyer_id` on delete cascade + policies auteur |
+| `0003` | Comptes+Sync S3′ | bucket privé `foyer-audio` + RLS storage |
+| `0004` | FIX revue n°9 | RPC atomiques quota IA (`reserve_ai_usage`/`refund_ai_usage`) |
+| `0005` | HOTFIX A1/A2 | lockdown RPC quota (service_role only) + `reserve_abuse_guard` |
+| `0006` | AS-2 Fiche 3 | fermeture de la fuite d'isolation `espaces`/`espace_opens` (écriture = membres du foyer ; lecture publique par jeton PRÉSERVÉE) |
+| `0007` | AS-2 Fiche 1 | RPC `accept_invite` transactionnel (anti-TOCTOU, **retourne un statut jsonb** — ne lève pas, sinon le rollback effacerait le compteur de rate-limit) |
+| `0008` | AS-2 Fiche 2 | `membres.owner_notice` + `dispose_foyer_for_deletion` (transfert de propriété au plus ancien membre) |
+| `0009` | AS-2b | `ack_owner_notice` (le client acquitte le bandeau — `membres` n'a pas de policy update) |
 
-## Comment on applique (staging d'abord, toujours)
-1. **Staging** : coller le SQL dans *Supabase Dashboard → SQL Editor → Run*, **ou** `supabase db push`
-   si le CLI est configuré. Vérifier + jouer les **tests RLS**.
-2. **Prod** : seulement après validation staging + GO, même fichier, même ordre.
-3. Journaliser dans `DEVLOG.md`, section **« migrations appliquées »** du sous-lot (date · fichier · env).
+## Comment on applique
+1. **Staging d'abord** (`tryjcednzencepokodrs`) : via l'**API Management** (`/database/query`,
+   token `sbp_` jetable — protocole : annonce « je vais écrire », application, vérification
+   catalogue, révocation du token) ou le SQL Editor. Rejouer = prouver l'idempotence.
+2. **Parité** : `npm run parity:check` (7 aspects catalogue + edge functions) doit être vert.
+3. **Prod** (`pqeilsuqglmrvijndrwa`) : même fichier, même protocole, après GO explicite.
+4. Journaliser dans `DEVLOG.md` (date · fichier · env · preuves).
 
 ## Environnements
-- **Staging** = 2ᵉ projet Supabase (bac à sable) — on y teste **avant** toute application prod.
-- **Prod** = projet Heath actuel (`pqeilsuqglmrvijndrwa`).
-- Région : traitée comme **setting** (à confirmer) ; cible **UE** pour toute donnée hébergée (RGPD, D8).
-- Les clés `anon`/URL vivent dans la config CI ; **jamais** la clé `service_role` dans le repo.
-
-> État : dossier initialisé (S0). Le premier fichier de migration (`0001`, schéma S1) arrive
-> comme **artefact de read-back** — relu par Amine, appliqué en staging après GO.
+- **Staging** : reconstructible depuis le repo (migrations + `npm run seed:staging`) — voir
+  `RUNBOOK_ENVIRONNEMENTS.md` (et ses 3 fragilités F-a/F-b/F-c).
+- **Prod** : projet `Health`. Les clés publiques (URL + publishable) vivent dans la CI ;
+  **jamais** la clé `service_role`/`secret` dans le repo.

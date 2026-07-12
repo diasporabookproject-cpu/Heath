@@ -155,7 +155,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## À faire / en cours
 
-**➡️ Prochaine grande étape : lot « Flow FTUE »** (brief v1.2 — seed personnel retiré, collection-témoin 30 recettes, gabarits installables, FTUE gate pré-boot, verrous sync/générateur). Read-back formel puis tranches F1+F2+F3+F5b → F4 → F5a, base = défaut post-merge `coquille-v2`.
+**➡️ Prochaines étapes (ordre posé)** : ① **mini-lot correctifs** (`revokeEspace` silencieux + cache audio négatif — les 2 priorisés du tableau ci-dessous) · ② **passe d'audit sécurité avant mise en ligne** (demandée post-AS-2 ; inclut le reliquat `create_foyer` encore accordé à `public`/`anon`) · ③ **chantier UX/UI** (parking : nav-bar Android, harmonisation Sécurité, états vides hors chemin critique, CGU réelles/naming). *(Le lot « Flow FTUE » + avenant F4-bis sont CLOS — cf. État actuel.)*
 
 ### 🩺 Backlog qualité — findings de la revue du 07/07 encore ouverts (vérifiés sur code le 2026-07-12, curation coquille-v2)
 | Finding | Gravité | Constat vérifié |
