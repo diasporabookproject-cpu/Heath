@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { deleteSecurite, loadSecurite, saveSecurite } from '../lib/db';
-import seedData from '../data/securite-seed.json';
+import { importSecuriteSeed } from '../lib/securiteSeed';
 import VoiceNote from '../components/VoiceNote';
 import type { SecuriteFiche, SecuriteType } from '../types';
 
@@ -30,19 +30,10 @@ export default function SecuriteView() {
     setTimeout(() => setMsg((c) => (c === m ? null : c)), 3000);
   };
 
+  // F4 (Flow FTUE) : logique extraite en lib (`importSecuriteSeed`) — la FTUE
+  // (domaine « La sécurité ») et ce bouton appellent la MÊME fonction.
   const importSeed = async () => {
-    const existing = new Set(list.map((f) => f.titre));
-    let n = 0;
-    for (const s of seedData as Omit<SecuriteFiche, 'id' | 'statut' | 'createdAt'>[]) {
-      if (existing.has(s.titre)) continue;
-      await saveSecurite({
-        ...s,
-        id: crypto.randomUUID(),
-        statut: 'Test',
-        createdAt: Date.now() + n,
-      });
-      n++;
-    }
+    const n = await importSecuriteSeed();
     await refresh();
     flash(n ? `${n} fiche(s) importée(s) en statut Test — à relire et valider.` : 'Déjà importé.');
   };

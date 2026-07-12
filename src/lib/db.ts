@@ -120,6 +120,42 @@ const SETTINGS_KEY = 'settings';
 // 1 = jeu initial · 2 = darija · 3 = +2 recettes · 4 = modèle v2 (rôles + petitdej/acc)
 const SEED_VERSION = 4;
 
+// ── FTUE (F4) — méta LOCALES à l'appareil (le store `meta` n'est pas synchronisé) ──
+const FTUE_DONE_KEY = 'ftueDone';
+const ROLES_ACTIFS_KEY = 'rolesActifs';
+
+/** Rôles dont la carte est posée sur le hub (activés via FTUE ou « ＋ Une page pour… »). */
+export type RoleActif = 'cuisine' | 'nounou';
+
+/** La FTUE a-t-elle déjà été jouée (ou posée rétroactivement) sur CET appareil ? */
+export async function loadFtueDone(): Promise<boolean> {
+  const db = await getDB();
+  return (await db.get('meta', FTUE_DONE_KEY)) === true;
+}
+
+export async function saveFtueDone(): Promise<void> {
+  const db = await getDB();
+  await db.put('meta', true, FTUE_DONE_KEY);
+}
+
+export async function loadRolesActifs(): Promise<RoleActif[]> {
+  const db = await getDB();
+  return ((await db.get('meta', ROLES_ACTIFS_KEY)) as RoleActif[] | undefined) ?? [];
+}
+
+export async function saveRolesActifs(roles: RoleActif[]): Promise<void> {
+  const db = await getDB();
+  await db.put('meta', roles, ROLES_ACTIFS_KEY);
+}
+
+/** Cet appareil a-t-il déjà booté AVANT la FTUE ? (critère rétroactif de la migration
+ * one-shot — lu par le gate AVANT tout init de store, donc avant que le boot courant
+ * ne tamponne `seedVersion` : la course est éliminée par construction.) */
+export async function hasBootedBefore(): Promise<boolean> {
+  const db = await getDB();
+  return (await db.get('meta', SEED_VERSION_KEY)) !== undefined || (await db.get('meta', SEEDED_KEY)) === true;
+}
+
 /**
  * F2 (Flow FTUE) : PLUS D'IMPORT AUTOMATIQUE au premier lancement — une bibliothèque
  * neuve démarre VIDE ; l'ancien seed vit dans la collection installable « Fonds de

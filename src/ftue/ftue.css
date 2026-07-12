@@ -1,0 +1,144 @@
+/* FTUE v4 (F4, Flow FTUE) — port FIDÈLE de docs/maquettes/ftue-v4.html.
+   Écarts assumés : plein écran (pas de cadre .device), safe-areas natives,
+   POLICES EMBARQUÉES en local (Q-2 : première impression, potentiellement
+   hors-ligne — zéro fetch réseau), pas de name-sheet (#people active le rôle
+   SANS nom — le nommage arrive au premier partage, archi existante). */
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('./fonts/fraunces.woff2') format('woff2');
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('./fonts/plus-jakarta-sans.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./fonts/jetbrains-mono.woff2') format('woff2');
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Naskh Arabic';
+  src: url('./fonts/noto-naskh-arabic.woff2') format('woff2');
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+.ftue {
+  --sand: #ebe3d3;
+  --sand-2: #e3d9c6;
+  --card: #f7f2e8;
+  --ink: #292420;
+  --ink-soft: #6b6153;
+  --muted: #9c9280;
+  --line: #dad0bc;
+  --cream: #f8f4eb;
+  --olive: #3c5a1e;
+  --olive-d: #284012;
+  --olive-bg: #e5edd6;
+  --olive-soft: #b9ce95;
+  --majorelle: #3a34b4;
+  --majorelle-bg: #e6e4f6;
+  --ochre: #b07314;
+  --ochre-bg: #f3e7ce;
+  --rust: #9e3b2c;
+  --rust-bg: #f3dfd8;
+  --petrol: #1f5e5b;
+  --petrol-bg: #dceae7;
+  --saffron: #d89a1e;
+
+  position: fixed;
+  inset: 0;
+  z-index: 300; /* au-dessus de tout (le replay démo se superpose à l'app) */
+  background: var(--sand);
+  color: var(--ink);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+.ftue *,
+.ftue *::before,
+.ftue *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.ftue .ar { font-family: 'Noto Naskh Arabic', serif; }
+
+/* Un écran = une colonne pleine hauteur, SANS scroll (contrainte maquette). */
+.ftue-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: calc(26px + env(safe-area-inset-top, 0px)) 24px calc(22px + env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+  animation: ftue-enter 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@keyframes ftue-enter {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: none; }
+}
+
+.ftue .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--saffron); font-weight: 500; }
+.ftue .eyebrow.dim { color: rgba(255, 255, 255, 0.72); }
+.ftue .prog { display: flex; gap: 6px; margin: 12px 0 18px; }
+.ftue .prog i { width: 20px; height: 3px; border-radius: 2px; background: var(--line); }
+.ftue .prog i.on { background: var(--ink); }
+.ftue h1 { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; font-weight: 500; font-size: 25px; line-height: 1.16; letter-spacing: -0.015em; margin-bottom: 8px; }
+.ftue .sub { font-size: 13.5px; color: var(--ink-soft); line-height: 1.45; margin-bottom: 16px; max-width: 94%; }
+
+.ftue .opt { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 13px; cursor: pointer; transition: transform 0.16s, border-color 0.16s, box-shadow 0.16s; width: 100%; text-align: left; font-family: inherit; color: inherit; font-size: inherit; }
+.ftue .opt.sel { border-color: var(--olive); box-shadow: inset 0 0 0 1px var(--olive); }
+.ftue .opt.soon { opacity: 0.55; cursor: default; }
+.ftue .ic { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ftue .ic svg { width: 21px; height: 21px; }
+.ftue .opt .lab { flex: 1; min-width: 0; }
+.ftue .opt .t { font-size: 14.5px; font-weight: 600; }
+.ftue .opt .s { font-size: 11.5px; color: var(--muted); margin-top: 1px; line-height: 1.3; }
+.ftue .opt .mark { width: 21px; height: 21px; border-radius: 50%; border: 1.5px solid var(--line); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: transparent; font-size: 12px; }
+.ftue .opt.sel .mark { background: var(--olive); border-color: var(--olive); color: #fff; }
+.ftue .soonbadge { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px; flex-shrink: 0; }
+
+.ftue .btn { display: block; width: 100%; border: none; border-radius: 999px; padding: 14px; font-size: 15px; font-weight: 600; font-family: inherit; text-align: center; background: var(--ink); color: var(--cream); cursor: pointer; transition: transform 0.16s; }
+.ftue .btn.light { background: var(--cream); color: var(--ink); }
+.ftue .btn.olive { background: var(--olive); color: var(--cream); }
+.ftue .btn.line { background: none; border: 1px solid var(--line); color: var(--ink); }
+.ftue .btn:disabled { opacity: 0.6; cursor: default; }
+.ftue .foot { margin-top: auto; padding-top: 14px; }
+.ftue .skip { display: block; width: 100%; text-align: center; font-size: 13px; color: var(--muted); font-weight: 500; margin-top: 12px; cursor: pointer; background: none; border: none; font-family: inherit; }
+.ftue .fineprint { font-size: 11px; color: var(--muted); text-align: center; line-height: 1.5; margin-top: 14px; }
+.ftue .errnote { font-size: 12.5px; color: var(--rust); line-height: 1.4; margin-top: 10px; }
+
+.ftue .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.ftue .brandstar { width: 58px; height: 58px; margin-bottom: 20px; }
+.ftue .brand-m { font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--olive); text-align: center; margin-bottom: auto; }
+
+.ftue .tf { width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 13px 15px; font-size: 16px; font-family: inherit; color: var(--ink); margin-bottom: 15px; }
+.ftue .tf:focus { outline: none; border-color: var(--olive); }
+
+/* Planches narratives */
+.ftue .planche { color: #fff; position: relative; }
+.ftue .planche.olive { background: radial-gradient(120% 90% at 30% 0%, #47691f 0%, var(--olive-d) 82%); }
+.ftue .planche.ink { background: radial-gradient(120% 90% at 50% 0%, #35302a 0%, #201c18 82%); }
+.ftue .zellige { position: absolute; top: -44px; right: -44px; width: 180px; height: 180px; opacity: 0.1; animation: ftue-spin 70s linear infinite; }
+@keyframes ftue-spin { to { transform: rotate(360deg); } }
+.ftue .pl-h { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 25px; line-height: 1.18; letter-spacing: -0.015em; position: relative; z-index: 2; }
+.ftue .memfield { display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; margin: 18px 0; position: relative; z-index: 2; }
+.ftue .mchip { background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 11px; padding: 9px 13px; font-size: 13px; opacity: 0; animation: ftue-pop 0.45s forwards; }
+@keyframes ftue-pop { from { opacity: 0; transform: translateY(7px) scale(0.96); } to { opacity: 1; transform: none; } }
+
+.ftue .send-intro { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 19px; line-height: 1.25; margin: 10px 0 20px; position: relative; z-index: 2; }
+.ftue .steps { position: relative; z-index: 2; }
+.ftue .step { display: flex; gap: 13px; align-items: flex-start; margin-bottom: 15px; }
+.ftue .num { width: 30px; height: 30px; border-radius: 50%; background: var(--saffron); color: #2a2410; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ftue .num.plus { background: rgba(255, 255, 255, 0.92); color: var(--olive-d); }
+.ftue .step p { font-size: 13.5px; line-height: 1.42; opacity: 0.93; padding-top: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ftue *, .ftue { animation: none !important; transition: none !important; }
+}

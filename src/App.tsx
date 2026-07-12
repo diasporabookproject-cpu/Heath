@@ -13,6 +13,7 @@ import { supabaseEnabled } from './lib/supabase';
 import { checkOwnerNotice, ackOwnerNotice } from './lib/auth';
 import { isNative, onBackButton, minimizeApp } from './lib/platform';
 import { closeTopSheet } from './ui/primitives';
+import { loadRolesActifs, saveRolesActifs, type RoleActif } from './lib/db';
 import { useSession } from './lib/useSession';
 import { useSync, type AdoptRequest } from './lib/sync/useSync';
 import { downloadExport } from './lib/exportData';
@@ -39,6 +40,17 @@ export default function App() {
   // Rituel d'adoption (Q1) : quand le foyer rejoint a déjà du contenu cloud, la
   // fusion exige un consentement explicite (jamais silencieuse) + export préalable.
   const [adoptReq, setAdoptReq] = useState<AdoptRequest | null>(null);
+  // F4 (Flow FTUE) : rôles ACTIVÉS (cartes posées sur le hub) — méta locale, posée
+  // par la FTUE, la migration one-shot (appareils existants) ou le « ＋ » ci-dessous.
+  const [rolesActifs, setRolesActifs] = useState<RoleActif[]>([]);
+  useEffect(() => {
+    void loadRolesActifs().then(setRolesActifs);
+  }, []);
+  const activateRole = (r: RoleActif) => {
+    const next = rolesActifs.includes(r) ? rolesActifs : [...rolesActifs, r];
+    setRolesActifs(next);
+    void saveRolesActifs(next);
+  };
   // AS-2b : bandeau « tu as hérité du foyer » (l'ancien owner a supprimé son compte,
   // la propriété a été transférée à cet utilisateur). Affiché une fois, puis acquitté.
   const [ownerNotice, setOwnerNotice] = useState(false);
@@ -111,6 +123,7 @@ export default function App() {
           onNewPage={() => setNewPageOpen(true)}
           onOpenAccount={() => setAccountOpen(true)}
           showAccount={supabaseEnabled}
+          rolesActifs={rolesActifs}
         />
       ) : screen === 'cuisine' ? (
         !ready ? (
@@ -166,6 +179,36 @@ export default function App() {
           sub="Chaque page arrive déjà remplie — tu ajustes, tu n’écris pas tout."
           onClose={() => setNewPageOpen(false)}
         >
+          {/* F4 : le « ＋ » est LE chemin d'activation post-FTUE — sans lui, « rien
+              coché » à la FTUE serait un cul-de-sac (aucune carte, aucun moyen d'en poser). */}
+          {(['cuisine', 'nounou'] as RoleActif[])
+            .filter((r) => !rolesActifs.includes(r))
+            .map((r) => (
+              <div
+                className="mz-nprow"
+                key={r}
+                role="button"
+                tabIndex={0}
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  activateRole(r);
+                  setNewPageOpen(false);
+                }}
+              >
+                <span className="mz-tav" style={{ background: '#F1EFE8', fontSize: 20 }}>
+                  {r === 'cuisine' ? '🍲' : '🧸'}
+                </span>
+                <span>
+                  <h4>{r === 'cuisine' ? 'Cuisine' : 'Nounou'}</h4>
+                  <div className="st">
+                    {r === 'cuisine'
+                      ? 'Menus de la semaine, quantités, liste de courses'
+                      : 'Planning des enfants, consignes, qui les récupère'}
+                  </div>
+                </span>
+                <span className="chev">›</span>
+              </div>
+            ))}
           <div className="mz-nprow">
             <span className="mz-tav" style={{ background: '#F1EFE8', fontSize: 20 }}>🧺</span>
             <span>

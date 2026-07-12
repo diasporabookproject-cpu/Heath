@@ -60,4 +60,5 @@ jobs:
           set -e
           npm run smoke                         # parcours Cuisine (produit)
           node scripts/smoke-comptes.mjs        # parcours Compte DÉCONNECTÉ (invariant sans-compte)
+          node scripts/smoke-ftue.mjs           # traversée FTUE réelle (F4 : gate + peuplement + rôles)
           kill $PREV 2>/dev/null || true
