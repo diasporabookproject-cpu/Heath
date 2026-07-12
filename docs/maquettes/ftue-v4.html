@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manzil — Onboarding v4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sand:#EBE3D3; --sand-2:#E3D9C6; --card:#F7F2E8; --ink:#292420; --ink-soft:#6B6153; --muted:#9C9280;
+    --line:#DAD0BC; --cream:#F8F4EB;
+    --olive:#3C5A1E; --olive-d:#284012; --olive-bg:#E5EDD6; --olive-soft:#B9CE95;
+    --majorelle:#3A34B4; --majorelle-bg:#E6E4F6;
+    --ochre:#B07314; --ochre-bg:#F3E7CE;
+    --rust:#9E3B2C; --rust-bg:#F3DFD8;
+    --petrol:#1F5E5B; --petrol-bg:#DCEAE7;
+    --saffron:#D89A1E; --saffron-soft:#F0D08A;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:#DED5C3; color:var(--ink);
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 14px 66px; -webkit-font-smoothing:antialiased;}
+  .fr{font-family:'Fraunces',Georgia,serif;} .mono{font-family:'JetBrains Mono',monospace;}
+  .caption{font-size:12.5px; color:#8a8072; margin-bottom:12px; text-align:center; max-width:350px; line-height:1.5;}
+
+  .device{width:360px; max-width:100%; height:740px; border-radius:38px; overflow:hidden; position:relative;
+    background:var(--sand); box-shadow:0 20px 50px rgba(41,36,32,.22), inset 0 0 0 1px rgba(255,255,255,.35);}
+  .screen{display:none; flex-direction:column; height:100%; padding:26px 24px 22px; overflow:hidden; position:absolute; inset:0;}
+  .screen.active{display:flex; animation:enter .45s cubic-bezier(.22,.61,.36,1);}
+  @keyframes enter{from{opacity:0; transform:translateY(9px);} to{opacity:1; transform:none;}}
+
+  .eyebrow{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--saffron); font-weight:500;}
+  .eyebrow.dim{color:rgba(255,255,255,.72);}
+  .prog{display:flex; gap:6px; margin:12px 0 18px;}
+  .prog i{width:20px; height:3px; border-radius:2px; background:var(--line);} .prog i.on{background:var(--ink);}
+  h1{font-family:'Fraunces',serif; font-optical-sizing:auto; font-weight:500; font-size:25px; line-height:1.16; letter-spacing:-.015em; margin-bottom:8px;}
+  .sub{font-size:13.5px; color:var(--ink-soft); line-height:1.45; margin-bottom:16px; max-width:94%;}
+
+  .opt{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:13px; cursor:pointer; transition:transform .16s, border-color .16s, box-shadow .16s;}
+  .opt:hover{transform:translateY(-1px); box-shadow:0 8px 18px rgba(41,36,32,.07);}
+  .opt.sel{border-color:var(--olive); box-shadow:inset 0 0 0 1px var(--olive);}
+  .ic{width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .ic svg{width:21px; height:21px;}
+  .opt .lab{flex:1; min-width:0;} .opt .t{font-size:14.5px; font-weight:600;} .opt .s{font-size:11.5px; color:var(--muted); margin-top:1px; line-height:1.3;}
+  .opt .mark{width:21px; height:21px; border-radius:50%; border:1.5px solid var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; color:transparent; font-size:12px;}
+  .opt.sel .mark{background:var(--olive); border-color:var(--olive); color:#fff;}
+  .opt .named{font-size:11.5px; color:var(--olive); font-weight:600; margin-top:2px;}
+
+  .btn{display:block; width:100%; border:none; border-radius:999px; padding:14px; font-size:15px; font-weight:600; font-family:inherit; text-align:center; background:var(--ink); color:var(--cream); cursor:pointer; transition:transform .16s;}
+  .btn:hover{transform:translateY(-1px);} .btn.light{background:var(--cream); color:var(--ink);} .btn.olive{background:var(--olive);}
+  .btn.line{background:none; border:1px solid var(--line); color:var(--ink);}
+  .foot{margin-top:auto; padding-top:14px;}
+  .skip{display:block; text-align:center; font-size:13px; color:var(--muted); font-weight:500; margin-top:12px; cursor:pointer;}
+  .fineprint{font-size:11px; color:var(--muted); text-align:center; line-height:1.5; margin-top:14px;}
+
+  .center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;}
+  .brandstar{width:58px; height:58px; margin-bottom:20px;}
+  .brand-m{font-family:'Fraunces',serif; font-weight:600; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--olive);}
+
+  /* planches */
+  .planche{color:#fff; position:relative; overflow:hidden;}
+  .planche.olive{background:radial-gradient(120% 90% at 30% 0%, #47691F 0%, var(--olive-d) 82%);}
+  .planche.ink{background:radial-gradient(120% 90% at 50% 0%, #35302A 0%, #201C18 82%);}
+  .zellige{position:absolute; top:-44px; right:-44px; width:180px; height:180px; opacity:.10; animation:spin 70s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .pl-h{font-family:'Fraunces',serif; font-weight:500; font-size:25px; line-height:1.18; letter-spacing:-.015em; position:relative; z-index:2;}
+  .memfield{display:flex; flex-wrap:wrap; gap:8px; align-content:flex-start; margin:18px 0; position:relative; z-index:2;}
+  .mchip{background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.16); border-radius:11px; padding:9px 13px; font-size:13px; opacity:0; animation:pop .45s forwards;}
+  @keyframes pop{from{opacity:0; transform:translateY(7px) scale(.96);} to{opacity:1; transform:none;}}
+
+  /* transmission steps */
+  .send-intro{font-family:'Fraunces',serif; font-weight:500; font-size:19px; line-height:1.25; margin:10px 0 20px; position:relative; z-index:2;}
+  .steps{position:relative; z-index:2;}
+  .step{display:flex; gap:13px; align-items:flex-start; margin-bottom:15px;}
+  .num{width:30px; height:30px; border-radius:50%; background:var(--saffron); color:#2A2410; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .num.plus{background:rgba(255,255,255,.92); color:var(--olive-d);}
+  .step p{font-size:13.5px; line-height:1.42; opacity:.93; padding-top:4px;}
+
+  /* name sheet */
+  .overlay{position:absolute; inset:0; background:rgba(41,36,32,.5); display:none; align-items:flex-end; z-index:20;}
+  .overlay.show{display:flex; animation:fade .25s;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+  .sheet{background:var(--sand); width:100%; border-radius:26px 26px 0 0; padding:22px 22px 24px; animation:up .3s cubic-bezier(.22,.61,.36,1);}
+  @keyframes up{from{transform:translateY(100%);}to{transform:none;}}
+  .sheet h2{font-family:'Fraunces',serif; font-weight:500; font-size:20px; margin-bottom:15px;}
+  .tf{width:100%; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 15px; font-size:16px; font-family:inherit; color:var(--ink); margin-bottom:15px;}
+  .tf:focus{outline:none; border-color:var(--olive);}
+  .flabel{font-size:12.5px; color:var(--ink-soft); font-weight:600; margin:0 3px 8px;}
+  .langrow{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
+  .lchip{font-size:13.5px; border:1px solid var(--line); border-radius:999px; padding:9px 14px; color:var(--ink-soft); cursor:pointer; background:var(--card); font-weight:600;}
+  .lchip.sel{background:var(--olive-bg); border-color:var(--olive-soft); color:var(--olive);}
+
+  #restart{position:fixed; bottom:18px; right:18px; width:46px; height:46px; border-radius:50%; background:var(--ink); color:var(--cream); border:none; font-size:19px; cursor:pointer; box-shadow:0 8px 20px rgba(0,0,0,.28);}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important;}}
+</style>
+</head>
+<body>
+
+<p class="caption">FTUE v4 · sans scroll, tout tient sur l'écran · transmission en étapes · fin minimaliste.</p>
+
+<div class="device">
+
+  <!-- 1 · ENTRÉE -->
+  <section class="screen active" id="entry">
+    <p class="brand-m" style="text-align:center; margin-bottom:auto;">Manzil · منزل</p>
+    <div class="center">
+      <svg class="brandstar" viewBox="0 0 100 100"><rect x="22" y="22" width="56" height="56" fill="none" stroke="var(--olive)" stroke-width="3.5"/><rect x="22" y="22" width="56" height="56" fill="none" stroke="var(--saffron)" stroke-width="3.5" transform="rotate(45 50 50)"/></svg>
+      <h1 style="text-align:center; font-size:24px;">Manzil vous aide à organiser votre foyer et à briefer chacun dans sa langue.</h1>
+    </div>
+    <div class="foot">
+      <button class="btn" data-goto="domain">Entrer</button>
+      <button class="btn line" style="margin-top:10px;" data-goto="join">Rejoindre un foyer existant</button>
+      <p class="fineprint">En continuant, vous acceptez les conditions d'utilisation et la politique de confidentialité.</p>
+    </div>
+  </section>
+
+  <!-- REJOINDRE -->
+  <section class="screen" id="join">
+    <span class="eyebrow">Rejoindre</span>
+    <h1 style="margin-top:14px;">Entrez le code<br>du foyer.</h1>
+    <p class="sub">Demandez-le à la personne qui gère déjà le foyer.</p>
+    <input class="tf" type="text" placeholder="Ex. RIAD-4821" autocomplete="off">
+    <div class="foot">
+      <button class="btn olive" data-goto="welcome">Rejoindre le foyer</button>
+      <span class="skip" data-goto="entry">Retour</span>
+    </div>
+  </section>
+
+  <!-- 2 · DOMAINES -->
+  <section class="screen" id="domain">
+    <span class="eyebrow">Étape 1</span>
+    <div class="prog"><i class="on"></i><i></i></div>
+    <h1>Par quoi voulez-vous commencer ?</h1>
+    <p class="sub">Un ou plusieurs sujets. On pré-remplit ce qu'il faut.</p>
+
+    <div class="opt" data-dom="cuisine" onclick="toggleDom(this)">
+      <span class="ic" style="background:var(--olive-bg)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13h14M6 13c0-4 2.7-6 6-6s6 2 6 6M12 4v1.5" stroke="#3C5A1E" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+      <span class="lab"><div class="t">La cuisine</div><div class="s">Repas de la semaine, liste de courses par magasins</div></span>
+      <span class="mark">✓</span>
+    </div>
+    <div class="opt" data-dom="enfants" onclick="toggleDom(this)">
+      <span class="ic" style="background:var(--majorelle-bg)"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4.2" stroke="#3A34B4" stroke-width="1.6"/><path d="M11 20.5l1-4M13 20.5l-1-4" stroke="#3A34B4" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+      <span class="lab"><div class="t">Les enfants</div><div class="s">Sorties d'école, activités, qui les récupère</div></span>
+      <span class="mark">✓</span>
+    </div>
+    <div class="opt" data-dom="entretien" onclick="toggleDom(this)">
+      <span class="ic" style="background:var(--ochre-bg)"><svg viewBox="0 0 24 24" fill="none"><path d="M6 20l9-9-3-3-9 9v3zM13 8l3 3" stroke="#B07314" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+      <span class="lab"><div class="t">L'entretien</div><div class="s">Ménage quotidien, grand ménage ponctuel</div></span>
+      <span class="mark">✓</span>
+    </div>
+    <div class="opt" data-dom="securite" onclick="toggleDom(this)">
+      <span class="ic" style="background:var(--rust-bg)"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 4v6c0 4-3 6.5-7 8-4-1.5-7-4-7-8V7z" stroke="#9E3B2C" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.5 12l1.8 1.8L15 10" stroke="#9E3B2C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span class="lab"><div class="t">La sécurité</div><div class="s">Numéros d'urgence, allergies à connaître</div></span>
+      <span class="mark">✓</span>
+    </div>
+    <div class="opt" data-dom="pratique" onclick="toggleDom(this)">
+      <span class="ic" style="background:var(--petrol-bg)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5a7 7 0 0 1 14 0M8 15a4 4 0 0 1 8 0" stroke="#1F5E5B" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="18" r="1.3" fill="#1F5E5B"/></svg></span>
+      <span class="lab"><div class="t">La vie pratique</div><div class="s">Codes wifi, où trouver les choses</div></span>
+      <span class="mark">✓</span>
+    </div>
+
+    <div class="foot"><button class="btn olive" data-goto="memory">Continuer</button></div>
+  </section>
+
+  <!-- 3 · MÉMOIRE -->
+  <section class="screen planche olive" id="memory">
+    <svg class="zellige" viewBox="0 0 100 100"><rect x="16" y="16" width="68" height="68" fill="none" stroke="#fff" stroke-width="2"/><rect x="16" y="16" width="68" height="68" fill="none" stroke="#fff" stroke-width="2" transform="rotate(45 50 50)"/></svg>
+    <span class="eyebrow dim" style="position:relative; z-index:2;">La mémoire de votre maison</span>
+    <div class="pl-h" style="margin-top:12px;">Pour que vous n'ayez plus à répéter les choses 10 fois.</div>
+    <div class="memfield" id="memfield">
+      <span class="mchip" data-dom="cuisine">Menus de la semaine</span>
+      <span class="mchip" data-dom="cuisine">Liste de courses par magasin</span>
+      <span class="mchip" data-dom="enfants">Qui récupère les enfants</span>
+      <span class="mchip" data-dom="enfants">Les sorties d'école</span>
+      <span class="mchip" data-dom="entretien">Le grand ménage du samedi</span>
+      <span class="mchip" data-dom="securite">Les allergies à connaître</span>
+      <span class="mchip" data-dom="securite">Les numéros d'urgence</span>
+      <span class="mchip" data-dom="pratique">Le code du wifi</span>
+      <span class="mchip" data-dom="pratique">Où trouver les choses</span>
+    </div>
+    <div class="foot"><button class="btn light" data-goto="people">Continuer</button></div>
+  </section>
+
+  <!-- 4 · PERSONNEL -->
+  <section class="screen" id="people">
+    <span class="eyebrow">Étape 2</span>
+    <div class="prog"><i class="on"></i><i class="on"></i></div>
+    <h1>Qui vous aide au quotidien ?</h1>
+    <p class="sub">Briefez chaque personne via sa page, dans sa langue, sur WhatsApp. Un tap pour l'ajouter.</p>
+
+    <div class="opt" id="role-cuisine" onclick="openName('cuisine','votre cuisinière')">
+      <span class="ic" style="background:var(--olive-bg)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13h14M6 13c0-4 2.7-6 6-6s6 2 6 6" stroke="#3C5A1E" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+      <span class="lab"><div class="t">Cuisine</div><div class="s">Menus de la semaine, quantités, liste de courses</div><div class="named" data-name></div></span>
+      <span class="mark">+</span>
+    </div>
+    <div class="opt" id="role-nounou" onclick="openName('nounou','votre nounou')">
+      <span class="ic" style="background:var(--majorelle-bg)"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#3A34B4" stroke-width="1.6"/></svg></span>
+      <span class="lab"><div class="t">Nounou</div><div class="s">Planning des enfants, consignes, qui les récupère</div><div class="named" data-name></div></span>
+      <span class="mark">+</span>
+    </div>
+    <div class="opt" id="role-chauffeur" onclick="openName('chauffeur','votre chauffeur')">
+      <span class="ic" style="background:var(--ochre-bg)"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="6" rx="2" stroke="#B07314" stroke-width="1.6"/><circle cx="8" cy="17" r="1.4" stroke="#B07314" stroke-width="1.3"/><circle cx="16" cy="17" r="1.4" stroke="#B07314" stroke-width="1.3"/></svg></span>
+      <span class="lab"><div class="t">Chauffeur</div><div class="s">Trajets, horaires, adresses de rendez-vous</div><div class="named" data-name></div></span>
+      <span class="mark">+</span>
+    </div>
+    <div class="opt" id="role-menage" onclick="openName('menage','votre personne d&rsquo;entretien')">
+      <span class="ic" style="background:var(--petrol-bg)"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v9M8 12h8l-1 8H9z" stroke="#1F5E5B" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+      <span class="lab"><div class="t">Ménage</div><div class="s">Ce qu'il faut faire chaque jour, chaque semaine</div><div class="named" data-name></div></span>
+      <span class="mark">+</span>
+    </div>
+    <div class="opt" id="role-maison" onclick="toggleMaison(this)">
+      <span class="ic" style="background:var(--sand-2)"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11l8-6 8 6M6 10v9h12v-9" stroke="#8a7d5f" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+      <span class="lab"><div class="t">Toute la maison</div><div class="s">La page que chacun consulte : wifi, sécurité, contacts</div></span>
+      <span class="mark">+</span>
+    </div>
+
+    <div class="foot"><button class="btn olive" data-goto="send">Continuer</button></div>
+  </section>
+
+  <!-- 5 · TRANSMISSION (étapes) -->
+  <section class="screen planche ink" id="send">
+    <svg class="zellige" viewBox="0 0 100 100"><rect x="16" y="16" width="68" height="68" fill="none" stroke="#fff" stroke-width="2"/><rect x="16" y="16" width="68" height="68" fill="none" stroke="#fff" stroke-width="2" transform="rotate(45 50 50)"/></svg>
+    <span class="eyebrow dim" style="position:relative; z-index:2;">La transmission</span>
+    <div class="send-intro">Manzil envoie à chacun un brief personnalisé, dans la langue de son choix.</div>
+    <div class="steps">
+      <div class="step"><span class="num">1</span><p>Vous écrivez une fois — menus, planning, consignes — en français.</p></div>
+      <div class="step"><span class="num">2</span><p>Vous envoyez sa page à chacun par WhatsApp. Rien à installer de son côté.</p></div>
+      <div class="step"><span class="num">3</span><p>Chacun la consulte dans sa langue — darija, arabe, anglais.</p></div>
+      <div class="step"><span class="num">4</span><p>Quelqu'un part ? La page reste. La personne suivante en hérite.</p></div>
+      <div class="step"><span class="num plus">+</span><p>Affichez un QR dans la maison : chacun accède à l'essentiel, à tout moment.</p></div>
+    </div>
+    <div class="foot"><button class="btn light" data-goto="welcome">Terminer</button></div>
+  </section>
+
+  <!-- 6 · BIENVENUE (minimaliste) -->
+  <section class="screen" id="welcome">
+    <div class="center">
+      <svg class="brandstar" viewBox="0 0 100 100"><rect x="22" y="22" width="56" height="56" fill="none" stroke="var(--olive)" stroke-width="3.5"/><rect x="22" y="22" width="56" height="56" fill="none" stroke="var(--saffron)" stroke-width="3.5" transform="rotate(45 50 50)"/></svg>
+      <h1 style="text-align:center; font-size:29px;">Bienvenue<br>à la maison.</h1>
+      <button class="btn" style="width:auto; padding-left:44px; padding-right:44px; margin-top:24px;" data-goto="entry">Entrer</button>
+    </div>
+  </section>
+
+  <!-- NAME SHEET -->
+  <div class="overlay" id="overlay">
+    <div class="sheet">
+      <h2 id="sheetTitle">Comment s'appelle&nbsp;?</h2>
+      <div class="flabel">Son prénom</div>
+      <input class="tf" id="nameInput" type="text" placeholder="Ex. Fatima" autocomplete="off">
+      <div class="flabel">Sa langue</div>
+      <div class="langrow">
+        <span class="lchip sel" onclick="pickLang(this)">الدارجة</span>
+        <span class="lchip" onclick="pickLang(this)">Français</span>
+        <span class="lchip" onclick="pickLang(this)">العربية</span>
+        <span class="lchip" onclick="pickLang(this)">English</span>
+      </div>
+      <button class="btn olive" onclick="addPerson()">Ajouter</button>
+      <span class="skip" onclick="closeName()">Annuler</span>
+    </div>
+  </div>
+
+</div>
+
+<button id="restart" title="Recommencer">↺</button>
+
+<script>
+  var store={domains:[], people:{}, maison:false}, curRole=null;
+  function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); var t=document.getElementById(id); if(t){ t.classList.add('active'); if(id==='memory') filterMem(); } }
+  document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click',e=>{ e.stopPropagation(); show(el.getAttribute('data-goto')); }));
+  document.getElementById('restart').addEventListener('click',()=>{ store={domains:[],people:{},maison:false}; document.querySelectorAll('.opt').forEach(o=>{o.classList.remove('sel'); var n=o.querySelector('[data-name]'); if(n)n.textContent=''; var m=o.querySelector('.mark'); if(m && o.id && o.id.indexOf('role')===0) m.textContent='+';}); show('entry'); });
+
+  function toggleDom(el){ el.classList.toggle('sel'); var d=el.dataset.dom, i=store.domains.indexOf(d); if(i<0)store.domains.push(d); else store.domains.splice(i,1); }
+  function filterMem(){ document.querySelectorAll('#memfield .mchip').forEach(function(c,idx){ c.style.display='inline-block'; c.style.animation='none'; c.offsetHeight; c.style.animation='pop .45s forwards'; c.style.animationDelay=(idx*0.05)+'s'; }); }
+
+  function openName(role,label){ curRole=role; document.getElementById('sheetTitle').textContent='Comment s\u2019appelle '+label+'\u00A0?'; var inp=document.getElementById('nameInput'); inp.value=''; document.getElementById('overlay').classList.add('show'); setTimeout(()=>inp.focus(),120); }
+  function closeName(){ document.getElementById('overlay').classList.remove('show'); }
+  function pickLang(el){ el.parentNode.querySelectorAll('.lchip').forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); }
+  function addPerson(){ var name=document.getElementById('nameInput').value.trim()||'Ajouté'; var lang=document.querySelector('#overlay .lchip.sel').textContent; store.people[curRole]={name:name,lang:lang}; var card=document.getElementById('role-'+curRole); card.classList.add('sel'); card.querySelector('[data-name]').textContent='✓ '+name+' · '+lang; card.querySelector('.mark').textContent='✓'; closeName(); }
+  function toggleMaison(el){ store.maison=!store.maison; el.classList.toggle('sel'); el.querySelector('.mark').textContent=store.maison?'✓':'+'; }
+</script>
+
+</body>
+</html>

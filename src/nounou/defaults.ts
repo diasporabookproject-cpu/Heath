@@ -53,45 +53,22 @@ export function emptyNounouDoc(): NounouDoc {
   };
 }
 
-/** Jeu de départ : amorce la page sans imposer une semaine entière. */
+/** Jeu de départ (Flow FTUE, F1) : plus AUCUN contenu personnel pré-créé — un nouveau
+ * foyer démarre VIDE (enfants, rythme, destinataire, gabarits). Le peuplement est
+ * désormais OPT-IN : FTUE (« Les enfants » → gabarits, F3) ou boutons d'import. Seuls
+ * restent les numéros d'urgence Maroc « à vérifier » (info pays générique, portée par
+ * `emptyNounouDoc` — pas du personnel). Appareils existants : jamais re-seedés (leur
+ * doc existe), donc intouchés. */
 export function seedNounouDoc(): NounouDoc {
-  const doc = emptyNounouDoc();
-  const a = uid();
-  const b = uid();
-  doc.enfants = [
-    { id: a, prenom: 'Yasmine', initiale: 'Y', couleur: ENFANT_COULEURS[0] },
-    { id: b, prenom: 'Adam', initiale: 'A', couleur: ENFANT_COULEURS[1] },
-  ];
-  doc.rythme = [
-    { id: uid(), label: 'École', heure: '08:00', type: 'ecole', jours: JOURS_ECOLE, enfants: [], lieu: 'École' },
-    { id: uid(), label: 'Déjeuner', heure: '12:30', type: 'repas', jours: TOUS_LES_JOURS, enfants: [] },
-    { id: uid(), label: 'Sieste', heure: '14:00', type: 'sieste', jours: TOUS_LES_JOURS, enfants: [b] },
-    { id: uid(), label: 'Goûter', heure: '16:30', type: 'gouter', jours: TOUS_LES_JOURS, enfants: [] },
-    { id: uid(), label: 'Coucher', heure: '20:30', type: 'coucher', jours: TOUS_LES_JOURS, enfants: [] },
-  ];
-  // Bibliothèque de conduites amorcée en gabarits « à compléter » (anti-page-blanche).
-  doc.conduites = CONDUITE_MODELES.map((m, i) => ({
-    id: uid(),
-    titre: m.titre,
-    categ: m.categ,
-    urgent: m.urgent,
-    aCompleter: true,
-    etapes: '',
-    createdAt: i,
-  }));
-  // Un destinataire de départ (anti-page-blanche) : la nounou, scopée à tous.
-  doc.destinataires = [
-    {
-      id: uid(),
-      prenom: 'Khadija',
-      role: 'Nounou',
-      langue: 'fr',
-      enfants: [],
-      token: newToken(),
-      createdAt: 0,
-    },
-  ];
-  return doc;
+  return emptyNounouDoc();
+}
+
+/** F3 — gabarits de conduites encore ABSENTS du doc (anti-doublon par TITRE,
+ * insensible à la casse). Pur et testable ; la matérialisation passe par le store
+ * (`useNounou.installConduiteModeles`), la FTUE ou le bouton d'import de Conduites. */
+export function missingConduiteModeles(existing: { titre: string }[]): typeof CONDUITE_MODELES {
+  const have = new Set(existing.map((c) => c.titre.trim().toLowerCase()));
+  return CONDUITE_MODELES.filter((m) => !have.has(m.titre.trim().toLowerCase()));
 }
 
 /** Fusionne un document chargé avec les valeurs par défaut (compat ascendante). */

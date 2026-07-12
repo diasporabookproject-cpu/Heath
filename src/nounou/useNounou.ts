@@ -13,7 +13,7 @@ import type {
   ReglePerm,
 } from '../types';
 import { loadNounou, saveNounou } from '../lib/db';
-import { emptyNounouDoc, mergeNounouDoc, newToken, seedNounouDoc, uid } from './defaults';
+import { emptyNounouDoc, mergeNounouDoc, missingConduiteModeles, newToken, seedNounouDoc, uid } from './defaults';
 
 // Store de la page Nounou — document unique en local-first (IndexedDB = vérité).
 // Précédence du modèle : ponctuel > période > rythme habituel (cf. projection.ts).
@@ -45,6 +45,8 @@ interface NounouState {
   // Conduites (Lot 2 — actions prêtes côté data)
   upsertConduite: (c: Partial<Conduite> & { titre: string; categ: Conduite['categ'] }) => string;
   removeConduite: (id: string) => void;
+  /** F3 — matérialise les gabarits CONDUITE_MODELES manquants (idempotent par titre). Renvoie le nombre ajouté. */
+  installConduiteModeles: () => number;
 
   // Destinataires (lien durable scopé)
   upsertDest: (d: Partial<NounouDest> & { prenom: string }) => string;
@@ -223,6 +225,35 @@ export const useNounou = create<NounouState>((set) => {
 
     removeConduite(id) {
       mutate((doc) => ({ ...doc, conduites: doc.conduites.filter((c) => c.id !== id) }));
+    },
+
+    installConduiteModeles() {
+      // F3 (Flow FTUE) : gabarits « à compléter » installés À LA DEMANDE (FTUE domaine
+      // « Les enfants », ou bouton d'import de Conduites) — plus jamais seedés (F1).
+      // Idempotent : anti-doublon par titre (missingConduiteModeles, pur) — réinstaller
+      // n'ajoute que les absents.
+      let added = 0;
+      mutate((doc) => {
+        const missing = missingConduiteModeles(doc.conduites);
+        added = missing.length;
+        if (missing.length === 0) return doc;
+        return {
+          ...doc,
+          conduites: [
+            ...doc.conduites,
+            ...missing.map((m) => ({
+              id: uid(),
+              titre: m.titre,
+              categ: m.categ,
+              urgent: m.urgent,
+              aCompleter: true,
+              etapes: '',
+              createdAt: nowSeq(),
+            })),
+          ],
+        };
+      });
+      return added;
     },
 
     upsertDest(d) {

@@ -33,6 +33,18 @@ await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
 await page.getByText('Générer la semaine').waitFor({ timeout: 10000 });
 console.log('Hub Maison → Cuisine ✅');
 
+// 0bis) F2 (Flow FTUE) : la bibliothèque démarre VIDE — le smoke installe d'abord
+// la collection « Fonds de départ » (la porte teste ainsi F2 de bout en bout au
+// lieu de supposer une bibliothèque pré-seedée), puis déroule le parcours habituel.
+await page.getByRole('tab', { name: 'Recettes' }).click();
+await page.locator('.cz-pkt', { hasText: 'Fonds de départ' }).click();
+await page.locator('.cz-sheet.show .cz-cta').waitFor({ timeout: 5000 });
+await page.locator('.cz-sheet.show .cz-cta').click(); // « Ajouter les 30 recettes »
+await page.locator('.cz-librow').first().waitFor({ timeout: 5000 }); // bibliothèque peuplée
+console.log('Collection « Fonds de départ » installée ✅');
+await page.getByRole('tab', { name: 'Semaine' }).click();
+await page.getByText('Générer la semaine').waitFor({ timeout: 5000 });
+
 // 1) FC11/FC12 — composer le petit-déjeuner de Lundi via le composeur + sélecteur.
 const lundi = page.locator('.cz-daycard', { hasText: 'Lundi' });
 await lundi.locator('.cz-mrow.empty').first().click();

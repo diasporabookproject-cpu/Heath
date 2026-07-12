@@ -20,6 +20,7 @@ type SheetState = { k: 'add' } | { k: 'detail'; id: string } | { k: 'form'; id?:
 
 export default function ConduitesView({ toast }: { toast: (m: string) => void }) {
   const conduites = useNounou((s) => s.doc.conduites);
+  const installModeles = useNounou((s) => s.installConduiteModeles);
   const [filter, setFilter] = useState<Filter>('all');
   const [sheet, setSheet] = useState<SheetState>(null);
   const [voiceIds, setVoiceIds] = useState<Set<string>>(new Set());
@@ -58,7 +59,25 @@ export default function ConduitesView({ toast }: { toast: (m: string) => void })
 
       <div className="nz-lib">
         {list.length === 0 ? (
-          <div className="nz-dayempty">Aucune conduite ici.</div>
+          <div className="nz-dayempty">
+            Aucune conduite ici.
+            {/* F3 (Flow FTUE) : gabarits opt-in — pattern « importer » de Sécurité. */}
+            {conduites.length === 0 && (
+              <>
+                <br />
+                <button
+                  className="nz-addlink"
+                  style={{ marginTop: 10 }}
+                  onClick={() => {
+                    const n = installModeles();
+                    toast(n ? `${n} gabarit(s) « à compléter » ajoutés — à toi de les remplir` : 'Gabarits déjà présents.');
+                  }}
+                >
+                  ✦ Importer les gabarits (Fièvre, Étouffement…)
+                </button>
+              </>
+            )}
+          </div>
         ) : (
           list.map((c) => (
             <button
