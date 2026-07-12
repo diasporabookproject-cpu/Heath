@@ -89,6 +89,13 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## État actuel (au 2026-07-12)
 
+> ## ✅ LOT « FLOW FTUE » CLOS — F1→F5 livrées, 3 tranches mergées (2026-07-12)
+> **Un nouveau foyer démarre VIDE de contenu personnel ; le remplissage est OPT-IN via la FTUE.**
+> - **T1** : seed personnel retiré (F1) · collection installable « **Fonds de départ** » (30 recettes, F2) · gabarits de conduites opt-in (F3) · générateur guidé vers la collection sur biblio vide (F5b).
+> - **T2** : FTUE v4 (F4) — **gate pré-boot `Boot`** au-dessus d'App (aucun store initialisé pendant la FTUE), 7 écrans fidèles à la maquette (`docs/maquettes/ftue-v4.html`, polices embarquées 224 Ko), peuplement committé d'un bloc au #welcome, #join réel (OTP + `accept_invite`), état « **rôles activés** » + migration one-shot rétroactive (appareil existant ne voit JAMAIS la FTUE), replay démo visuel, `smoke-ftue.mjs` en CI.
+> - **T3** : preuve anti-fuite (F5a) — chemin ① garanti par construction (tracé au journal), chemin ② : **dédup du contenu de pack à l'adoption** (`planAdopt.dropLocal` — remplacé par la version du foyer, zéro doublon ; le personnel fusionne comme avant).
+> - **⏳ Test device PO** (protocole : foyer NEUF · scénario mise à jour · « Rejoindre » réel) sur l'APK CI #13. Liens CGU inertes (parking naming).
+
 > ## ✅ COQUILLE v2 LIVRÉE & VALIDÉE SUR APPAREIL (2026-07-12)
 > **Coquille native recréée sur le défaut durci** (décision « recréer, pas réaligner » — `coquille-v1` archivée comme référence). Volet A (dist-native séparé, `.env.local` via loadEnv, greffes portées, porte diff-de-contrôle A6) · Volet B (micro, export natif via feuille de partage, bouton retour à pile de feuilles, safe-areas top) · Volet C (curation docs + findings). **STOP 2 validé sur appareil réel** : 4/4 verdicts ✓. APK debug en artifact CI (`apk.yml`). Voir `READBACK_COQUILLE_V2.md` + `BUILD_NATIF.md`.
 > **➡️ Prochain lot : « Flow FTUE »** (brief v1.2) — seed personnel retiré, collection-témoin, FTUE gate pré-boot, verrous sync/générateur.
@@ -186,6 +193,17 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 ---
 
 ## Journal des sessions
+
+### Flow FTUE — Tranche 3 (F5a : PREUVE anti-fuite vers un foyer rejoint) — 2026-07-12
+Dernière tranche du lot. Q-3 confirmée par le PO : **option (b)** — dédup ciblée du contenu de pack à l'adoption.
+- **Chemin ① (appareil vierge qui rejoint via FTUE #join) — PREUVE PAR CONSTRUCTION, tracée ici** :
+  1. Pendant la FTUE, **App n'est pas monté** (`main.tsx` → `Boot` → `Ftue`) : ni `useSync`, ni `useStore.init`, ni `useNounou.init` n'existent → **aucun listener, aucun push possible**, même une fois la session OTP ouverte dans #join (`Ftue.tsx` n'appelle que `sendOtp`/`verifyOtp`/`acceptInvite`).
+  2. `acceptInvite` (`lib/auth.ts`) purge l'état de sync (`clearSyncState`) puis la FTUE pose `ftueDone` et **recharge**.
+  3. Au reboot, `useSync.fullSync` voit `last !== foyerId` → **fenêtre d'adoption : `activeFoyer=null`, push interdit** (`useSync.ts:58-60`) ; foyer peuplé → **consentement explicite** avant `adopt()` ; vide → `adopt()` direct, qui n'upload que le plan.
+  4. L'appareil étant VIERGE (rien n'a été persisté pendant la FTUE), `collectLocalDocs()` est vide → `planAdopt.upload = []`. **Rien ne peut fuiter, à aucun maillon.** Témoin CI : `smoke-ftue.mjs` (gate actif, zéro store pendant la traversée).
+- **Chemin ② (appareil peuplé par la FTUE qui rejoint PLUS TARD) — option (b) codée** :
+  `planAdopt` (`sync/plan.ts`) filtre désormais le contenu de PACK : recette locale avec `packId` dont le **nom** (insensible casse/espaces) vit déjà dans le foyer → **ni téléversée** (`upload`), **ni gardée** (`dropLocal` : supprimée localement par `adopt()`, puis remplacée par le jumeau du foyer via `adoptRemote` — convergence, zéro doublon). Le PERSONNEL (recettes sans `packId`) fusionne comme avant (« on garde TES choses », rituel Q1 inchangé). Une recette de pack ABSENTE du foyer est uploadée (le foyer la gagne, sans doublon) ; un tombstone distant ne compte pas comme « présent » ; les autres stores sont intouchés.
+- **Tests purs** : +4 sur `planAdopt` (pack-doublon → drop ; fait-main → upload ; pack-absent → upload ; tombstone/stores) — **Vitest 115/115**.
 
 ### Flow FTUE — Tranche 2 (F4 : la FTUE v4, gate pré-boot, rôles activés, replay) — 2026-07-12
 Le cœur du lot, sur `flow-ftue-v1` (T1 mergée en amont, `6af1906`).
