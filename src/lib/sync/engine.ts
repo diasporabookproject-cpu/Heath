@@ -155,6 +155,11 @@ export async function adopt(foyerId: string): Promise<{ changed: boolean; error?
   const remote = (remoteRes.data as DocRow[]).map(toRemote);
   const plan = planAdopt(local, remote);
 
+  // F5a-② (option b) : le contenu de PACK local en doublon de nom avec le foyer
+  // n'est ni téléversé ni gardé — supprimé ici, puis REMPLACÉ par le jumeau du
+  // foyer (ré-écrit juste en dessous par adoptRemote, sous le docId du foyer).
+  for (const ref of plan.dropLocal) await applyDelete(ref.store, ref.docId);
+
   for (const r of plan.adoptRemote) {
     await applyRemote(r.store, r.docId, r.payload);
     await putSyncMeta(docKey(r), { syncedHash: hashPayload(r.payload), syncedAt: r.updatedAt });

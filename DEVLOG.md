@@ -187,6 +187,17 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## Journal des sessions
 
+### Flow FTUE — Tranche 3 (F5a : PREUVE anti-fuite vers un foyer rejoint) — 2026-07-12
+Dernière tranche du lot. Q-3 confirmée par le PO : **option (b)** — dédup ciblée du contenu de pack à l'adoption.
+- **Chemin ① (appareil vierge qui rejoint via FTUE #join) — PREUVE PAR CONSTRUCTION, tracée ici** :
+  1. Pendant la FTUE, **App n'est pas monté** (`main.tsx` → `Boot` → `Ftue`) : ni `useSync`, ni `useStore.init`, ni `useNounou.init` n'existent → **aucun listener, aucun push possible**, même une fois la session OTP ouverte dans #join (`Ftue.tsx` n'appelle que `sendOtp`/`verifyOtp`/`acceptInvite`).
+  2. `acceptInvite` (`lib/auth.ts`) purge l'état de sync (`clearSyncState`) puis la FTUE pose `ftueDone` et **recharge**.
+  3. Au reboot, `useSync.fullSync` voit `last !== foyerId` → **fenêtre d'adoption : `activeFoyer=null`, push interdit** (`useSync.ts:58-60`) ; foyer peuplé → **consentement explicite** avant `adopt()` ; vide → `adopt()` direct, qui n'upload que le plan.
+  4. L'appareil étant VIERGE (rien n'a été persisté pendant la FTUE), `collectLocalDocs()` est vide → `planAdopt.upload = []`. **Rien ne peut fuiter, à aucun maillon.** Témoin CI : `smoke-ftue.mjs` (gate actif, zéro store pendant la traversée).
+- **Chemin ② (appareil peuplé par la FTUE qui rejoint PLUS TARD) — option (b) codée** :
+  `planAdopt` (`sync/plan.ts`) filtre désormais le contenu de PACK : recette locale avec `packId` dont le **nom** (insensible casse/espaces) vit déjà dans le foyer → **ni téléversée** (`upload`), **ni gardée** (`dropLocal` : supprimée localement par `adopt()`, puis remplacée par le jumeau du foyer via `adoptRemote` — convergence, zéro doublon). Le PERSONNEL (recettes sans `packId`) fusionne comme avant (« on garde TES choses », rituel Q1 inchangé). Une recette de pack ABSENTE du foyer est uploadée (le foyer la gagne, sans doublon) ; un tombstone distant ne compte pas comme « présent » ; les autres stores sont intouchés.
+- **Tests purs** : +4 sur `planAdopt` (pack-doublon → drop ; fait-main → upload ; pack-absent → upload ; tombstone/stores) — **Vitest 115/115**.
+
 ### Flow FTUE — Tranche 2 (F4 : la FTUE v4, gate pré-boot, rôles activés, replay) — 2026-07-12
 Le cœur du lot, sur `flow-ftue-v1` (T1 mergée en amont, `6af1906`).
 - **Gate pré-boot `Boot`** (`src/ftue/Boot.tsx`, monté par `main.tsx` AU-DESSUS d'App — un early return DANS App laisserait tourner ses hooks) : ① `#e=`/`#mz-demo` court-circuitent vers App (un destinataire ne voit JAMAIS la FTUE) ; ② `ftueDone` → App ; ③ **migration one-shot** (méta `seedVersion`/`seeded` lues AVANT tout init de store — la course est éliminée par construction) : appareil existant → `ftueDone` + rôles `['cuisine','nounou']` rétroactifs, JAMAIS la FTUE ; ④ vierge → FTUE. App non monté pendant la FTUE ⇒ rien ne s'initialise/persiste/pousse (**F5a-① par construction**).

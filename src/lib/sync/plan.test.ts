@@ -155,5 +155,57 @@ describe('sync/plan — planAdopt (union, cloud gagne sur collision)', () => {
     const plan = planAdopt(local, remote);
     expect(plan.upload.map((d) => d.docId)).toEqual(['onlyLocal']); // 'both' NON uploadé (cloud gagne)
     expect(plan.adoptRemote.map((r) => r.docId)).toEqual(['both', 'onlyRemote']); // tombstone ignoré
+    expect(plan.dropLocal).toEqual([]); // pas de contenu de pack en jeu ici
+  });
+});
+
+// ── F5a-② (Flow FTUE, option b) : la fusion ne déverse PAS le contenu de pack ──
+describe('sync/plan — planAdopt : dédup du contenu de pack (F5a-②)', () => {
+  const at = '2026-01-01T00:00:00Z';
+  const remoteRec = (docId: string, nom: string, deleted = false): RemoteDoc => ({
+    store: 'recipes',
+    docId,
+    payload: { nom },
+    updatedAt: at,
+    deletedAt: deleted ? at : null,
+  });
+
+  it('recette de PACK dont le nom vit déjà dans le foyer → dropLocal, PAS upload', () => {
+    const local: LocalDoc[] = [
+      { store: 'recipes', docId: 'l1', payload: { nom: 'Tajine poulet', packId: 'fonds-de-depart' } },
+    ];
+    const remote = [remoteRec('r1', 'tajine POULET')]; // même nom, casse différente
+    const plan = planAdopt(local, remote);
+    expect(plan.upload).toEqual([]);
+    expect(plan.dropLocal).toEqual([{ store: 'recipes', docId: 'l1' }]);
+    expect(plan.adoptRemote.map((r) => r.docId)).toEqual(['r1']); // le jumeau du foyer remplace
+  });
+
+  it('« on garde TES choses » : recette FAITE MAIN (sans packId) → uploadée même à nom égal', () => {
+    const local: LocalDoc[] = [
+      { store: 'recipes', docId: 'l1', payload: { nom: 'Tajine poulet' } }, // pas de packId
+    ];
+    const plan = planAdopt(local, [remoteRec('r1', 'Tajine poulet')]);
+    expect(plan.upload.map((d) => d.docId)).toEqual(['l1']); // fusion Q1 inchangée pour le personnel
+    expect(plan.dropLocal).toEqual([]);
+  });
+
+  it('recette de pack ABSENTE du foyer → uploadée (le foyer la gagne, zéro doublon)', () => {
+    const local: LocalDoc[] = [
+      { store: 'recipes', docId: 'l1', payload: { nom: 'Harira', packId: 'fonds-de-depart' } },
+    ];
+    const plan = planAdopt(local, [remoteRec('r1', 'Tajine poulet')]);
+    expect(plan.upload.map((d) => d.docId)).toEqual(['l1']);
+    expect(plan.dropLocal).toEqual([]);
+  });
+
+  it('un tombstone distant ne compte PAS comme « nom présent » ; autres stores intouchés', () => {
+    const local: LocalDoc[] = [
+      { store: 'recipes', docId: 'l1', payload: { nom: 'Harira', packId: 'p' } },
+      { store: 'securite', docId: 's1', payload: { titre: 'Fièvre', packId: 'p', nom: 'Fièvre' } },
+    ];
+    const plan = planAdopt(local, [remoteRec('r1', 'Harira', true)]); // supprimée côté foyer
+    expect(plan.upload.map((d) => d.docId)).toEqual(['l1', 's1']); // les deux partent
+    expect(plan.dropLocal).toEqual([]);
   });
 });

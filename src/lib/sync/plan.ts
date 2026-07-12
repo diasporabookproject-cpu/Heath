@@ -164,7 +164,14 @@ export function nextCursor(remote: RemoteDoc[], skipped: RemoteDoc[], cursor: st
 export interface AdoptPlan {
   upload: LocalDoc[]; // docs présents seulement en local → téléversés
   adoptRemote: RemoteDoc[]; // docs distants vivants → écrits en local (collision incluse)
+  /** F5a-② (option b) : contenu de PACK local dont le nom vit déjà dans le foyer
+   * rejoint → ni téléversé, ni gardé — SUPPRIMÉ localement (le jumeau du foyer,
+   * présent dans `adoptRemote`, le remplace et fait foi). */
+  dropLocal: DocRef[];
 }
+
+const normNom = (v: unknown): string | null =>
+  typeof v === 'string' && v.trim() ? v.trim().toLowerCase() : null;
 
 /**
  * Fusion à la 1ʳᵉ connexion : UNION par (store, docId).
@@ -173,10 +180,31 @@ export interface AdoptPlan {
  * - collision → LWW ; sans horloge locale fiable, le CLOUD gagne (foyer déjà
  *   établi par un autre appareil). Filet : l'export JSON préalable (S2). Documenté.
  *   Les tombstones distants sont ignorés à l'adoption.
+ *
+ * F5a-② (Flow FTUE, option b — décision PO) : la fusion garde TES choses (recettes
+ * créées à la main), pas le bruit INSTALLABLE en double — une recette locale de pack
+ * (`packId` posé) dont le NOM (insensible à la casse) existe déjà dans le foyer
+ * rejoint n'est PAS téléversée ; sa copie locale est remplacée par celle du foyer.
+ * Sans ce filtre, un appareil peuplé par la FTUE déverserait la collection-témoin
+ * dans le foyer rejoint (docIds différents → « local seul » → upload → doublons par nom).
  */
 export function planAdopt(local: LocalDoc[], remote: RemoteDoc[]): AdoptPlan {
   const remoteKeys = new Set(remote.map(docKey));
-  const upload = local.filter((d) => !remoteKeys.has(docKey(d)));
+  const remoteNoms = new Set(
+    remote
+      .filter((r) => r.store === 'recipes' && !r.deletedAt)
+      .map((r) => normNom((r.payload as { nom?: unknown } | null)?.nom))
+      .filter((n): n is string => n !== null),
+  );
+  const isPackDupe = (d: LocalDoc): boolean => {
+    if (d.store !== 'recipes') return false;
+    const p = d.payload as { packId?: unknown; nom?: unknown } | null;
+    const nom = normNom(p?.nom);
+    return !!p?.packId && nom !== null && remoteNoms.has(nom);
+  };
+  const localOnly = local.filter((d) => !remoteKeys.has(docKey(d)));
+  const upload = localOnly.filter((d) => !isPackDupe(d));
+  const dropLocal = localOnly.filter(isPackDupe).map(({ store, docId }) => ({ store, docId }));
   const adoptRemote = remote.filter((r) => !r.deletedAt);
-  return { upload, adoptRemote };
+  return { upload, adoptRemote, dropLocal };
 }
