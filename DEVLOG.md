@@ -89,6 +89,13 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## État actuel (au 2026-07-12)
 
+> ## ✅ LOT « FLOW FTUE » CLOS — F1→F5 livrées, 3 tranches mergées (2026-07-12)
+> **Un nouveau foyer démarre VIDE de contenu personnel ; le remplissage est OPT-IN via la FTUE.**
+> - **T1** : seed personnel retiré (F1) · collection installable « **Fonds de départ** » (30 recettes, F2) · gabarits de conduites opt-in (F3) · générateur guidé vers la collection sur biblio vide (F5b).
+> - **T2** : FTUE v4 (F4) — **gate pré-boot `Boot`** au-dessus d'App (aucun store initialisé pendant la FTUE), 7 écrans fidèles à la maquette (`docs/maquettes/ftue-v4.html`, polices embarquées 224 Ko), peuplement committé d'un bloc au #welcome, #join réel (OTP + `accept_invite`), état « **rôles activés** » + migration one-shot rétroactive (appareil existant ne voit JAMAIS la FTUE), replay démo visuel, `smoke-ftue.mjs` en CI.
+> - **T3** : preuve anti-fuite (F5a) — chemin ① garanti par construction (tracé au journal), chemin ② : **dédup du contenu de pack à l'adoption** (`planAdopt.dropLocal` — remplacé par la version du foyer, zéro doublon ; le personnel fusionne comme avant).
+> - **⏳ Test device PO** (protocole : foyer NEUF · scénario mise à jour · « Rejoindre » réel) sur l'APK CI #13. Liens CGU inertes (parking naming).
+
 > ## ✅ COQUILLE v2 LIVRÉE & VALIDÉE SUR APPAREIL (2026-07-12)
 > **Coquille native recréée sur le défaut durci** (décision « recréer, pas réaligner » — `coquille-v1` archivée comme référence). Volet A (dist-native séparé, `.env.local` via loadEnv, greffes portées, porte diff-de-contrôle A6) · Volet B (micro, export natif via feuille de partage, bouton retour à pile de feuilles, safe-areas top) · Volet C (curation docs + findings). **STOP 2 validé sur appareil réel** : 4/4 verdicts ✓. APK debug en artifact CI (`apk.yml`). Voir `READBACK_COQUILLE_V2.md` + `BUILD_NATIF.md`.
 > **➡️ Prochain lot : « Flow FTUE »** (brief v1.2) — seed personnel retiré, collection-témoin, FTUE gate pré-boot, verrous sync/générateur.
