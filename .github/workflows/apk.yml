@@ -2,12 +2,12 @@ name: APK Android (debug)
 
 # C1 (coquille) : build l'APK debug et l'attache en ARTIFACT — la distribution
 # multi-appareils d'Amine (onglet Actions → run → Artifacts → app-debug).
-# Déclenchement : push sur coquille-v2 (phase de dev) + manuel (workflow_dispatch,
-# utilisable une fois le fichier sur la branche par défaut).
+# Déclenchement : push sur la BRANCHE DE LOT ACTIVE (mettre à jour à chaque
+# nouveau lot touchant le natif) + manuel (workflow_dispatch).
 on:
   workflow_dispatch:
   push:
-    branches: [coquille-v2]
+    branches: [flow-ftue-v1]
 
 jobs:
   apk:
