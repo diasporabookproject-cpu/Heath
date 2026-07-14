@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manzil — Cuisine cliquable</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{ --paper:#f5f1e8; --card:#fffdf8; --ink:#2c2822; --muted:#9a9286;
+    --olive:#6c703f; --olive-soft:#eef0e0; --saffron:#d98f2f; --saffron-soft:#f9edd9; --line:#eae3d6; }
+  body { font-family:'Plus Jakarta Sans', system-ui, sans-serif; background:#dcd8ce; color:var(--ink);
+         min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 16px; }
+  .hint { font-size:12.5px; color:#6b655c; margin-bottom:14px; text-align:center; max-width:420px; line-height:1.5; }
+  .hint b { color:#3a352e; }
+
+  .phone { width:390px; height:740px; background:var(--paper); border:1px solid #cfc9be; border-radius:34px;
+           overflow:hidden; box-shadow:0 16px 44px rgba(60,50,40,.2); position:relative; }
+  .stage { position:absolute; inset:0; }
+  .screen { position:absolute; inset:0; display:none; flex-direction:column; background:var(--paper); }
+  .screen.active { display:flex; animation:fade .18s ease; }
+  @keyframes fade { from{opacity:.35} to{opacity:1} }
+  .scr { flex:1; overflow-y:auto; position:relative; } .scr::-webkit-scrollbar{ display:none; }
+
+  .hd { padding:18px 18px 8px; display:flex; align-items:center; gap:10px; flex:none; }
+  .hd .bk { font-size:22px; color:#9a9186; cursor:pointer; width:30px; }
+  .hd .h { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:21px; flex:1; letter-spacing:-.01em; }
+  .hd .ic { width:34px; height:34px; border-radius:10px; background:#fff; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:16px; color:#6b655c; }
+
+  .nav { display:flex; padding:8px 12px; background:#fff; border-top:1px solid var(--line); box-shadow:0 -3px 12px rgba(60,50,40,.06); flex:none; }
+  .nav .t { flex:1; text-align:center; padding:11px 4px; font-size:13px; color:var(--muted); border-radius:12px; cursor:pointer; }
+  .nav .t.on { background:var(--ink); color:#faf6ee; font-weight:700; }
+  .sys { height:16px; background:#ddd7cc; flex:none; }
+
+  /* MENU */
+  .seg { display:flex; gap:5px; background:#ece6da; border-radius:13px; padding:4px; margin:8px 18px 4px; }
+  .seg .s { flex:1; text-align:center; padding:10px 4px; font-size:13.5px; border-radius:10px; color:#8a8175; cursor:pointer; }
+  .seg .s.on { background:#fff; color:var(--ink); font-weight:700; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .dayline { padding:8px 20px 2px; font-size:12.5px; color:var(--muted); }
+  .sharejour { margin:8px 18px 6px; background:var(--ink); color:#faf6ee; border-radius:14px; padding:14px; text-align:center; font-size:14px; font-weight:700; cursor:pointer; }
+  .meals { padding:6px 18px 16px; }
+  .ml { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:16px 0 8px; font-weight:600; }
+  .dish { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:15px; padding:13px 14px; cursor:pointer; }
+  .dish .an { width:44px; height:44px; border-radius:12px; background:#f2ede4; display:flex; align-items:center; justify-content:center; font-size:22px; flex:none; }
+  .dish .dn { font-size:14.5px; } .dish .dr { font-size:11px; color:var(--muted); margin-top:2px; }
+  .dish .ch { margin-left:auto; color:#c9c0b0; font-size:19px; }
+  .addslot { display:flex; align-items:center; gap:9px; border:1.5px dashed #d8d0c1; border-radius:15px; padding:15px 14px; color:var(--olive); font-size:14.5px; font-weight:600; cursor:pointer; }
+
+  /* RECETTES */
+  .search { display:flex; align-items:center; gap:9px; border:1px solid var(--line); background:#fff; border-radius:13px; padding:11px 14px; margin:6px 18px 12px; }
+  .search input { border:none; outline:none; font-size:14.5px; background:transparent; width:100%; font-family:inherit; color:var(--ink); }
+  .chips { display:flex; gap:7px; padding:0 18px 14px; overflow-x:auto; } .chips::-webkit-scrollbar{ display:none; }
+  .chip { border:1px solid var(--line); border-radius:999px; padding:7px 14px; font-size:12.5px; color:#6b655c; background:#fff; white-space:nowrap; flex:none; cursor:pointer; }
+  .chip.on { background:var(--ink); color:#faf6ee; border-color:var(--ink); font-weight:600; }
+  .rl { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:15px; padding:13px 14px; margin:0 18px 10px; cursor:pointer; }
+  .rl .an { width:46px; height:46px; border-radius:12px; background:#f2ede4; display:flex; align-items:center; justify-content:center; font-size:23px; flex:none; }
+  .rl .rn { font-size:14.5px; } .rl .rr { font-size:11px; color:var(--muted); margin-top:2px; }
+  .rl .fav { margin-left:auto; font-size:18px; color:#d8cdb8; } .rl .fav.on { color:#c9a94a; }
+  .colline { margin:2px 18px 12px; display:flex; justify-content:space-between; align-items:center; padding:13px 15px; background:var(--olive-soft); border:1px solid #dde1c8; border-radius:14px; font-size:13px; cursor:pointer; }
+  .colline .l { font-weight:700; color:var(--olive); } .colline .a { font-size:12px; color:#7a7d4a; }
+  .fab { position:absolute; right:16px; bottom:80px; background:var(--ink); color:#faf6ee; border-radius:16px; padding:15px 19px; font-size:14.5px; font-weight:700; display:flex; align-items:center; gap:8px; box-shadow:0 6px 18px rgba(44,40,34,.34); z-index:6; cursor:pointer; }
+  .fab .p { font-size:20px; font-weight:400; }
+
+  /* CRÉER */
+  .lead { font-family:'Fraunces',Georgia,serif; font-size:24px; font-weight:600; letter-spacing:-.01em; margin:8px 20px 18px; }
+  .capc { display:flex; gap:13px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; margin:0 18px 13px; cursor:pointer; }
+  .capc .ci { width:48px; height:48px; border-radius:13px; background:var(--olive-soft); display:flex; align-items:center; justify-content:center; font-size:24px; flex:none; }
+  .capc .cn { font-size:16px; font-weight:700; } .capc .cd { font-size:12.5px; color:var(--muted); margin-top:5px; line-height:1.45; }
+
+  /* form fields */
+  .fl { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:6px 18px 6px; }
+  .fl:not(:first-of-type){ margin-top:16px; }
+  .fi { margin:0 18px; border:1px solid #e0dacf; background:var(--card); border-radius:12px; padding:12px 14px; font-size:15px; font-family:inherit; color:var(--ink); width:calc(100% - 36px); outline:none; }
+  textarea.fi { min-height:110px; line-height:1.7; resize:none; }
+  .row2 { display:flex; gap:12px; margin:16px 18px 0; }
+  .row2 > div { flex:1; } .row2 .fl { margin-left:0; margin-right:0; }
+  .rolechips { display:flex; gap:6px; flex-wrap:wrap; }
+  .rc { border:1px solid var(--line); border-radius:999px; padding:7px 12px; font-size:12px; color:#6b655c; background:#fff; cursor:pointer; }
+  .rc.on { background:var(--ink); color:#faf6ee; border-color:var(--ink); font-weight:600; }
+  .pstep { display:flex; align-items:center; gap:12px; }
+  .pstep .b { width:34px; height:34px; border:1px solid var(--line); border-radius:10px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; }
+  .pstep .pv { font-size:15px; font-weight:600; }
+  .helper { font-size:11.5px; color:var(--muted); font-style:italic; margin:14px 18px 0; }
+  .cta { background:var(--ink); color:#faf6ee; border-radius:14px; padding:15px; text-align:center; font-size:15px; font-weight:700; margin:18px 18px 20px; cursor:pointer; }
+
+  /* IMPORT */
+  .srcw { position:relative; margin:0 18px; }
+  .srcf { border:1.5px solid #d5ccbc; background:var(--card); border-radius:14px; padding:15px; min-height:92px; font-size:14.5px; font-family:inherit; color:var(--ink); width:100%; outline:none; resize:none; line-height:1.6; }
+  .cam { position:absolute; right:11px; bottom:11px; width:46px; height:46px; border-radius:12px; background:var(--saffron-soft); border:1px solid #ecd7b0; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer; }
+  .af { margin:0 18px; border:1.5px dashed #d3ccbe; background:#fbfaf6; border-radius:13px; padding:12px 14px; font-size:14px; font-family:inherit; color:var(--ink); width:calc(100% - 36px); outline:none; }
+  .foyer { display:flex; gap:10px; align-items:center; background:var(--olive-soft); border:1px solid #dbe0c4; border-radius:13px; padding:12px 13px; margin:15px 18px 0; }
+  .foyer .fx { flex:1; font-size:12px; color:#5a6033; line-height:1.4; } .foyer .fx b { color:var(--olive); }
+  .foyer .fe { font-size:12px; font-weight:700; color:var(--olive); text-decoration:underline; cursor:pointer; }
+  .rev { text-align:center; font-size:11.5px; color:var(--muted); margin:-8px 18px 20px; }
+
+  /* FICHE — overlap corrigé */
+  .topbar { position:absolute; top:0; left:0; right:0; display:flex; align-items:center; padding:15px 16px; z-index:4; }
+  .tbi { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.94); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.12); cursor:pointer; }
+  .tbi.fav { color:#b8b0a2; }
+  .tbsp { flex:1; }
+  .gap { width:9px; }
+  .share { display:flex; align-items:center; gap:7px; background:var(--ink); color:#faf6ee; border-radius:999px; padding:9px 17px 9px 14px; font-size:13.5px; font-weight:700; box-shadow:0 3px 12px rgba(44,40,34,.34); cursor:pointer; }
+  .photo { height:190px; position:relative; background:radial-gradient(120% 120% at 30% 20%, #e9b25a 0%, #cf7f34 42%, #8a5a2e 100%); }
+  .photo .chg { position:absolute; right:12px; bottom:12px; background:rgba(0,0,0,.42); color:#fff; border-radius:10px; padding:7px 11px; font-size:11.5px; font-weight:600; cursor:pointer; }
+  .fc { padding:20px 18px 24px; }
+  .ftit { font-family:'Fraunces',Georgia,serif; font-size:24px; font-weight:600; line-height:1.12; letter-spacing:-.01em; margin-bottom:12px; }
+  .ftags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; }
+  .tg { font-size:11.5px; font-weight:600; border-radius:999px; padding:5px 11px; }
+  .tg.m { background:var(--olive-soft); color:var(--olive); } .tg.c { background:var(--saffron-soft); color:#a5691c; } .tg.x { background:#efe9df; color:#7a7266; }
+  .voice { display:flex; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:22px; cursor:pointer; }
+  .voice .mic { width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg,#d9603f,#b8472f); color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; flex:none; }
+  .voice b { font-size:14px; display:block; } .voice small { font-size:11.5px; color:var(--muted); }
+  .sec { font-family:'Fraunces',Georgia,serif; font-size:17px; font-weight:600; margin:4px 0 12px; display:flex; justify-content:space-between; align-items:baseline; }
+  .sec small { font-family:'Plus Jakarta Sans',sans-serif; font-size:11.5px; color:var(--muted); font-weight:500; }
+  .ing .il { display:flex; justify-content:space-between; padding:10px 2px; border-bottom:1px solid var(--line); font-size:14px; } .ing .il:last-child{ border-bottom:none; }
+  .ing .q { font-weight:700; color:var(--olive); }
+  .steplist { margin-top:20px; }
+  .steplist .st { display:flex; gap:12px; margin-bottom:15px; }
+  .steplist .n { width:26px; height:26px; border-radius:50%; background:var(--olive); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; flex:none; margin-top:1px; }
+  .steplist .sx { font-size:14px; line-height:1.5; }
+
+  .toast { position:absolute; left:50%; bottom:96px; transform:translateX(-50%) translateY(12px); background:rgba(44,40,34,.94); color:#faf6ee;
+           padding:11px 18px; border-radius:12px; font-size:13px; font-weight:600; opacity:0; pointer-events:none; transition:all .22s; z-index:20; white-space:nowrap; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .courses-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--muted); padding:40px; text-align:center; }
+  .courses-empty .ce { font-size:40px; } .courses-empty .ct { font-size:14px; }
+</style>
+</head>
+<body>
+
+<p class="hint">Prototype cliquable · tape la <b>barre du bas</b>, le <b>＋ Nouvelle recette</b>, une <b>carte recette</b>, les boutons <b>retour</b>. Overlap de la fiche corrigé.</p>
+
+<div class="phone">
+  <div class="stage">
+
+    <!-- MENU -->
+    <div class="screen active" id="menu">
+      <div class="scr">
+        <div class="hd"><span class="h">Menu</span><span class="ic">⚙</span></div>
+        <div class="seg"><span class="s" onclick="toast('Horizon : aujourd\'hui')">Aujourd'hui</span><span class="s on">Demain</span><span class="s" onclick="toast('Horizon : la semaine')">Semaine</span></div>
+        <div class="dayline">mercredi 15 juillet</div>
+        <div class="sharejour" onclick="toast('Ouverture du partage du menu…')">⤴ Partager la journée</div>
+        <div class="meals">
+          <div class="ml">Matin</div>
+          <div class="dish" onclick="go('fiche')"><div class="an">🫓</div><div><div class="dn">Msemmen, œufs &amp; fromage</div><div class="dr">Petit‑déj</div></div><span class="ch">›</span></div>
+          <div class="ml">Midi</div>
+          <div class="dish" onclick="go('fiche')"><div class="an">🍽️</div><div><div class="dn">Assiette mezze, poulet chermoula</div><div class="dr">Plat</div></div><span class="ch">›</span></div>
+          <div class="ml">Soir</div>
+          <div class="addslot" onclick="go('recettes')">＋ Ajouter un plat</div>
+        </div>
+      </div>
+      <div class="nav"><div class="t on">Menu</div><div class="t" onclick="go('recettes')">Recettes</div><div class="t" onclick="go('courses')">Courses</div></div>
+      <div class="sys"></div>
+    </div>
+
+    <!-- RECETTES -->
+    <div class="screen" id="recettes">
+      <div class="scr">
+        <div class="hd"><span class="h">Recettes</span><span class="ic">⚙</span></div>
+        <div class="search">🔎<input placeholder="Rechercher…"></div>
+        <div class="chips"><span class="chip on">Tous</span><span class="chip">★ Favoris</span><span class="chip">Petit‑déj</span><span class="chip">Plat</span><span class="chip">Dessert</span><span class="chip">Soupe</span></div>
+        <div class="rl" onclick="go('fiche')"><div class="an">🍽️</div><div><div class="rn">Assiette mezze, poulet chermoula</div><div class="rr">Plat</div></div><span class="fav on">★</span></div>
+        <div class="rl" onclick="go('fiche')"><div class="an">🥘</div><div><div class="rn">Tajine de poulet aux amandes</div><div class="rr">Plat</div></div><span class="fav">☆</span></div>
+        <div class="rl" onclick="go('fiche')"><div class="an">🥒</div><div><div class="rn">Boat de concombre</div><div class="rr">Entrée</div></div><span class="fav">☆</span></div>
+        <div class="rl" onclick="go('fiche')"><div class="an">🫓</div><div><div class="rn">Msemmen, œufs &amp; fromage</div><div class="rr">Petit‑déj</div></div><span class="fav">☆</span></div>
+        <div class="colline" onclick="toast('Ouverture des collections…')"><span class="l">＋ Ajouter des recettes</span><span class="a">Collections ›</span></div>
+      </div>
+      <div class="fab" onclick="go('creer')"><span class="p">＋</span> Nouvelle recette</div>
+      <div class="nav"><div class="t" onclick="go('menu')">Menu</div><div class="t on">Recettes</div><div class="t" onclick="go('courses')">Courses</div></div>
+      <div class="sys"></div>
+    </div>
+
+    <!-- COURSES (stub) -->
+    <div class="screen" id="courses">
+      <div class="scr">
+        <div class="hd"><span class="h">Courses</span><span class="ic">⚙</span></div>
+        <div class="courses-empty"><div class="ce">🛒</div><div class="ct">La liste par rayon, sur l'horizon Semaine.<br>(écran à concevoir)</div></div>
+      </div>
+      <div class="nav"><div class="t" onclick="go('menu')">Menu</div><div class="t" onclick="go('recettes')">Recettes</div><div class="t on">Courses</div></div>
+      <div class="sys"></div>
+    </div>
+
+    <!-- CRÉER -->
+    <div class="screen" id="creer">
+      <div class="scr">
+        <div class="hd"><span class="bk" onclick="go('recettes')">‹</span><span class="h">Nouvelle recette</span></div>
+        <div class="lead">Comment on l'ajoute ?</div>
+        <div class="capc" onclick="go('ecrire')"><div class="ci">✍️</div><div><div class="cn">L'écrire</div><div class="cd">Comme sur un carnet : ingrédients, étapes. « une bonne pincée » passe.</div></div></div>
+        <div class="capc" onclick="go('importer')"><div class="ci">✨</div><div><div class="cn">À partir d'instructions</div><div class="cd">Colle un lien, photographie‑la, ou décris‑la — je la mets en forme, tu vérifies.</div></div></div>
+        <div class="capc" style="background:#fbfaf6" onclick="toast('Ouverture des collections…')"><div class="ci" style="background:#f0ece3">📚</div><div><div class="cn">Depuis une collection</div><div class="cd">Pioche dans les packs, adapte, c'est à toi.</div></div></div>
+      </div>
+      <div class="sys"></div>
+    </div>
+
+    <!-- ÉCRIRE -->
+    <div class="screen" id="ecrire">
+      <div class="scr">
+        <div class="hd"><span class="bk" onclick="go('creer')">‹</span><span class="h">Écris ta recette</span></div>
+        <div class="fl">Nom</div>
+        <input class="fi" value="Tajine de poulet aux amandes">
+        <div class="fl">Ingrédients</div>
+        <textarea class="fi">1,2 kg de poulet fermier
+4 citrons confits
+100 g d'amandes mondées
+une bonne pincée de gingembre
+un filet d'huile d'olive</textarea>
+        <div class="fl">Préparation</div>
+        <textarea class="fi">Faire dorer le poulet avec les épices.
+Ajouter les citrons, couvrir, mijoter.
+Torréfier les amandes, parsemer.</textarea>
+        <div class="row2">
+          <div><div class="fl">Rôle</div><div class="rolechips"><span class="rc on">Plat</span><span class="rc">Entrée</span></div></div>
+          <div><div class="fl">Portions</div><div class="pstep"><span class="b">−</span><span class="pv">4</span><span class="b">＋</span></div></div>
+        </div>
+        <div class="helper">Écris comme tu veux — je range les quantités pour les courses et le partage ×personnes.</div>
+        <div class="cta" onclick="toast('Recette enregistrée'); setTimeout(()=>go('fiche'),700)">Enregistrer</div>
+      </div>
+    </div>
+
+    <!-- IMPORTER -->
+    <div class="screen" id="importer">
+      <div class="scr">
+        <div class="hd"><span class="bk" onclick="go('creer')">‹</span><span class="h">Importer</span></div>
+        <div class="lead" style="margin-bottom:14px">D'où vient‑elle ?</div>
+        <div class="srcw"><textarea class="srcf" placeholder="Colle un lien, un texte — ou photographie‑la (capture, page de livre)."></textarea><div class="cam" onclick="toast('Appareil photo…')">📷</div></div>
+        <div class="fl" style="margin-top:18px;font-size:13px;font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0">Adapte‑la, si tu veux</div>
+        <input class="af" placeholder="pour 6 personnes · sans porc · plus léger…">
+        <div class="foyer"><span>🔒</span><span class="fx">J'adapte selon les <b>règles de ton foyer</b> : halal, sans arachide. <i>À vérifier.</i></span><span class="fe" onclick="toast('Règles du foyer…')">Modifier</span></div>
+        <div class="cta" onclick="toast('Mise en forme…'); setTimeout(()=>go('fiche'),800)">Créer la recette</div>
+        <div class="rev">→ Tu relis ensuite — surtout les quantités.</div>
+      </div>
+    </div>
+
+    <!-- FICHE (overlap corrigé) -->
+    <div class="screen" id="fiche">
+      <div class="scr">
+        <div class="topbar">
+          <div class="tbi" onclick="go('recettes')">‹</div>
+          <div class="tbsp"></div>
+          <div class="tbi fav" onclick="toast('Ajouté aux favoris')">♡</div>
+          <div class="gap"></div>
+          <div class="share" onclick="toast('Ouverture du partage…')">⤴ Partager</div>
+        </div>
+        <div class="photo"><div class="chg" onclick="toast('Changer la photo…')">Changer la photo</div></div>
+        <div class="fc">
+          <div class="ftit">Tajine de poulet aux amandes</div>
+          <div class="ftags"><span class="tg m">Plat</span><span class="tg c">Marocain</span><span class="tg x">◆ Moyen</span><span class="tg x">1 h</span><span class="tg x">4 pers.</span></div>
+          <div class="voice" onclick="toast('Lecture de la consigne…')"><div class="mic">🎙</div><div><b>Écouter la consigne vocale</b><small>Ta voix, transmise à la cuisinière.</small></div></div>
+          <div class="sec">Ingrédients <small>pour 4 personnes</small></div>
+          <div class="ing">
+            <div class="il"><span>Poulet fermier</span><span class="q">1,2 kg</span></div>
+            <div class="il"><span>Citrons confits</span><span class="q">4</span></div>
+            <div class="il"><span>Amandes mondées</span><span class="q">100 g</span></div>
+            <div class="il"><span>Gingembre</span><span class="q">1 pincée</span></div>
+          </div>
+          <div class="steplist">
+            <div class="sec" style="margin-bottom:0">Préparation</div>
+            <div class="st" style="margin-top:12px"><div class="n">1</div><div class="sx">Faire dorer le poulet avec les épices.</div></div>
+            <div class="st"><div class="n">2</div><div class="sx">Ajouter les citrons confits, couvrir, mijoter 45 min.</div></div>
+            <div class="st"><div class="n">3</div><div class="sx">Torréfier les amandes, parsemer avant de servir.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    var el=document.getElementById(id); el.classList.add('active');
+    var sc=el.querySelector('.scr'); if(sc) sc.scrollTop=0;
+  }
+  var _t;
+  function toast(msg){
+    var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(_t); _t=setTimeout(function(){ t.classList.remove('show'); },1700);
+  }
+  // favoris toggle visuel léger
+  document.querySelectorAll('.rl .fav').forEach(function(f){
+    f.addEventListener('click', function(e){ e.stopPropagation(); f.classList.toggle('on'); f.textContent=f.classList.contains('on')?'★':'☆'; });
+  });
+</script>
+</body>
+</html>

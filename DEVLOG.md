@@ -155,7 +155,11 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 ## À faire / en cours
 
-**➡️ Prochaines étapes (ordre posé)** : ① **mini-lot correctifs** (`revokeEspace` silencieux + cache audio négatif — les 2 priorisés du tableau ci-dessous) · ② **passe d'audit sécurité avant mise en ligne** (demandée post-AS-2 ; inclut le reliquat `create_foyer` encore accordé à `public`/`anon`) · ③ **chantier UX/UI** (parking : nav-bar Android, harmonisation Sécurité, états vides hors chemin critique, CGU réelles/naming). *(Le lot « Flow FTUE » + avenant F4-bis sont CLOS — cf. État actuel.)*
+**➡️ EN COURS : Lot Cuisine (chantier UX passe 1)** — spec §8 (`BRIEF_LOT_CUISINE.md`) + rapport Q&A (`RAPPORT_QA_CUISINE.md`) + maquette unique (`docs/maquettes/cuisine/`). Read-back livré (`READBACK_LOT_CUISINE.md`), **en attente du GO PO** (Q1-Q6, dont la contestation « T3 sans migration SQL »). Branche `lot-cuisine-v1`.
+
+**➡️ Étapes suivantes (ordre posé)** : ① **mini-lot correctifs** (`revokeEspace` silencieux + cache audio négatif — les 2 priorisés du tableau ci-dessous) · ② **passe d'audit sécurité avant mise en ligne** (demandée post-AS-2 ; inclut le reliquat `create_foyer` encore accordé à `public`/`anon`) · ③ **suite du chantier UX/UI** (parking : nav-bar Android, harmonisation Sécurité, états vides hors chemin critique, CGU réelles/naming). *(Le lot « Flow FTUE » + avenant F4-bis sont CLOS — cf. État actuel.)*
+
+**📦 Reporté au backlog (décision PO 14/07, amendement ① du lot Cuisine)** : **« Semaines favorites »** (modèles de semaines réutilisables sauvegardés). Le lot Cuisine ne livre que « Copier » = journée/semaine **précédente** (F7.2) ; le libellé quitte F1.3. À re-scoper dans un lot ultérieur. *(Également reporté par la spec : « proposer un repas » — remplace « Générer la semaine », retiré en F1.2 avec accord PO.)*
 
 ### 🩺 Backlog qualité — findings de la revue du 07/07 encore ouverts (vérifiés sur code le 2026-07-12, curation coquille-v2)
 | Finding | Gravité | Constat vérifié |
@@ -193,6 +197,13 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 ---
 
 ## Journal des sessions
+
+### Lot Cuisine — ouverture : références + read-back (protocole §0) — 2026-07-14
+Branche `lot-cuisine-v1` (base défaut `338abfb` = le commit audité par la Q&A). Aucun code produit.
+- **Références commitées** : `BRIEF_LOT_CUISINE.md` (spec §8) · `RAPPORT_QA_CUISINE.md` (autorité pour l'inventaire nutrition F2.2 et le garde-fou F5b) · `docs/maquettes/cuisine/proto-cuisine-cliquable.html` + `INDEX_MAQUETTES_CUISINE.md` (maquette **unique** — les itérations intermédiaires sont volontairement exclues).
+- **Réconciliations spec↔code faites** (détail au read-back) : F2.2 = les **11 fichiers du rapport, écart zéro** (page reçue/digest/hub confirmés propres) ; F5b = entièrement contenu dans `SemaineView.generate()` → meurt avec le bouton « Générer la semaine ».
+- **`READBACK_LOT_CUISINE.md`** : fiche par fiche, chiffrage 🟢🟡🔴 par tranche, 2 amendements PO intégrés (« semaines favorites » reportées · RecipePickerSheet + « ＋ Nouvelle recette »), et 6 questions dont la **contestation T3** : la table `docs` (`store text` sans CHECK, RLS `docs_rw`) accepte un nouveau store de sync **sans migration SQL** → le rituel token se déplace vers T4 (edge function vision) et T5 (`0010_images_bucket.sql`, design bucket+policies posé au read-back en miroir de 0003).
+- **⏸ STOP — en attente du GO PO (arbitrages Q1-Q6).**
 
 ### F4-bis — Fiches A + C + B (retours device APK #13) — 2026-07-12
 Branche `f4bis-v1` (défaut post-lot FTUE `3c38955`). Read-back : `READBACK_F4BIS.md`. Fiche D après validation PO de la copie B.
