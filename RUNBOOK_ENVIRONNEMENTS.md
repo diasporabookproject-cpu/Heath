@@ -46,8 +46,10 @@ Token jetable **lecture+écriture staging** (révoqué après). Prod **non touch
    irréversible ; staging est jetable, pas de backup.)
 2. **WIPE** (SQL, cf. §5) : `drop table … cascade`, `drop function …`, `drop policy if exists … on
    storage.objects`, `delete from auth.users`. **Pas** de `delete from storage.objects` (F-c).
-3. **Rejeu migrations** dans l'ordre : `0001 → 0001b → 0002 → 0003 → 0004 → 0005`, **puis un 2ᵉ
-   passage** (preuve d'idempotence, F-a).
+3. **Rejeu migrations** dans l'ordre : **TOUTES**, `0001 → 0001b → 0002 → … → dernière` (la liste
+   vivante est `supabase/migrations/README.md` — ne jamais figer une liste ici : c'est une liste
+   figée `0001→0005` qui a laissé penser que le rebuild s'arrêtait là), **puis un 2ᵉ passage**
+   (preuve d'idempotence, F-a).
 4. **Déployer les 5 edge functions** depuis le repo (`generate-recipe`, `generate-translation`,
    `invite`, `accept-invite`, `delete-account`), `verify_jwt` selon `CONFIG_CHECKLIST` (recipe &
    translation = **false**, le reste = **true**).
@@ -68,6 +70,10 @@ explicite**, ouverte et annoncée (ex. AS-2 Fiche 3).
    lien public anonyme → **200 avant/après**).
 4. **Rollback** : migration = pur `grant/revoke` ou `drop+create` → inverse trivial ; sinon
    `git revert` du merge + re-déploiement des versions précédentes des fonctions.
+5. **CLORE la fenêtre par un `parity:check` final (0 écart attendu)** — l'avant ne suffit pas :
+   un écart né pendant la fenêtre (application staging omise, etc.) ne se voit qu'APRÈS. Leçon
+   0009/lot Cuisine T4b : l'écart `ack_owner_notice` a dormi depuis AS-2b faute de parité de
+   clôture, et n'a resurgi qu'à la fenêtre suivante.
 
 ## 4. Rituel token
 - **Jetable, par étape** (inventaire / écriture staging / diff), **révoqué entre chaque** — jamais
