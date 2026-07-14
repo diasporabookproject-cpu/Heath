@@ -40,6 +40,8 @@ export interface Recipe {
   packId?: string;
   /** Favori (étoile). */
   fav?: boolean;
+  /** Nombre de portions telles qu'écrites (T4/F4.2 ; affiché en tag F5.2). */
+  portions?: number;
   /** Darija marocaine (lettres arabes), pour l'espace cuisinière. */
   nom_ar?: string;
   ingredients_ar?: string;

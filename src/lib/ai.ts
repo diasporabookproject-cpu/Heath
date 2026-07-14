@@ -26,7 +26,8 @@ export async function generateRecipeDraft(intention: string): Promise<RecipeDraf
   const supa = getSupabase();
   if (!supa) throw new Error('Synchro non configurée.');
   const { data: sess } = await supa.auth.getSession();
-  if (!sess.session) throw new Error('Connecte-toi (☁︎) pour utiliser la génération IA.');
+  // ③ (GO T4) : messages VISIBLES sans « IA/génération » — on nomme le geste.
+  if (!sess.session) throw new Error('Connecte-toi (☁︎) pour mettre en forme une recette.');
 
   const { data, error } = await supa.functions.invoke('generate-recipe', {
     body: { intention },
@@ -49,7 +50,7 @@ export async function generateRecipeDraft(intention: string): Promise<RecipeDraf
     } catch {
       /* corps illisible : on garde le message générique */
     }
-    throw new Error('Génération : ' + detail);
+    throw new Error('Mise en forme : ' + detail);
   }
   if (!data || data.error) throw new Error(data?.error ?? 'Réponse vide.');
   return data.recipe as RecipeDraft;
@@ -91,7 +92,7 @@ export async function importRecipeText(text: string): Promise<RecipeDraft> {
   const supa = getSupabase();
   if (!supa) throw new Error('Synchro non configurée.');
   const { data: sess } = await supa.auth.getSession();
-  if (!sess.session) throw new Error('Connecte-toi (☁︎) pour utiliser l’import IA.');
+  if (!sess.session) throw new Error('Connecte-toi (☁︎) pour importer une recette.');
 
   const { data, error } = await supa.functions.invoke('generate-recipe', {
     body: { mode: 'import', text },

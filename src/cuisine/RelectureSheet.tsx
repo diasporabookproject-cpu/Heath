@@ -75,7 +75,7 @@ export default function RelectureSheet({ startId, onClose, onOpenRecipe, toast }
         <div className="cz-sheethead">
           <div className="ttl">
             Relecture express
-            {total > 0 && <small>Brouillons IA — 2 minutes et c’est réglé</small>}
+            {total > 0 && <small>Nouvelles recettes — 2 minutes et c’est réglé</small>}
           </div>
           <span className="cz-relprog">{Math.min(idx + 1, total)} / {total}</span>
         </div>
@@ -103,7 +103,7 @@ export default function RelectureSheet({ startId, onClose, onOpenRecipe, toast }
 
               {warn && (
                 <div className="cz-relwarn">
-                  ⚠ Texte suspect détecté (artefact IA) — à corriger via « Modifier ».
+                  ⚠ Texte suspect détecté à l’import — à corriger via « Modifier ».
                 </div>
               )}
 

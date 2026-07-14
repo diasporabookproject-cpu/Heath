@@ -92,7 +92,7 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
           <button className="cz-sigrow" onClick={() => setRelire({})}>
             <span className="e">✦</span>
             <span className="st">
-              <b>{draftCount} brouillon{draftCount > 1 ? 's' : ''} IA à relire</b>
+              <b>{draftCount} nouvelle{draftCount > 1 ? 's' : ''} recette{draftCount > 1 ? 's' : ''} à relire</b>
               <i>2 minutes et c’est réglé</i>
             </span>
             <span className="go">Relire</span>

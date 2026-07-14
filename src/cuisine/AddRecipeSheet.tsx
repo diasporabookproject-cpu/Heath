@@ -23,21 +23,24 @@ interface Props {
   onCreated: (id: string) => void;
   onCollections: () => void;
   toast: (m: string) => void;
+  /** Rôle pré-sélectionné pour « L'écrire » (amendement ② : entrée depuis le sélecteur). */
+  initialRole?: RecipeRole;
 }
 
-type Step = 'choose' | 'manual' | 'ai' | 'importjson';
+type Step = 'choose' | 'ecrire' | 'instructions' | 'importjson';
 
-/** Valeurs de départ pour la saisie manuelle (duplication « copier puis adapter »). */
+/** Valeurs de départ pour « L'écrire » (duplication « copier puis adapter »). */
 type ManualSeed = Pick<Recipe, 'nom' | 'role' | 'ingredients' | 'etapes' | 'kcal' | 'prot' | 'gluc' | 'lip' | 'calcium' | 'flag_calcium'>;
 
 /**
- * L3-2 — Création « 3 portes » égales. L'IA est un accélérateur optionnel, jamais
- * un péage : la saisie manuelle reste toujours gratuite et illimitée.
- *  ① Depuis la bibliothèque (collections L3-4 ; repli : dupliquer une recette)
- *  ② Saisie manuelle → naît `Validé` (c'est la recette de l'auteur)
- *  ③ ✦ Coup de main IA (colle OU décris) → brouillon `Test` (file de relecture) + quota
+ * F4.1 (lot Cuisine) — la feuille des TROIS VOIES (port maquette « Comment on
+ * l'ajoute ? ») : ① L'écrire (tes mots, naît `Validé`) · ② À partir
+ * d'instructions (lien / texte collé / description — photo en T4b ; brouillon
+ * `Test` + relecture, quota serveur) · ③ Depuis une collection (packs).
+ * ③ du GO T4 : le mot « IA » (et Générer/génération/✨) n'apparaît NULLE PART
+ * ici — on nomme la source (lien, texte, photo), jamais l'outil.
  */
-export default function AddRecipeSheet({ onClose, onCreated, onCollections, toast }: Props) {
+export default function AddRecipeSheet({ onClose, onCreated, onCollections, toast, initialRole }: Props) {
   const [step, setStep] = useState<Step>('choose');
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
@@ -53,19 +56,19 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, toas
     return () => cancelAnimationFrame(t);
   }, []);
 
-  const openAi = () => {
-    if (!canAi) return toast('Connecte-toi (☁︎) et sois en ligne pour le coup de main IA');
-    if (rem <= 0) return toast('Quota du mois épuisé — la saisie manuelle reste illimitée');
-    setStep('ai');
+  const openInstructions = () => {
+    if (!canAi) return toast('Connecte-toi (☁︎) et sois en ligne pour importer des instructions');
+    if (rem <= 0) return toast('Plus de mises en forme ce mois — écris-la, c’est illimité');
+    setStep('instructions');
   };
 
   const title =
     step === 'choose'
       ? 'Nouvelle recette'
-      : step === 'manual'
-        ? 'Saisie manuelle'
-        : step === 'ai'
-          ? '✦ Coup de main IA'
+      : step === 'ecrire'
+        ? 'Écris ta recette'
+        : step === 'instructions'
+          ? 'À partir d’instructions'
           : 'Importer (JSON)';
 
   return (
@@ -76,7 +79,8 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, toas
         <div className="cz-sheethead">
           <div className="ttl">
             {title}
-            {step === 'manual' && suivi && <small>Les macros sont calculées, pas saisies</small>}
+            {step === 'choose' && <small>Comment on l’ajoute ?</small>}
+            {step === 'ecrire' && suivi && <small>Les macros sont calculées, pas saisies</small>}
           </div>
           <button className="cz-x" onClick={onClose} aria-label="Fermer">
             ✕
@@ -85,39 +89,39 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, toas
         <div className="cz-sheetbody">
           {step === 'choose' && (
             <div style={{ paddingTop: 8 }}>
-              <button className="cz-opt2" onClick={onCollections}>
-                <span className="ic imp">📚</span>
-                <span className="ot">
-                  <span className="h">Depuis la bibliothèque</span>
-                  <span className="d">Pioche dans les collections, adapte en 30 secondes.</span>
-                </span>
-              </button>
-              <button className="cz-opt2" onClick={() => setStep('manual')}>
+              <button className="cz-opt2" onClick={() => setStep('ecrire')}>
                 <span className="ic pen">✍️</span>
                 <span className="ot">
-                  <span className="h">Saisie manuelle</span>
-                  <span className="d">Pas à pas — toujours gratuit, toujours illimité.</span>
+                  <span className="h">L’écrire</span>
+                  <span className="d">Tes mots suffisent — « une bonne pincée » compris.</span>
                 </span>
               </button>
-              <button className="cz-opt2" onClick={openAi} style={{ opacity: canAi && rem > 0 ? 1 : 0.6 }}>
-                <span className="ic ai">✦</span>
+              <button className="cz-opt2" onClick={openInstructions} style={{ opacity: canAi && rem > 0 ? 1 : 0.6 }}>
+                <span className="ic imp">📄</span>
                 <span className="ot">
-                  <span className="h">Coup de main IA</span>
+                  <span className="h">À partir d’instructions</span>
                   <span className="d">
                     {!canAi
-                      ? 'Indisponible hors-ligne / sans connexion.'
+                      ? 'En ligne uniquement — connecte-toi (☁︎) d’abord.'
                       : rem > 0
-                        ? 'Colle ou décris — on structure pour toi.'
-                        : 'Quota du mois épuisé — la saisie manuelle reste illimitée.'}
+                        ? 'Un lien, un texte collé, une description — mise au format pour toi.'
+                        : 'Plus de mises en forme ce mois — écris-la, c’est illimité.'}
                   </span>
                 </span>
                 {canAi && <span className="cz-quotab">{rem} / {AI_MONTHLY_LIMIT} ce mois</span>}
               </button>
+              <button className="cz-opt2" onClick={onCollections}>
+                <span className="ic imp">📚</span>
+                <span className="ot">
+                  <span className="h">Depuis une collection</span>
+                  <span className="d">Des recettes prêtes, à copier chez toi.</span>
+                </span>
+              </button>
             </div>
           )}
 
-          {step === 'manual' && <ManualForm seed={seed} suivi={suivi} onCreated={onCreated} toast={toast} onJson={() => setStep('importjson')} />}
-          {step === 'ai' && <AiForm onCreated={onCreated} toast={toast} />}
+          {step === 'ecrire' && <EcrireForm seed={seed} suivi={suivi} initialRole={initialRole} onCreated={onCreated} toast={toast} onJson={() => setStep('importjson')} />}
+          {step === 'instructions' && <InstructionsForm onCreated={onCreated} toast={toast} />}
           {step === 'importjson' && <ImportForm onClose={onClose} toast={toast} />}
         </div>
       </div>
@@ -137,15 +141,20 @@ function MacroPreview({ m }: { m: { kcal: number; prot: number; gluc: number; ca
   );
 }
 
-function ManualForm({
+/** F4.2 — « L'écrire » : zones de texte NATURELLES (recettes de famille), la
+ * structure (courses, ×personnes) est dérivée en coulisse. Zéro champ macro à
+ * saisir ; zéro widget allergène (D2 — les restrictions vivent au foyer). */
+function EcrireForm({
   seed,
   suivi,
+  initialRole,
   onCreated,
   toast,
   onJson,
 }: {
   seed: ManualSeed | null;
   suivi: boolean;
+  initialRole?: RecipeRole;
   onCreated: (id: string) => void;
   toast: (m: string) => void;
   onJson: () => void;
@@ -153,7 +162,10 @@ function ManualForm({
   const recipes = useStore((s) => s.recipes);
   const upsertRecipe = useStore((s) => s.upsertRecipe);
   const [nom, setNom] = useState(seed?.nom ?? '');
-  const [role, setRole] = useState<RecipeRole>(seed?.role ?? 'plat');
+  // Rôle par défaut = « Plat » (cas limite F4.2) — ou celui du créneau d'origine
+  // quand on arrive du sélecteur de composant (amendement ②).
+  const [role, setRole] = useState<RecipeRole>(seed?.role ?? initialRole ?? 'plat');
+  const [portions, setPortions] = useState(4);
   const [ingredients, setIngredients] = useState(seed?.ingredients ?? '');
   const [etapes, setEtapes] = useState(seed?.etapes ?? '');
   const [macros, setMacros] = useState<{ kcal: number; prot: number; gluc: number; lip: number; calcium: number; flag_calcium: CalciumFlag } | null>(
@@ -179,12 +191,13 @@ function ManualForm({
       setCalc(false);
     }
     const id = nextRecipeId(recipes, role);
-    // Saisie manuelle = recette de l'auteur → naît « Validé » (jamais en relecture).
+    // « L'écrire » = recette de l'auteur → naît « Validé » (jamais en relecture).
     upsertRecipe({
       id,
       nom: nom.trim(),
       role,
       statut: 'Validé',
+      portions,
       kcal: m.kcal,
       prot: m.prot,
       gluc: m.gluc,
@@ -216,13 +229,28 @@ function ManualForm({
         </div>
       </div>
       <div className="cz-block">
-        <div className="cz-blab">Ingrédients ({role === 'acc' ? '100 g de référence' : '1 portion'})</div>
+        <div className="cz-blab">Portions</div>
+        <div className="cz-objset">
+          <button onClick={() => setPortions(Math.max(1, portions - 1))} aria-label="Moins">
+            −
+          </button>
+          <div className="cz-objval">
+            <span>{portions}</span>
+            <small>portion{portions > 1 ? 's' : ''}</small>
+          </div>
+          <button onClick={() => setPortions(Math.min(12, portions + 1))} aria-label="Plus">
+            +
+          </button>
+        </div>
+      </div>
+      <div className="cz-block">
+        <div className="cz-blab">Ingrédients (une ligne = un ingrédient{role === 'acc' ? ' · pour 100 g' : ''})</div>
         <textarea
           className="cz-ta"
           rows={5}
           value={ingredients}
           onChange={(e) => { setIngredients(e.target.value); setMacros(null); }}
-          placeholder="Poulet cuit 200g · riz cuit 110g · feta 40g · huile 1 càc"
+          placeholder={'poulet 200 g\nriz cuit 110 g\nune bonne pincée de sel\nun filet d’huile d’olive'}
         />
       </div>
       <div className="cz-block">
@@ -232,7 +260,7 @@ function ManualForm({
           rows={4}
           value={etapes}
           onChange={(e) => setEtapes(e.target.value)}
-          placeholder={'Couper les légumes.\nAssaisonner et cuire 15 min.\nDresser.'}
+          placeholder={'Fais revenir le poulet.\nAjoute le riz, laisse mijoter 15 min.\nSers bien chaud.'}
         />
       </div>
       {/* F2.2 #2/#3 : bloc Macros sous le flag — OFF, l'estimation reste faite en
@@ -258,8 +286,10 @@ function ManualForm({
   );
 }
 
-/** Porte ③ — un seul champ libre : texte collé OU intention. */
-function AiForm({ onCreated, toast }: { onCreated: (id: string) => void; toast: (m: string) => void }) {
+/** F4.3 (voie texte, T4a) — UN seul champ : le contenu désambiguïse (texte
+ * long/collé = conversion ; court = intention à produire). La photo arrive en
+ * T4b (mode serveur dédié). Jamais le mot « IA » — on nomme la source. */
+function InstructionsForm({ onCreated, toast }: { onCreated: (id: string) => void; toast: (m: string) => void }) {
   const recipes = useStore((s) => s.recipes);
   const upsertRecipe = useStore((s) => s.upsertRecipe);
   const consumeAi = useStore((s) => s.consumeAi);
@@ -271,17 +301,17 @@ function AiForm({ onCreated, toast }: { onCreated: (id: string) => void; toast: 
   const create = async () => {
     const v = text.trim();
     if (!v) return toast('Colle une recette ou décris ce que tu veux');
-    if (rem <= 0) return toast('Quota du mois épuisé — la saisie manuelle reste illimitée');
+    if (rem <= 0) return toast('Plus de mises en forme ce mois — écris-la, c’est illimité');
     setBusy(true);
     try {
-      // Texte long / multi-lignes = conversion d'un collé ; court = intention à générer.
+      // Texte long / multi-lignes = conversion d'un collé ; court = intention à produire.
       const isPaste = v.length > 100 || v.includes('\n');
       const d = isPaste ? await importRecipeText(v) : await generateRecipeDraft(v);
       const rr = roleFromDraft(d.role);
       const id = nextRecipeId(recipes, rr);
       upsertRecipe({
         id,
-        nom: d.nom?.trim() || 'Recette (IA)',
+        nom: d.nom?.trim() || 'Recette importée',
         role: rr,
         statut: 'Test',
         origineIA: true,
@@ -311,20 +341,20 @@ function AiForm({ onCreated, toast }: { onCreated: (id: string) => void; toast: 
   return (
     <div>
       <div className="cz-block" style={{ marginTop: 2 }}>
-        <div className="cz-blab">Colle une recette, ou décris ce que tu veux</div>
+        <div className="cz-blab">Un lien, un texte collé, ou décris ce que tu veux</div>
         <textarea
           className="cz-ta"
           rows={7}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={'Ex. « Tajine de poulet léger, citron confit, pour 4 »\n— ou colle la légende d’un post / blog.'}
+          placeholder={'Ex. « Tajine de poulet léger, citron confit, pour 4 »\n— ou colle la recette d’un blog / d’un post.'}
           autoFocus
         />
       </div>
-      <div className="cz-estnote" style={{ marginBottom: 10 }}>{rem} / {AI_MONTHLY_LIMIT} générations ce mois</div>
+      <div className="cz-estnote" style={{ marginBottom: 10 }}>{rem} / {AI_MONTHLY_LIMIT} mises en forme ce mois</div>
       <button className="cz-cta draft" onClick={create} disabled={busy}>
         {busy ? <IconLoader size={18} className="cz-spin" /> : <IconStar size={18} />}
-        {busy ? 'On structure…' : 'Créer le brouillon'}
+        {busy ? 'Mise au format…' : 'Créer la recette'}
       </button>
     </div>
   );

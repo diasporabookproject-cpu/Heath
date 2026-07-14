@@ -203,6 +203,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             setPick(null);
             toast('Composant ajouté');
           }}
+          onNewRecipe={() => setAdding(true)}
           onClose={() => setPick(null)}
         />
       )}
@@ -219,10 +220,21 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
 
       {adding && (
         <AddRecipeSheet
+          initialRole={pick?.role}
           onClose={() => setAdding(false)}
           onCreated={(id) => {
             setAdding(false);
             refreshVoice();
+            // Amendement ② : créée depuis le sélecteur de composant et du bon
+            // rôle → elle prend directement le créneau (le geste se termine).
+            const created = useStore.getState().recipes.find((r) => r.id === id);
+            if (pick && created && created.statut === 'Validé' && created.role === pick.role) {
+              const value: string | AccRef = pick.slot === 'acc' ? { id, g: 100 } : id;
+              setComponent(pick.dayKey, pick.mealKey, pick.slot, value);
+              setPick(null);
+              toast('Recette créée et ajoutée au repas');
+              return;
+            }
             setOpenRecipeId(id);
           }}
           onCollections={() => openCollections()}

@@ -293,7 +293,7 @@ function EditBody({
     setMacros({ kcal: m.kcal, prot: m.prot, gluc: m.gluc, lip: m.lip, calcium: m.calcium, flag_calcium: m.flag_calcium });
     setEstimated(true);
     setCalc(false);
-    toast(m.source === 'ia' ? 'Macros estimées par l’IA' : 'Macros estimées (base locale)');
+    toast('Macros estimées');
   };
 
   const save = (validate: boolean) => {

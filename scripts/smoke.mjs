@@ -153,7 +153,51 @@ await page.getByRole('tab', { name: 'Recettes' }); // (reste sur Recettes)
 await page.screenshot({ path: 'scripts/shot-biblio.png', fullPage: false });
 console.log('Bibliothèque ✅ (', nbRecettes, 'recettes)');
 
+// 3bis) T4a (F4.1/F4.2, GO ③) — FAB → feuille des 3 voies (langage banni ABSENT),
+// « L'écrire » crée une recette Validé qui atterrit dans la bibliothèque.
+await page.locator('.cz-chips .cz-chip', { hasText: 'Tous' }).click();
+await page.locator('.cz-fab').click();
+await page.getByText('Comment on l’ajoute ?').waitFor({ timeout: 5000 });
+for (const voie of ['L’écrire', 'À partir d’instructions', 'Depuis une collection']) {
+  if (!(await page.getByText(voie, { exact: false }).count()))
+    throw new Error(`F4.1 : voie « ${voie} » absente de la feuille`);
+}
+const voiesTxt = await page.locator('.cz-sheet.show').last().innerText();
+if (/\bIA\b|Générer|génération|✨/i.test(voiesTxt))
+  throw new Error('GO T4 ③ : langage banni (IA/Générer/✨) présent dans la feuille des voies');
+console.log('Feuille des 3 voies : complète, zéro langage banni ✅');
+await page.getByText('L’écrire', { exact: false }).click();
+await page.getByText('Portions', { exact: true }).waitFor({ timeout: 5000 });
+await page.locator('.cz-sheet.show .cz-inp').first().fill('Soupe du smoke');
+await page.locator('.cz-sheet.show textarea').first().fill('courgette 200 g\nune bonne pincée de cumin');
+await page.locator('.cz-sheet.show').getByText('Enregistrer', { exact: true }).click();
+await page.waitForTimeout(600);
+await page.locator('.cz-sheet.show .cz-x').last().click(); // fermer la fiche ouverte
+await page.locator('.cz-librow', { hasText: 'Soupe du smoke' }).waitFor({ timeout: 5000 });
+console.log('« L’écrire » : recette créée (Validé), dans la bibliothèque ✅');
+
+// 3ter) Amendement ② — « ＋ Nouvelle recette » DANS le sélecteur de composant :
+// création avec rôle pré-rempli → prend directement le créneau (geste fini).
+await page.getByRole('tab', { name: 'Menu' }).click();
+const mardi = page.locator('.cz-daycard', { hasText: 'Mardi' });
+await mardi.locator('.cz-mrow.empty').first().click();
+await page.locator('.cz-sheet.show .cz-comp .cmid').first().click(); // « Choisir »
+await page.locator('.cz-sheet.show').last().getByText('Nouvelle recette').waitFor({ timeout: 5000 });
+await page.locator('.cz-sheet.show').last().getByText('Nouvelle recette').click();
+await page.getByText('Comment on l’ajoute ?').waitFor({ timeout: 5000 });
+await page.locator('.cz-sheet.show').last().getByText('L’écrire', { exact: false }).click();
+await page.getByText('Portions', { exact: true }).waitFor({ timeout: 5000 });
+await page.locator('.cz-sheet.show').last().locator('.cz-inp').first().fill('Œufs du picker');
+await page.locator('.cz-sheet.show').last().locator('textarea').first().fill('œufs 2\nune noisette de beurre');
+await page.locator('.cz-sheet.show').last().getByText('Enregistrer', { exact: true }).click();
+await page.getByText('Recette créée et ajoutée au repas').waitFor({ timeout: 5000 });
+await page.locator('.cz-sheet.show .cz-x').first().click().catch(() => {}); // fermer le composeur
+await page.waitForTimeout(400);
+await mardi.getByText('Œufs du picker').waitFor({ timeout: 5000 });
+console.log('Amendement ② : créée depuis le sélecteur, posée dans le créneau ✅');
+
 // 4) FC7 — ouvrir une fiche.
+await page.getByRole('tab', { name: 'Recettes' }).click();
 await page.locator('.cz-chips .cz-chip', { hasText: 'Tous' }).click();
 await page.locator('.cz-librow').first().click();
 await page.getByText('Ingrédients', { exact: false }).first().waitFor({ timeout: 5000 });
