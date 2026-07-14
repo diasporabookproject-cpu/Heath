@@ -16,6 +16,7 @@ interface Props {
 export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onClose }: Props) {
   const recipes = useStore((s) => s.recipes);
   const toggleFav = useStore((s) => s.toggleFav);
+  const suivi = useStore((s) => s.suivi); // F2.2 : macros du sélecteur sous le flag
   const [q, setQ] = useState('');
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
@@ -87,15 +88,17 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onClose
                     </span>
                     <span className="cz-tag role">{ROLE_LABEL[r.role]}</span>
                   </div>
-                  <div className="cz-macros">
-                    <span>{macroText(r)}</span>
-                    {voiceIds.has(r.id) && (
-                      <span className="cz-vchip">
-                        <IconMic size={11} />
-                        vocal
-                      </span>
-                    )}
-                  </div>
+                  {(suivi || voiceIds.has(r.id)) && (
+                    <div className="cz-macros">
+                      {suivi && <span>{macroText(r)}</span>}
+                      {voiceIds.has(r.id) && (
+                        <span className="cz-vchip">
+                          <IconMic size={11} />
+                          vocal
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </button>
               ))}
             </div>

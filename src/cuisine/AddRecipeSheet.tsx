@@ -41,6 +41,7 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, toas
   const [step, setStep] = useState<Step>('choose');
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
+  const suivi = useStore((s) => s.suivi); // F2.2 #2/#3 : MacroPreview + Calculer sous le flag
   const [canAi, setCanAi] = useState(false);
   const [seed] = useState<ManualSeed | null>(null);
   const app = useStore((s) => s.app);
@@ -75,7 +76,7 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, toas
         <div className="cz-sheethead">
           <div className="ttl">
             {title}
-            {step === 'manual' && <small>Les macros sont calculées, pas saisies</small>}
+            {step === 'manual' && suivi && <small>Les macros sont calculées, pas saisies</small>}
           </div>
           <button className="cz-x" onClick={onClose} aria-label="Fermer">
             ✕
@@ -115,7 +116,7 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, toas
             </div>
           )}
 
-          {step === 'manual' && <ManualForm seed={seed} onCreated={onCreated} toast={toast} onJson={() => setStep('importjson')} />}
+          {step === 'manual' && <ManualForm seed={seed} suivi={suivi} onCreated={onCreated} toast={toast} onJson={() => setStep('importjson')} />}
           {step === 'ai' && <AiForm onCreated={onCreated} toast={toast} />}
           {step === 'importjson' && <ImportForm onClose={onClose} toast={toast} />}
         </div>
@@ -138,11 +139,13 @@ function MacroPreview({ m }: { m: { kcal: number; prot: number; gluc: number; ca
 
 function ManualForm({
   seed,
+  suivi,
   onCreated,
   toast,
   onJson,
 }: {
   seed: ManualSeed | null;
+  suivi: boolean;
   onCreated: (id: string) => void;
   toast: (m: string) => void;
   onJson: () => void;
@@ -232,14 +235,18 @@ function ManualForm({
           placeholder={'Couper les légumes.\nAssaisonner et cuire 15 min.\nDresser.'}
         />
       </div>
-      <div className="cz-block">
-        <div className="cz-blab">Macros</div>
-        <button className="cz-calcbtn" onClick={compute} disabled={calc}>
-          {calc ? <IconLoader size={16} className="cz-spin" /> : <IconStar size={16} />}
-          {calc ? 'Calcul…' : 'Calculer les macros à partir des ingrédients'}
-        </button>
-        <MacroPreview m={macros} />
-      </div>
+      {/* F2.2 #2/#3 : bloc Macros sous le flag — OFF, l'estimation reste faite en
+          coulisse à l'enregistrement (save), rien n'est perdu. */}
+      {suivi && (
+        <div className="cz-block">
+          <div className="cz-blab">Macros</div>
+          <button className="cz-calcbtn" onClick={compute} disabled={calc}>
+            {calc ? <IconLoader size={16} className="cz-spin" /> : <IconStar size={16} />}
+            {calc ? 'Calcul…' : 'Calculer les macros à partir des ingrédients'}
+          </button>
+          <MacroPreview m={macros} />
+        </div>
+      )}
       <button className="cz-cta" onClick={save} disabled={!nom.trim() || !ingredients.trim() || calc}>
         <IconCheck size={17} />
         Enregistrer

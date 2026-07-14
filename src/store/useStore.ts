@@ -7,10 +7,12 @@ import {
   loadApp,
   loadRecipes,
   loadSettings,
+  loadSuiviEquilibre,
   loadWeek,
   saveApp,
   saveRecipe,
   saveSettings,
+  saveSuiviEquilibre,
   saveWeek,
   type AppState,
   type Rappel,
@@ -50,6 +52,10 @@ interface State {
   week: WeekMenu;
   weekOffset: number;
   settings: CuisineSettings;
+  /** F2.1 — « Suivi de l'équilibre » : SEUL point de vérité de l'affichage
+   * nutrition (11 surfaces, F2.2). OFF par défaut ; préférence d'appareil
+   * (méta IDB), jamais synchronisée. Le CALCUL, lui, tourne toujours. */
+  suivi: boolean;
   app: AppState;
   init: () => Promise<void>;
   /** Recharge les données depuis IndexedDB (après un pull de sync), sans reset de nav. */
@@ -65,6 +71,7 @@ interface State {
   setAccQty: (dayKey: string, meal: MealKey, deltaG: number) => void;
   setObjective: (n: number) => void;
   setPersons: (n: number) => void;
+  setSuivi: (v: boolean) => void;
   upsertRecipe: (recipe: Recipe) => void;
   setStatut: (id: string, statut: Recipe['statut']) => void;
   validateRecipe: (id: string) => void;
@@ -77,21 +84,23 @@ export const useStore = create<State>((set, get) => ({
   week: freshWeek(weekId(0)),
   weekOffset: 0,
   settings: DEFAULT_SETTINGS,
+  suivi: false,
   app: {},
 
   async init() {
     await ensureSeeded();
-    const [recipes, week, settings, loadedApp] = await Promise.all([
+    const [recipes, week, settings, suivi, loadedApp] = await Promise.all([
       loadRecipes(),
       weekFor(weekId(0)),
       loadSettings(),
+      loadSuiviEquilibre(),
       loadApp(),
     ]);
     // Normalise le quota IA pour le mois courant (reset au changement de mois).
     const aiQuota = normalizeQuota(loadedApp.aiQuota, currentMonth());
     const app: AppState = { ...loadedApp, aiQuota };
     if (loadedApp.aiQuota?.month !== aiQuota.month) void saveApp(app);
-    set({ recipes, week, weekOffset: 0, settings, app, ready: true });
+    set({ recipes, week, weekOffset: 0, settings, suivi, app, ready: true });
   },
 
   async refresh() {
@@ -181,6 +190,11 @@ export const useStore = create<State>((set, get) => ({
       void saveSettings(settings);
       return { settings };
     });
+  },
+
+  setSuivi(v) {
+    void saveSuiviEquilibre(v);
+    set({ suivi: v });
   },
 
   upsertRecipe(recipe) {

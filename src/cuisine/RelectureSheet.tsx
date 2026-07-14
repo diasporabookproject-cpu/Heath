@@ -21,6 +21,7 @@ export default function RelectureSheet({ startId, onClose, onOpenRecipe, toast }
   const recipes = useStore((s) => s.recipes);
   const validateRecipe = useStore((s) => s.validateRecipe);
   const setStatut = useStore((s) => s.setStatut);
+  const suivi = useStore((s) => s.suivi); // F2.2 : macros de la relecture sous le flag
 
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
@@ -90,9 +91,11 @@ export default function RelectureSheet({ startId, onClose, onOpenRecipe, toast }
                   <span className="nm clamp2" style={{ fontWeight: 600, flex: 1 }}>{cleanText(cur.nom)}</span>
                   <span className="cz-tag role">{ROLE_LABEL[cur.role]}</span>
                 </div>
-                <div className="cz-macros">
-                  <span><b>{cur.kcal}</b> kcal · <b>{cur.prot}</b>g P · <b>{cur.calcium}</b>mg Ca</span>
-                </div>
+                {suivi && (
+                  <div className="cz-macros">
+                    <span><b>{cur.kcal}</b> kcal · <b>{cur.prot}</b>g P · <b>{cur.calcium}</b>mg Ca</span>
+                  </div>
+                )}
               </div>
 
               <div className="cz-relbody">{cleanText(cur.ingredients) || 'Pas d’ingrédients.'}</div>

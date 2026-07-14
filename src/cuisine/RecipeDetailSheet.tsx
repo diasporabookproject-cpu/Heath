@@ -31,6 +31,7 @@ export default function RecipeDetailSheet({ recipeId, voiceIds, onClose, onVoice
   const upsertRecipe = useStore((s) => s.upsertRecipe);
   const validateRecipe = useStore((s) => s.validateRecipe);
   const setStatut = useStore((s) => s.setStatut);
+  const suivi = useStore((s) => s.suivi); // F2.2 #4 : fiche + édition sous le flag
 
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [shown, setShown] = useState(false);
@@ -52,6 +53,7 @@ export default function RecipeDetailSheet({ recipeId, voiceIds, onClose, onVoice
           <DetailBody
             recipe={recipe}
             draft={draft}
+            suivi={suivi}
             hasVoice={voiceIds.has(recipe.id)}
             onClose={onClose}
             onEdit={() => setMode('edit')}
@@ -69,6 +71,7 @@ export default function RecipeDetailSheet({ recipeId, voiceIds, onClose, onVoice
         ) : (
           <EditBody
             recipe={recipe}
+            suivi={suivi}
             onCancel={() => setMode('view')}
             onSave={(next, validate) => {
               upsertRecipe(next);
@@ -93,7 +96,9 @@ function DetailBody({
   onValidate,
   onDiscard,
   onVoiceChange,
+  suivi,
 }: {
+  suivi: boolean;
   recipe: Recipe;
   draft: boolean;
   hasVoice: boolean;
@@ -123,8 +128,8 @@ function DetailBody({
           <div className="cz-aibanner">
             <IconStar size={17} />
             <span>
-              Recette <b>à valider</b>. Macros estimées automatiquement. Ajuste-la, puis valide pour
-              l’ajouter à ta bibliothèque.
+              Recette <b>à valider</b>. {suivi ? 'Macros estimées automatiquement. ' : ''}Ajuste-la,
+              puis valide pour l’ajouter à ta bibliothèque.
             </span>
           </div>
         )}
@@ -132,25 +137,32 @@ function DetailBody({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '6px 0' }}>
           <FavStar id={recipe.id} fav={recipe.fav} />
           <span className="cz-tag role">{ROLE_LABEL[recipe.role]}</span>
-          <span className={'cz-caflag ' + flagClass(recipe.flag_calcium)} style={{ fontSize: 11.5 }}>
-            ◆ {recipe.flag_calcium.toLowerCase()}
-          </span>
+          {/* F2.2 : le repère calcium suit le flag comme le reste de la nutrition
+              (décision lot Cuisine — l'invariant « calcium visible » vaut suivi ON). */}
+          {suivi && (
+            <span className={'cz-caflag ' + flagClass(recipe.flag_calcium)} style={{ fontSize: 11.5 }}>
+              ◆ {recipe.flag_calcium.toLowerCase()}
+            </span>
+          )}
           {draft ? <span className="cz-tag draft">✦ À valider</span> : <span className="cz-tag ok">Validé</span>}
         </div>
 
-        {estimated && (
+        {suivi && estimated && (
           <div className="cz-estnote">
             <IconClock size={13} />
             Macros estimées · à valider
           </div>
         )}
 
-        <div className="cz-dmacros">
-          <Cell v={recipe.kcal} l={recipe.role === 'acc' ? 'kcal/100g' : 'kcal'} />
-          <Cell v={recipe.prot} l="prot" />
-          <Cell v={recipe.gluc} l="gluc" />
-          <Cell v={recipe.calcium} l="calcium" ca />
-        </div>
+        {/* F2.2 #4 : tuiles macros de la fiche sous le flag. */}
+        {suivi && (
+          <div className="cz-dmacros">
+            <Cell v={recipe.kcal} l={recipe.role === 'acc' ? 'kcal/100g' : 'kcal'} />
+            <Cell v={recipe.prot} l="prot" />
+            <Cell v={recipe.gluc} l="gluc" />
+            <Cell v={recipe.calcium} l="calcium" ca />
+          </div>
+        )}
 
         <div className="cz-sect">
           Consigne vocale pour la cuisinière
@@ -239,12 +251,14 @@ function FavStar({ id, fav }: { id: string; fav?: boolean }) {
 
 function EditBody({
   recipe,
+  suivi,
   onCancel,
   onSave,
   onVoiceChange,
   toast,
 }: {
   recipe: Recipe;
+  suivi: boolean;
   onCancel: () => void;
   onSave: (next: Recipe, validate: boolean) => void;
   onVoiceChange: (has: boolean) => void;
@@ -308,7 +322,7 @@ function EditBody({
       <div className="cz-sheethead">
         <div className="ttl">
           Modifier la recette
-          <small>Ajuste, recalcule les macros, enregistre</small>
+          <small>{suivi ? 'Ajuste, recalcule les macros, enregistre' : 'Ajuste et enregistre'}</small>
         </div>
         <button className="cz-x" onClick={onCancel} aria-label="Annuler">
           ✕
@@ -350,23 +364,27 @@ function EditBody({
           />
         </div>
 
-        <div className="cz-block">
-          <div className="cz-blab">Macros</div>
-          <div className="cz-estnote">
-            <IconClock size={13} />
-            {estimated ? 'Estimées automatiquement · recalcule après tes modifs' : 'Vérifiées'}
+        {/* F2.2 #2/#3 : le bloc Macros (aperçu + recalcul) n'apparaît que si le suivi
+            est ON — les valeurs, elles, restent portées et sauvegardées à l'identique. */}
+        {suivi && (
+          <div className="cz-block">
+            <div className="cz-blab">Macros</div>
+            <div className="cz-estnote">
+              <IconClock size={13} />
+              {estimated ? 'Estimées automatiquement · recalcule après tes modifs' : 'Vérifiées'}
+            </div>
+            <div className="cz-dmacros">
+              <Cell v={macros.kcal} l="kcal" />
+              <Cell v={macros.prot} l="prot" />
+              <Cell v={macros.gluc} l="gluc" />
+              <Cell v={macros.calcium} l="calcium" ca />
+            </div>
+            <button className="cz-calcbtn" style={{ marginTop: 9 }} onClick={recompute} disabled={calc}>
+              {calc ? <IconLoader size={16} className="cz-spin" /> : <IconStar size={16} />}
+              {calc ? 'Calcul…' : 'Recalculer les macros à partir des ingrédients'}
+            </button>
           </div>
-          <div className="cz-dmacros">
-            <Cell v={macros.kcal} l="kcal" />
-            <Cell v={macros.prot} l="prot" />
-            <Cell v={macros.gluc} l="gluc" />
-            <Cell v={macros.calcium} l="calcium" ca />
-          </div>
-          <button className="cz-calcbtn" style={{ marginTop: 9 }} onClick={recompute} disabled={calc}>
-            {calc ? <IconLoader size={16} className="cz-spin" /> : <IconStar size={16} />}
-            {calc ? 'Calcul…' : 'Recalculer les macros à partir des ingrédients'}
-          </button>
-        </div>
+        )}
 
         <div className="cz-block">
           <div className="cz-blab">Consigne vocale</div>

@@ -123,6 +123,21 @@ const SEED_VERSION = 4;
 // ── FTUE (F4) — méta LOCALES à l'appareil (le store `meta` n'est pas synchronisé) ──
 const FTUE_DONE_KEY = 'ftueDone';
 const ROLES_ACTIFS_KEY = 'rolesActifs';
+// F2.1 (lot Cuisine) — « Suivi de l'équilibre » : préférence d'AFFICHAGE, par
+// appareil, HORS sync de contenu (spec §8) — donc `meta`, pas `CuisineSettings`
+// (qui, lui, est synchronisé). Clé absente = OFF (défaut, foyers existants inclus).
+const SUIVI_EQUILIBRE_KEY = 'suiviEquilibre';
+
+/** Le suivi de l'équilibre (affichage nutrition) est-il activé sur CET appareil ? */
+export async function loadSuiviEquilibre(): Promise<boolean> {
+  const db = await getDB();
+  return (await db.get('meta', SUIVI_EQUILIBRE_KEY)) === true;
+}
+
+export async function saveSuiviEquilibre(v: boolean): Promise<void> {
+  const db = await getDB();
+  await db.put('meta', v, SUIVI_EQUILIBRE_KEY);
+}
 
 /** Rôles dont la carte est posée sur le hub (activés via FTUE ou « ＋ Une page pour… »). */
 export type RoleActif = 'cuisine' | 'nounou';

@@ -30,6 +30,7 @@ interface Props {
 export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe, onOpenCollections, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const toggleFav = useStore((s) => s.toggleFav);
+  const suivi = useStore((s) => s.suivi); // F2.2 #1 : kcal/gP des cartes sous le flag
   const [q, setQ] = useState('');
   const [relire, setRelire] = useState<{ startId?: string } | null>(null);
 
@@ -130,15 +131,17 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
                   {draft && <span className="cz-tag draft">✦ À valider</span>}
                   <span className="cz-tag role">{ROLE_LABEL[r.role]}</span>
                 </div>
-                <div className="cz-macros">
-                  {macro(r)}
-                  {voiceIds.has(r.id) && (
-                    <span className="cz-vchip">
-                      <IconMic size={11} />
-                      vocal
-                    </span>
-                  )}
-                </div>
+                {(suivi || voiceIds.has(r.id)) && (
+                  <div className="cz-macros">
+                    {suivi && macro(r)}
+                    {voiceIds.has(r.id) && (
+                      <span className="cz-vchip">
+                        <IconMic size={11} />
+                        vocal
+                      </span>
+                    )}
+                  </div>
+                )}
               </button>
             );
           })

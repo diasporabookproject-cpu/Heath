@@ -61,6 +61,14 @@ if (await page.getByText('Générer la semaine').count())
   throw new Error('F1.2 : « Générer la semaine » ne doit plus exister');
 console.log('Hub Maison → Cuisine (sans « Générer ») ✅');
 
+// F2.1/F2.2 (lot Cuisine) — porte « opt-in nutrition » : OFF PAR DÉFAUT, donc
+// ZÉRO « kcal » à l'écran tant que « Suivi de l'équilibre » n'est pas activé.
+const assertNoKcal = async (ou) => {
+  const n = await page.getByText(/kcal/i).count();
+  if (n) throw new Error(`F2.2 : ${n} « kcal » visibles (${ou}) alors que le suivi est OFF`);
+};
+await assertNoKcal('vue Menu, arrivée');
+
 // 0bis) F2 (Flow FTUE) : la bibliothèque démarre VIDE — le smoke installe d'abord
 // la collection « Fonds de départ » (la porte teste ainsi F2 de bout en bout au
 // lieu de supposer une bibliothèque pré-seedée), puis déroule le parcours habituel.
@@ -75,9 +83,11 @@ await page.getByRole('tab', { name: 'Menu' }).click();
 await page.getByText('Copier une semaine précédente').waitFor({ timeout: 5000 });
 
 // 1) FC11/FC12 — composer le petit-déjeuner de Lundi via le composeur + sélecteur.
+// (F2.2 : « Total du repas » n'existe plus quand le suivi est OFF — ancre = la
+// rangée de composant « Choisir ».)
 const lundi = page.locator('.cz-daycard', { hasText: 'Lundi' });
 await lundi.locator('.cz-mrow.empty').first().click();
-await page.getByText('Total du repas').waitFor({ timeout: 5000 });
+await page.locator('.cz-sheet.show .cz-comp').first().waitFor({ timeout: 5000 });
 await page.locator('.cz-sheet.show .cz-comp .cmid').first().click(); // « Choisir » le plat
 await page.locator('.cz-sheet.show .cz-pick').first().waitFor({ timeout: 5000 });
 await page.locator('.cz-sheet.show .cz-pick').first().click();
@@ -85,14 +95,30 @@ await page.waitForTimeout(300);
 await page.locator('.cz-sheet.show .cz-x').first().click(); // fermer le composeur
 await lundi.locator('.cz-mrow:not(.empty)').first().waitFor({ timeout: 5000 });
 console.log('Compose : petit-déjeuner Lundi ajouté ✅');
+await assertNoKcal('vue Menu, repas composé'); // même rempli : rien tant que OFF
 await page.screenshot({ path: 'scripts/shot-semaine.png', fullPage: false });
 
-// 2) FC13 — objectif (pastille d'en-tête).
-await page.locator('.cz-pill').click();
-await page.getByText('Objectif par personne').waitFor({ timeout: 5000 });
+// 2) F2.1 + FC13 — Réglages ⚙ : OFF par défaut → ON restitue tout (pastille +
+// objectif réglable) → OFF re-masque tout. Le nombre de personnes reste toujours là.
+if (await page.locator('.cz-pill').count())
+  throw new Error('F2.2 #5 : la pastille Objectif ne doit pas exister quand le suivi est OFF');
+await page.getByLabel('Réglages Cuisine').click();
+await page.getByText('Suivi de l’équilibre').first().waitFor({ timeout: 5000 });
+await page.getByText('Nombre de personnes', { exact: true }).waitFor({ timeout: 3000 }); // valeur foyer : toujours visible
+if (await page.getByText('Objectif par personne').count())
+  throw new Error('F2.2 #6 : la section objectif doit être masquée quand le suivi est OFF');
+await page.locator('.cz-switch').click(); // ON
+await page.getByText('Objectif par personne').waitFor({ timeout: 3000 });
 await page.locator('.cz-objset button').first().click(); // -50
 await page.locator('.cz-sheet.show .cz-cta').click(); // OK
-console.log('Objectif réglable ✅');
+await page.locator('.cz-pill', { hasText: 'kcal/pers.' }).waitFor({ timeout: 5000 }); // ON → pastille de retour
+console.log('Suivi de l’équilibre ON → objectif réglable, pastille visible ✅');
+await page.getByLabel('Réglages Cuisine').click();
+await page.locator('.cz-switch').click(); // OFF
+await page.locator('.cz-sheet.show .cz-cta').click(); // OK
+await page.waitForTimeout(300);
+await assertNoKcal('retour OFF');
+console.log('Suivi de l’équilibre OFF → zéro nutrition (porte F2.2) ✅');
 
 // 3) FC5 — bibliothèque (rôles + favoris).
 await page.getByRole('tab', { name: 'Recettes' }).click();

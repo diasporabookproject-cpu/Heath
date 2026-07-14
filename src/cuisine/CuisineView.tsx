@@ -12,7 +12,7 @@ import RecipeDetailSheet from './RecipeDetailSheet';
 import AddRecipeSheet from './AddRecipeSheet';
 import CollectionsSheet from './CollectionsSheet';
 import PartageSheet from './PartageSheet';
-import ObjectiveSheet from './ObjectiveSheet';
+import ReglagesSheet from './ReglagesSheet';
 import CopyWeekSheet from './CopyWeekSheet';
 import { IconPlus, IconCheck, IconShareUp } from './icons';
 import './cuisine.css';
@@ -39,6 +39,7 @@ interface Props {
 export default function CuisineView({ showAccount, connected, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
   const recipes = useStore((s) => s.recipes);
   const objective = useStore((s) => s.settings.objective);
+  const suivi = useStore((s) => s.suivi);
   const setComponent = useStore((s) => s.setComponent);
 
   const [seg, setSeg] = useState<Segment>('semaine');
@@ -102,12 +103,23 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             Cuisine
           </div>
           <div className="cz-headicons">
-            <button className="cz-pill" onClick={() => setObjectiveOpen(true)}>
-              Objectif {objective.toLocaleString('fr-FR')} kcal/pers.
-            </button>
+            {/* F2.2 #5 : la pastille Objectif n'existe que si le suivi est ON ;
+                la feuille Réglages (⚙), elle, reste toujours accessible. */}
+            {suivi && (
+              <button className="cz-pill" onClick={() => setObjectiveOpen(true)}>
+                Objectif {objective.toLocaleString('fr-FR')} kcal/pers.
+              </button>
+            )}
             <button
               className="cz-headicon"
               style={{ marginLeft: 8 }}
+              onClick={() => setObjectiveOpen(true)}
+              aria-label="Réglages Cuisine"
+            >
+              ⚙
+            </button>
+            <button
+              className="cz-headicon"
               onClick={() => {
                 setShareToken(undefined);
                 setSharing(true);
@@ -202,7 +214,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
           toast={toast}
         />
       )}
-      {objectiveOpen && <ObjectiveSheet onClose={() => setObjectiveOpen(false)} />}
+      {objectiveOpen && <ReglagesSheet onClose={() => setObjectiveOpen(false)} />}
       {copyOpen && <CopyWeekSheet onClose={() => setCopyOpen(false)} toast={toast} />}
 
       {adding && (

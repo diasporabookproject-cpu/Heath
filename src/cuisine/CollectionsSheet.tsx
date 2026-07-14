@@ -18,6 +18,7 @@ interface Props {
 export default function CollectionsSheet({ initialPackId, onClose, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const upsertRecipe = useStore((s) => s.upsertRecipe);
+  const suivi = useStore((s) => s.suivi); // F2.2 #7 : kcal·gP du rail sous le flag
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
   const [sel, setSel] = useState<Pack | null>(() => PACKS.find((p) => p.id === initialPackId) ?? null);
@@ -61,7 +62,9 @@ export default function CollectionsSheet({ initialPackId, onClose, toast }: Prop
             {sel ? (
               <>
                 {sel.emoji} {sel.nom}
-                <small>{sel.recettes.length} recettes — macros comprises, modifiables à volonté</small>
+                <small>
+                  {sel.recettes.length} recettes — {suivi ? 'macros comprises, ' : ''}modifiables à volonté
+                </small>
               </>
             ) : (
               <>
@@ -113,9 +116,18 @@ export default function CollectionsSheet({ initialPackId, onClose, toast }: Prop
                       <span className="nm" style={{ flex: 1, fontWeight: 600 }}>{s.nom}</span>
                       <span className="cz-tag role">{ROLE_LABEL[s.role]}</span>
                     </div>
-                    <div className="cz-macros" style={{ marginTop: 4 }}>
-                      <span><b>{s.kcal}</b> kcal · <b>{s.prot}</b>g P{already ? ' · déjà dans ta bibliothèque' : ''}</span>
-                    </div>
+                    {(suivi || already) && (
+                      <div className="cz-macros" style={{ marginTop: 4 }}>
+                        <span>
+                          {suivi && (
+                            <>
+                              <b>{s.kcal}</b> kcal · <b>{s.prot}</b>g P
+                            </>
+                          )}
+                          {already ? (suivi ? ' · déjà dans ta bibliothèque' : 'Déjà dans ta bibliothèque') : ''}
+                        </span>
+                      </div>
+                    )}
                   </button>
                 );
               })}

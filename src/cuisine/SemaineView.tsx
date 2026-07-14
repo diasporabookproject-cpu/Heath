@@ -35,6 +35,7 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate }: Pr
   const weekOffset = useStore((s) => s.weekOffset);
   const navWeek = useStore((s) => s.navWeek);
   const objective = useStore((s) => s.settings.objective);
+  const suivi = useStore((s) => s.suivi); // F2.2 : gouverne TOUT l'affichage nutrition
 
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
   const dates = useMemo(() => weekDatesOffset(weekOffset), [weekOffset]);
@@ -77,41 +78,45 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate }: Pr
         </button>
       </div>
 
-      <div className="cz-pad">
-        <div className="cz-summary">
-          {avg.count === 0 ? (
-            <>
-              <div className="cz-slab">Cette semaine</div>
-              <div className="cz-sval">—</div>
-              <div className="cz-sempty">Semaine vide — compose tes repas ou copie une semaine.</div>
-            </>
-          ) : (
-            <>
-              <div className="cz-sumtop">
-                <div>
-                  <div className="cz-slab">Moyenne / jour</div>
-                  <div className="cz-sval">
-                    {fmt(avg.kcal)}
-                    <small>kcal · obj. {fmt(objective)}</small>
+      {/* F2.2 #10 : le résumé nutritionnel (moyenne/jour + jauge) n'existe que si le
+          suivi est ON. OFF : seul le guidage d'état vide (pas un chiffre) subsiste. */}
+      {(suivi || avg.count === 0) && (
+        <div className="cz-pad">
+          <div className="cz-summary">
+            {avg.count === 0 ? (
+              <>
+                <div className="cz-slab">Cette semaine</div>
+                {suivi && <div className="cz-sval">—</div>}
+                <div className="cz-sempty">Semaine vide — compose tes repas ou copie une semaine.</div>
+              </>
+            ) : (
+              <>
+                <div className="cz-sumtop">
+                  <div>
+                    <div className="cz-slab">Moyenne / jour</div>
+                    <div className="cz-sval">
+                      {fmt(avg.kcal)}
+                      <small>kcal · obj. {fmt(objective)}</small>
+                    </div>
+                  </div>
+                  <div className="cz-sprot">
+                    {avg.prot} g<small>protéines</small>
                   </div>
                 </div>
-                <div className="cz-sprot">
-                  {avg.prot} g<small>protéines</small>
+                <div className="cz-sgauge">
+                  <div
+                    className="cz-sgfill"
+                    style={{
+                      width: avgPct + '%',
+                      background: avgStatus.cls === 'ok' ? '#7BD3A0' : avgStatus.cls === 'warn' ? '#F4B860' : '#F0897A',
+                    }}
+                  />
                 </div>
-              </div>
-              <div className="cz-sgauge">
-                <div
-                  className="cz-sgfill"
-                  style={{
-                    width: avgPct + '%',
-                    background: avgStatus.cls === 'ok' ? '#7BD3A0' : avgStatus.cls === 'warn' ? '#F4B860' : '#F0897A',
-                  }}
-                />
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <button className="cz-subgen" onClick={onCopyWeek}>
         <IconCopy size={15} />
@@ -151,24 +156,27 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate }: Pr
                   meal={day[k]}
                   mealKey={k}
                   byId={byId}
+                  suivi={suivi}
                   onClick={() => onOpenMeal(jour.key, k)}
                 />
               ))}
 
-              {hasAny ? (
-                <div className="cz-gauge">
-                  <div className="cz-gtrack">
-                    <div className={'cz-gfill ' + status.cls} style={{ width: pct + '%' }} />
-                    <div className="cz-gtick" style={{ left: '100%' }} />
+              {/* F2.2 : jauge du jour + bandeau « équilibre » (#8) = nutrition, sous le flag. */}
+              {suivi &&
+                (hasAny ? (
+                  <div className="cz-gauge">
+                    <div className="cz-gtrack">
+                      <div className={'cz-gfill ' + status.cls} style={{ width: pct + '%' }} />
+                      <div className="cz-gtick" style={{ left: '100%' }} />
+                    </div>
+                    <div className="cz-gmeta">
+                      <span className="cz-gk">{fmt(dk)} kcal</span>
+                      <span className={'cz-gstatus ' + status.cls}>{status.word}</span>
+                    </div>
                   </div>
-                  <div className="cz-gmeta">
-                    <span className="cz-gk">{fmt(dk)} kcal</span>
-                    <span className={'cz-gstatus ' + status.cls}>{status.word}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="cz-gincomplete">Ajoute au moins un repas pour voir l’équilibre.</div>
-              )}
+                ) : (
+                  <div className="cz-gincomplete">Ajoute au moins un repas pour voir l’équilibre.</div>
+                ))}
             </div>
           );
         })}
@@ -182,12 +190,14 @@ function MealRow({
   meal,
   mealKey,
   byId,
+  suivi,
   onClick,
 }: {
   label: string;
   meal: import('../types').MealSlot;
   mealKey: MealKey;
   byId: Map<string, Recipe>;
+  suivi: boolean;
   onClick: () => void;
 }) {
   const plat = meal.plat ? byId.get(meal.plat) : undefined;
@@ -231,7 +241,7 @@ function MealRow({
         </span>
         {sub.length > 0 && <span className="sub">{sub.join(' · ')}</span>}
       </span>
-      <span className="mk2">{fmt(mealMacros(meal, mealKey, byId).kcal)}</span>
+      {suivi && <span className="mk2">{fmt(mealMacros(meal, mealKey, byId).kcal)}</span>}
       <span className="chev">
         <IconChevR size={16} />
       </span>
