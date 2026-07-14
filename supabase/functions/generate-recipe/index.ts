@@ -174,7 +174,7 @@ async function resolveFoyer(req: Request): Promise<FoyerCtx | Denied> {
   const svc = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!url || !svc) return { ok: false, status: 500, error: 'Config serveur manquante.' };
   const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
-  if (!jwt) return { ok: false, status: 401, error: 'Connecte-toi pour utiliser l’IA.' };
+  if (!jwt) return { ok: false, status: 401, error: 'Connecte-toi pour continuer.' };
   const admin = createClient(url, svc, { auth: { persistSession: false } });
   const { data: u, error: uErr } = await admin.auth.getUser(jwt);
   if (uErr || !u.user) return { ok: false, status: 401, error: 'Session invalide.' };
