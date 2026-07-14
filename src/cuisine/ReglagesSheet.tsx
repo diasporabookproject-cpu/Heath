@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
-import { reglesActives } from '../types';
+import { reglesActives, reglesList } from '../types';
 import { IconClock } from './icons';
 
 /** Une allergie par ligne à la saisie ↔ liste propre dans le modèle. */
@@ -187,14 +187,7 @@ export default function ReglagesSheet({ onClose }: { onClose: () => void }) {
           {reglesActives(regles) && (
             <div className="cz-estnote" style={{ marginTop: 2 }}>
               <IconClock size={13} />
-              Règles actives :{' '}
-              {[
-                regles.halal ? 'halal' : null,
-                regles.regime,
-                ...regles.allergies.map((a) => `sans ${a}`),
-              ]
-                .filter(Boolean)
-                .join(' · ')}
+              Règles actives : {reglesList(regles).join(' · ')}
             </div>
           )}
 

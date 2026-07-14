@@ -42,6 +42,9 @@ export interface Recipe {
   fav?: boolean;
   /** Nombre de portions telles qu'écrites (T4/F4.2 ; affiché en tag F5.2). */
   portions?: number;
+  /** G3 (F4.4) : règles du foyer appliquées à l'import — la trace vit DANS le
+   * document et s'affiche à la relecture (« Adaptée selon : … »). */
+  adapteSelon?: string[];
   /** Darija marocaine (lettres arabes), pour l'espace cuisinière. */
   nom_ar?: string;
   ingredients_ar?: string;
@@ -143,6 +146,14 @@ export const EMPTY_REGLES: ReglesFoyer = { allergies: [], halal: false, regime: 
 /** Y a-t-il au moins une restriction posée ? (état vide = légal, F3.1) */
 export function reglesActives(r: ReglesFoyer): boolean {
   return r.allergies.length > 0 || r.halal || r.regime !== null;
+}
+
+/** Les règles en liste lisible (« halal · végétarien · sans arachide ») — même
+ * format partout : Réglages (G1), ligne d'import (F4.4), trace de relecture (G3). */
+export function reglesList(r: ReglesFoyer): string[] {
+  return [r.halal ? 'halal' : null, r.regime, ...r.allergies.map((a) => `sans ${a}`)].filter(
+    (x): x is string => !!x,
+  );
 }
 
 /** Destinataire d'un brief (personnel de maison). Concept transverse réutilisable. */

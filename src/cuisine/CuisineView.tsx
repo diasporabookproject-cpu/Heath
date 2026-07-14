@@ -238,6 +238,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             setOpenRecipeId(id);
           }}
           onCollections={() => openCollections()}
+          onOpenReglages={() => setObjectiveOpen(true)}
           toast={toast}
         />
       )}

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
-import { estimateMacros, generateRecipeDraft, importRecipeText, aiAvailable } from '../lib/ai';
+import { estimateMacros, generateRecipeDraft, importRecipeText, importRecipeImage, aiAvailable } from '../lib/ai';
+import { prepareImage, type PreparedImage } from '../lib/image';
 import { parseRecipesJson } from '../lib/importRecipes';
 import { nextRecipeId } from '../lib/recipeId';
 import { AI_MONTHLY_LIMIT, remaining, normalizeQuota, currentMonth } from '../lib/quota';
-import { ROLE_LABEL, type CalciumFlag, type Recipe, type RecipeRole } from '../types';
+import { ROLE_LABEL, reglesList, type CalciumFlag, type Recipe, type RecipeRole } from '../types';
 import { IconStar, IconLoader, IconCheck } from './icons';
 
 const ROLES: RecipeRole[] = ['petitdej', 'entree', 'plat', 'acc'];
@@ -22,6 +23,8 @@ interface Props {
   onClose: () => void;
   onCreated: (id: string) => void;
   onCollections: () => void;
+  /** F4.4 : « Modifier » de la ligne règles du foyer → ouvre Réglages (D2). */
+  onOpenReglages: () => void;
   toast: (m: string) => void;
   /** Rôle pré-sélectionné pour « L'écrire » (amendement ② : entrée depuis le sélecteur). */
   initialRole?: RecipeRole;
@@ -40,7 +43,7 @@ type ManualSeed = Pick<Recipe, 'nom' | 'role' | 'ingredients' | 'etapes' | 'kcal
  * ③ du GO T4 : le mot « IA » (et Générer/génération/✨) n'apparaît NULLE PART
  * ici — on nomme la source (lien, texte, photo), jamais l'outil.
  */
-export default function AddRecipeSheet({ onClose, onCreated, onCollections, toast, initialRole }: Props) {
+export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOpenReglages, toast, initialRole }: Props) {
   const [step, setStep] = useState<Step>('choose');
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
@@ -121,7 +124,14 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, toas
           )}
 
           {step === 'ecrire' && <EcrireForm seed={seed} suivi={suivi} initialRole={initialRole} onCreated={onCreated} toast={toast} onJson={() => setStep('importjson')} />}
-          {step === 'instructions' && <InstructionsForm onCreated={onCreated} toast={toast} />}
+          {step === 'instructions' && (
+            <InstructionsForm
+              onCreated={onCreated}
+              onEcrire={() => setStep('ecrire')}
+              onOpenReglages={onOpenReglages}
+              toast={toast}
+            />
+          )}
           {step === 'importjson' && <ImportForm onClose={onClose} toast={toast} />}
         </div>
       </div>
@@ -286,27 +296,63 @@ function EcrireForm({
   );
 }
 
-/** F4.3 (voie texte, T4a) — UN seul champ : le contenu désambiguïse (texte
- * long/collé = conversion ; court = intention à produire). La photo arrive en
- * T4b (mode serveur dédié). Jamais le mot « IA » — on nomme la source. */
-function InstructionsForm({ onCreated, toast }: { onCreated: (id: string) => void; toast: (m: string) => void }) {
+/** F4.3 + F4.4 (T4b) — UN champ (lien / texte collé / description) + UNE photo.
+ * Le contenu désambiguïse (texte long/collé = conversion ; court = intention ;
+ * photo = lecture vision). Les règles du foyer (T3) s'appliquent D'OFFICE :
+ * montrées AVANT (G1, ligne « J'adapte selon… » + Modifier), tracées APRÈS
+ * (G3, `adapteSelon` affiché à la relecture). G2 par topologie : cette fonction
+ * est l'UNIQUE point de persistance des imports et écrit `statut: 'Test'` en
+ * dur — les seules sorties de `Test` sont les surfaces de relecture. */
+function InstructionsForm({
+  onCreated,
+  onEcrire,
+  onOpenReglages,
+  toast,
+}: {
+  onCreated: (id: string) => void;
+  /** Repli doux : photo/lien illisible → bascule vers « L'écrire ». */
+  onEcrire: () => void;
+  onOpenReglages: () => void;
+  toast: (m: string) => void;
+}) {
   const recipes = useStore((s) => s.recipes);
   const upsertRecipe = useStore((s) => s.upsertRecipe);
   const consumeAi = useStore((s) => s.consumeAi);
+  const regles = useStore((s) => s.regles);
   const app = useStore((s) => s.app);
   const rem = remaining(normalizeQuota(app.aiQuota, currentMonth()));
   const [text, setText] = useState('');
+  const [adaptation, setAdaptation] = useState('');
+  const [photo, setPhoto] = useState<PreparedImage | null>(null);
   const [busy, setBusy] = useState(false);
+  const [failNote, setFailNote] = useState('');
+  const liste = reglesList(regles);
+
+  const pickPhoto = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      setPhoto(await prepareImage(file));
+      setFailNote('');
+    } catch (e) {
+      toast((e as Error).message);
+    }
+  };
 
   const create = async () => {
     const v = text.trim();
-    if (!v) return toast('Colle une recette ou décris ce que tu veux');
+    if (!v && !photo) return toast('Colle une recette, décris-la — ou prends-la en photo');
     if (rem <= 0) return toast('Plus de mises en forme ce mois — écris-la, c’est illimité');
     setBusy(true);
+    setFailNote('');
     try {
-      // Texte long / multi-lignes = conversion d'un collé ; court = intention à produire.
-      const isPaste = v.length > 100 || v.includes('\n');
-      const d = isPaste ? await importRecipeText(v) : await generateRecipeDraft(v);
+      const opts = { regles: liste, adaptation: adaptation.trim() || undefined };
+      // Photo présente = lecture vision ; sinon texte long/collé = conversion,
+      // court = intention à produire (désambiguïsation par l'entrée).
+      const d = photo
+        ? await importRecipeImage(photo.base64, photo.mediaType, opts)
+        : v.length > 100 || v.includes('\n')
+          ? await importRecipeText(v, opts)
+          : await generateRecipeDraft(v, opts);
       const rr = roleFromDraft(d.role);
       const id = nextRecipeId(recipes, rr);
       upsertRecipe({
@@ -315,6 +361,7 @@ function InstructionsForm({ onCreated, toast }: { onCreated: (id: string) => voi
         role: rr,
         statut: 'Test',
         origineIA: true,
+        adapteSelon: liste.length ? liste : undefined, // G3 : la trace vit dans le doc
         kcal: Math.round(Number(d.kcal) || 0),
         prot: Math.round(Number(d.prot) || 0),
         gluc: Math.round(Number(d.gluc) || 0),
@@ -332,7 +379,8 @@ function InstructionsForm({ onCreated, toast }: { onCreated: (id: string) => voi
       toast('Brouillon prêt — relis et valide');
       onCreated(id);
     } catch (e) {
-      toast((e as Error).message);
+      // Échec honnête, jamais dur : message réel + repli vers « L'écrire ».
+      setFailNote((e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -344,17 +392,75 @@ function InstructionsForm({ onCreated, toast }: { onCreated: (id: string) => voi
         <div className="cz-blab">Un lien, un texte collé, ou décris ce que tu veux</div>
         <textarea
           className="cz-ta"
-          rows={7}
+          rows={5}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={'Ex. « Tajine de poulet léger, citron confit, pour 4 »\n— ou colle la recette d’un blog / d’un post.'}
           autoFocus
         />
       </div>
+      <div className="cz-block">
+        <label className="cz-photobtn">
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => void pickPhoto(e.target.files?.[0])}
+          />
+          {photo ? (
+            <>
+              <img src={URL.createObjectURL(photo.blob)} alt="" />
+              <span>
+                Photo prête ({photo.width}×{photo.height}) — appuie pour la changer
+              </span>
+            </>
+          ) : (
+            <span>📷 Ou prends la recette en photo (page de livre, capture)</span>
+          )}
+        </label>
+        {photo && (
+          <button className="cz-cta ghost" style={{ marginTop: 6 }} onClick={() => setPhoto(null)}>
+            Retirer la photo
+          </button>
+        )}
+      </div>
+      <div className="cz-block">
+        <div className="cz-blab">Adapte-la, si tu veux</div>
+        <input
+          className="cz-inp"
+          value={adaptation}
+          onChange={(e) => setAdaptation(e.target.value)}
+          placeholder="pour 6 · sans porc · plus léger"
+        />
+      </div>
+      {/* G1 — les règles appliquées sont TOUJOURS montrées, jamais une boîte noire. */}
+      <div className="cz-reglesline">
+        <span>
+          {liste.length ? (
+            <>
+              J’adapte selon les règles de ton foyer : <b>{liste.join(' · ')}</b>{' '}
+              <i className="cz-averifier">à vérifier</i>
+            </>
+          ) : (
+            <>Aucune règle du foyer — rien ne sera adapté.</>
+          )}
+        </span>
+        <button className="cz-linkbtn" onClick={onOpenReglages}>
+          Modifier
+        </button>
+      </div>
       <div className="cz-estnote" style={{ marginBottom: 10 }}>{rem} / {AI_MONTHLY_LIMIT} mises en forme ce mois</div>
+      {failNote && (
+        <div className="cz-relwarn" style={{ marginBottom: 10 }}>
+          {failNote}
+          <button className="cz-linkbtn" onClick={onEcrire} style={{ marginLeft: 8 }}>
+            L’écrire à la place
+          </button>
+        </div>
+      )}
       <button className="cz-cta draft" onClick={create} disabled={busy}>
         {busy ? <IconLoader size={18} className="cz-spin" /> : <IconStar size={18} />}
-        {busy ? 'Mise au format…' : 'Créer la recette'}
+        {busy ? (photo ? 'Lecture de la photo…' : 'Mise au format…') : 'Créer la recette'}
       </button>
     </div>
   );

@@ -133,6 +133,13 @@ function DetailBody({
             </span>
           </div>
         )}
+        {/* G3 (F4.4) : la trace d'adaptation vit dans le doc et s'affiche à la relecture. */}
+        {draft && recipe.adapteSelon && recipe.adapteSelon.length > 0 && (
+          <div className="cz-estnote">
+            <IconClock size={13} />
+            Adaptée selon : {recipe.adapteSelon.join(' · ')} — vérifie surtout les quantités.
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '6px 0' }}>
           <FavStar id={recipe.id} fav={recipe.fav} />

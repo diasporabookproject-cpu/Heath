@@ -22,7 +22,14 @@ export interface RecipeDraft {
   etapes_ar?: string;
 }
 
-export async function generateRecipeDraft(intention: string): Promise<RecipeDraft> {
+/** F4.4 : règles du foyer (T3) + demande d'adaptation, jointes aux imports.
+ * Le serveur ne lit jamais les règles en base — elles voyagent dans la requête. */
+export interface AdaptOpts {
+  regles?: string[];
+  adaptation?: string;
+}
+
+export async function generateRecipeDraft(intention: string, opts: AdaptOpts = {}): Promise<RecipeDraft> {
   const supa = getSupabase();
   if (!supa) throw new Error('Synchro non configurée.');
   const { data: sess } = await supa.auth.getSession();
@@ -30,7 +37,7 @@ export async function generateRecipeDraft(intention: string): Promise<RecipeDraf
   if (!sess.session) throw new Error('Connecte-toi (☁︎) pour mettre en forme une recette.');
 
   const { data, error } = await supa.functions.invoke('generate-recipe', {
-    body: { intention },
+    body: { intention, regles: opts.regles, adaptation: opts.adaptation },
   });
   if (error) {
     // Remonter le vrai message renvoyé par la fonction (sinon « non-2xx » opaque).
@@ -88,15 +95,33 @@ export async function translateToDarija(input: {
  * FC17 — Importe une recette depuis un texte collé (légende/blog) via l'edge
  * function (mode import, sortie structurée). Renvoie un brouillon « à valider ».
  */
-export async function importRecipeText(text: string): Promise<RecipeDraft> {
+export async function importRecipeText(text: string, opts: AdaptOpts = {}): Promise<RecipeDraft> {
+  return importCall({ mode: 'import', text, regles: opts.regles, adaptation: opts.adaptation });
+}
+
+/** T4b — import PHOTO (page de livre, capture). L'image est le JPEG ≤1280px
+ * ré-encodé par `prepareImage` (EXIF/GPS déjà supprimés côté client). */
+export async function importRecipeImage(
+  imageBase64: string,
+  mediaType: string,
+  opts: AdaptOpts = {},
+): Promise<RecipeDraft> {
+  return importCall({
+    mode: 'import-image',
+    image: imageBase64,
+    media_type: mediaType,
+    regles: opts.regles,
+    adaptation: opts.adaptation,
+  });
+}
+
+async function importCall(body: Record<string, unknown>): Promise<RecipeDraft> {
   const supa = getSupabase();
   if (!supa) throw new Error('Synchro non configurée.');
   const { data: sess } = await supa.auth.getSession();
   if (!sess.session) throw new Error('Connecte-toi (☁︎) pour importer une recette.');
 
-  const { data, error } = await supa.functions.invoke('generate-recipe', {
-    body: { mode: 'import', text },
-  });
+  const { data, error } = await supa.functions.invoke('generate-recipe', { body });
   if (error) {
     let detail = error.message;
     try {
