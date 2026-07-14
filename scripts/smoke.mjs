@@ -54,8 +54,12 @@ console.log('FTUE court-circuitée (méta posées + reload) ✅');
 // 0) Hub Maison (L1-2) : entrer dans la page Cuisine depuis « Ton équipe ».
 await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
 await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
-await page.getByText('Générer la semaine').waitFor({ timeout: 10000 });
-console.log('Hub Maison → Cuisine ✅');
+// F1.2 (lot Cuisine) : « Générer la semaine » n'existe plus — l'ancre de la vue
+// Menu est le bouton « Copier une semaine précédente ». + porte F1.2 : zéro « Générer ».
+await page.getByText('Copier une semaine précédente').waitFor({ timeout: 10000 });
+if (await page.getByText('Générer la semaine').count())
+  throw new Error('F1.2 : « Générer la semaine » ne doit plus exister');
+console.log('Hub Maison → Cuisine (sans « Générer ») ✅');
 
 // 0bis) F2 (Flow FTUE) : la bibliothèque démarre VIDE — le smoke installe d'abord
 // la collection « Fonds de départ » (la porte teste ainsi F2 de bout en bout au
@@ -66,8 +70,9 @@ await page.locator('.cz-sheet.show .cz-cta').waitFor({ timeout: 5000 });
 await page.locator('.cz-sheet.show .cz-cta').click(); // « Ajouter les 30 recettes »
 await page.locator('.cz-librow').first().waitFor({ timeout: 5000 }); // bibliothèque peuplée
 console.log('Collection « Fonds de départ » installée ✅');
-await page.getByRole('tab', { name: 'Semaine' }).click();
-await page.getByText('Générer la semaine').waitFor({ timeout: 5000 });
+// F1.3 : l'onglet s'appelle désormais « Menu ».
+await page.getByRole('tab', { name: 'Menu' }).click();
+await page.getByText('Copier une semaine précédente').waitFor({ timeout: 5000 });
 
 // 1) FC11/FC12 — composer le petit-déjeuner de Lundi via le composeur + sélecteur.
 const lundi = page.locator('.cz-daycard', { hasText: 'Lundi' });

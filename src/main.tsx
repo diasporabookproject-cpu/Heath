@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import Boot from './ftue/Boot';
+import './assets/fonts.css';
 import './styles.css';
 import { initSentry } from './lib/sentry';
 

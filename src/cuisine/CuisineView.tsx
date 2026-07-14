@@ -21,7 +21,9 @@ type Segment = 'semaine' | 'recettes' | 'courses';
 type Composer = { dayKey: string; mealKey: MealKey } | null;
 type Pick = { dayKey: string; mealKey: MealKey; slot: 'plat' | 'entree' | 'acc'; role: RecipeRole } | null;
 
-const SEG_LABEL: Record<Segment, string> = { semaine: 'Semaine', recettes: 'Recettes', courses: 'Courses' };
+// F1.3 (lot Cuisine) : l'onglet s'appelle « Menu » (vocabulaire verrouillé) — la clé
+// interne `semaine` ne bouge pas. « Semaines favorites » : REPORTÉ au backlog (PO 14/07).
+const SEG_LABEL: Record<Segment, string> = { semaine: 'Menu', recettes: 'Recettes', courses: 'Courses' };
 const dayNom = (key: string) => SEED_CONFIG.jours.find((j) => j.key === key)?.nom ?? '';
 
 interface Props {
@@ -145,8 +147,6 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
               setRecFilters('draft');
               switchSeg('recettes');
             }}
-            onOpenCollections={openCollections}
-            toast={toast}
           />
         ) : seg === 'recettes' ? (
           <RecettesView
