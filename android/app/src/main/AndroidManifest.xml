@@ -42,4 +42,10 @@
          app ; le Bridge Capacitor relaie la demande runtime à la 1ʳᵉ capture. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- T4b (import photo, @capacitor/camera) : CameraSource.Prompt = appareil OU
+         galerie. CAMERA requise pour « Prendre une photo » ; la galerie passe par
+         le Photo Picker Android 13+ (pas de READ_EXTERNAL_STORAGE). La demande
+         runtime est relayée par le plugin à la 1ʳᵉ prise. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>

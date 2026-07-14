@@ -3,6 +3,7 @@ import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { estimateMacros, generateRecipeDraft, importRecipeText, importRecipeImage, aiAvailable } from '../lib/ai';
 import { prepareImage, type PreparedImage } from '../lib/image';
+import { isNative, pickPhoto as pickPhotoNative } from '../lib/platform';
 import { parseRecipesJson } from '../lib/importRecipes';
 import { nextRecipeId } from '../lib/recipeId';
 import { AI_MONTHLY_LIMIT, remaining, normalizeQuota, currentMonth } from '../lib/quota';
@@ -328,10 +329,25 @@ function InstructionsForm({
   const [failNote, setFailNote] = useState('');
   const liste = reglesList(regles);
 
-  const pickPhoto = async (file: File | undefined) => {
+  // Web : le <input type=file> passe le fichier ici. Natif : ce chemin n'est
+  // jamais emprunté (le bouton appelle le prompt caméra — cf. onPickNative).
+  const onFile = async (file: File | undefined) => {
     if (!file) return;
     try {
       setPhoto(await prepareImage(file));
+      setFailNote('');
+    } catch (e) {
+      toast((e as Error).message);
+    }
+  };
+
+  // Natif (repli Q5) : prompt système « Prendre une photo » OU « Depuis la
+  // galerie » — les deux chemins que la WebView ne proposait pas.
+  const onPickNative = async () => {
+    const blob = await pickPhotoNative();
+    if (!blob) return; // annulé
+    try {
+      setPhoto(await prepareImage(blob));
       setFailNote('');
     } catch (e) {
       toast((e as Error).message);
@@ -400,24 +416,41 @@ function InstructionsForm({
         />
       </div>
       <div className="cz-block">
-        <label className="cz-photobtn">
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => void pickPhoto(e.target.files?.[0])}
-          />
-          {photo ? (
-            <>
-              <img src={URL.createObjectURL(photo.blob)} alt="" />
-              <span>
-                Photo prête ({photo.width}×{photo.height}) — appuie pour la changer
-              </span>
-            </>
-          ) : (
-            <span>📷 Ou prends la recette en photo (page de livre, capture)</span>
-          )}
-        </label>
+        {/* Natif : bouton → prompt caméra/galerie (pickPhotoNative). Web : label
+            + <input type=file> (le chooser web offre déjà les deux sur mobile). */}
+        {isNative ? (
+          <button type="button" className="cz-photobtn" onClick={() => void onPickNative()}>
+            {photo ? (
+              <>
+                <img src={URL.createObjectURL(photo.blob)} alt="" />
+                <span>
+                  Photo prête ({photo.width}×{photo.height}) — appuie pour la changer
+                </span>
+              </>
+            ) : (
+              <span>📷 Ou prends la recette en photo (page de livre, capture)</span>
+            )}
+          </button>
+        ) : (
+          <label className="cz-photobtn">
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => void onFile(e.target.files?.[0])}
+            />
+            {photo ? (
+              <>
+                <img src={URL.createObjectURL(photo.blob)} alt="" />
+                <span>
+                  Photo prête ({photo.width}×{photo.height}) — appuie pour la changer
+                </span>
+              </>
+            ) : (
+              <span>📷 Ou prends la recette en photo (page de livre, capture)</span>
+            )}
+          </label>
+        )}
         {photo && (
           <button className="cz-cta ghost" style={{ marginTop: 6 }} onClick={() => setPhoto(null)}>
             Retirer la photo
