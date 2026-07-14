@@ -6,6 +6,7 @@ import {
   type NounouDoc,
   type Recipe,
   type RecipeRole,
+  type ReglesFoyer,
   type SecuriteFiche,
   type WeekMenu,
 } from '../types';
@@ -35,6 +36,8 @@ interface MenuDB extends DBSchema {
   app: { key: string; value: AppState };
   // v8 : méta de sync par document (hash + horodatage serveur du dernier échange).
   syncmeta: { key: string; value: DocMeta };
+  // v9 : règles du foyer (lot Cuisine T3) — document unique, clé fixe 'regles'.
+  foyer: { key: string; value: ReglesFoyer };
 }
 
 /** Trace locale du dernier envoi par destinataire (état « à envoyer », L1-4). */
@@ -61,7 +64,7 @@ export interface Rappel {
 }
 
 const DB_NAME = 'menu-semaine';
-const DB_VERSION = 8;
+const DB_VERSION = 9;
 const APP_KEY = 'app';
 const SYNC_CURSOR_KEY = 'syncCursor';
 
@@ -107,6 +110,10 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
         // v8 : méta de sync par document (clé = `${store}:${docId}`, hors ligne).
         if (!db.objectStoreNames.contains('syncmeta')) {
           db.createObjectStore('syncmeta');
+        }
+        // v9 : règles du foyer (lot Cuisine T3) — document unique, clé fixe 'regles'.
+        if (!db.objectStoreNames.contains('foyer')) {
+          db.createObjectStore('foyer');
         }
       },
     });
@@ -345,6 +352,23 @@ export async function loadNounou(): Promise<NounouDoc | undefined> {
 export async function saveNounou(doc: NounouDoc): Promise<void> {
   const db = await getDB();
   await db.put('nounou', doc, NOUNOU_KEY);
+  notifyDataChanged();
+}
+
+// ── Règles du foyer (lot Cuisine T3) — document unique, clé fixe 'regles' ─────
+// Absent tant que rien n'a été posé (état vide légal, F3.1) : `collectLocalDocs`
+// ne pousse alors RIEN (pas de bruit de sync pour un foyer sans restrictions).
+
+const REGLES_KEY = 'regles';
+
+export async function loadFoyerRegles(): Promise<ReglesFoyer | undefined> {
+  const db = await getDB();
+  return (await db.get('foyer', REGLES_KEY)) as ReglesFoyer | undefined;
+}
+
+export async function saveFoyerRegles(r: ReglesFoyer): Promise<void> {
+  const db = await getDB();
+  await db.put('foyer', r, REGLES_KEY);
   notifyDataChanged();
 }
 

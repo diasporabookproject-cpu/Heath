@@ -107,18 +107,40 @@ await page.getByText('Suivi de l’équilibre').first().waitFor({ timeout: 5000 
 await page.getByText('Nombre de personnes', { exact: true }).waitFor({ timeout: 3000 }); // valeur foyer : toujours visible
 if (await page.getByText('Objectif par personne').count())
   throw new Error('F2.2 #6 : la section objectif doit être masquée quand le suivi est OFF');
-await page.locator('.cz-switch').click(); // ON
+// (T3 : la feuille porte désormais 3 interrupteurs — cibler par aria-label.)
+const suiviSwitch = page.getByRole('switch', { name: 'Suivi de l’équilibre' });
+await suiviSwitch.click(); // ON
 await page.getByText('Objectif par personne').waitFor({ timeout: 3000 });
 await page.locator('.cz-objset button').first().click(); // -50
 await page.locator('.cz-sheet.show .cz-cta').click(); // OK
 await page.locator('.cz-pill', { hasText: 'kcal/pers.' }).waitFor({ timeout: 5000 }); // ON → pastille de retour
 console.log('Suivi de l’équilibre ON → objectif réglable, pastille visible ✅');
 await page.getByLabel('Réglages Cuisine').click();
-await page.locator('.cz-switch').click(); // OFF
+await suiviSwitch.click(); // OFF
 await page.locator('.cz-sheet.show .cz-cta').click(); // OK
 await page.waitForTimeout(300);
 await assertNoKcal('retour OFF');
 console.log('Suivi de l’équilibre OFF → zéro nutrition (porte F2.2) ✅');
+
+// 2bis) T3 (F3.1/F3.2) — restrictions du foyer : pose (halal + allergie), résumé
+// G1 affiché, puis PERSISTANCE prouvée après un reload complet (IDB v9).
+await page.getByLabel('Réglages Cuisine').click();
+await page.getByText('Restrictions du foyer').waitFor({ timeout: 5000 });
+await page.getByRole('switch', { name: 'Halal' }).click();
+await page.locator('.cz-sheet.show textarea').fill('arachide');
+await page.locator('.cz-sheet.show textarea').blur();
+await page.getByText('Règles actives : halal · sans arachide').waitFor({ timeout: 3000 }); // G1
+await page.locator('.cz-sheet.show .cz-cta').click(); // OK
+await page.reload({ waitUntil: 'networkidle' });
+await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
+await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
+await page.getByText('Copier une semaine précédente').waitFor({ timeout: 10000 });
+await page.getByLabel('Réglages Cuisine').click();
+await page.getByText('Règles actives : halal · sans arachide').waitFor({ timeout: 5000 });
+const halalOn = await page.getByRole('switch', { name: 'Halal' }).getAttribute('aria-checked');
+if (halalOn !== 'true') throw new Error('T3 : halal non persisté après reload');
+await page.locator('.cz-sheet.show .cz-cta').click(); // OK
+console.log('Restrictions du foyer : posées, affichées (G1), persistées au reload ✅');
 
 // 3) FC5 — bibliothèque (rôles + favoris).
 await page.getByRole('tab', { name: 'Recettes' }).click();

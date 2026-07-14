@@ -122,6 +122,27 @@ export interface WeekMenu {
 
 export type Feu = 'vert' | 'orange' | 'rouge';
 
+// ── Règles du foyer (lot Cuisine T3, F3.1 — décision D2 : UN SEUL endroit) ────
+// Restrictions posées au niveau du FOYER (jamais par personne) : appliquées aux
+// prochains imports de recettes (T4/F4.4) et signalées sur la page reçue
+// (T5/F5.5). Document unique synchronisé via `docs` (store 'foyer', façon
+// nounou) — LWW par document, lisible hors-ligne. La fiche enfant Nounou ne
+// bouge pas (passerelle parquée, D2).
+export interface ReglesFoyer {
+  /** Allergies / interdits libres (une entrée par ligne à la saisie). */
+  allergies: string[];
+  halal: boolean;
+  /** Régime du foyer (extensible) — 'végétarien' pour l'instant, null sinon. */
+  regime: string | null;
+}
+
+export const EMPTY_REGLES: ReglesFoyer = { allergies: [], halal: false, regime: null };
+
+/** Y a-t-il au moins une restriction posée ? (état vide = légal, F3.1) */
+export function reglesActives(r: ReglesFoyer): boolean {
+  return r.allergies.length > 0 || r.halal || r.regime !== null;
+}
+
 /** Destinataire d'un brief (personnel de maison). Concept transverse réutilisable. */
 export interface Destinataire {
   id: string;

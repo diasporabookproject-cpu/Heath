@@ -1,15 +1,17 @@
 import { create } from 'zustand';
-import type { AccRef, CuisineSettings, MealKey, Recipe, WeekMenu } from '../types';
-import { DEFAULT_SETTINGS } from '../types';
+import type { AccRef, CuisineSettings, MealKey, Recipe, ReglesFoyer, WeekMenu } from '../types';
+import { DEFAULT_SETTINGS, EMPTY_REGLES } from '../types';
 import { SEED_CONFIG } from '../data';
 import {
   ensureSeeded,
   loadApp,
+  loadFoyerRegles,
   loadRecipes,
   loadSettings,
   loadSuiviEquilibre,
   loadWeek,
   saveApp,
+  saveFoyerRegles,
   saveRecipe,
   saveSettings,
   saveSuiviEquilibre,
@@ -56,6 +58,9 @@ interface State {
    * nutrition (11 surfaces, F2.2). OFF par défaut ; préférence d'appareil
    * (méta IDB), jamais synchronisée. Le CALCUL, lui, tourne toujours. */
   suivi: boolean;
+  /** T3 (F3.1) — règles du foyer (allergies, halal, régime). EMPTY_REGLES tant
+   * que rien n'est posé (le doc IDB n'existe alors pas → rien ne se synchronise). */
+  regles: ReglesFoyer;
   app: AppState;
   init: () => Promise<void>;
   /** Recharge les données depuis IndexedDB (après un pull de sync), sans reset de nav. */
@@ -72,6 +77,7 @@ interface State {
   setObjective: (n: number) => void;
   setPersons: (n: number) => void;
   setSuivi: (v: boolean) => void;
+  setRegles: (r: ReglesFoyer) => void;
   upsertRecipe: (recipe: Recipe) => void;
   setStatut: (id: string, statut: Recipe['statut']) => void;
   validateRecipe: (id: string) => void;
@@ -85,33 +91,36 @@ export const useStore = create<State>((set, get) => ({
   weekOffset: 0,
   settings: DEFAULT_SETTINGS,
   suivi: false,
+  regles: EMPTY_REGLES,
   app: {},
 
   async init() {
     await ensureSeeded();
-    const [recipes, week, settings, suivi, loadedApp] = await Promise.all([
+    const [recipes, week, settings, suivi, regles, loadedApp] = await Promise.all([
       loadRecipes(),
       weekFor(weekId(0)),
       loadSettings(),
       loadSuiviEquilibre(),
+      loadFoyerRegles(),
       loadApp(),
     ]);
     // Normalise le quota IA pour le mois courant (reset au changement de mois).
     const aiQuota = normalizeQuota(loadedApp.aiQuota, currentMonth());
     const app: AppState = { ...loadedApp, aiQuota };
     if (loadedApp.aiQuota?.month !== aiQuota.month) void saveApp(app);
-    set({ recipes, week, weekOffset: 0, settings, suivi, app, ready: true });
+    set({ recipes, week, weekOffset: 0, settings, suivi, regles: regles ?? EMPTY_REGLES, app, ready: true });
   },
 
   async refresh() {
-    const [recipes, week, settings, loadedApp] = await Promise.all([
+    const [recipes, week, settings, regles, loadedApp] = await Promise.all([
       loadRecipes(),
       weekFor(weekId(get().weekOffset)),
       loadSettings(),
+      loadFoyerRegles(),
       loadApp(),
     ]);
     const aiQuota = normalizeQuota(loadedApp.aiQuota, currentMonth());
-    set({ recipes, week, settings, app: { ...loadedApp, aiQuota } });
+    set({ recipes, week, settings, regles: regles ?? EMPTY_REGLES, app: { ...loadedApp, aiQuota } });
   },
 
   consumeAi() {
@@ -195,6 +204,11 @@ export const useStore = create<State>((set, get) => ({
   setSuivi(v) {
     void saveSuiviEquilibre(v);
     set({ suivi: v });
+  },
+
+  setRegles(r) {
+    void saveFoyerRegles(r);
+    set({ regles: r });
   },
 
   upsertRecipe(recipe) {

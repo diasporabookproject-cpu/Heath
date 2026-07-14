@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
+import { reglesActives } from '../types';
 import { IconClock } from './icons';
+
+/** Une allergie par ligne à la saisie ↔ liste propre dans le modèle. */
+const parseAllergies = (text: string): string[] =>
+  text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
 
 /**
  * Réglages Cuisine (ex-ObjectiveSheet, FC13) — la maison des réglages ⚙.
@@ -9,16 +17,36 @@ import { IconClock } from './icons';
  * l'affichage nutrition (F2.2). Cas limite gravé : OFF cache la pastille
  * d'en-tête ET la section objectif ici-même ; le nombre de personnes, valeur
  * du foyer (courses ×personnes), reste toujours accessible.
- * (F3.2, T3, ajoutera « Restrictions du foyer » dans cette même feuille.)
+ *
+ * F3.2 (T3) — « Restrictions du foyer » vit ICI et SEULEMENT ici (D2 verrouillé) :
+ * allergies en champ libre (une par ligne — on ne peut pas énumérer toutes les
+ * restrictions, décision Volet C) + bascules courantes (halal, végétarien).
+ * G1 : ce qui est posé est toujours affiché ici, confirmable et modifiable.
+ * Retirer une restriction n'altère pas les recettes passées (pas de
+ * rétro-réécriture) — elle vaut pour les prochains imports (F4.4).
  */
 export default function ReglagesSheet({ onClose }: { onClose: () => void }) {
   const settings = useStore((s) => s.settings);
   const suivi = useStore((s) => s.suivi);
+  const regles = useStore((s) => s.regles);
   const setSuivi = useStore((s) => s.setSuivi);
+  const setRegles = useStore((s) => s.setRegles);
   const setObjective = useStore((s) => s.setObjective);
   const setPersons = useStore((s) => s.setPersons);
   const [shown, setShown] = useState(false);
+  // Saisie libre locale ; persistée à la sortie du champ et au OK (jamais de
+  // doc créé si rien n'a changé — un foyer sans restrictions ne synchronise rien).
+  const [allergiesText, setAllergiesText] = useState(regles.allergies.join('\n'));
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
+
+  const commitAllergies = () => {
+    const next = parseAllergies(allergiesText);
+    if (next.join('\n') !== regles.allergies.join('\n')) setRegles({ ...regles, allergies: next });
+  };
+  const close = () => {
+    commitAllergies();
+    onClose();
+  };
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setShown(true));
@@ -27,7 +55,7 @@ export default function ReglagesSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <div className={'cz-overlay' + (shown ? ' show' : '')} onClick={onClose} />
+      <div className={'cz-overlay' + (shown ? ' show' : '')} onClick={close} />
       <div className={'cz-sheet' + (shown ? ' show' : '')} role="dialog" aria-modal="true">
         <div className="cz-handle" />
         <div className="cz-sheethead">
@@ -35,7 +63,7 @@ export default function ReglagesSheet({ onClose }: { onClose: () => void }) {
             Réglages
             <small>Cuisine</small>
           </div>
-          <button className="cz-x" onClick={onClose} aria-label="Fermer">
+          <button className="cz-x" onClick={close} aria-label="Fermer">
             ✕
           </button>
         </div>
@@ -107,7 +135,70 @@ export default function ReglagesSheet({ onClose }: { onClose: () => void }) {
             )}
           </div>
 
-          <button className="cz-cta" onClick={onClose}>
+          {/* F3.2 — Restrictions du foyer : LE seul endroit (D2). */}
+          <div className="cz-blab" style={{ marginTop: 22 }}>
+            Restrictions du foyer
+          </div>
+          <p className="cz-sethint" style={{ margin: '0 2px 10px' }}>
+            Ce que ta maison ne mange pas — posé une fois, pour tout le monde. Les prochaines
+            recettes importées s’y adapteront, et rien ne s’appliquera sans te l’afficher.
+          </p>
+          <div className="cz-setrow">
+            <div className="cz-settxt">
+              <div className="cz-blab" style={{ margin: 0 }}>
+                Halal
+              </div>
+            </div>
+            <button
+              className={'cz-switch' + (regles.halal ? ' on' : '')}
+              role="switch"
+              aria-checked={regles.halal}
+              aria-label="Halal"
+              onClick={() => setRegles({ ...regles, halal: !regles.halal })}
+            />
+          </div>
+          <div className="cz-setrow" style={{ marginTop: 8 }}>
+            <div className="cz-settxt">
+              <div className="cz-blab" style={{ margin: 0 }}>
+                Végétarien
+              </div>
+            </div>
+            <button
+              className={'cz-switch' + (regles.regime === 'végétarien' ? ' on' : '')}
+              role="switch"
+              aria-checked={regles.regime === 'végétarien'}
+              aria-label="Végétarien"
+              onClick={() =>
+                setRegles({ ...regles, regime: regles.regime === 'végétarien' ? null : 'végétarien' })
+              }
+            />
+          </div>
+          <div className="cz-block" style={{ marginTop: 10 }}>
+            <div className="cz-blab">Allergies et interdits (une par ligne)</div>
+            <textarea
+              className="cz-ta"
+              rows={3}
+              value={allergiesText}
+              onChange={(e) => setAllergiesText(e.target.value)}
+              onBlur={commitAllergies}
+              placeholder={'arachide\nfruits de mer'}
+            />
+          </div>
+          {reglesActives(regles) && (
+            <div className="cz-estnote" style={{ marginTop: 2 }}>
+              <IconClock size={13} />
+              Règles actives :{' '}
+              {[
+                regles.halal ? 'halal' : null,
+                regles.regime,
+                ...regles.allergies.map((a) => `sans ${a}`),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </div>
+          )}
+
+          <button className="cz-cta" onClick={close}>
             OK
           </button>
         </div>
