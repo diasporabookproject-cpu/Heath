@@ -6,7 +6,8 @@ import { prochainsCreneaux, type Creneau } from '../lib/creneaux';
 import type { MealKey, Recipe } from '../types';
 import { IconChevR } from './icons';
 
-const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit-déj', dej: 'Déjeuner', diner: 'Dîner' };
+// F7.2 : Matin / Midi / Soir (libellés seuls — clés du modèle inchangées).
+const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Matin', dej: 'Midi', diner: 'Soir' };
 
 /**
  * F6.1 (D1) — « Pour quel repas ? » : le DÉFAUT (prochain repas compatible,

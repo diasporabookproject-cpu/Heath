@@ -4,7 +4,7 @@ import { SEED_CONFIG } from '../data';
 import { loadAudioKeys } from '../lib/db';
 import type { AccRef, MealKey, RecipeRole } from '../types';
 import CoursesCuisine from './CoursesCuisine';
-import SemaineView from './SemaineView';
+import SemaineView, { type Horizon } from './SemaineView';
 import RecettesView from './RecettesView';
 import MealComposerSheet from './MealComposerSheet';
 import RecipePickerSheet from './RecipePickerSheet';
@@ -48,6 +48,10 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const navWeek = useStore((s) => s.navWeek);
 
   const [seg, setSeg] = useState<Segment>('semaine');
+  // F7.2 — horizon du Menu, DÉFAUT DEMAIN à l'ouverture (le briefing de la
+  // cuisinière se prépare la veille — même si aujourd'hui est en cours).
+  const [horizon, setHorizon] = useState<Horizon>('demain');
+  const weekOffset = useStore((s) => s.weekOffset);
   const [composer, setComposer] = useState<Composer>(null);
   const [pick, setPick] = useState<Pick>(null);
   const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);
@@ -96,6 +100,17 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const switchSeg = (s: Segment) => {
     setSeg(s);
     window.scrollTo({ top: 0 });
+  };
+
+  // F7.2 — changer d'horizon recale la semaine chargée : les vues jour parlent
+  // du VRAI aujourd'hui/demain (dimanche soir : « Demain » = lundi suivant).
+  const changeHorizon = (h: Horizon) => {
+    setHorizon(h);
+    if (h === 'aujourdhui' && weekOffset !== 0) void navWeek(-weekOffset);
+    if (h === 'demain') {
+      const target = (new Date().getDay() + 6) % 7 === 6 ? 1 : 0;
+      if (weekOffset !== target) void navWeek(target - weekOffset);
+    }
   };
 
   // F6.1 (D1) — Partager depuis la fiche : ajout au menu PUIS partage, jamais
@@ -155,6 +170,8 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
               className="cz-headicon"
               onClick={() => {
                 setShareToken(undefined);
+                // F6.2 branché sur l'horizon (T7) : la portée du digest suit la vue.
+                setShareScope(seg === 'semaine' ? { scope: horizon } : null);
                 setSharing(true);
               }}
               aria-label="Partager le menu"
@@ -173,25 +190,23 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             )}
           </div>
         </div>
-        <div className="cz-segmented" role="tablist">
-          {(['semaine', 'recettes', 'courses'] as Segment[]).map((s) => (
-            <button key={s} className="cz-seg" role="tab" aria-selected={seg === s} onClick={() => switchSeg(s)}>
-              {SEG_LABEL[s]}
-            </button>
-          ))}
-        </div>
       </header>
+      {/* F7.2 — la navigation vit au FOOTER (une seule barre, fond blanc,
+          bordure + ombre, actif = pastille foncée). L'en-tête n'a plus d'onglets. */}
 
       <div className="cz-content">
         {seg === 'semaine' ? (
           <SemaineView
             voiceIds={voiceIds}
+            horizon={horizon}
+            onHorizon={changeHorizon}
             onOpenMeal={(dayKey, mealKey) => setComposer({ dayKey, mealKey })}
             onCopyWeek={() => setCopyOpen(true)}
             onGoValidate={() => {
               setRecFilters('draft');
               switchSeg('recettes');
             }}
+            toast={toast}
           />
         ) : seg === 'recettes' ? (
           <RecettesView
@@ -318,6 +333,15 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
           onClose={() => setShareFiche(null)}
         />
       )}
+
+      {/* F7.2 — LA barre (unique) : Menu · Recettes · Courses, actif = pastille foncée. */}
+      <nav className="cz-footbar" role="tablist" aria-label="Navigation Cuisine">
+        {(['semaine', 'recettes', 'courses'] as Segment[]).map((s) => (
+          <button key={s} className="cz-fbtn" role="tab" aria-selected={seg === s} onClick={() => switchSeg(s)}>
+            {SEG_LABEL[s]}
+          </button>
+        ))}
+      </nav>
 
       <div className={'cz-toast' + (toastMsg ? ' show' : '')}>
         {toastMsg && <IconCheck size={16} />}

@@ -9,11 +9,13 @@ import {
   objectiveStatus,
   weekAverage,
 } from '../lib/nutrition';
-import type { MealKey, Recipe } from '../types';
+import type { DayMenu, MealKey, Recipe } from '../types';
 import { weekDatesOffset, weekSub, dayLabel } from './dates';
 import { IconChevL, IconChevR, IconStar, IconPlus, IconCopy } from './icons';
 
-const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit-déj', dej: 'Déjeuner', diner: 'Dîner' };
+// F7.2 : repas = Matin / Midi / Soir (libellés seuls — les clés du modèle,
+// du digest et de la projection ne bougent pas : compat totale).
+const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Matin', dej: 'Midi', diner: 'Soir' };
 const MEAL_KEYS: MealKey[] = ['petitdej', 'dej', 'diner'];
 const fmt = (n: number) => Math.round(n).toLocaleString('fr-FR');
 
@@ -22,20 +24,33 @@ const fmt = (n: number) => Math.round(n).toLocaleString('fr-FR');
 // collection), qui ne servait que ce bouton, meurt avec lui (réconcilié avec le
 // rapport Q&A 338abfb au read-back). Le rail Collections reste la voie d'entrée.
 
+/** F7.2 — horizon du Menu : pas-à-pas DANS le contenu (jamais une 2ᵉ barre). */
+export type Horizon = 'aujourdhui' | 'demain' | 'semaine';
+
+const HORIZONS: { key: Horizon; label: string }[] = [
+  { key: 'aujourdhui', label: 'Aujourd’hui' },
+  { key: 'demain', label: 'Demain' },
+  { key: 'semaine', label: 'Semaine' },
+];
+
 interface Props {
   voiceIds: Set<string>;
+  horizon: Horizon;
+  onHorizon: (h: Horizon) => void;
   onOpenMeal: (dayKey: string, meal: MealKey) => void;
   onCopyWeek: () => void;
   onGoValidate: () => void;
+  toast: (m: string) => void;
 }
 
-export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate }: Props) {
+export default function SemaineView({ horizon, onHorizon, onOpenMeal, onCopyWeek, onGoValidate, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const weekOffset = useStore((s) => s.weekOffset);
   const navWeek = useStore((s) => s.navWeek);
   const objective = useStore((s) => s.settings.objective);
   const suivi = useStore((s) => s.suivi); // F2.2 : gouverne TOUT l'affichage nutrition
+  const copyDayInto = useStore((s) => s.copyDayInto);
 
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
   const dates = useMemo(() => weekDatesOffset(weekOffset), [weekOffset]);
@@ -60,127 +75,189 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate }: Pr
   const avgStatus = objectiveStatus(avg.kcal, objective);
   const avgPct = Math.min(100, Math.round((avg.kcal / (objective || 1)) * 100));
 
+  // Vue JOUR : l'index du jour affiché (le passage de semaine — dimanche soir →
+  // lundi suivant — est géré par CuisineView via weekOffset au changement d'horizon).
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const dayIdx = horizon === 'aujourdhui' ? todayIdx : (todayIdx + 1) % 7;
+
+  // F7.2 (amendement ① + Q4) : « Copier la journée précédente » = le DERNIER jour
+  // non vide avant le jour affiché (dans la semaine affichée) ; cible non vide →
+  // confirmation explicite, jamais d'écrasement silencieux.
+  const copyDay = () => {
+    const targetKey = SEED_CONFIG.jours[dayIdx].key;
+    let src: { key: string; nom: string; day: DayMenu } | null = null;
+    for (let i = dayIdx - 1; i >= 0; i--) {
+      const j = SEED_CONFIG.jours[i];
+      if (dayHasAny(week.days[j.key])) {
+        src = { key: j.key, nom: j.nom, day: week.days[j.key] };
+        break;
+      }
+    }
+    if (!src) {
+      toast('Rien à copier pour l’instant — compose ton premier repas');
+      return;
+    }
+    if (dayHasAny(week.days[targetKey]) && !window.confirm('Ce jour a déjà des repas — les remplacer ?')) {
+      return;
+    }
+    copyDayInto(targetKey, src.day);
+    toast(`Journée copiée depuis ${src.nom}`);
+  };
+
+  const dayCard = (i: number) => {
+    const jour = SEED_CONFIG.jours[i];
+    const day = week.days[jour.key];
+    const hasAny = dayHasAny(day);
+    const dk = dayMacros(day, byId).kcal;
+    const status = objectiveStatus(dk, objective);
+    const pct = Math.min(100, Math.round((dk / (objective || 1)) * 100));
+    return (
+      <div className="cz-daycard" key={jour.key}>
+        <div className="cz-dayhead">
+          <span className="cz-dayname">{jour.nom}</span>
+          <span className="cz-daydate">{dayLabel(dates[i])}</span>
+        </div>
+
+        {MEAL_KEYS.map((k) => (
+          <MealRow
+            key={k}
+            label={MEAL_LABEL[k]}
+            meal={day[k]}
+            mealKey={k}
+            byId={byId}
+            suivi={suivi}
+            onClick={() => onOpenMeal(jour.key, k)}
+          />
+        ))}
+
+        {/* F2.2 : jauge du jour + bandeau « équilibre » (#8) = nutrition, sous le flag. */}
+        {suivi &&
+          (hasAny ? (
+            <div className="cz-gauge">
+              <div className="cz-gtrack">
+                <div className={'cz-gfill ' + status.cls} style={{ width: pct + '%' }} />
+                <div className="cz-gtick" style={{ left: '100%' }} />
+              </div>
+              <div className="cz-gmeta">
+                <span className="cz-gk">{fmt(dk)} kcal</span>
+                <span className={'cz-gstatus ' + status.cls}>{status.word}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="cz-gincomplete">Ajoute au moins un repas pour voir l’équilibre.</div>
+          ))}
+      </div>
+    );
+  };
+
   return (
     <div>
-      <div className="cz-weeknav">
-        <button className="cz-navchev" aria-label="Précédente" onClick={() => void navWeek(-1)}>
-          <IconChevL size={16} />
-        </button>
-        {/* F1.3 : titre de vue = « menu de la semaine » (vocabulaire verrouillé) ; la date reste. */}
-        <span className="cz-wk">
-          Menu de la semaine
-          <small>
-            du {dayLabel(dates[0])} · {weekSub(weekOffset)}
-          </small>
-        </span>
-        <button className="cz-navchev" aria-label="Suivante" onClick={() => void navWeek(1)}>
-          <IconChevR size={16} />
-        </button>
+      {/* F7.2 — l'horizon vit DANS le contenu (interdit : deux barres empilées).
+          Défaut à l'ouverture : Demain (posé par CuisineView). */}
+      <div className="cz-horizon" role="group" aria-label="Horizon du menu">
+        {HORIZONS.map((h) => (
+          <button key={h.key} className="cz-hbtn" aria-pressed={horizon === h.key} onClick={() => onHorizon(h.key)}>
+            {h.label}
+          </button>
+        ))}
       </div>
 
-      {/* F2.2 #10 : le résumé nutritionnel (moyenne/jour + jauge) n'existe que si le
-          suivi est ON. OFF : seul le guidage d'état vide (pas un chiffre) subsiste. */}
-      {(suivi || avg.count === 0) && (
-        <div className="cz-pad">
-          <div className="cz-summary">
-            {avg.count === 0 ? (
-              <>
-                <div className="cz-slab">Cette semaine</div>
-                {suivi && <div className="cz-sval">—</div>}
-                <div className="cz-sempty">Semaine vide — compose tes repas ou copie une semaine.</div>
-              </>
-            ) : (
-              <>
-                <div className="cz-sumtop">
-                  <div>
-                    <div className="cz-slab">Moyenne / jour</div>
-                    <div className="cz-sval">
-                      {fmt(avg.kcal)}
-                      <small>kcal · obj. {fmt(objective)}</small>
-                    </div>
-                  </div>
-                  <div className="cz-sprot">
-                    {avg.prot} g<small>protéines</small>
-                  </div>
-                </div>
-                <div className="cz-sgauge">
-                  <div
-                    className="cz-sgfill"
-                    style={{
-                      width: avgPct + '%',
-                      background: avgStatus.cls === 'ok' ? '#7BD3A0' : avgStatus.cls === 'warn' ? '#F4B860' : '#F0897A',
-                    }}
-                  />
-                </div>
-              </>
-            )}
+      {horizon === 'semaine' ? (
+        <>
+          <div className="cz-weeknav">
+            <button className="cz-navchev" aria-label="Précédente" onClick={() => void navWeek(-1)}>
+              <IconChevL size={16} />
+            </button>
+            {/* F1.3 : titre de vue = « menu de la semaine » (vocabulaire verrouillé) ; la date reste. */}
+            <span className="cz-wk">
+              Menu de la semaine
+              <small>
+                du {dayLabel(dates[0])} · {weekSub(weekOffset)}
+              </small>
+            </span>
+            <button className="cz-navchev" aria-label="Suivante" onClick={() => void navWeek(1)}>
+              <IconChevR size={16} />
+            </button>
           </div>
-        </div>
-      )}
 
-      <button className="cz-subgen" onClick={onCopyWeek}>
-        <IconCopy size={15} />
-        Copier une semaine précédente
-      </button>
-
-      {toValidate > 0 && (
-        <button className="cz-vbanner" onClick={onGoValidate}>
-          <span className="cz-vi">
-            <IconStar size={18} />
-          </span>
-          <span className="cz-vt">
-            {toValidate} recette{toValidate > 1 ? 's' : ''} à valider dans cette semaine
-          </span>
-          <IconChevR size={16} />
-        </button>
-      )}
-
-      <div className="cz-days">
-        {SEED_CONFIG.jours.map((jour, i) => {
-          const day = week.days[jour.key];
-          const hasAny = dayHasAny(day);
-          const dk = dayMacros(day, byId).kcal;
-          const status = objectiveStatus(dk, objective);
-          const pct = Math.min(100, Math.round((dk / (objective || 1)) * 100));
-          return (
-            <div className="cz-daycard" key={jour.key}>
-              <div className="cz-dayhead">
-                <span className="cz-dayname">{jour.nom}</span>
-                <span className="cz-daydate">{dayLabel(dates[i])}</span>
-              </div>
-
-              {MEAL_KEYS.map((k) => (
-                <MealRow
-                  key={k}
-                  label={MEAL_LABEL[k]}
-                  meal={day[k]}
-                  mealKey={k}
-                  byId={byId}
-                  suivi={suivi}
-                  onClick={() => onOpenMeal(jour.key, k)}
-                />
-              ))}
-
-              {/* F2.2 : jauge du jour + bandeau « équilibre » (#8) = nutrition, sous le flag. */}
-              {suivi &&
-                (hasAny ? (
-                  <div className="cz-gauge">
-                    <div className="cz-gtrack">
-                      <div className={'cz-gfill ' + status.cls} style={{ width: pct + '%' }} />
-                      <div className="cz-gtick" style={{ left: '100%' }} />
-                    </div>
-                    <div className="cz-gmeta">
-                      <span className="cz-gk">{fmt(dk)} kcal</span>
-                      <span className={'cz-gstatus ' + status.cls}>{status.word}</span>
-                    </div>
-                  </div>
+          {/* F2.2 #10 : le résumé nutritionnel n'existe que si le suivi est ON. */}
+          {(suivi || avg.count === 0) && (
+            <div className="cz-pad">
+              <div className="cz-summary">
+                {avg.count === 0 ? (
+                  <>
+                    <div className="cz-slab">Cette semaine</div>
+                    {suivi && <div className="cz-sval">—</div>}
+                    <div className="cz-sempty">Semaine vide — compose tes repas ou copie une semaine.</div>
+                  </>
                 ) : (
-                  <div className="cz-gincomplete">Ajoute au moins un repas pour voir l’équilibre.</div>
-                ))}
+                  <>
+                    <div className="cz-sumtop">
+                      <div>
+                        <div className="cz-slab">Moyenne / jour</div>
+                        <div className="cz-sval">
+                          {fmt(avg.kcal)}
+                          <small>kcal · obj. {fmt(objective)}</small>
+                        </div>
+                      </div>
+                      <div className="cz-sprot">
+                        {avg.prot} g<small>protéines</small>
+                      </div>
+                    </div>
+                    <div className="cz-sgauge">
+                      <div
+                        className="cz-sgfill"
+                        style={{
+                          width: avgPct + '%',
+                          background:
+                            avgStatus.cls === 'ok' ? '#7BD3A0' : avgStatus.cls === 'warn' ? '#F4B860' : '#F0897A',
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-          );
-        })}
-      </div>
+          )}
+
+          <button className="cz-subgen" onClick={onCopyWeek}>
+            <IconCopy size={15} />
+            Copier une semaine précédente
+          </button>
+
+          {toValidate > 0 && (
+            <button className="cz-vbanner" onClick={onGoValidate}>
+              <span className="cz-vi">
+                <IconStar size={18} />
+              </span>
+              <span className="cz-vt">
+                {toValidate} recette{toValidate > 1 ? 's' : ''} à valider dans cette semaine
+              </span>
+              <IconChevR size={16} />
+            </button>
+          )}
+
+          <div className="cz-days">{SEED_CONFIG.jours.map((_, i) => dayCard(i))}</div>
+        </>
+      ) : (
+        <>
+          {/* F1.3 : titre de vue jour = « menu du jour ». État vide = composer
+              (les rangées « Ajouter » de la carte) + Copier — sans « Générer ». */}
+          <div className="cz-weeknav">
+            <span className="cz-wk">
+              Menu du jour
+              <small>
+                {horizon === 'aujourdhui' ? 'aujourd’hui' : 'demain'} · {dayLabel(dates[dayIdx])}
+              </small>
+            </span>
+          </div>
+          <div className="cz-days">{dayCard(dayIdx)}</div>
+          <button className="cz-subgen" onClick={copyDay}>
+            <IconCopy size={15} />
+            Copier la journée précédente
+          </button>
+        </>
+      )}
     </div>
   );
 }

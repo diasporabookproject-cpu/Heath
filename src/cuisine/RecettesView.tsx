@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { ROLE_LABEL, type Recipe } from '../types';
 import { cleanText } from '../lib/sanitize';
+import { recipeEmoji } from '../lib/emoji';
 import { PACKS } from '../data/packs';
 import { isPackInstalled } from '../lib/packs';
 import { IconSearch, IconMic, IconFav } from './icons';
@@ -41,6 +42,33 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
 
   // File de relecture (L3-3) : périmètre = tous les brouillons `Test`.
   const draftCount = useMemo(() => recipes.filter((r) => r.statut === 'Test').length, [recipes]);
+
+  // F7.1 — bibliothèque « pauvre » (seuil = 12, tranché PO, ≤ inclus) : le rail
+  // Collections passe EN TÊTE ; « riche » : il se replie en une ligne en bas.
+  const nbVisibles = useMemo(() => recipes.filter((r) => r.statut !== 'Écarté').length, [recipes]);
+  const pauvre = nbVisibles <= 12;
+
+  const rail = (
+    <>
+      <div className="cz-collab">Collections — à copier, puis à toi</div>
+      <div className="cz-rail">
+        {PACKS.map((p) => {
+          const installed = isPackInstalled(p, recipes);
+          return (
+            <button key={p.id} className="cz-pkt" onClick={() => onOpenCollections(p.id)}>
+              {!installed && <span className="cz-newb">NOUVEAU</span>}
+              <span className="cz-cov">{p.emoji}</span>
+              <h5>{p.nom}</h5>
+              <i>{p.recettes.length} RECETTES</i>
+            </button>
+          );
+        })}
+        <button className="cz-pkt more" onClick={() => onOpenCollections()}>
+          Tout voir →
+        </button>
+      </div>
+    </>
+  );
 
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -92,6 +120,8 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
         ))}
       </div>
 
+      {pauvre && rail}
+
       {draftCount > 0 && (
         <div className="cz-pad" style={{ paddingTop: 8, paddingBottom: 0 }}>
           <button className="cz-sigrow" onClick={() => setRelire({})}>
@@ -130,6 +160,8 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
                   >
                     <IconFav size={16} filled={r.fav} />
                   </span>
+                  {/* F7.1 — repère emoji : mot-clé → repli rôle, jamais choisi à la main. */}
+                  <span className="cz-remoji">{recipeEmoji(r)}</span>
                   <span className="nm clamp2" style={{ flex: 1, fontWeight: 600 }}>
                     {cleanText(r.nom)}
                   </span>
@@ -153,24 +185,12 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
         )}
       </div>
 
-      {/* Collections (L3-4) — l'anti-page-blanche : des packs à copier chez soi. */}
-      <div className="cz-collab">Collections — à copier, puis à toi</div>
-      <div className="cz-rail">
-        {PACKS.map((p) => {
-          const installed = isPackInstalled(p, recipes);
-          return (
-            <button key={p.id} className="cz-pkt" onClick={() => onOpenCollections(p.id)}>
-              {!installed && <span className="cz-newb">NOUVEAU</span>}
-              <span className="cz-cov">{p.emoji}</span>
-              <h5>{p.nom}</h5>
-              <i>{p.recettes.length} RECETTES</i>
-            </button>
-          );
-        })}
-        <button className="cz-pkt more" onClick={() => onOpenCollections()}>
-          Tout voir →
+      {/* F7.1 — bibliothèque riche : le rail se REPLIE en une ligne discrète en bas. */}
+      {!pauvre && (
+        <button className="cz-collline" onClick={() => onOpenCollections()}>
+          ＋ Ajouter des recettes · Collections ›
         </button>
-      </div>
+      )}
 
       {relire && (
         <RelectureSheet

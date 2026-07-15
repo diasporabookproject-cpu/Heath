@@ -1,0 +1,40 @@
+import type { Recipe, RecipeRole } from '../types';
+
+// F7.1 (lot Cuisine T7) — repère EMOJI des cartes recette : mapping DÉTERMINISTE
+// mot-clé → repli rôle. Jamais choisi à la main (règle du brief) : la même
+// recette porte toujours le même repère, sur tous les appareils.
+
+const MOTS: [RegExp, string][] = [
+  [/tajine|tagine/, '🍲'],
+  [/soupe|harira|potage|bouillon/, '🍜'],
+  [/poulet|dinde|volaille/, '🍗'],
+  [/poisson|dorade|sardine|saumon|lotte|crevette|mer\b/, '🐟'],
+  [/bœuf|boeuf|kefta|kefta|viande|agneau|brochette/, '🥩'],
+  [/salade|crudité/, '🥗'],
+  [/œuf|oeuf|omelette|frittata|chakchouka/, '🍳'],
+  [/riz|semoule|couscous|pâtes|pates/, '🍚'],
+  [/pain|msemmen|batbout|sandwich|galette/, '🥖'],
+  [/yaourt|fromage|laitage|creami|whey/, '🥛'],
+  [/fruit|pomme|banane|fraise|orange/, '🍓'],
+  [/légume|legume|courgette|carotte|épinard|epinard|brocoli/, '🥦'],
+  [/gâteau|gateau|dessert|halva|chocolat/, '🍰'],
+  [/jus|thé|the\b|café|cafe|smoothie/, '🥤'],
+];
+
+const PAR_ROLE: Record<RecipeRole, string> = {
+  petitdej: '🍳',
+  entree: '🥗',
+  plat: '🍽️',
+  acc: '🍚',
+  dessert: '🍰',
+  soupe: '🍜',
+  gouter: '🍪',
+  boisson: '🥤',
+};
+
+/** Repère de la carte : premier mot-clé du NOM qui matche, sinon le rôle. */
+export function recipeEmoji(r: Pick<Recipe, 'nom' | 'role'>): string {
+  const nom = r.nom.toLowerCase();
+  for (const [re, e] of MOTS) if (re.test(nom)) return e;
+  return PAR_ROLE[r.role] ?? '🍽️';
+}

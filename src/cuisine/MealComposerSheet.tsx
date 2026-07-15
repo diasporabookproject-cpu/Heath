@@ -5,7 +5,8 @@ import { mealMacros, componentMacros } from '../lib/nutrition';
 import type { MealKey, Recipe, RecipeRole } from '../types';
 import { IconPlus, IconClose, IconClock } from './icons';
 
-const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit-déj', dej: 'Déjeuner', diner: 'Dîner' };
+// F7.2 : Matin / Midi / Soir (libellés seuls — clés du modèle inchangées).
+const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Matin', dej: 'Midi', diner: 'Soir' };
 type Slot = 'plat' | 'entree' | 'acc';
 
 interface Props {

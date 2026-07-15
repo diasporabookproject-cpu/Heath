@@ -56,7 +56,18 @@ await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
 await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
 // F1.2 (lot Cuisine) : « Générer la semaine » n'existe plus — l'ancre de la vue
 // Menu est le bouton « Copier une semaine précédente ». + porte F1.2 : zéro « Générer ».
-await page.getByText('Copier une semaine précédente').waitFor({ timeout: 10000 });
+// T7/F7.2 — portes structurelles : DÉFAUT = DEMAIN (vue jour), UNE seule barre
+// (l'en-tête n'a plus d'onglets, la nav vit au footer).
+await page.getByText('Menu du jour').waitFor({ timeout: 10000 });
+const demainOn = await page.locator('.cz-hbtn', { hasText: 'Demain' }).getAttribute('aria-pressed');
+if (demainOn !== 'true') throw new Error('F7.2 : le défaut doit être Demain');
+if (await page.locator('.cz-head [role="tab"]').count())
+  throw new Error('F7.2 : l’en-tête ne doit plus porter d’onglets (une seule barre)');
+await page.locator('.cz-footbar').waitFor({ timeout: 3000 });
+console.log('F7.2 : défaut Demain, une seule barre (footer) ✅');
+// bascule Semaine pour dérouler le parcours historique
+await page.locator('.cz-hbtn', { hasText: 'Semaine' }).click();
+await page.getByText('Copier une semaine précédente').waitFor({ timeout: 5000 });
 if (await page.getByText('Générer la semaine').count())
   throw new Error('F1.2 : « Générer la semaine » ne doit plus exister');
 console.log('Hub Maison → Cuisine (sans « Générer ») ✅');
@@ -78,8 +89,16 @@ await page.locator('.cz-sheet.show .cz-cta').waitFor({ timeout: 5000 });
 await page.locator('.cz-sheet.show .cz-cta').click(); // « Ajouter les 30 recettes »
 await page.locator('.cz-librow').first().waitFor({ timeout: 5000 }); // bibliothèque peuplée
 console.log('Collection « Fonds de départ » installée ✅');
+// T7/F7.1 — biblio RICHE (>12) : le rail se replie en ligne ; repère emoji posé.
+await page.locator('.cz-collline').waitFor({ timeout: 3000 });
+if (await page.locator('.cz-rail').count())
+  throw new Error('F7.1 : le rail doit être replié quand la bibliothèque est riche (>12)');
+if (!(await page.locator('.cz-remoji').count()))
+  throw new Error('F7.1 : repère emoji absent des cartes');
+console.log('F7.1 : rail replié (riche) + repères emoji ✅');
 // F1.3 : l'onglet s'appelle désormais « Menu ».
 await page.getByRole('tab', { name: 'Menu' }).click();
+await page.locator('.cz-hbtn', { hasText: 'Semaine' }).click();
 await page.getByText('Copier une semaine précédente').waitFor({ timeout: 5000 });
 
 // 1) FC11/FC12 — composer le petit-déjeuner de Lundi via le composeur + sélecteur.
@@ -134,7 +153,7 @@ await page.locator('.cz-sheet.show .cz-cta').click(); // OK
 await page.reload({ waitUntil: 'networkidle' });
 await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
 await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
-await page.getByText('Copier une semaine précédente').waitFor({ timeout: 10000 });
+await page.getByText('Menu du jour').waitFor({ timeout: 10000 });
 await page.getByLabel('Réglages Cuisine').click();
 await page.getByText('Règles actives : halal · sans arachide').waitFor({ timeout: 5000 });
 const halalOn = await page.getByRole('switch', { name: 'Halal' }).getAttribute('aria-checked');
@@ -179,6 +198,7 @@ console.log('« L’écrire » : recette créée (Validé), dans la bibliothèqu
 // 3ter) Amendement ② — « ＋ Nouvelle recette » DANS le sélecteur de composant :
 // création avec rôle pré-rempli → prend directement le créneau (geste fini).
 await page.getByRole('tab', { name: 'Menu' }).click();
+await page.locator('.cz-hbtn', { hasText: 'Semaine' }).click();
 const mardi = page.locator('.cz-daycard', { hasText: 'Mardi' });
 await mardi.locator('.cz-mrow.empty').first().click();
 await page.locator('.cz-sheet.show .cz-comp .cmid').first().click(); // « Choisir »

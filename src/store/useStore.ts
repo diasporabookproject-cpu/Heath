@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AccRef, CuisineSettings, MealKey, Recipe, ReglesFoyer, WeekMenu } from '../types';
+import type { AccRef, CuisineSettings, DayMenu, MealKey, Recipe, ReglesFoyer, WeekMenu } from '../types';
 import { DEFAULT_SETTINGS, EMPTY_REGLES } from '../types';
 import { SEED_CONFIG } from '../data';
 import {
@@ -72,6 +72,8 @@ interface State {
   setRappel: (kind: 'cuisine' | 'nounou', r: Rappel | null) => void;
   /** Copie en profondeur les jours d'une autre semaine dans la semaine courante. */
   copyWeekInto: (srcDays: WeekMenu['days']) => void;
+  /** F7.2 : copie en profondeur UN jour (journée précédente) dans le jour cible. */
+  copyDayInto: (targetKey: string, srcDay: DayMenu) => void;
   setComponent: (dayKey: string, meal: MealKey, slot: Slot, value: string | AccRef | null) => void;
   setAccQty: (dayKey: string, meal: MealKey, deltaG: number) => void;
   setObjective: (n: number) => void;
@@ -153,6 +155,16 @@ export const useStore = create<State>((set, get) => ({
       for (const key of Object.keys(week.days)) {
         if (isV2Day(srcDays[key])) week.days[key] = JSON.parse(JSON.stringify(srcDays[key]));
       }
+      void saveWeek(week);
+      return { week };
+    });
+  },
+
+  // F7.2 (amendement ① — « Copier » = journée précédente) : copie PROFONDE d'un
+  // seul jour dans le jour cible de la semaine courante.
+  copyDayInto(targetKey, srcDay) {
+    set((s) => {
+      const week = { ...s.week, days: { ...s.week.days, [targetKey]: JSON.parse(JSON.stringify(srcDay)) } };
       void saveWeek(week);
       return { week };
     });
