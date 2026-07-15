@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { ROLE_LABEL, type Recipe, type RecipeRole } from '../types';
+import { pickable } from '../lib/picker';
 import { IconSearch, IconMic, IconFav, IconPlus } from './icons';
 
 interface Props {
@@ -30,8 +31,9 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onNewRe
 
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return recipes
-      .filter((r) => r.role === role && r.statut === 'Validé')
+    // Règle d'éligibilité EXTRAITE (lib/picker) : Validé seulement (verrou G2,
+    // testé) + soupe éligible entrée/plat (F5.2).
+    return pickable(recipes, role)
       .filter((r) => (needle ? r.nom.toLowerCase().includes(needle) : true))
       .sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || a.nom.localeCompare(b.nom, 'fr'));
   }, [recipes, role, q]);

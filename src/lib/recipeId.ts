@@ -5,6 +5,11 @@ const PREFIX: Record<RecipeRole, string> = {
   entree: 'ENT',
   plat: 'PLT',
   acc: 'ACC',
+  // F5.2 — les 4 nouveaux moments.
+  dessert: 'DES',
+  soupe: 'SOU',
+  gouter: 'GOU',
+  boisson: 'BOI',
 };
 
 /** Prochain identifiant libre pour un rôle (PLT-01, ENT-02, ACC-03…). */

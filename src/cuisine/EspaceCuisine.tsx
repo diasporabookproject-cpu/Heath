@@ -127,6 +127,8 @@ function MealCard({
   const extras: string[] = [];
   if (meal.entree) extras.push(`${t.entree} : ${compName(meal.entree)}`);
   if (meal.acc) extras.push(`${compName(meal.acc)}${meal.acc.g ? ` ${meal.acc.g} g` : ''}`);
+  // F5.5 — allergènes du foyer touchés par ce repas (dès l'accueil, G3).
+  const warns = [...new Set([meal.plat, meal.entree, meal.acc].flatMap((c) => c?.w ?? []))];
   return (
     <button className="ck-mealcard" onClick={onClick}>
       <span className="ck-mi">
@@ -137,6 +139,12 @@ function MealCard({
         <span className={'ck-mn' + (ar ? ' ar' : '')}>{title}</span>
         {extras.length > 0 && (
           <span className={'ck-msub' + (ar ? ' ar' : '')}>{extras.join(' · ')}</span>
+        )}
+        {warns.length > 0 && (
+          <span className={'ck-warn' + (ar ? ' ar' : '')}>
+            ⚠ {ar ? 'انتبهي — فيها : ' : 'Attention — contient : '}
+            {warns.join(' · ')}
+          </span>
         )}
         {mealHasVoice(meal) && (
           <span className={'ck-vdot' + (ar ? ' ar' : '')}>
@@ -282,6 +290,16 @@ function CompBlock({
       <div className={'ck-rn' + (ar ? ' ar' : '')} style={{ fontSize: 20, marginBottom: 12 }}>
         {name}
       </div>
+
+      {/* F5.5 — alerte allergène du FOYER (règles T3), calculée à la publication,
+          MISE EN ÉVIDENCE sur la recette (G3 : jamais silencieuse). Phrase fixe
+          bilingue (registre du gate) ; le terme reste tel que posé par l'employeur. */}
+      {comp.w && comp.w.length > 0 && (
+        <div className={'ck-warnbox' + (ar ? ' ar' : '')}>
+          ⚠ {ar ? 'انتبهي — قاعدة الدار : فيها ' : 'Attention — règle du foyer : contient '}
+          <b>{comp.w.join(' · ')}</b>
+        </div>
+      )}
 
       {comp.a && (
         <>

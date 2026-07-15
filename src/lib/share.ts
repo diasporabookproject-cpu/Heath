@@ -1,4 +1,5 @@
 import type { AppConfig, MealKey, MealSlot, Recipe, WeekMenu } from '../types';
+import { matchAllergenes } from './allergenes';
 
 // Payload du menu envoyé dans l'espace cuisinière (FC10/FC19, modèle v2).
 // 3 repas par jour, chacun pouvant être structuré (plat / entrée / accompagnement).
@@ -14,6 +15,10 @@ export interface SharedComp {
   ea?: string; // étapes darija
   a?: string; // URL publique de la note vocale
   g?: number; // quantité en grammes (accompagnement)
+  /** F5.5 — allergènes du FOYER touchés par cette recette (calculés à la
+   * PUBLICATION : page vivante = se met à jour au prochain envoi ; G3 = l'alerte
+   * voyage DANS le payload, visible hors-ligne, jamais silencieuse). */
+  w?: string[];
 }
 
 export interface SharedMealV2 {
@@ -53,7 +58,7 @@ export function usedRecipeIds(config: AppConfig, week: WeekMenu): string[] {
   return [...ids];
 }
 
-function comp(r: Recipe, audioUrls?: Map<string, string>, g?: number): SharedComp {
+function comp(r: Recipe, audioUrls?: Map<string, string>, g?: number, allergies?: string[]): SharedComp {
   const c: SharedComp = { n: r.nom, i: r.ingredients };
   if (r.etapes) c.e = r.etapes;
   if (r.nom_ar) c.na = r.nom_ar;
@@ -62,6 +67,11 @@ function comp(r: Recipe, audioUrls?: Map<string, string>, g?: number): SharedCom
   const u = audioUrls?.get(r.id);
   if (u) c.a = u;
   if (g != null) c.g = g;
+  // F5.5 : alerte allergène calculée ici — foyer sans règle → jamais de champ.
+  if (allergies?.length) {
+    const hits = matchAllergenes(allergies, `${r.nom} ${r.ingredients}`);
+    if (hits.length) c.w = hits;
+  }
   return c;
 }
 
@@ -70,16 +80,17 @@ function buildMeal(
   key: MealKey,
   byId: Map<string, Recipe>,
   audioUrls?: Map<string, string>,
+  allergies?: string[],
 ): SharedMealV2 | undefined {
   const out: SharedMealV2 = {};
   const plat = slot.plat ? byId.get(slot.plat) : undefined;
-  if (plat) out.plat = comp(plat, audioUrls);
+  if (plat) out.plat = comp(plat, audioUrls, undefined, allergies);
   if (key !== 'petitdej') {
     const e = slot.entree ? byId.get(slot.entree) : undefined;
-    if (e) out.entree = comp(e, audioUrls);
+    if (e) out.entree = comp(e, audioUrls, undefined, allergies);
     if (slot.acc) {
       const a = byId.get(slot.acc.id);
-      if (a) out.acc = comp(a, audioUrls, slot.acc.g);
+      if (a) out.acc = comp(a, audioUrls, slot.acc.g, allergies);
     }
   }
   return out.plat || out.entree || out.acc ? out : undefined;
@@ -91,15 +102,16 @@ export function buildEspaceMenu(
   week: WeekMenu,
   byId: Map<string, Recipe>,
   audioUrls?: Map<string, string>,
+  allergies?: string[],
 ): SharedMenu {
   const days: SharedDay[] = [];
   for (const j of config.jours) {
     const day = week.days[j.key];
     if (!day) continue;
     const sd: SharedDay = { k: j.key, nom: j.nom };
-    const pd = buildMeal(day.petitdej, 'petitdej', byId, audioUrls);
-    const dj = buildMeal(day.dej, 'dej', byId, audioUrls);
-    const dn = buildMeal(day.diner, 'diner', byId, audioUrls);
+    const pd = buildMeal(day.petitdej, 'petitdej', byId, audioUrls, allergies);
+    const dj = buildMeal(day.dej, 'dej', byId, audioUrls, allergies);
+    const dn = buildMeal(day.diner, 'diner', byId, audioUrls, allergies);
     if (pd) sd.petitdej = pd;
     if (dj) sd.dej = dj;
     if (dn) sd.diner = dn;

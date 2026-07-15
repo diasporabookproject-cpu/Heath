@@ -172,7 +172,7 @@ await page.locator('.cz-sheet.show .cz-inp').first().fill('Soupe du smoke');
 await page.locator('.cz-sheet.show textarea').first().fill('courgette 200 g\nune bonne pincée de cumin');
 await page.locator('.cz-sheet.show').getByText('Enregistrer', { exact: true }).click();
 await page.waitForTimeout(600);
-await page.locator('.cz-sheet.show .cz-x').last().click(); // fermer la fiche ouverte
+await page.locator('.cz-fichebar .cz-back').click(); // fermer la fiche (F5.4 : ‹, plus de ✕)
 await page.locator('.cz-librow', { hasText: 'Soupe du smoke' }).waitFor({ timeout: 5000 });
 console.log('« L’écrire » : recette créée (Validé), dans la bibliothèque ✅');
 
@@ -196,12 +196,57 @@ await page.waitForTimeout(400);
 await mardi.getByText('Œufs du picker').waitFor({ timeout: 5000 });
 console.log('Amendement ② : créée depuis le sélecteur, posée dans le créneau ✅');
 
+// 3quater) T5/F5.5 — alerte ALLERGÈNE bout-en-bout SANS backend : les règles du
+// foyer (« arachide », posées en 2bis) doivent ressortir sur la page cuisinière
+// via « Voir l'aperçu » (previewEspace = même buildEspaceMenu que la publication).
+const merc = page.locator('.cz-daycard', { hasText: 'Mercredi' });
+await merc.locator('.cz-mrow.empty').nth(1).click(); // Déjeuner (plat)
+await page.locator('.cz-sheet.show .cz-comp .cmid').first().click(); // « Choisir »
+await page.locator('.cz-sheet.show').last().getByText('Nouvelle recette').click();
+await page.locator('.cz-sheet.show').last().getByText('L’écrire', { exact: false }).click();
+await page.getByText('Portions', { exact: true }).waitFor({ timeout: 5000 });
+await page.locator('.cz-sheet.show').last().locator('.cz-inp').first().fill('Poulet sauce arachide');
+await page.locator('.cz-sheet.show').last().locator('textarea').first().fill('pâte d’arachide 50 g\npoulet 200 g');
+await page.locator('.cz-sheet.show').last().getByText('Enregistrer', { exact: true }).click();
+await page.getByText('Recette créée et ajoutée au repas').waitFor({ timeout: 5000 });
+await page.locator('.cz-sheet.show .cz-x').first().click().catch(() => {});
+await page.waitForTimeout(400);
+// destinataire (palier 1 : « Ajouter une personne » → formulaire → Enregistrer)
+await page.getByLabel('Partager le menu').click();
+await page.locator('.cz-sheet.show').waitFor({ timeout: 5000 });
+await page.waitForTimeout(400);
+const shareSheet = page.locator('.cz-sheet.show').last();
+const addDest = shareSheet.getByText('Ajouter une personne', { exact: false }).first();
+if (await addDest.count()) { await addDest.click(); await page.waitForTimeout(400); }
+if (await shareSheet.locator('input').count()) {
+  await shareSheet.locator('input').first().fill('Fatima');
+  await shareSheet.getByText('Enregistrer', { exact: false }).first().click();
+  await page.waitForTimeout(600);
+}
+await shareSheet.getByText('Aperçu · QR', { exact: false }).click();
+await page.locator('.cz-preview-overlay').waitFor({ timeout: 8000 });
+// La destinataire naît en darija → l'alerte s'affiche d'abord en ARABE (RTL),
+// puis on bascule FR : les DEUX registres du gate sont ainsi couverts.
+await page.locator('.ck-warn', { hasText: 'arachide' }).first().waitFor({ timeout: 5000 });
+await page.locator('.cz-preview-overlay').getByText('FR', { exact: true }).click();
+await page.getByText('Attention — contient : arachide').first().waitFor({ timeout: 5000 });
+await page.screenshot({ path: 'scripts/shot-espace-alerte.png', fullPage: false });
+await page.locator('.cz-preview-bar .cz-x').click(); // fermer l'aperçu
+await page.waitForTimeout(300);
+await page.locator('.cz-overlay.show').first().click({ position: { x: 8, y: 8 } }).catch(() => {});
+await page.waitForTimeout(300);
+console.log('F5.5 : alerte allergène du foyer visible sur la page cuisinière (aperçu) ✅');
+
 // 4) FC7 — ouvrir une fiche.
 await page.getByRole('tab', { name: 'Recettes' }).click();
 await page.locator('.cz-chips .cz-chip', { hasText: 'Tous' }).click();
 await page.locator('.cz-librow').first().click();
 await page.getByText('Ingrédients', { exact: false }).first().waitFor({ timeout: 5000 });
-await page.locator('.cz-sheet.show .cz-x').click();
+// T5 (F5.1/F5.4) — porte fiche : titre Fraunces + tags + zone photo + Partager dominant.
+await page.locator('.cz-fichetitle').waitFor({ timeout: 3000 });
+await page.getByText('Ajouter une photo du plat').waitFor({ timeout: 3000 });
+await page.locator('.cz-sharebtn').waitFor({ timeout: 3000 });
+await page.locator('.cz-fichebar .cz-back').click(); // F5.4 : fermeture par ‹
 
 // 5) FC8 — courses.
 await page.getByRole('tab', { name: 'Courses' }).click();

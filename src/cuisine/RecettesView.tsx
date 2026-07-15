@@ -7,6 +7,7 @@ import { isPackInstalled } from '../lib/packs';
 import { IconSearch, IconMic, IconFav } from './icons';
 import RelectureSheet from './RelectureSheet';
 
+// F5.2 : les 8 moments filtrables (rail horizontal — les chips défilent déjà).
 const CHIPS: { key: string; label: string; draft?: boolean }[] = [
   { key: 'all', label: 'Tous' },
   { key: 'fav', label: '★ Favoris' },
@@ -14,6 +15,10 @@ const CHIPS: { key: string; label: string; draft?: boolean }[] = [
   { key: 'entree', label: 'Entrée' },
   { key: 'plat', label: 'Plat' },
   { key: 'acc', label: 'Accomp.' },
+  { key: 'soupe', label: 'Soupe' },
+  { key: 'dessert', label: 'Dessert' },
+  { key: 'gouter', label: 'Goûter' },
+  { key: 'boisson', label: 'Boisson' },
   { key: 'draft', label: '✦ À valider', draft: true },
 ];
 

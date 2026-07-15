@@ -10,13 +10,18 @@ import { AI_MONTHLY_LIMIT, remaining, normalizeQuota, currentMonth } from '../li
 import { ROLE_LABEL, reglesList, type CalciumFlag, type Recipe, type RecipeRole } from '../types';
 import { IconStar, IconLoader, IconCheck } from './icons';
 
-const ROLES: RecipeRole[] = ['petitdej', 'entree', 'plat', 'acc'];
+// F5.2 : les 8 moments disponibles à la création (jeu fermé).
+const ROLES: RecipeRole[] = ['petitdej', 'entree', 'plat', 'acc', 'dessert', 'soupe', 'gouter', 'boisson'];
 
 function roleFromDraft(v: unknown): RecipeRole {
   const s = String(v ?? '').trim().toLowerCase();
   if (s.startsWith('petit')) return 'petitdej';
+  if (s.startsWith('soupe') || s.startsWith('potage')) return 'soupe';
   if (s.startsWith('entr') || s.startsWith('coupe')) return 'entree';
   if (s.startsWith('acc') || s.startsWith('garniture')) return 'acc';
+  if (s.startsWith('dessert')) return 'dessert';
+  if (s.startsWith('go')) return 'gouter'; // goûter / gouter
+  if (s.startsWith('boisson') || s.startsWith('jus')) return 'boisson';
   return 'plat';
 }
 

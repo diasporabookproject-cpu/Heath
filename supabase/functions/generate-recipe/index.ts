@@ -58,7 +58,12 @@ const RECIPE_TOOL = {
     type: 'object',
     properties: {
       nom: { type: 'string' },
-      role: { type: 'string', enum: ['petitdej', 'entree', 'plat', 'acc'], description: 'petit-déj / entrée / plat / accompagnement' },
+      // F5.2 (T5) : le jeu de moments passe à 8 (fermé). Déployé avec la fenêtre 0010.
+      role: {
+        type: 'string',
+        enum: ['petitdej', 'entree', 'plat', 'acc', 'dessert', 'soupe', 'gouter', 'boisson'],
+        description: 'petit-déj / entrée / plat / accompagnement / dessert / soupe / goûter / boisson',
+      },
       kcal: { type: 'number' },
       prot: { type: 'number' },
       gluc: { type: 'number' },

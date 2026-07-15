@@ -255,6 +255,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
         <RecipeDetailSheet
           recipeId={openRecipeId}
           voiceIds={voiceIds}
+          onOpenRecipe={(id) => setOpenRecipeId(id)}
           onClose={() => setOpenRecipeId(null)}
           onVoiceChange={(id, has) =>
             setVoiceIds((prev) => {

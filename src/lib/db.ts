@@ -38,6 +38,16 @@ interface MenuDB extends DBSchema {
   syncmeta: { key: string; value: DocMeta };
   // v9 : règles du foyer (lot Cuisine T3) — document unique, clé fixe 'regles'.
   foyer: { key: string; value: ReglesFoyer };
+  // v10 : photo du plat (T5/F5.3) — même modèle que `audio` (clé = recipeId).
+  images: { key: string; value: RecipeImage };
+}
+
+/** Photo du plat d'une recette (F5.3) — JPEG ≤1280px, EXIF déjà retirés. */
+export interface RecipeImage {
+  recipeId: string;
+  blob: Blob;
+  mime: string;
+  updatedAt: number;
 }
 
 /** Trace locale du dernier envoi par destinataire (état « à envoyer », L1-4). */
@@ -64,7 +74,7 @@ export interface Rappel {
 }
 
 const DB_NAME = 'menu-semaine';
-const DB_VERSION = 9;
+const DB_VERSION = 10;
 const APP_KEY = 'app';
 const SYNC_CURSOR_KEY = 'syncCursor';
 
@@ -114,6 +124,10 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
         // v9 : règles du foyer (lot Cuisine T3) — document unique, clé fixe 'regles'.
         if (!db.objectStoreNames.contains('foyer')) {
           db.createObjectStore('foyer');
+        }
+        // v10 : photo du plat (T5/F5.3) — clé = recipeId, comme `audio`.
+        if (!db.objectStoreNames.contains('images')) {
+          db.createObjectStore('images', { keyPath: 'recipeId' });
         }
       },
     });
@@ -353,6 +367,18 @@ export async function saveNounou(doc: NounouDoc): Promise<void> {
   const db = await getDB();
   await db.put('nounou', doc, NOUNOU_KEY);
   notifyDataChanged();
+}
+
+// ── Photo du plat (T5/F5.3) — même modèle que l'audio (local d'abord) ─────────
+
+export async function loadImage(recipeId: string): Promise<RecipeImage | undefined> {
+  const db = await getDB();
+  return db.get('images', recipeId);
+}
+
+export async function saveImage(recipeId: string, blob: Blob, mime: string): Promise<void> {
+  const db = await getDB();
+  await db.put('images', { recipeId, blob, mime, updatedAt: Date.now() });
 }
 
 // ── Règles du foyer (lot Cuisine T3) — document unique, clé fixe 'regles' ─────

@@ -1,7 +1,21 @@
 // Modèle métier — Cuisine v2 (brief FC11-FC19).
 
-/** Rôle d'une recette : sert au filtrage et à la composition des repas. */
-export type RecipeRole = 'petitdej' | 'entree' | 'plat' | 'acc';
+/**
+ * MOMENT d'une recette (F5.2, lot Cuisine T5) : le jeu passe de 4 à 8, FERMÉ.
+ * La clé stockée reste `role` — les recettes existantes gardent leur valeur
+ * (migration = identité). Composition v1 inchangée (créneaux petitdej/entree/
+ * plat/acc) : la soupe est éligible entrée ET plat au sélecteur (lib/picker) ;
+ * dessert / goûter / boisson vivent en bibliothèque + fiche, sans créneau.
+ */
+export type RecipeRole =
+  | 'petitdej'
+  | 'entree'
+  | 'plat'
+  | 'acc'
+  | 'dessert'
+  | 'soupe'
+  | 'gouter'
+  | 'boisson';
 export type RecipeStatus = 'Validé' | 'Écarté' | 'Test';
 export type CalciumFlag = 'Champion' | 'Moyen' | 'Faible';
 
@@ -10,6 +24,10 @@ export const ROLE_LABEL: Record<RecipeRole, string> = {
   entree: 'Entrée',
   plat: 'Plat',
   acc: 'Accompagnement',
+  dessert: 'Dessert',
+  soupe: 'Soupe',
+  gouter: 'Goûter',
+  boisson: 'Boisson',
 };
 
 export interface Recipe {
@@ -42,6 +60,10 @@ export interface Recipe {
   fav?: boolean;
   /** Nombre de portions telles qu'écrites (T4/F4.2 ; affiché en tag F5.2). */
   portions?: number;
+  /** Tags F5.2 optionnels (pastilles de fiche — omises si absentes). */
+  cuisine?: string;
+  difficulte?: string;
+  temps?: string;
   /** G3 (F4.4) : règles du foyer appliquées à l'import — la trace vit DANS le
    * document et s'affiche à la relecture (« Adaptée selon : … »). */
   adapteSelon?: string[];

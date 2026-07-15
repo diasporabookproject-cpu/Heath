@@ -98,11 +98,12 @@ export default function RelectureSheet({ startId, onClose, onOpenRecipe, toast }
                 )}
               </div>
 
-              {/* G3 (F4.4) : la trace d'adaptation est visible ICI aussi — la
-                  relecture express est une surface de relecture à part entière. */}
+              {/* G3 (F4.4, libellé corrigé retour Q&A) : on trace une DEMANDE, pas un
+                  fait — la relecture doit vérifier que le modèle l'a vraiment suivie. */}
               {cur.adapteSelon && cur.adapteSelon.length > 0 && (
                 <div className="cz-estnote" style={{ margin: '8px 0 0' }}>
-                  Adaptée selon : {cur.adapteSelon.join(' · ')} — vérifie surtout les quantités.
+                  On a demandé d’adapter selon : {cur.adapteSelon.join(' · ')} — vérifie que c’est
+                  bien le cas.
                 </div>
               )}
 
