@@ -15,6 +15,9 @@ const MOTS: [RegExp, string][] = [
   [/riz|semoule|couscous|pâtes|pates/, '🍚'],
   [/pain|msemmen|batbout|sandwich|galette/, '🥖'],
   [/yaourt|fromage|laitage|creami|whey/, '🥛'],
+  // AVANT la ligne fruit : « pommes de terre » matchait /pomme/ → 🍓 (découverte
+  // PO à la clôture T7, prouvée au code — correction triviale, testée).
+  [/pommes? de terre|patate/, '🥔'],
   [/fruit|pomme|banane|fraise|orange/, '🍓'],
   [/légume|legume|courgette|carotte|épinard|epinard|brocoli/, '🥦'],
   [/gâteau|gateau|dessert|halva|chocolat/, '🍰'],

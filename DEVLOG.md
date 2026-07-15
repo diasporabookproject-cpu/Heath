@@ -87,9 +87,20 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 32. **Page Nounou (brief FN0–FN5) — nouvelle page par rôle, sœur de Cuisine** : dossier `src/nounou/`, **modèle en couches** (`Moment` récurrent / `Periode` rythme alternatif sur plage / `Ponctuel` un jour / `Enfant`), **précédence stricte `ponctuel > période > rythme habituel`** (`projection.ts`, aligné RRULE pour un futur ICS). **Stockage = document JSON unique** (store IndexedDB `nounou`, clé `'doc'`, **DB v5**), fusion à la lecture (`mergeNounouDoc`) pour la compat ascendante ; **last-write-wins** assumé (MVP). Store dédié `useNounou` (séparé de Cuisine). **Chevauchement de périodes interdit à la création** (`periodesOverlap`). **Jours d'école = lun–ven (0–4)**, tous = 0–6. Numéros d'urgence Maroc **19/15/150** seedés « à vérifier ». Réutilise tokens + coquille Cuisine (`cz-*`), classes propres `nz-*`. Onglets **Journée · Conduites · Fiche urgence** (« Repères » banni). Construit par lots, ordre **0 → 1 → (4.1+4.3) → 5 → 2 → 3 → 4.2** (page reçue partageable tôt, traduction en dernier). ✅ Lots 0, 1, **4.1+4.3**, **5**, **2** et **3** livrés — **MVP fonctionnellement complet** (admin Journée + Conduites/voix + Fiche urgence/enfants → lien scopé → page reçue + 3 accès + RTL, réutilisant la table `espaces`). ⏳ reste : **Lot 4.2** (traduction edge function + relecture du sensible) — le seul 🔴.
 
-## État actuel (au 2026-07-12)
+## État actuel (au 2026-07-15)
 
-> ## ✅ LOT « FLOW FTUE » CLOS — F1→F5 livrées, 3 tranches mergées (2026-07-12)
+> ## 🟢 LOT « CUISINE » CODE-COMPLET — T1→T7 validées PO sur `lot-cuisine-v1` (2026-07-15)
+> **Reste avant merge : C2 (test device foyer NEUF, APK `ec79c48` livré) puis merge vers le défaut + portes re-vérifiées.**
+> - **T1** polices embarquées (zéro Google Fonts) · « Générer la semaine » retiré (accord PO, verrouillé smoke) · onglet Menu.
+> - **T2** nutrition **opt-in** « Suivi de l'équilibre » (OFF défaut, 11 surfaces, `ReglagesSheet`) — porte « zéro kcal ».
+> - **T3** **règles du foyer** (allergies/halal/régime, UN endroit) — store `'foyer'` sur `docs`, **zéro SQL**, 6 tests d'adoption.
+> - **T4** création 3 voies (« L'écrire » · « À partir d'instructions » texte/lien/photo VISION · collections) — **« IA » banni de l'UI (porte)**, G1·G2·G3 (G2 topologique verrouillé par tests), `generate-recipe` **v13 prod**, EXIF/GPS retirés des photos.
+> - **T5** fiche restructurée (barre ‹·☆·⋯·Partager, Fraunces, 8 moments, photo du plat — bucket `foyer-images`/0010 en prod) · **alerte allergène** sur la page cuisinière (FR + darija).
+> - **T6** **Partager = ajout au menu puis partage (D1)**, défaut compatible avec le moment (jamais un plat au Matin) ; portée du digest = contexte.
+> - **T7** horizon **défaut Demain**, Matin/Midi/Soir, **footer une seule barre** (pastille foncée), rail Collections au seuil 12 + emoji.
+> - **Portes** : 143 tests · 3 smokes (portes structurelles incluses) · CI+APK verts sur chaque tranche · 2 fenêtres token closes (0009 exhumée+corrigée · 0010+edge, parité 0).
+
+> ### ✅ LOT « FLOW FTUE » CLOS — F1→F5 livrées, 3 tranches mergées (2026-07-12)
 > **Un nouveau foyer démarre VIDE de contenu personnel ; le remplissage est OPT-IN via la FTUE.**
 > - **T1** : seed personnel retiré (F1) · collection installable « **Fonds de départ** » (30 recettes, F2) · gabarits de conduites opt-in (F3) · générateur guidé vers la collection sur biblio vide (F5b).
 > - **T2** : FTUE v4 (F4) — **gate pré-boot `Boot`** au-dessus d'App (aucun store initialisé pendant la FTUE), 7 écrans fidèles à la maquette (`docs/maquettes/ftue-v4.html`, polices embarquées 224 Ko), peuplement committé d'un bloc au #welcome, #join réel (OTP + `accept_invite`), état « **rôles activés** » + migration one-shot rétroactive (appareil existant ne voit JAMAIS la FTUE), replay démo visuel, `smoke-ftue.mjs` en CI.
@@ -201,6 +212,22 @@ Méthode retenue pour ce futur lot : **① couper la production d'abord** (sché
 ---
 
 ## Journal des sessions
+
+### Lot Cuisine — CLÔTURE C1 (doc · décisions · RGPD · parking) — 2026-07-15
+**STOP T7 validé PO — le lot est code-complet.** Clôture documentaire ; C2 (device foyer NEUF, APK `ec79c48` livré) reste le dernier maillon avant merge.
+- **🔧 Emoji (découverte PO, prouvée AU CODE sans attendre le device)** : « Pommes de terre rôties » matchait `/pomme/` → 🍓. Correction : ligne `pommes? de terre|patate → 🥔` AVANT la ligne fruit, +2 tests (le vrai fruit reste 🍓). Le glyphe « œufs » (🍳) est correct sémantiquement — rendu à confirmer au device (police emoji), bascule 🥚 triviale si illisible.
+- **🗂 DÉCOUVERTE À TRACER (PO, parking — rien rouvert)** : **le « Fonds de départ » est un PROTOCOLE PERSONNEL** — « Msemmen SG », « pain SG », « batbout GF », « Semoule sans gluten », « Creami (whey) » ×2 : les recettes de la famille du PO, distribuées à TOUS les foyers. Même racine que le `SYSTEM` serveur hardcodé (« 100% SANS GLUTEN ») : **le lot FTUE a retiré les données personnelles, pas les recettes personnelles.** → **Le lot simplification transverse s'élargit d'un mandat : revue ÉDITORIALE du Fonds de départ** (il ouvre déjà ces données pour la purge nutrition ; c'est aussi le premier contenu du chantier §7.2).
+- **📋 LISTE C1 pour la doc projet v2.2 (rédaction côté chat produit — Q6)** :
+  1. **Nutrition opt-in généralisée** : « Suivi de l'équilibre », OFF par défaut, 11 surfaces — le §3 « objectif calorique individuel comme plafond » n'est plus vrai qu'en opt-in ; **et décision postérieure gravée : la nutrition SORT du produit** (lot dédié après audit — la v2.2 peut l'annoncer comme direction).
+  2. **Restrictions du foyer** (nouvelle brique) : allergies/halal/régime, UN SEUL endroit (Réglages), appliquées aux imports (montrées + « à vérifier », jamais silencieuses), alerte page cuisinière (FR+darija) ; passerelle Nounou PARQUÉE.
+  3. **Création de recette** : « L'écrire » (texte naturel, portions) · « À partir d'instructions » (lien/texte/photo — vision, adaptation, relecture OBLIGATOIRE par topologie) · « Depuis une collection ». **Le mot « IA » n'existe plus dans l'UI** (verrouillé par porte).
+  4. **Partager une recette = ajout au menu puis partage** (jamais un 2ᵉ canal) ; brouillons non partageables (valider d'abord).
+  5. **« Proposer un repas » REPORTÉ** (« Générer la semaine » retiré, accord PO) ; **« Semaines favorites » REPORTÉ** (amendement ①).
+  6. **Tags 8 moments** (dessert/soupe/goûter/boisson — soupe composable entrée/plat, les 3 autres sans créneau v1) + cuisine/difficulté/temps/portions.
+  7. **Menu** : horizon Aujourd'hui/Demain/Semaine **défaut Demain**, Matin/Midi/Soir, footer une-seule-barre, Copier journée/semaine précédente. **Bibliothèque** : rail Collections seuil 12, repères emoji. **Fiche** : barre Partager-dominant, photo du plat (privée, `foyer-images`).
+- **🛡 LIGNE REGISTRE RGPD (à coller au registre du PO)** : « *Traitement : mise en forme et adaptation de recettes. Les restrictions alimentaires du foyer (dont allergies — donnée de santé potentielle) TRANSITENT dans la requête vers l'edge function `generate-recipe` (Supabase) puis l'API Anthropic pour adapter la recette ; elles ne sont NI stockées NI journalisées côté serveur (vérité : table `docs` chiffrée au repos, RLS foyer ; le relais ne persiste rien). Les photos importées sont ré-encodées côté client (EXIF/GPS supprimés) avant envoi. Base : intérêt légitime du foyer ; minimisation : seules les règles actives voyagent.* »
+- **`DECISIONS_STORE_V1.md`** : addendum lot Cuisine (restrictions = un seul endroit verrouillé · Partager = ajout au menu). **Fiche ETAT.md : en attente de la passe du PO** (annoncée avec le GO clôture).
+- **⏳ C2 : device foyer NEUF (APK `ec79c48`)** — checklist spec + photo de fiche (chaîne complète post-0010) + tag Q3 « à sentir » (liste complète vs défaut) + rendu des emoji.
 
 ### Lot Cuisine — Tranche 7 (biblio & Menu : rail/emoji · horizon · footer) — LA DERNIÈRE — 2026-07-15
 **T6 close par le PO** (2 notes non bloquantes : ① le filtre Q3 sur toute la liste — pas seulement le défaut — à SENTIR au device de clôture ; ② « Cuisinière » sur la carte : **réponse = c'est LE PRODUIT** — `PartageSheet.ROLES` propose Cuisinière/Femme de ménage/Nounou/Autre et pose `role:'Cuisinière'` par défaut à la création rapide, idem FTUE (`Ftue.tsx:61`) → **vocabulaire à corriger au chantier A7/D2**, tracé).

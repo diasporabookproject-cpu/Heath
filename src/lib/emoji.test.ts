@@ -14,6 +14,11 @@ describe('lib/emoji — repère déterministe des cartes (F7.1)', () => {
     expect(recipeEmoji({ nom: 'Chose sucrée', role: 'gouter' })).toBe('🍪');
   });
 
+  it('« pommes de terre » ≠ fruit (découverte PO clôture T7) — 🥔, jamais 🍓', () => {
+    expect(recipeEmoji({ nom: 'Pommes de terre rôties', role: 'acc' })).toBe('🥔');
+    expect(recipeEmoji({ nom: 'Pomme au four', role: 'dessert' })).toBe('🍓'); // le vrai fruit reste fruit
+  });
+
   it('déterministe : même nom → même repère, insensible à la casse', () => {
     expect(recipeEmoji({ nom: 'CHAKCHOUKA à la kefta', role: 'plat' })).toBe(
       recipeEmoji({ nom: 'chakchouka à la kefta', role: 'plat' }),

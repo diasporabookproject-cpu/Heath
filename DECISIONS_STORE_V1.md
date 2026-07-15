@@ -123,3 +123,18 @@ Q-a Prix/paliers : reporté au chantier monétisation (hors v1). · Q-b PIN/expi
 reçus : instruire au lot sync (D8). · Q-c Périmètre exact de la première adoption locale→cloud
 (tout d'un coup vs par store) : chiffrage Claude Code. · Q-d Vente web (Stripe) : sans objet
 tant que tout est gratuit.
+
+---
+
+## Addendum lot Cuisine (15 juillet 2026) — 2 décisions produit GRAVÉES
+
+**Restrictions du foyer = UN SEUL endroit, verrouillé (D2 du lot Cuisine).** Allergies (champ
+libre), halal, régime vivent dans Réglages Cuisine → « Restrictions du foyer », attachées au
+`foyer_id` (store de sync `'foyer'` sur la table `docs` — zéro SQL). Elles s'appliquent d'office
+aux imports (montrées, « à vérifier », jamais silencieuses — G1·G2·G3) et alertent la page de la
+cuisinière. La fiche enfant Nounou ne bouge pas ; AUCUNE passerelle construite (parquée).
+
+**« Partager » une recette = AJOUT AU MENU puis partage (D1 du lot Cuisine).** Jamais un second
+canal de transmission : défaut = prochain repas à venir COMPATIBLE avec le moment (jamais un plat
+au Matin), créneau occupé annoncé avant le tap. Un brouillon ne se partage pas (le bouton n'existe
+pas — cohérence topologique avec la relecture obligatoire) : on valide d'abord.
