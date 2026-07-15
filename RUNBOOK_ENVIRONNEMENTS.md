@@ -74,6 +74,12 @@ explicite**, ouverte et annoncée (ex. AS-2 Fiche 3).
    un écart né pendant la fenêtre (application staging omise, etc.) ne se voit qu'APRÈS. Leçon
    0009/lot Cuisine T4b : l'écart `ack_owner_notice` a dormi depuis AS-2b faute de parité de
    clôture, et n'a resurgi qu'à la fenêtre suivante.
+   **Lecture de la parité pendant une fenêtre (nuance PO, fenêtre 0010)** : 0 écart AVANT
+   d'ouvrir · entre staging et prod, l'écart doit être **exactement le delta déployé, ni plus
+   ni autre chose** (staging en avance de ce qu'on vient d'y mettre = normal) · 0 écart à la
+   CLÔTURE. Un écart **préexistant ou inexpliqué** (façon 0009) est un **STOP**, pas une note.
+   Ordre pratique : la parité de clôture s'exécute **avant** la révocation du token (un token
+   mort ne peut plus lire) ; la vérification de disparition vient en dernier.
 
 ## 4. Rituel token
 - **Jetable, par étape** (inventaire / écriture staging / diff), **révoqué entre chaque** — jamais
