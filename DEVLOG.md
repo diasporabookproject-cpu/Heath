@@ -202,6 +202,16 @@ Méthode retenue pour ce futur lot : **① couper la production d'abord** (sché
 
 ## Journal des sessions
 
+### Lot Cuisine — Tranche 6 (Partager : recette→menu D1 · portée=contexte F6.2) — 2026-07-15
+**Fenêtre 0010+edge v13 VÉRIFIÉE CLOSE** (token révoqué → management API 401, prod vivante — un raté TLS transitoire du proxy sur une sonde, rejouée verte).
+- **F6.1 (D1)** — « Partager » sur une fiche = **ajout au menu PUIS partage, jamais un second canal** : règle PURE **`lib/creneaux.ts`** (+ **8 tests**, `now` injecté) — **Q3 AMENDÉE** : défaut = prochain repas **compatible avec le moment** (petit-déj → prochain Matin ; le reste → prochain Midi/Soir, seuils 11 h/18 h — **jamais un plat au Matin**, asserté) ; dimanche soir → **lundi semaine suivante** (`weekDelta`, `navWeek(1)` au placement) ; créneau occupé → l'option **annonce « remplacera : X » AVANT le tap** (choisir = confirmer, jamais d'écrasement silencieux) ; **`PourQuelRepasSheet`** (défaut en tête badgé « Prochain repas », un tap) → pose (`setComponent`, slot selon le moment : soupe→plat, entrée→entrée, acc→acc) → fiche fermée → **partage ouvert sur la portée du créneau**. Moments sans créneau (dessert/goûter/boisson, Q2) → toast explicatif, aucun canal parallèle.
+- **F6.2** — `PartageSheet` gagne **`initialScope`/`initialDayKey`** : la portée du DIGEST suit le contexte d'ouverture (créneau F6.1 aujourd'hui → `aujourdhui`/`demain`/`jour` ; **l'horizon T7 s'y branchera**) — « le message informe, la page fait le travail » : la portée ne change QUE le message (capture : « Demain » pré-sélectionné, digest « pour demain : Déjeuner — Chakchouka… »).
+- **📌 Trace PO tranchée — « Partager » sur un BROUILLON** : le bouton **n'existe pas** sur une fiche `Test` (posé en T5, confirmé ici comme décision) — cohérence TOPOLOGIQUE avec G2 : partager = poser au menu, et le menu n'accepte que du `Validé` (picker verrouillé par test). Le geste pour un brouillon est « Valider » d'abord — aucun chemin de traverse créé.
+- **🐛 Bug d'empilement attrapé par la porte smoke** : la feuille « Pour quel repas ? » rendue AVANT la fiche dans le JSX s'ouvrait SOUS elle (ordre DOM = ordre de peinture à z-index égal) → bloc déplacé après la fiche. La porte D1 a payé avant même la CI.
+- **Porte smoke D1** : fiche → Partager → « Pour quel repas ? » (défaut badgé) → UN tap → toast « Ajoutée au repas » → feuille d'envoi ouverte. Preuve indirecte du placement réel : la liste de courses passe de 6 à 16 articles dans le même smoke.
+- **Portes T6** : typecheck ✓ · **139/139** ✓ (131 + 8 créneaux) · build web+natif ✓ · 3 smokes ✓ · captures (Pour quel repas · partage portée Demain) ✓.
+- **⏸ STOP T6 — reste T7 (rail/seuil/emoji · horizon Demain/footer/état vide — l'horizon branche F6.2) puis clôture (doc v2.2 côté PO, DEVLOG+C1, ligne RGPD, device foyer NEUF).**
+
 ### Lot Cuisine — Tranche 5 (fiche recette : structure · tags · photo · barre · alerte) — 2026-07-15
 **GO T5 avec 3 ajouts PO (retours Q&A) + décision « la nutrition sort du produit » tracée au parking (§ À faire).**
 - **Libellé G3 corrigé (retour Q&A)** : `adapteSelon` trace une DEMANDE, pas un fait — bandeau « **On a demandé d'adapter selon : … — vérifie que c'est bien le cas** » sur les DEUX surfaces de relecture.

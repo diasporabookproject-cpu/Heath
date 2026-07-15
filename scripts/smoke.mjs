@@ -246,7 +246,20 @@ await page.getByText('Ingrédients', { exact: false }).first().waitFor({ timeout
 await page.locator('.cz-fichetitle').waitFor({ timeout: 3000 });
 await page.getByText('Ajouter une photo du plat').waitFor({ timeout: 3000 });
 await page.locator('.cz-sharebtn').waitFor({ timeout: 3000 });
-await page.locator('.cz-fichebar .cz-back').click(); // F5.4 : fermeture par ‹
+
+// 4bis) T6/F6.1 (D1) — Partager depuis la fiche = AJOUT AU MENU puis partage :
+// « Pour quel repas ? » avec le défaut en tête (un tap), puis la feuille d'envoi
+// s'ouvre — jamais de second canal.
+await page.locator('.cz-sharebtn').click();
+await page.getByText('Pour quel repas ?').waitFor({ timeout: 5000 });
+await page.getByText('Prochain repas', { exact: true }).waitFor({ timeout: 3000 }); // défaut marqué
+await page.locator('.cz-sheet.show', { hasText: 'Pour quel repas ?' }).locator('.cz-pick').first().click(); // UN tap
+await page.getByText('Ajoutée au repas — à toi d’envoyer').waitFor({ timeout: 5000 });
+await page.getByText('L’essentiel dans WhatsApp', { exact: false }).waitFor({ timeout: 5000 }); // partage ouvert
+await page.locator('.cz-overlay.show').first().click({ position: { x: 8, y: 8 } }).catch(() => {});
+await page.waitForTimeout(400);
+console.log('F6.1 (D1) : Partager = posée au prochain repas, puis feuille d’envoi ✅');
+await page.getByRole('tab', { name: 'Recettes' }).click();
 
 // 5) FC8 — courses.
 await page.getByRole('tab', { name: 'Courses' }).click();

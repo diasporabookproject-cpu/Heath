@@ -43,10 +43,13 @@ interface Props {
   toast: (m: string) => void;
   /** Destinataire à pré-sélectionner (ouverture ciblée depuis « Envoyer » de Maison). */
   initialToken?: string;
+  /** F6.2 : portée initiale du digest (suit la vue / le créneau F6.1). */
+  initialScope?: CuisineScope;
+  initialDayKey?: string;
 }
 
 /** FC9 — Envoyer le menu : un seul geste (espace mis à jour + rappel WhatsApp). */
-export default function PartageSheet({ onClose, toast, initialToken }: Props) {
+export default function PartageSheet({ onClose, toast, initialToken, initialScope, initialDayKey }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const persons = useStore((s) => s.settings.persons);
@@ -66,8 +69,10 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const [busy, setBusy] = useState(false);
   // F4-bis fiche B : volet « Sécuriser » inline (création de compte transparente).
   const [securiser, setSecuriser] = useState(false);
-  const [scope, setScope] = useState<CuisineScope>('semaine');
-  const [dayKey, setDayKey] = useState<string>(todayKey());
+  // F6.2 : la portée SUIT le contexte d'ouverture (créneau F6.1 aujourd'hui ;
+  // horizon T7 ensuite) — elle ne change que le MESSAGE, jamais la page.
+  const [scope, setScope] = useState<CuisineScope>(initialScope ?? 'semaine');
+  const [dayKey, setDayKey] = useState<string>(initialDayKey ?? todayKey());
   const [digest, setDigest] = useState('');
   const [confirmEmpty, setConfirmEmpty] = useState(false);
 

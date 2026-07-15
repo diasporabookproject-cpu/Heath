@@ -12,8 +12,12 @@ import RecipeDetailSheet from './RecipeDetailSheet';
 import AddRecipeSheet from './AddRecipeSheet';
 import CollectionsSheet from './CollectionsSheet';
 import PartageSheet from './PartageSheet';
+import PourQuelRepasSheet from './PourQuelRepasSheet';
 import ReglagesSheet from './ReglagesSheet';
 import CopyWeekSheet from './CopyWeekSheet';
+import { slotForRole, type Creneau } from '../lib/creneaux';
+import type { Recipe } from '../types';
+import type { CuisineScope } from '../maison/digest';
 import { IconPlus, IconCheck, IconShareUp } from './icons';
 import './cuisine.css';
 
@@ -41,6 +45,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const objective = useStore((s) => s.settings.objective);
   const suivi = useStore((s) => s.suivi);
   const setComponent = useStore((s) => s.setComponent);
+  const navWeek = useStore((s) => s.navWeek);
 
   const [seg, setSeg] = useState<Segment>('semaine');
   const [composer, setComposer] = useState<Composer>(null);
@@ -50,6 +55,10 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const [collections, setCollections] = useState<{ packId?: string } | null>(null);
   const [sharing, setSharing] = useState(false);
   const [shareToken, setShareToken] = useState<string | undefined>(undefined);
+  // F6.2 : portée initiale du partage (posée par le flux F6.1 ; horizon T7 ensuite).
+  const [shareScope, setShareScope] = useState<{ scope: CuisineScope; dayKey?: string } | null>(null);
+  // F6.1 (D1) : fiche en cours de « Partager » → feuille « Pour quel repas ? ».
+  const [shareFiche, setShareFiche] = useState<Recipe | null>(null);
 
   const openCollections = (packId?: string) => {
     setAdding(false);
@@ -87,6 +96,30 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const switchSeg = (s: Segment) => {
     setSeg(s);
     window.scrollTo({ top: 0 });
+  };
+
+  // F6.1 (D1) — Partager depuis la fiche : ajout au menu PUIS partage, jamais
+  // un second canal. Moments sans créneau (Q2) : le geste explique, sans détour.
+  const shareFromFiche = (r: Recipe) => {
+    if (!slotForRole(r.role)) {
+      toast('Ce moment n’a pas de créneau au menu pour l’instant — le partage passe par les repas');
+      return;
+    }
+    setShareFiche(r);
+  };
+
+  const placeAndShare = async (r: Recipe, c: Creneau) => {
+    if (c.weekDelta === 1) await navWeek(1); // dimanche soir → lundi suivant
+    const value: string | AccRef = c.slot === 'acc' ? { id: r.id, g: 100 } : r.id;
+    setComponent(c.dayKey, c.mealKey, c.slot, value);
+    setShareFiche(null);
+    setOpenRecipeId(null);
+    // F6.2 : la portée du MESSAGE suit le créneau — la page reste complète.
+    const scope: CuisineScope = c.dOffset === 0 ? 'aujourdhui' : c.dOffset === 1 ? 'demain' : 'jour';
+    setShareScope({ scope, dayKey: c.dayKey });
+    setShareToken(undefined);
+    setSharing(true);
+    toast('Ajoutée au repas — à toi d’envoyer');
   };
 
   return (
@@ -211,10 +244,16 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
       {sharing && (
         <PartageSheet
           initialToken={shareToken}
-          onClose={() => setSharing(false)}
+          initialScope={shareScope?.scope}
+          initialDayKey={shareScope?.dayKey}
+          onClose={() => {
+            setSharing(false);
+            setShareScope(null);
+          }}
           toast={toast}
         />
       )}
+
       {objectiveOpen && <ReglagesSheet onClose={() => setObjectiveOpen(false)} />}
       {copyOpen && <CopyWeekSheet onClose={() => setCopyOpen(false)} toast={toast} />}
 
@@ -256,6 +295,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
           recipeId={openRecipeId}
           voiceIds={voiceIds}
           onOpenRecipe={(id) => setOpenRecipeId(id)}
+          onShare={shareFromFiche}
           onClose={() => setOpenRecipeId(null)}
           onVoiceChange={(id, has) =>
             setVoiceIds((prev) => {
@@ -266,6 +306,16 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             })
           }
           toast={toast}
+        />
+      )}
+
+      {/* F6.1 — rendue APRÈS la fiche : elle s'empile AU-DESSUS (ordre DOM = ordre
+          de peinture à z-index égal — leçon attrapée par la porte smoke). */}
+      {shareFiche && (
+        <PourQuelRepasSheet
+          recipe={shareFiche}
+          onPick={(c) => void placeAndShare(shareFiche, c)}
+          onClose={() => setShareFiche(null)}
         />
       )}
 

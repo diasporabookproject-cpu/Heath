@@ -28,10 +28,12 @@ interface Props {
   onVoiceChange: (id: string, has: boolean) => void;
   /** F5.4 (⋯ Dupliquer) : ouvre la fiche de la copie créée. */
   onOpenRecipe?: (id: string) => void;
+  /** F6.1 (D1) : Partager = ajouter au menu puis partager — orchestré par CuisineView. */
+  onShare?: (r: Recipe) => void;
   toast: (m: string) => void;
 }
 
-export default function RecipeDetailSheet({ recipeId, voiceIds, onClose, onVoiceChange, onOpenRecipe, toast }: Props) {
+export default function RecipeDetailSheet({ recipeId, voiceIds, onClose, onVoiceChange, onOpenRecipe, onShare, toast }: Props) {
   const recipe = useStore((s) => s.recipes.find((r) => r.id === recipeId));
   const recipes = useStore((s) => s.recipes);
   const upsertRecipe = useStore((s) => s.upsertRecipe);
@@ -73,9 +75,7 @@ export default function RecipeDetailSheet({ recipeId, voiceIds, onClose, onVoice
             onClose={onClose}
             onEdit={() => setMode('edit')}
             onDuplicate={duplicate}
-            onShare={() =>
-              toast('Bientôt : partager ajoutera la recette au menu, puis enverra la page')
-            }
+            onShare={() => onShare?.(recipe)}
             onValidate={() => {
               validateRecipe(recipe.id);
               toast('Recette validée et ajoutée à la bibliothèque');
