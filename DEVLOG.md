@@ -125,6 +125,11 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Post-clôture Cuisine — proposition v2 committée + frontière réparée (5ᵉ fiche) — 2026-07-18
+- **`PROPOSITION_PROMPT_V2_GENERATE_RECIPE.md` committé** (reçu du PO — la référence dans `ETAT.md` devient vivante) : schéma v2 sans macros/calcium, règles du foyer au SYSTÈME, rapport `adaptations` requis, `quantites_incertaines`, garde-fou G3 mécanique, Opt-C darija-au-partage à valider au read-back du lot simplification.
+- **Frontière backlog→ETAT testée à J+0, un trou attrapé par le PO** : le **cache audio négatif** avait quitté le backlog qualité (« → mini-lot destinataires ») sans arriver dans la ligne du mini-lot d'`ETAT.md` — parti de la table, arrivé nulle part. Corrigé : **5ᵉ fiche** posée (`missing.add()` sur 404 seulement, fix ~3 lignes) ; la ligne porte désormais les 5 et ses sources (readout A7 design v2 §5). *Leçon de la règle ① : la migration se vérifie aux DEUX bouts.*
+- Côté PO : doc projet **v2.2 rédigée** (§1 carte des documents autour d'ETAT + rituel d'ouverture à deux fichiers) · ligne RGPD portée au registre. Prochain lot **au signal PO** : mini-lot destinataires.
+
 ### Lot Cuisine — CLÔTURE C1.5 + C2 + MERGE : le lot est CLOS — 2026-07-18
 **C2 validé PO (device foyer NEUF : photo de fiche post-0010, migration, emoji — OK) → GO merge + GO C1.5** (read-back accepté avec amendements : ① l'amputation est une **migration exhaustive** — tout ce qui vit dans les sections d'état atterrit dans `ETAT.md` ou est **nommé comme abandonné** ici ; ② frontière **ETAT = décidé et planifié · backlog qualité = trouvé, pas encore décidé**, sens unique backlog→ETAT ; porte = **CLAUDE.md règle n°1**, porte CI rejetée).
 - **`ETAT.md` créé (racine)** : photo de l'état, un seul écrivain (Claude Code, au commit de clôture), une page-écran, réécrite à chaque STOP de tranche et clôture de lot. Motivation PO : ce DEVLOG fait ~700 lignes / 184 Ko — incollable dans un thread ; le split rend l'état **extractable** (rituel d'ouverture : `PROJET_MAISON_OS.md` + `ETAT.md`). *Noté pour plus tard (PO) : la convention « lire le DEVLOG en entier en début de session » ne passera pas l'année — à instruire.*

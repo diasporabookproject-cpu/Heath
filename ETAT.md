@@ -14,9 +14,9 @@
 
 ## ⚪ File d'attente — ordre verrouillé
 
-1. **Mini-lot destinataires** — `revokeEspace` fiabilisé · `revoked` (câbler ou supprimer) · remappage langue `'ar'`→`'dr'` *(tranche isolée, sa propre porte)* · `backupImage` (état `backedUp?`, pas de retry aveugle) *(4ᵉ fiche, même cause racine : fire-and-forget sans état)*. **Prérequis dur d'A7.**
+1. **Mini-lot destinataires** — `revokeEspace` fiabilisé · `revoked` (câbler ou supprimer) · remappage langue `'ar'`→`'dr'` *(tranche isolée, sa propre porte)* · `backupImage` (état `backedUp?`, pas de retry aveugle) · **cache audio négatif** (`missing.add()` sur 404 seulement — fix ~3 lignes) *(5 fiches — cause racine commune aux échecs silencieux : fire-and-forget sans état ni retour)*. **Prérequis dur d'A7.** Sources : readout A7 design v2 §5 (fiches 1-3, déjà instruites).
 2. **Audit sécurité §7.8** — + A7-C2/A7-C4 en durcissement · reliquat `create_foyer` (`public`/`anon`).
-3. **Lot simplification transverse** — purge nutrition (méthode gravée au DEVLOG : production d'abord, flag T2 = carte, porte par suppression) **+** prompt v2 **+ revue éditoriale du Fonds de départ** *(30 recettes = protocole personnel : « Msemmen SG », « batbout GF », « Creami (whey) » ×2 — même racine que le `SYSTEM` hardcodé. Premier contenu du chantier §7.2)*. *Signal = audit clos. Prérequis : poser « sans gluten » dans les Réglages du foyer PO **avant** la bascule.* → `PROPOSITION_PROMPT_V2_GENERATE_RECIPE.md` *(doc PO — à committer dès réception)*
+3. **Lot simplification transverse** — purge nutrition (méthode gravée au DEVLOG : production d'abord, flag T2 = carte, porte par suppression) **+** prompt v2 **+ revue éditoriale du Fonds de départ** *(30 recettes = protocole personnel : « Msemmen SG », « batbout GF », « Creami (whey) » ×2 — même racine que le `SYSTEM` hardcodé. Premier contenu du chantier §7.2)*. *Signal = audit clos. Prérequis : poser « sans gluten » dans les Réglages du foyer PO **avant** la bascule.* → `PROPOSITION_PROMPT_V2_GENERATE_RECIPE.md` *(committé — schéma v2, règles au SYSTÈME, rapport `adaptations`, Opt-C darija à valider au read-back)*
 4. **Lot A7** — implémentation *(design clos ; film mesuré + spec §8 à venir)*.
 5. **Lot visuel « Riad moderne »** — passe 2, à part.
 
