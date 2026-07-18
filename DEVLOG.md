@@ -1,17 +1,19 @@
 # DEVLOG — Menu de la semaine
 
-> **Fil conducteur du projet.** Décisions d'architecture, état d'avancement, et
-> journal des sessions/commits. À lire en début de session, à mettre à jour à
-> chaque session et à chaque commit (voir « Comment tenir ce journal »).
+> **Journal du projet (append-only) + décisions d'architecture.**
+> **Où on en est = `ETAT.md`** (racine — photo de l'état, réécrite à chaque STOP de
+> tranche et clôture de lot). Ce fichier garde le *récit* (journal des sessions),
+> les *ADR* et le *backlog qualité* (trouvé, pas encore décidé).
 
 ---
 
 ## Comment tenir ce journal (convention)
 
-- **Début de session** : lire ce fichier en entier (surtout « État actuel » et « Décisions »).
+- **Début de session** : lire **`ETAT.md`** (où on en est) + les ADR ci-dessous ; le journal se consulte au besoin (il est long).
 - **À chaque commit** : ajouter une ligne dans **Journal des sessions** (date · sujet · pourquoi).
-- **Décision d'archi** (choix de techno, modèle de données, sécurité, etc.) : ajouter/мettre à jour une **ADR** dans la section « Décisions d'architecture ».
-- **Changement d'état** (fonctionnalité finie, dette, point bloquant) : mettre à jour « État actuel » et « À faire / en cours ».
+- **À chaque STOP de tranche et clôture de lot** : **réécrire `ETAT.md`** (critère de fini — CLAUDE.md règle n°1).
+- **Décision d'archi** (choix de techno, modèle de données, sécurité, etc.) : ajouter/mettre à jour une **ADR** dans la section « Décisions d'architecture ».
+- **Frontière avec `ETAT.md`** : ETAT = **décidé et planifié** · backlog qualité (ici) = **trouvé, pas encore décidé**. Sens unique : backlog → ETAT le jour où une décision le planifie.
 - Garder le ton **factuel et bref**. Ne jamais committer de secret (clé `service_role`/`secret`).
 
 ---
@@ -27,6 +29,7 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 - **Stack** : React + Vite + TypeScript · vite-plugin-pwa · zustand · `idb` (IndexedDB) · lz-string · @supabase/supabase-js
 - **Hébergement** : GitHub Pages via GitHub Actions (`.github/workflows/deploy.yml`), base `/Heath/`
 - **Backend** : Supabase (auth lien magique + stockage des notes vocales). Projet : `pqeilsuqglmrvijndrwa.supabase.co`
+- **Config Supabase utile** : bucket `shared` (public — lecture publique, écriture par utilisateurs connectés) · buckets privés `foyer-audio` (0003) / `foyer-images` (0010) · Auth → URL Configuration : Site URL + Redirect = `https://diasporabookproject-cpu.github.io/Heath/` · clés (URL + publishable, publiques) dans `.github/workflows/deploy.yml` — **ne jamais committer la clé secrète**.
 
 ---
 
@@ -87,131 +90,53 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 32. **Page Nounou (brief FN0–FN5) — nouvelle page par rôle, sœur de Cuisine** : dossier `src/nounou/`, **modèle en couches** (`Moment` récurrent / `Periode` rythme alternatif sur plage / `Ponctuel` un jour / `Enfant`), **précédence stricte `ponctuel > période > rythme habituel`** (`projection.ts`, aligné RRULE pour un futur ICS). **Stockage = document JSON unique** (store IndexedDB `nounou`, clé `'doc'`, **DB v5**), fusion à la lecture (`mergeNounouDoc`) pour la compat ascendante ; **last-write-wins** assumé (MVP). Store dédié `useNounou` (séparé de Cuisine). **Chevauchement de périodes interdit à la création** (`periodesOverlap`). **Jours d'école = lun–ven (0–4)**, tous = 0–6. Numéros d'urgence Maroc **19/15/150** seedés « à vérifier ». Réutilise tokens + coquille Cuisine (`cz-*`), classes propres `nz-*`. Onglets **Journée · Conduites · Fiche urgence** (« Repères » banni). Construit par lots, ordre **0 → 1 → (4.1+4.3) → 5 → 2 → 3 → 4.2** (page reçue partageable tôt, traduction en dernier). ✅ Lots 0, 1, **4.1+4.3**, **5**, **2** et **3** livrés — **MVP fonctionnellement complet** (admin Journée + Conduites/voix + Fiche urgence/enfants → lien scopé → page reçue + 3 accès + RTL, réutilisant la table `espaces`). ⏳ reste : **Lot 4.2** (traduction edge function + relecture du sensible) — le seul 🔴.
 
-## État actuel (au 2026-07-15)
+## État actuel
 
-> ## 🟢 LOT « CUISINE » CODE-COMPLET — T1→T7 validées PO sur `lot-cuisine-v1` (2026-07-15)
-> **Reste avant merge : C2 (test device foyer NEUF, APK `ec79c48` livré) puis merge vers le défaut + portes re-vérifiées.**
-> - **T1** polices embarquées (zéro Google Fonts) · « Générer la semaine » retiré (accord PO, verrouillé smoke) · onglet Menu.
-> - **T2** nutrition **opt-in** « Suivi de l'équilibre » (OFF défaut, 11 surfaces, `ReglagesSheet`) — porte « zéro kcal ».
-> - **T3** **règles du foyer** (allergies/halal/régime, UN endroit) — store `'foyer'` sur `docs`, **zéro SQL**, 6 tests d'adoption.
-> - **T4** création 3 voies (« L'écrire » · « À partir d'instructions » texte/lien/photo VISION · collections) — **« IA » banni de l'UI (porte)**, G1·G2·G3 (G2 topologique verrouillé par tests), `generate-recipe` **v13 prod**, EXIF/GPS retirés des photos.
-> - **T5** fiche restructurée (barre ‹·☆·⋯·Partager, Fraunces, 8 moments, photo du plat — bucket `foyer-images`/0010 en prod) · **alerte allergène** sur la page cuisinière (FR + darija).
-> - **T6** **Partager = ajout au menu puis partage (D1)**, défaut compatible avec le moment (jamais un plat au Matin) ; portée du digest = contexte.
-> - **T7** horizon **défaut Demain**, Matin/Midi/Soir, **footer une seule barre** (pastille foncée), rail Collections au seuil 12 + emoji.
-> - **Portes** : 143 tests · 3 smokes (portes structurelles incluses) · CI+APK verts sur chaque tranche · 2 fenêtres token closes (0009 exhumée+corrigée · 0010+edge, parité 0).
-
-> ### ✅ LOT « FLOW FTUE » CLOS — F1→F5 livrées, 3 tranches mergées (2026-07-12)
-> **Un nouveau foyer démarre VIDE de contenu personnel ; le remplissage est OPT-IN via la FTUE.**
-> - **T1** : seed personnel retiré (F1) · collection installable « **Fonds de départ** » (30 recettes, F2) · gabarits de conduites opt-in (F3) · générateur guidé vers la collection sur biblio vide (F5b).
-> - **T2** : FTUE v4 (F4) — **gate pré-boot `Boot`** au-dessus d'App (aucun store initialisé pendant la FTUE), 7 écrans fidèles à la maquette (`docs/maquettes/ftue-v4.html`, polices embarquées 224 Ko), peuplement committé d'un bloc au #welcome, #join réel (OTP + `accept_invite`), état « **rôles activés** » + migration one-shot rétroactive (appareil existant ne voit JAMAIS la FTUE), replay démo visuel, `smoke-ftue.mjs` en CI.
-> - **T3** : preuve anti-fuite (F5a) — chemin ① garanti par construction (tracé au journal), chemin ② : **dédup du contenu de pack à l'adoption** (`planAdopt.dropLocal` — remplacé par la version du foyer, zéro doublon ; le personnel fusionne comme avant).
-> - **✅ Test device PO passé** (APK #13 : fondation validée — page reçue, anti-fuite, migration, 30 recettes) puis **avenant F4-bis** (retours device) : A moment-sans-enfant · B volet « Sécuriser » (compte transparent au partage, Lecture 1) · C partage natif (feuille système) · D name-sheet FTUE. **Re-test device 4/4 (APK #14) — avenant clos.** Liens CGU inertes (parking naming).
-
-> ## ✅ COQUILLE v2 LIVRÉE & VALIDÉE SUR APPAREIL (2026-07-12)
-> **Coquille native recréée sur le défaut durci** (décision « recréer, pas réaligner » — `coquille-v1` archivée comme référence). Volet A (dist-native séparé, `.env.local` via loadEnv, greffes portées, porte diff-de-contrôle A6) · Volet B (micro, export natif via feuille de partage, bouton retour à pile de feuilles, safe-areas top) · Volet C (curation docs + findings). **STOP 2 validé sur appareil réel** : 4/4 verdicts ✓. APK debug en artifact CI (`apk.yml`). Voir `READBACK_COQUILLE_V2.md` + `BUILD_NATIF.md`.
-> **➡️ Prochain lot : « Flow FTUE »** (brief v1.2) — seed personnel retiré, collection-témoin, FTUE gate pré-boot, verrous sync/générateur.
-
-> ## ✅ AS-2 CLOS — isolation & tenancy durcies (2026-07-11)
-> **Toutes les fiches livrées, backend en prod + volet client mergé.**
-> - **Fiche 3** (fuite d'isolation `espaces`/`espace_opens` fermée, lecture publique préservée), **Fiches 1·2·4** backend (accept transactionnel anti-TOCTOU + rate-limit persistant, transfert de propriété au plus ancien membre à la suppression du compte owner, entropie invitation + caps), **AS-2b** volet client (accept via RPC, bandeau « nouveau propriétaire » `owner_notice`, copie suppression corrigée). Migrations `0006`→`0009` en prod (`Health`/`pqeilsuqglmrvijndrwa`).
-> - **Lot « Environnements propres »** soldé en amont : staging reconstructible depuis le repo, parité prouvée (`npm run parity:check`), prod tenue en lecture seule sur tout le lot. Voir `RUNBOOK_ENVIRONNEMENTS.md`.
-
-> ## 🚀 Lot « Comptes + Sync » — **MERGÉ & DÉPLOYÉ EN PROD** (2026-07-05, `e21d0ec`)
-> **Passe de déploiement prod exécutée** (via API Management Supabase + Pages) :
-> - **Backup préalable** : `espaces_bak_20260705` (4 lignes) + `espace_opens_bak_20260705` (66) + snapshot des policies `espaces`.
-> - **Migrations appliquées (prod `pqeilsuqglmrvijndrwa`)** : **0001** (schéma foyers/membres/invitations/docs/ai_usage + RLS + `create_foyer`) → **0004** (RPC quota atomiques) → **0002** (`espaces.foyer_id` on delete cascade — **non-régression vérifiée** : lecture publique d'un jeton réel toujours 200) → **0003** (bucket privé `foyer-audio` + RLS storage).
-> - **Edge functions prod déployées + gardées (401 sans session)** : `delete-account`, `invite`, `accept-invite`, **`generate-recipe` v10** (gate quota, déployée APRÈS le client live pour ne pas casser l'IA existante). Secret `ANTHROPIC_API_KEY` prod inchangé.
-> - **Client mergé** (`--no-ff`) → Pages run #87 **vert** → **prod en ligne** avec comptes. Auth config prod déjà correcte (Site URL/redirect `/Heath/` — le fix P0-3 y renvoie).
-> - **Rollback** : tag **`pre-comptes-sync`** (`0bd5863`) + `git revert -m 1 e21d0ec`. Backups en base à conserver quelques jours.
-> - **⏳ Reste (non bloquant, actions Amine)** : **SMTP Resend** (code 6 chiffres + lève le rate-limit e-mail ; login par **lien** marche en attendant) · QA appareil (2 comptes : invite/quitter/fusion/suppression/IA) · rétention Sentry 30 j · dropper les tables `*_bak` après vérif · lot **Coquille** (Capacitor) ensuite.
-
-
-
-> **✅ Refonte UI/UX « Bento lumineux » → Manzil FUSIONNÉE EN PROD** (`claude/jolly-wozniak-s83str`,
-> merge `--no-ff` du 2026-07-05, décision Amine « avance sans attendre la QA manuelle »).
-> Voir **`PASSATION_REFONTE_BENTO.md`** (dossier de passation complet : état, ADR, fichiers,
-> comment auditer/tester). Résumé express :
-> - **Lots 0→3 COMPLETS** : socle `mz-`, hub Maison, Cuisine+Nounou rhabillées Manzil, **Lot 3 « Flux »** entier (EnvoiSheet v2, 3 portes + quota IA, file de relecture, collections/packs, rappel d'envoi). Prototype `prototype-interactif-v6-1-bento.html` committé (spec).
-> - **Manzil est désormais la prod** (déclencheur temporaire `refonte/bento-v1` retiré du workflow).
-> - **Retour arrière trivial** : tag **`pre-bento`** pointe sur l'état pré-refonte ; rollback = `git revert -m 1 <merge>` (sans force-push) ou reset sur `pre-bento`. Branche `refonte/bento-v1` conservée comme ancre.
-> - **QA d'Amine reportée** : à faire directement sur la prod quand il aura le temps ; le filet de retour arrière reste en place.
->
-> **✅ Lot « Comptes + Sync » — CODE COMPLET, REVU & CORRIGÉ sur `comptes-sync-v1`** (pas encore mergé en prod).
-> La dette **local-only → local-first synchronisé** est levée. Résumé :
-> - **S0→S7 livrés** : auth OTP + foyer (S2), moteur de sync LWW/tombstones/adoption (S3, cœur pur testé),
->   quota IA serveur (S5), invitation 2ᵉ membre (S4), quitter/supprimer + tenancy espaces (S6), audio backup (S3′),
->   paquet RGPD (S7). Docs de cadrage : `DECISIONS_STORE_V1.md`, `BRIEF_COMPTES_SYNC.md`, `CHIFFRAGE_COMPTES_SYNC.md`, `READBACK_LOT_COMPTES_SYNC.md`, `RGPD.md`.
-> - **Validé** : RLS/foyer/push/pull/LWW/tombstone/isolation **9/9** headless contre staging ; auth **sur appareil** (préview).
-> - **Revue qualité à froid (8 angles) → 10 findings (3 P0, 7 P1) TOUS CORRIGÉS** + P2. Voir **`REVUE_QUALITE_COMPTES_SYNC.md`**.
-> - **Préview de test connectée** : **https://manzil-staging.pages.dev** (Cloudflare Pages → Supabase **staging**). Migrations 0001+0004 appliquées staging ; 4 edge functions déployées.
-> - **Reste avant prod** : **passe de déploiement prod** (migrations 0001→0004 en prod dans l'ordre, 4 edge functions, SMTP pour le code 6 chiffres, achat `manzil.ma`) + QA appareil d'Amine. **Rien n'est mergé en prod** (la prod = Manzil UI seule, sans comptes).
->
-> **➡️ Décisions d'archi actées** : `DECISIONS_STORE_V1.md` (Capacitor, foyer=identité Manzil, OTP, sync LWW, **v1 tout gratuit** mais coutures premium serveur, `manzil.ma`, RGPD/loi 09-08). Après le merge Comptes+Sync : **Lot Coquille** (Capacitor iOS/Android).
-
-**Fait (base, avant refonte) :**
-- P0 complet : composer, feux tricolores + moyenne semaine, vue Cuisinière (copie WhatsApp), bibliothèque, persistance, mobile-first, PWA.
-- P1 : liste de courses (onglet Courses), PWA installable, **fiches non encore détaillées**.
-- Darija (vue Cuisinière, 24 recettes traduites) + bascule FR/AR + RTL.
-- Import JSON de recettes + édition des recettes existantes (dont le type).
-- Notes vocales par recette (enregistrement, lecture, partage).
-- Partage par lien : hors-ligne (`#m=`) **et** publié avec audio (`#p=`).
-- Backend Supabase : connexion (lien magique) + publication des notes vocales (lien court avec ▶️). Upload désormais authentifié.
-
-**Données Supabase utiles :**
-- Bucket `shared` (public) — lecture publique, écriture par utilisateurs connectés.
-- Auth → URL Configuration : Site URL + Redirect = `https://diasporabookproject-cpu.github.io/Heath/`.
-- Clés (URL + publishable, publiques) dans `.github/workflows/deploy.yml`. **Ne jamais committer la clé secrète.**
+**→ `ETAT.md` (racine)** — la photo de l'état (lot en vol, file d'attente, bloquants,
+parking, points ouverts), **réécrite à chaque STOP de tranche et clôture de lot**
+(CLAUDE.md règle n°1). Ce qui vivait ici a été migré le 2026-07-18, à la clôture du
+lot Cuisine — migration exhaustive : chaque ligne est allée dans `ETAT.md`, dans la
+« Vue d'ensemble » ci-dessus (config Supabase), ou a été **nommée comme abandonnée**
+dans l'entrée de journal « Clôture C1.5 ». Les bannières des lots clos (Cuisine, FTUE,
+Coquille v2, AS-2, Comptes+Sync, Bento) vivent au récit : **Journal des sessions**.
 
 ---
 
 ## À faire / en cours
 
-**➡️ EN COURS : Lot Cuisine (chantier UX passe 1)** — spec §8 (`BRIEF_LOT_CUISINE.md`) + rapport Q&A (`RAPPORT_QA_CUISINE.md`) + maquette unique (`docs/maquettes/cuisine/`). Read-back livré (`READBACK_LOT_CUISINE.md`), **en attente du GO PO** (Q1-Q6, dont la contestation « T3 sans migration SQL »). Branche `lot-cuisine-v1`.
-
-**➡️ Étapes suivantes (ordre posé)** : ① **mini-lot correctifs « LES ÉCHECS SILENCIEUX »** (renommé — décision PO 15/07 : même cause racine, du fire-and-forget sans état ni retour) : **`revokeEspace`** (échoue et MENT — annonce révoqué, le lien peut vivre) + **`backupImage`** (échoue et PERD — toute photo posée hors-ligne/sans session/avant 0010 reste locale POUR TOUJOURS : l'audio se rattrape à chaque publication, la photo jamais ; dans une archi local-first synchronisée, le cloud EST la sauvegarde). **Correctif juste = un ÉTAT, pas un retry aveugle** : `backedUp?: boolean` sur la photo, on ne retente que si faux (re-tenter au montage sans état ré-uploaderait tout à chaque parcours de fiches — rejeté PO). + cache audio négatif (fiche existante). · ② **passe d'audit sécurité avant mise en ligne** (demandée post-AS-2 ; inclut le reliquat `create_foyer` encore accordé à `public`/`anon`) · ③ **suite du chantier UX/UI** (parking : nav-bar Android, harmonisation Sécurité, états vides hors chemin critique, CGU réelles/naming). *(Le lot « Flow FTUE » + avenant F4-bis sont CLOS — cf. État actuel.)*
-
-**📦 Reporté au backlog (décision PO 14/07, amendement ① du lot Cuisine)** : **« Semaines favorites »** (modèles de semaines réutilisables sauvegardés). Le lot Cuisine ne livre que « Copier » = journée/semaine **précédente** (F7.2) ; le libellé quitte F1.3. À re-scoper dans un lot ultérieur. *(Également reporté par la spec : « proposer un repas » — remplace « Générer la semaine », retiré en F1.2 avec accord PO.)*
-
-**🗑️ DÉCISION PO (14/07, gravée — parking, AUCUN code dans le lot en cours) : la NUTRITION SORT DU PRODUIT.**
-Réponse tranchée à « la nutrition fait-elle partie de la promesse Manzil ? » : **non, jamais.** Macros, `flag_calcium` (un jugement, pas une donnée), calories, objectif : faible valeur, source de confusion, vestiges de « Menu de la semaine ». **Purge totale en lot dédié**, après l'audit sécurité — ordre posé : **clôture Cuisine → mini-lot revoke → audit §7.8 → lot simplification transverse**. Ne rien rouvrir dans le lot en cours (les tuiles macros restent fonctionnelles sous le flag T2, **zéro effort de mise en page** — on ne soigne pas ce qui va disparaître).
-Méthode retenue pour ce futur lot : **① couper la production d'abord** (schéma IA, prompt serveur, `macros.ts`) — les affichages tombent d'eux-mêmes, le compilateur montre les points morts ; **② le flag T2 est la carte** — chaque lecture de « Suivi de l'équilibre » marque une surface à supprimer, le flag meurt en dernier ; **③ laisser mourir les données inertes** (champs nutrition des 30 recettes du fonds) ; **④ une porte par suppression** (assertion « zéro kcal NULLE PART » qui remplacera les assertions ON/OFF de T2). À vérifier à son read-back : le rôle réel de `SEED_CONFIG`, le sort de `nutrition.test.ts`/`macros.test.ts`, l'objectif comme plafond du composeur.
+**→ `ETAT.md`** — file d'attente (ordre verrouillé) et bloquants : le **décidé et
+planifié**. Ne reste ici que le **backlog qualité** — le *trouvé, pas encore décidé*.
+Sens unique : une ligne quitte cette table vers `ETAT.md` le jour où une décision la
+planifie (elle est alors retirée d'ici, avec mention datée).
 
 ### 🩺 Backlog qualité — findings de la revue du 07/07 encore ouverts (vérifiés sur code le 2026-07-12, curation coquille-v2)
 | Finding | Gravité | Constat vérifié |
 |---|---|---|
-| `revokeEspace` silencieux | **Haute (confiance)** | `espace.ts:237` ignore l'erreur du delete → un lien annoncé « révoqué » peut rester vivant. Fix : vérifier l'erreur. Candidat **mini-lot correctifs** |
-| Cache audio négatif | **Moyenne-haute** | `sync/audio.ts:44` : `missing.add()` sur TOUT échec (réseau inclus) → une note vocale présente au cloud paraît perdue toute la session. Fix ~3 lignes (404-only). Candidat **mini-lot correctifs** |
 | Faux « Envoyé ✓ » WhatsApp | Moyenne (confiance) | `PartageSheet.tsx:140` : `window.open(wa.me)` APRÈS un await (contexte de geste perdu → popup bloquable) mais le toast affirme l'envoi |
 | Adoption échouée sans retry | Moyenne | `useSync.ts:64-65` : `asked.current = foyerId` posé AVANT `proceed` ; si `adoptInto` échoue, plus d'invite de la session (reset seulement à la déconnexion) |
 | `confirmedJoin` busy bloqué | Basse-moyenne | `AccountSheet.tsx` : `downloadExport`/`acceptInvite` hors try/finally → une exception laisse `busy=true` (contournement : recharger) |
 | Compteur IA barrière locale | Basse | `AddRecipeSheet.tsx:57` : `rem <= 0` (compteur LOCAL) bloque l'entrée IA alors que le vrai quota est serveur → blocage possible à tort après changement de foyer |
 | Couverture tests `engine`/`map`/`useSync` | Moyenne (dette) | Orchestration sync non testée (le cœur pur `plan.ts` l'est) ; partiellement mitigé par AS-1 (smoke Comptes CI) |
 
-### 📱 Parking UX (avec la refonte de l'écran d'accueil)
-- Contenu qui passe derrière les **touches de navigation Android** en bas d'écran (constat device STOP 2 coquille-v2, non bloquant).
-
-**✅ Synchro multi-appareils — LIVRÉE** (lot Comptes+Sync sur `comptes-sync-v1`, non mergé) : remplace la ligne « ⏳ Synchro multi-appareils » ci-dessous.
-
-**✅ Lot v1 de la passation produit livré (F1→F5).**
-
-**✅ Refonte Cuisine (brief FC1–FC10) — COMPLÈTE (5 lots livrés & déployés).**
-**✅ Cuisine v2 (brief FC11–FC19) — COMPLÈTE (5 lots + repas optionnels, déployés).**
-- ✅ **Lot 1** : FC1 (nav) · FC2 (Semaine) · FC3 (sélecteur).
-- ✅ **Lot 2** : FC5 (Recettes/statuts/filtres) · FC6 (ajout manuel + IA + auto-macros + import JSON) · FC7 (fiche + édition + validation + étapes + vocal).
-- ✅ **Lot 3** : FC4 (générateur hybride biblio + complétion IA) + correctif « changer un repas placé ».
-- ✅ **Lot 4** : FC9 (envoi un geste + traduction) · FC10 (espace cuisinière, projection cuisine, voix héros, RTL).
-- ✅ **Lot 5** : FC8 (Courses par rayon + mise à l'échelle ×personnes + partage).
-
-- ⏳ **Affiner « quel contenu pour quelle personne »** : aujourd'hui l'espace inclut toujours le menu courant + la sécurité assignée. Permettre de choisir les briques par personne (ex. nounou sans menu).
-- ⏳ **Compléter F1** (différé) : QR imprimable + aide d'installation iOS, accusé « lu/ouvert ».
-- ⏳ **Synchro multi-appareils** (menus/recettes/destinataires/sécurité). Stratégie de fusion + RLS par `user_id`. *(Note dette : destinataires + référentiel sécurité sont encore locaux à l'appareil ; à synchroniser.)*
-- ⏳ **Module Entretien maison** (réutilise le socle référentiel→espace).
-- ⏳ **P1/P2 Cuisine** : fiches recette détaillées, repas verrouillés, export PDF, récap calcium hebdo.
-- 🧹 **Nettoyage mineur** : fichiers de test du bucket `shared` (`diagnostic-*`, `t*`, `flow*`, `testflow*`) via Storage UI.
+*(Sortis de cette table le 18/07 — décidés et planifiés, désormais dans `ETAT.md` :
+`revokeEspace` silencieux et cache audio négatif → mini-lot destinataires, file n°1.)*
 
 ---
 
 ## Journal des sessions
+
+### Lot Cuisine — CLÔTURE C1.5 + C2 + MERGE : le lot est CLOS — 2026-07-18
+**C2 validé PO (device foyer NEUF : photo de fiche post-0010, migration, emoji — OK) → GO merge + GO C1.5** (read-back accepté avec amendements : ① l'amputation est une **migration exhaustive** — tout ce qui vit dans les sections d'état atterrit dans `ETAT.md` ou est **nommé comme abandonné** ici ; ② frontière **ETAT = décidé et planifié · backlog qualité = trouvé, pas encore décidé**, sens unique backlog→ETAT ; porte = **CLAUDE.md règle n°1**, porte CI rejetée).
+- **`ETAT.md` créé (racine)** : photo de l'état, un seul écrivain (Claude Code, au commit de clôture), une page-écran, réécrite à chaque STOP de tranche et clôture de lot. Motivation PO : ce DEVLOG fait ~700 lignes / 184 Ko — incollable dans un thread ; le split rend l'état **extractable** (rituel d'ouverture : `PROJET_MAISON_OS.md` + `ETAT.md`). *Noté pour plus tard (PO) : la convention « lire le DEVLOG en entier en début de session » ne passera pas l'année — à instruire.*
+- **DEVLOG amputé** : « État actuel » et « À faire / en cours » → pointeurs vers `ETAT.md` ; le journal, les ADR et le backlog qualité restent ici. **Migration exhaustive** :
+  - **→ `ETAT.md`** : file d'attente (mini-lot destinataires — `revokeEspace` + `revoked` + remappage `'ar'`→`'dr'` + `backupImage` avec état `backedUp?` · audit §7.8 · lot simplification+Fonds de départ · A7 · lot visuel) · bloquants (A7-C2/A7-C4, `revokeEspace`, naming/`manzil.ma`, RGPD) · parking (Semaines favorites · « Proposer un repas » · Module Entretien · Kit d'installation QR/iOS + accusé lu/ouvert · repas verrouillés · export PDF · nav-bar Android · nettoyage bucket `shared`) · ouvert (« Affiner quel contenu pour quelle personne » = D4+D10 · vocabulaire ROLES · tag Q3).
+  - **→ « Vue d'ensemble » (ci-dessus)** : les 3 lignes « Données Supabase utiles » (bucket, Auth URL, clés).
+  - **→ Journal (récit)** : les bannières des lots clos (Cuisine, FTUE+F4-bis, Coquille v2, AS-2, Comptes+Sync, Bento) — chacune a déjà ses entrées datées ; « harmonisation Sécurité » et « états vides hors chemin critique » restent portés par le chantier UX passe 1 (B2 et consorts, listés dans `ETAT.md`).
+  - **ABANDONNÉS, nommés au STOP** : **récap calcium hebdo** (mort — la nutrition sort du produit) · **« Fait (base) »** (inventaire historique pré-refonte — le récit vit au journal, l'état vit dans le produit) · **« fiches recette détaillées »** (livrées en T5 — ligne morte) · **ligne ⏳ « Synchro multi-appareils »** (livrée au lot Comptes+Sync, mergée depuis — doublon mort) · les listes ✅ FC1–FC19 (récit, déjà au journal).
+- **🗑️ DÉCISION PRÉSERVÉE ICI (déplacée de « À faire », référencée par `ETAT.md` : « méthode gravée au DEVLOG ») — la NUTRITION SORT DU PRODUIT (PO, 14/07)** : macros, `flag_calcium` (un jugement, pas une donnée), calories, objectif — faible valeur, vestiges de « Menu de la semaine ». **Purge totale au lot simplification transverse** (après l'audit §7.8). Méthode retenue : **① couper la production d'abord** (schéma IA, prompt serveur, `macros.ts`) — les affichages tombent d'eux-mêmes, le compilateur montre les points morts ; **② le flag T2 est la carte** — chaque lecture de « Suivi de l'équilibre » marque une surface à supprimer, le flag meurt en dernier ; **③ laisser mourir les données inertes** (champs nutrition des 30 recettes du fonds) ; **④ une porte par suppression** (assertion « zéro kcal NULLE PART » qui remplacera les assertions ON/OFF de T2). À vérifier à son read-back : le rôle réel de `SEED_CONFIG`, le sort de `nutrition.test.ts`/`macros.test.ts`, l'objectif comme plafond du composeur.
+- **CLAUDE.md règle n°1 amendée (la porte)** : « réécrire `ETAT.md` » devient un **critère de fini** du STOP de tranche et de la clôture de lot, à côté de l'entrée DEVLOG.
+- **`PROPOSITION_PROMPT_V2_GENERATE_RECIPE.md`** : annoncé joint par le PO, **non reçu dans ce thread** — marqué « à committer dès réception » dans `ETAT.md` (même règle que maquettes et rapports Q&A).
+- **Merge `lot-cuisine-v1` → défaut (`--no-ff`)** + **portes re-vérifiées sur le défaut mergé** (typecheck · 143 tests · build web+natif · 3 smokes) + déploiement Pages vérifié. **Le lot Cuisine est CLOS** — prochain : mini-lot destinataires (file n°1, spec à écrire). *Note : `apk.yml` pointe encore `lot-cuisine-v1` ; le prochain lot le fera pointer sur sa branche, selon le rituel.*
 
 ### Lot Cuisine — CLÔTURE C1 (doc · décisions · RGPD · parking) — 2026-07-15
 **STOP T7 validé PO — le lot est code-complet.** Clôture documentaire ; C2 (device foyer NEUF, APK `ec79c48` livré) reste le dernier maillon avant merge.
