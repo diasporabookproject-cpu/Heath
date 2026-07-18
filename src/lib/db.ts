@@ -6,6 +6,7 @@ import {
   type NounouDoc,
   type Recipe,
   type RecipeRole,
+  type ReglesFoyer,
   type SecuriteFiche,
   type WeekMenu,
 } from '../types';
@@ -35,6 +36,18 @@ interface MenuDB extends DBSchema {
   app: { key: string; value: AppState };
   // v8 : méta de sync par document (hash + horodatage serveur du dernier échange).
   syncmeta: { key: string; value: DocMeta };
+  // v9 : règles du foyer (lot Cuisine T3) — document unique, clé fixe 'regles'.
+  foyer: { key: string; value: ReglesFoyer };
+  // v10 : photo du plat (T5/F5.3) — même modèle que `audio` (clé = recipeId).
+  images: { key: string; value: RecipeImage };
+}
+
+/** Photo du plat d'une recette (F5.3) — JPEG ≤1280px, EXIF déjà retirés. */
+export interface RecipeImage {
+  recipeId: string;
+  blob: Blob;
+  mime: string;
+  updatedAt: number;
 }
 
 /** Trace locale du dernier envoi par destinataire (état « à envoyer », L1-4). */
@@ -61,7 +74,7 @@ export interface Rappel {
 }
 
 const DB_NAME = 'menu-semaine';
-const DB_VERSION = 8;
+const DB_VERSION = 10;
 const APP_KEY = 'app';
 const SYNC_CURSOR_KEY = 'syncCursor';
 
@@ -108,6 +121,14 @@ function getDB(): Promise<IDBPDatabase<MenuDB>> {
         if (!db.objectStoreNames.contains('syncmeta')) {
           db.createObjectStore('syncmeta');
         }
+        // v9 : règles du foyer (lot Cuisine T3) — document unique, clé fixe 'regles'.
+        if (!db.objectStoreNames.contains('foyer')) {
+          db.createObjectStore('foyer');
+        }
+        // v10 : photo du plat (T5/F5.3) — clé = recipeId, comme `audio`.
+        if (!db.objectStoreNames.contains('images')) {
+          db.createObjectStore('images', { keyPath: 'recipeId' });
+        }
       },
     });
   }
@@ -123,6 +144,21 @@ const SEED_VERSION = 4;
 // ── FTUE (F4) — méta LOCALES à l'appareil (le store `meta` n'est pas synchronisé) ──
 const FTUE_DONE_KEY = 'ftueDone';
 const ROLES_ACTIFS_KEY = 'rolesActifs';
+// F2.1 (lot Cuisine) — « Suivi de l'équilibre » : préférence d'AFFICHAGE, par
+// appareil, HORS sync de contenu (spec §8) — donc `meta`, pas `CuisineSettings`
+// (qui, lui, est synchronisé). Clé absente = OFF (défaut, foyers existants inclus).
+const SUIVI_EQUILIBRE_KEY = 'suiviEquilibre';
+
+/** Le suivi de l'équilibre (affichage nutrition) est-il activé sur CET appareil ? */
+export async function loadSuiviEquilibre(): Promise<boolean> {
+  const db = await getDB();
+  return (await db.get('meta', SUIVI_EQUILIBRE_KEY)) === true;
+}
+
+export async function saveSuiviEquilibre(v: boolean): Promise<void> {
+  const db = await getDB();
+  await db.put('meta', v, SUIVI_EQUILIBRE_KEY);
+}
 
 /** Rôles dont la carte est posée sur le hub (activés via FTUE ou « ＋ Une page pour… »). */
 export type RoleActif = 'cuisine' | 'nounou';
@@ -330,6 +366,35 @@ export async function loadNounou(): Promise<NounouDoc | undefined> {
 export async function saveNounou(doc: NounouDoc): Promise<void> {
   const db = await getDB();
   await db.put('nounou', doc, NOUNOU_KEY);
+  notifyDataChanged();
+}
+
+// ── Photo du plat (T5/F5.3) — même modèle que l'audio (local d'abord) ─────────
+
+export async function loadImage(recipeId: string): Promise<RecipeImage | undefined> {
+  const db = await getDB();
+  return db.get('images', recipeId);
+}
+
+export async function saveImage(recipeId: string, blob: Blob, mime: string): Promise<void> {
+  const db = await getDB();
+  await db.put('images', { recipeId, blob, mime, updatedAt: Date.now() });
+}
+
+// ── Règles du foyer (lot Cuisine T3) — document unique, clé fixe 'regles' ─────
+// Absent tant que rien n'a été posé (état vide légal, F3.1) : `collectLocalDocs`
+// ne pousse alors RIEN (pas de bruit de sync pour un foyer sans restrictions).
+
+const REGLES_KEY = 'regles';
+
+export async function loadFoyerRegles(): Promise<ReglesFoyer | undefined> {
+  const db = await getDB();
+  return (await db.get('foyer', REGLES_KEY)) as ReglesFoyer | undefined;
+}
+
+export async function saveFoyerRegles(r: ReglesFoyer): Promise<void> {
+  const db = await getDB();
+  await db.put('foyer', r, REGLES_KEY);
   notifyDataChanged();
 }
 

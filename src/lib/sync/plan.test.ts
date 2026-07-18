@@ -209,3 +209,78 @@ describe('sync/plan — planAdopt : dédup du contenu de pack (F5a-②)', () => 
     expect(plan.dropLocal).toEqual([]);
   });
 });
+
+// ── T3 (lot Cuisine, Q1) : règles du foyer = store 'foyer' sur la table `docs` ──
+// Exigence PO du GO : PROUVER que l'adoption transporte les restrictions —
+// pendant de l'anti-fuite F5a du lot FTUE, côté « ce qui DOIT voyager ».
+describe('sync/plan — planAdopt & pull : règles du foyer (store générique, T3)', () => {
+  const at = '2026-01-01T00:00:00Z';
+  const REGLES = { allergies: ['arachide'], halal: true, regime: null };
+  const remoteRegles: RemoteDoc = {
+    store: 'foyer',
+    docId: 'regles',
+    payload: REGLES,
+    updatedAt: at,
+    deletedAt: null,
+  };
+
+  it('foyer rejoint : les restrictions du foyer sont ADOPTÉES en local', () => {
+    // Appareil vierge (aucune règle locale) qui rejoint un foyer réglé.
+    const plan = planAdopt([], [remoteRegles]);
+    expect(plan.adoptRemote).toEqual([remoteRegles]); // → saveFoyerRegles à l'application
+    expect(plan.upload).toEqual([]);
+    expect(plan.dropLocal).toEqual([]);
+  });
+
+  it('appareil déjà réglé qui FONDE le foyer : ses règles sont téléversées', () => {
+    const local: LocalDoc[] = [{ store: 'foyer', docId: 'regles', payload: REGLES }];
+    const plan = planAdopt(local, []);
+    expect(plan.upload).toEqual(local);
+    expect(plan.dropLocal).toEqual([]);
+  });
+
+  it('collision (les deux ont des règles) : celles du FOYER rejoint font foi (cloud gagne)', () => {
+    const local: LocalDoc[] = [
+      { store: 'foyer', docId: 'regles', payload: { allergies: [], halal: false, regime: 'végétarien' } },
+    ];
+    const plan = planAdopt(local, [remoteRegles]);
+    expect(plan.upload).toEqual([]); // les règles locales ne partent pas
+    expect(plan.adoptRemote).toEqual([remoteRegles]); // celles du foyer les remplacent
+    expect(plan.dropLocal).toEqual([]);
+  });
+
+  it('la dédup de pack (F5a-②) ne touche JAMAIS le store foyer (garde store === recipes)', () => {
+    // Un doc foyer qui ressemble à une recette de pack (nom + packId) ne doit
+    // pas être avalé par isPackDupe : la garde porte sur le STORE, pas la forme.
+    const local: LocalDoc[] = [
+      { store: 'foyer', docId: 'regles', payload: { nom: 'Tajine poulet', packId: 'fonds-de-depart' } },
+    ];
+    const remote: RemoteDoc[] = [
+      { store: 'recipes', docId: 'r1', payload: { nom: 'Tajine poulet' }, updatedAt: at, deletedAt: null },
+    ];
+    const plan = planAdopt(local, remote);
+    expect(plan.upload.map((d) => d.store)).toEqual(['foyer']);
+    expect(plan.dropLocal).toEqual([]);
+  });
+
+  it('pull : une édition locale des règles non poussée n’est JAMAIS écrasée (garde G2)', () => {
+    const localDoc: LocalDoc = {
+      store: 'foyer',
+      docId: 'regles',
+      payload: { allergies: ['arachide', 'sésame'], halal: true, regime: null }, // édité localement
+    };
+    const synced: LocalDoc = { store: 'foyer', docId: 'regles', payload: REGLES };
+    const remoteNewer: RemoteDoc = { ...remoteRegles, updatedAt: '2026-01-02T00:00:00Z' };
+    const plan = planPull([remoteNewer], { [docKey(localDoc)]: localDoc }, meta(synced));
+    expect(plan.applies).toEqual([]); // pas d'écrasement silencieux
+    expect(plan.skipped).toEqual([remoteNewer]); // re-servi après le prochain push
+  });
+
+  it('push : des règles modifiées sont détectées dirty et poussées', () => {
+    const synced: LocalDoc = { store: 'foyer', docId: 'regles', payload: REGLES };
+    const edited: LocalDoc = { ...synced, payload: { ...REGLES, halal: false } };
+    const plan = planPush([edited], meta(synced));
+    expect(plan.upserts).toEqual([edited]);
+    expect(plan.tombstones).toEqual([]);
+  });
+});

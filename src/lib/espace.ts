@@ -3,7 +3,7 @@ import { currentFoyerId } from './auth';
 import { webBaseUrl } from './platform';
 import { getAccessToken, uploadAudios, uploadWeekAudios } from './publish';
 import { buildEspaceMenu, usedRecipeIds, type SharedMenu } from './share';
-import { loadAudio, loadSecurite, recordPublished } from './db';
+import { loadAudio, loadFoyerRegles, loadSecurite, recordPublished } from './db';
 import { cuisineSig } from '../maison/transmission';
 import { translateToDarija } from './ai';
 import { DEFAULT_SETTINGS, type AppConfig, type Destinataire, type Recipe, type SecuriteType, type WeekMenu } from '../types';
@@ -131,7 +131,10 @@ export async function publishEspace(
 
   // Traduction darija figée (best-effort) si le destinataire lit en darija.
   const recipes = dest.langue === 'ar' ? await augmentDarija(config, week, byId) : byId;
-  const menu = buildEspaceMenu(config, week, recipes, audioUrls);
+  // F5.5 : alertes allergènes du FOYER (règles T3) calculées À LA PUBLICATION —
+  // page vivante : une règle ajoutée se reflète au prochain envoi.
+  const regles = await loadFoyerRegles();
+  const menu = buildEspaceMenu(config, week, recipes, audioUrls, regles?.allergies);
   const securite = await buildSecurite(dest, prefix, token);
 
   const payload: Espace = {
@@ -178,7 +181,8 @@ export async function previewEspace(
     const blob = await loadAudio(id);
     if (blob) audioUrls.set(id, URL.createObjectURL(blob));
   }
-  const menu = buildEspaceMenu(config, week, byId, audioUrls);
+  const regles = await loadFoyerRegles(); // F5.5 : l'aperçu montre les mêmes alertes
+  const menu = buildEspaceMenu(config, week, byId, audioUrls, regles?.allergies);
   const securite = await buildSecurite(dest, null, null);
   return {
     v: 1,

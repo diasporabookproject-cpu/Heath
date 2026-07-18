@@ -1,37 +1,8 @@
 /* FTUE v4 (F4, Flow FTUE) — port FIDÈLE de docs/maquettes/ftue-v4.html.
    Écarts assumés : plein écran (pas de cadre .device), safe-areas natives,
-   POLICES EMBARQUÉES en local (Q-2 : première impression, potentiellement
-   hors-ligne — zéro fetch réseau), pas de name-sheet (#people active le rôle
-   SANS nom — le nommage arrive au premier partage, archi existante). */
-
-@font-face {
-  font-family: 'Fraunces';
-  src: url('./fonts/fraunces.woff2') format('woff2');
-  font-weight: 400 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Plus Jakarta Sans';
-  src: url('./fonts/plus-jakarta-sans.woff2') format('woff2');
-  font-weight: 400 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  src: url('./fonts/jetbrains-mono.woff2') format('woff2');
-  font-weight: 400 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Noto Naskh Arabic';
-  src: url('./fonts/noto-naskh-arabic.woff2') format('woff2');
-  font-weight: 500 600;
-  font-style: normal;
-  font-display: swap;
-}
+   pas de name-sheet (#people active le rôle SANS nom — le nommage arrive au
+   premier partage, archi existante). Les @font-face embarqués (Q-2) ont été
+   remontés au niveau app en F1.1 (lot Cuisine) : src/assets/fonts.css. */
 
 .ftue {
   --sand: #ebe3d3;

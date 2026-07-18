@@ -5,7 +5,8 @@ import { mealMacros, componentMacros } from '../lib/nutrition';
 import type { MealKey, Recipe, RecipeRole } from '../types';
 import { IconPlus, IconClose, IconClock } from './icons';
 
-const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit-déj', dej: 'Déjeuner', diner: 'Dîner' };
+// F7.2 : Matin / Midi / Soir (libellés seuls — clés du modèle inchangées).
+const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Matin', dej: 'Midi', diner: 'Soir' };
 type Slot = 'plat' | 'entree' | 'acc';
 
 interface Props {
@@ -22,6 +23,7 @@ const fmt = (n: number) => Math.round(n).toLocaleString('fr-FR');
 export default function MealComposerSheet({ dayKey, dayNom, mealKey, onPickSlot, onClose }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
+  const suivi = useStore((s) => s.suivi); // F2.2 #9 : total/objectif du composeur sous le flag
   const setComponent = useStore((s) => s.setComponent);
   const setAccQty = useStore((s) => s.setAccQty);
   const byId = new Map(recipes.map((r) => [r.id, r]));
@@ -60,11 +62,13 @@ export default function MealComposerSheet({ dayKey, dayNom, mealKey, onPickSlot,
               {recipe.nom}
               {recipe.statut === 'Test' && <span style={{ color: 'var(--draft)', fontSize: 11 }}> ✦</span>}
             </span>
-            <span className="ck">
-              {slot === 'acc' && meal.acc
-                ? `${fmt(componentMacros('acc', meal.acc, byId).kcal)} kcal · ${fmt(componentMacros('acc', meal.acc, byId).prot)} g P`
-                : `${fmt(recipe.kcal)} kcal · ${fmt(recipe.prot)} g P`}
-            </span>
+            {suivi && (
+              <span className="ck">
+                {slot === 'acc' && meal.acc
+                  ? `${fmt(componentMacros('acc', meal.acc, byId).kcal)} kcal · ${fmt(componentMacros('acc', meal.acc, byId).prot)} g P`
+                  : `${fmt(recipe.kcal)} kcal · ${fmt(recipe.prot)} g P`}
+              </span>
+            )}
           </span>
           {slot === 'acc' && meal.acc && (
             <span className="cz-qty">
@@ -104,14 +108,16 @@ export default function MealComposerSheet({ dayKey, dayNom, mealKey, onPickSlot,
           </button>
         </div>
         <div className="cz-sheetbody">
-          <div className="cz-mealmac">
-            <span className="l">Total du repas</span>
-            <span className="v">
-              {fmt(total.kcal)}
-              <small>kcal</small> · {fmt(total.prot)}
-              <small>g P</small>
-            </span>
-          </div>
+          {suivi && (
+            <div className="cz-mealmac">
+              <span className="l">Total du repas</span>
+              <span className="v">
+                {fmt(total.kcal)}
+                <small>kcal</small> · {fmt(total.prot)}
+                <small>g P</small>
+              </span>
+            </div>
+          )}
 
           <div className="cz-complist">
             <Row role={full ? 'Plat' : 'Petit-déj'} slot="plat" recipe={plat} />
@@ -130,11 +136,13 @@ export default function MealComposerSheet({ dayKey, dayNom, mealKey, onPickSlot,
             </button>
           )}
 
-          <div className="cz-composernote">
-            <IconClock size={14} />
-            Les macros du repas = somme des composants. La quantité d’un accompagnement ajuste ses
-            macros.
-          </div>
+          {suivi && (
+            <div className="cz-composernote">
+              <IconClock size={14} />
+              Les macros du repas = somme des composants. La quantité d’un accompagnement ajuste ses
+              macros.
+            </div>
+          )}
         </div>
       </div>
     </>

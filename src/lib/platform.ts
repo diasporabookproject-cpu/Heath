@@ -61,3 +61,34 @@ export async function shareText(text: string, title?: string): Promise<void> {
   const { Share } = await import('@capacitor/share');
   await Share.share({ text, dialogTitle: title ?? 'Envoyer la page' });
 }
+
+/**
+ * T4b — sélection d'une photo en NATIF (retour device : l'`<input type=file>` de
+ * la WebView Android n'ouvre que la galerie, jamais l'appareil ; repli Q5 acté).
+ * `CameraSource.Prompt` = dialogue natif « Prendre une photo » OU « Depuis les
+ * photos » : les DEUX chemins que le web ne pouvait pas offrir. Renvoie le Blob
+ * (via le webPath éphémère), ou null si l'utilisateur annule. Le web garde son
+ * `<input>` — cette fonction n'est jamais appelée hors natif (DCE : zéro octet
+ * `@capacitor/camera` dans le bundle web). L'image passe ensuite par
+ * `prepareImage` (≤1280px, EXIF/GPS retirés) comme toute photo. */
+export async function pickPhoto(): Promise<Blob | null> {
+  try {
+    const { Camera, CameraSource, CameraResultType } = await import('@capacitor/camera');
+    const photo = await Camera.getPhoto({
+      source: CameraSource.Prompt, // ← appareil OU galerie (le prompt laisse choisir)
+      resultType: CameraResultType.Uri,
+      quality: 90,
+      // pas d'édition imposée : on redimensionne nous-mêmes (prepareImage).
+      allowEditing: false,
+      promptLabelHeader: 'Ajouter une photo',
+      promptLabelPhoto: 'Depuis la galerie',
+      promptLabelPicture: 'Prendre une photo',
+    });
+    if (!photo.webPath) return null;
+    const res = await fetch(photo.webPath);
+    return await res.blob();
+  } catch {
+    // getPhoto lève si l'utilisateur annule le prompt — ce n'est pas une erreur.
+    return null;
+  }
+}

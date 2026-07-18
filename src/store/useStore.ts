@@ -1,16 +1,20 @@
 import { create } from 'zustand';
-import type { AccRef, CuisineSettings, MealKey, Recipe, WeekMenu } from '../types';
-import { DEFAULT_SETTINGS } from '../types';
+import type { AccRef, CuisineSettings, DayMenu, MealKey, Recipe, ReglesFoyer, WeekMenu } from '../types';
+import { DEFAULT_SETTINGS, EMPTY_REGLES } from '../types';
 import { SEED_CONFIG } from '../data';
 import {
   ensureSeeded,
   loadApp,
+  loadFoyerRegles,
   loadRecipes,
   loadSettings,
+  loadSuiviEquilibre,
   loadWeek,
   saveApp,
+  saveFoyerRegles,
   saveRecipe,
   saveSettings,
+  saveSuiviEquilibre,
   saveWeek,
   type AppState,
   type Rappel,
@@ -50,6 +54,13 @@ interface State {
   week: WeekMenu;
   weekOffset: number;
   settings: CuisineSettings;
+  /** F2.1 — « Suivi de l'équilibre » : SEUL point de vérité de l'affichage
+   * nutrition (11 surfaces, F2.2). OFF par défaut ; préférence d'appareil
+   * (méta IDB), jamais synchronisée. Le CALCUL, lui, tourne toujours. */
+  suivi: boolean;
+  /** T3 (F3.1) — règles du foyer (allergies, halal, régime). EMPTY_REGLES tant
+   * que rien n'est posé (le doc IDB n'existe alors pas → rien ne se synchronise). */
+  regles: ReglesFoyer;
   app: AppState;
   init: () => Promise<void>;
   /** Recharge les données depuis IndexedDB (après un pull de sync), sans reset de nav. */
@@ -61,10 +72,14 @@ interface State {
   setRappel: (kind: 'cuisine' | 'nounou', r: Rappel | null) => void;
   /** Copie en profondeur les jours d'une autre semaine dans la semaine courante. */
   copyWeekInto: (srcDays: WeekMenu['days']) => void;
+  /** F7.2 : copie en profondeur UN jour (journée précédente) dans le jour cible. */
+  copyDayInto: (targetKey: string, srcDay: DayMenu) => void;
   setComponent: (dayKey: string, meal: MealKey, slot: Slot, value: string | AccRef | null) => void;
   setAccQty: (dayKey: string, meal: MealKey, deltaG: number) => void;
   setObjective: (n: number) => void;
   setPersons: (n: number) => void;
+  setSuivi: (v: boolean) => void;
+  setRegles: (r: ReglesFoyer) => void;
   upsertRecipe: (recipe: Recipe) => void;
   setStatut: (id: string, statut: Recipe['statut']) => void;
   validateRecipe: (id: string) => void;
@@ -77,32 +92,37 @@ export const useStore = create<State>((set, get) => ({
   week: freshWeek(weekId(0)),
   weekOffset: 0,
   settings: DEFAULT_SETTINGS,
+  suivi: false,
+  regles: EMPTY_REGLES,
   app: {},
 
   async init() {
     await ensureSeeded();
-    const [recipes, week, settings, loadedApp] = await Promise.all([
+    const [recipes, week, settings, suivi, regles, loadedApp] = await Promise.all([
       loadRecipes(),
       weekFor(weekId(0)),
       loadSettings(),
+      loadSuiviEquilibre(),
+      loadFoyerRegles(),
       loadApp(),
     ]);
     // Normalise le quota IA pour le mois courant (reset au changement de mois).
     const aiQuota = normalizeQuota(loadedApp.aiQuota, currentMonth());
     const app: AppState = { ...loadedApp, aiQuota };
     if (loadedApp.aiQuota?.month !== aiQuota.month) void saveApp(app);
-    set({ recipes, week, weekOffset: 0, settings, app, ready: true });
+    set({ recipes, week, weekOffset: 0, settings, suivi, regles: regles ?? EMPTY_REGLES, app, ready: true });
   },
 
   async refresh() {
-    const [recipes, week, settings, loadedApp] = await Promise.all([
+    const [recipes, week, settings, regles, loadedApp] = await Promise.all([
       loadRecipes(),
       weekFor(weekId(get().weekOffset)),
       loadSettings(),
+      loadFoyerRegles(),
       loadApp(),
     ]);
     const aiQuota = normalizeQuota(loadedApp.aiQuota, currentMonth());
-    set({ recipes, week, settings, app: { ...loadedApp, aiQuota } });
+    set({ recipes, week, settings, regles: regles ?? EMPTY_REGLES, app: { ...loadedApp, aiQuota } });
   },
 
   consumeAi() {
@@ -135,6 +155,16 @@ export const useStore = create<State>((set, get) => ({
       for (const key of Object.keys(week.days)) {
         if (isV2Day(srcDays[key])) week.days[key] = JSON.parse(JSON.stringify(srcDays[key]));
       }
+      void saveWeek(week);
+      return { week };
+    });
+  },
+
+  // F7.2 (amendement ① — « Copier » = journée précédente) : copie PROFONDE d'un
+  // seul jour dans le jour cible de la semaine courante.
+  copyDayInto(targetKey, srcDay) {
+    set((s) => {
+      const week = { ...s.week, days: { ...s.week.days, [targetKey]: JSON.parse(JSON.stringify(srcDay)) } };
       void saveWeek(week);
       return { week };
     });
@@ -181,6 +211,16 @@ export const useStore = create<State>((set, get) => ({
       void saveSettings(settings);
       return { settings };
     });
+  },
+
+  setSuivi(v) {
+    void saveSuiviEquilibre(v);
+    set({ suivi: v });
+  },
+
+  setRegles(r) {
+    void saveFoyerRegles(r);
+    set({ regles: r });
   },
 
   upsertRecipe(recipe) {

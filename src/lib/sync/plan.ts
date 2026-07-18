@@ -9,7 +9,12 @@ export type SyncStore =
   | 'securite'
   | 'nounou'
   | 'app'
-  | 'settings';
+  | 'settings'
+  // Lot Cuisine T3 (Q1 acceptée) : règles du foyer — document unique 'regles',
+  // façon nounou. Monte sur la table `docs` existante (store = texte libre,
+  // RLS docs_rw) : AUCUNE migration SQL. L'adoption (planAdopt) le transporte
+  // comme tout store — prouvé par tests dédiés (exigence PO du GO).
+  | 'foyer';
 
 /** Référence d'un document synchronisable. */
 export interface DocRef {

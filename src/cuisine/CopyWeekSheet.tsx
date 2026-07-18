@@ -25,6 +25,7 @@ interface Props {
 export default function CopyWeekSheet({ onClose, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const currentId = useStore((s) => s.week.id);
+  const suivi = useStore((s) => s.suivi); // F2.2 : ~kcal/j des candidates sous le flag
   const copyWeekInto = useStore((s) => s.copyWeekInto);
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r] as [string, Recipe])), [recipes]);
 
@@ -95,7 +96,7 @@ export default function CopyWeekSheet({ onClose, toast }: Props) {
                     <span>
                       <b>{c.count}</b> jour{c.count > 1 ? 's' : ''}
                     </span>
-                    {c.avg > 0 && (
+                    {suivi && c.avg > 0 && (
                       <span>
                         ~<b>{fmt(c.avg)}</b> kcal/j
                       </span>

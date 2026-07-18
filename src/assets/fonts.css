@@ -1,0 +1,33 @@
+/* Polices EMBARQUÉES au niveau app (F1.1, lot Cuisine) — plus aucune requête
+   Google Fonts au runtime (offline-first, pas de FOUT). Fichiers woff2 VARIABLES
+   (précédent : lot Flow FTUE, 224 Ko), précachés par le SW (globPatterns woff2).
+   Repli : serif/sans système déclaré aux points d'usage (var(--font-*), .ar). */
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('./fonts/fraunces.woff2') format('woff2');
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('./fonts/plus-jakarta-sans.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./fonts/jetbrains-mono.woff2') format('woff2');
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Naskh Arabic';
+  src: url('./fonts/noto-naskh-arabic.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}

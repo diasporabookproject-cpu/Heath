@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import {
@@ -6,77 +6,51 @@ import {
   dayHasAny,
   mealMacros,
   mealHasDraft,
-  mealBudgets,
   objectiveStatus,
   weekAverage,
 } from '../lib/nutrition';
-import { aiAvailable, generateRecipeDraft, type RecipeDraft } from '../lib/ai';
-import { estimateMacrosLocal } from '../lib/macros';
-import { nextRecipeId } from '../lib/recipeId';
-import { ROLE_LABEL, type CalciumFlag, type MealKey, type Recipe, type RecipeRole } from '../types';
-import { weekDatesOffset, weekLabelOffset, weekSub, dayLabel } from './dates';
-import { IconChevL, IconChevR, IconSpark, IconStar, IconPlus, IconCopy, IconLoader } from './icons';
+import type { DayMenu, MealKey, Recipe } from '../types';
+import { weekDatesOffset, weekSub, dayLabel } from './dates';
+import { IconChevL, IconChevR, IconStar, IconPlus, IconCopy } from './icons';
 
-const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit-déj', dej: 'Déjeuner', diner: 'Dîner' };
+// F7.2 : repas = Matin / Midi / Soir (libellés seuls — les clés du modèle,
+// du digest et de la projection ne bougent pas : compat totale).
+const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Matin', dej: 'Midi', diner: 'Soir' };
 const MEAL_KEYS: MealKey[] = ['petitdej', 'dej', 'diner'];
 const fmt = (n: number) => Math.round(n).toLocaleString('fr-FR');
 
-/** Exécute `worker` sur `items` avec une concurrence limitée. */
-async function runPool<T, R>(items: T[], worker: (item: T) => Promise<R>, concurrency = 4): Promise<R[]> {
-  const results = new Array(items.length) as R[];
-  let i = 0;
-  const next = async (): Promise<void> => {
-    const idx = i++;
-    if (idx >= items.length) return;
-    results[idx] = await worker(items[idx]);
-    return next();
-  };
-  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, next));
-  return results;
-}
+// F1.2 (lot Cuisine, accord PO) : « Générer la semaine » est RETIRÉ — « proposer
+// un repas » part au backlog. Le garde-fou F5b (biblio vide → proposer la
+// collection), qui ne servait que ce bouton, meurt avec lui (réconcilié avec le
+// rapport Q&A 338abfb au read-back). Le rail Collections reste la voie d'entrée.
 
-function recipeFromDraft(id: string, role: RecipeRole, d: RecipeDraft): Recipe {
-  const hasMacros = Number(d.kcal) > 0;
-  const est = hasMacros ? null : estimateMacrosLocal(d.ingredients ?? '');
-  return {
-    id,
-    nom: d.nom?.trim() || `${ROLE_LABEL[role]} (IA)`,
-    role,
-    statut: 'Test',
-    kcal: hasMacros ? Math.round(Number(d.kcal)) : est!.kcal,
-    prot: hasMacros ? Math.round(Number(d.prot) || 0) : est!.prot,
-    gluc: hasMacros ? Math.round(Number(d.gluc) || 0) : est!.gluc,
-    lip: hasMacros ? Math.round(Number(d.lip) || 0) : est!.lip,
-    calcium: hasMacros ? Math.round(Number(d.calcium) || 0) : est!.calcium,
-    flag_calcium: (d.flag_calcium as CalciumFlag) || (est ? est.flag_calcium : 'Moyen'),
-    ingredients: d.ingredients?.trim() || '',
-    etapes: d.etapes?.trim() || undefined,
-    macros_estimees: true,
-    nom_ar: d.nom_ar?.trim() || undefined,
-    ingredients_ar: d.ingredients_ar?.trim() || undefined,
-    etapes_ar: d.etapes_ar?.trim() || undefined,
-  };
-}
+/** F7.2 — horizon du Menu : pas-à-pas DANS le contenu (jamais une 2ᵉ barre). */
+export type Horizon = 'aujourdhui' | 'demain' | 'semaine';
+
+const HORIZONS: { key: Horizon; label: string }[] = [
+  { key: 'aujourdhui', label: 'Aujourd’hui' },
+  { key: 'demain', label: 'Demain' },
+  { key: 'semaine', label: 'Semaine' },
+];
 
 interface Props {
   voiceIds: Set<string>;
+  horizon: Horizon;
+  onHorizon: (h: Horizon) => void;
   onOpenMeal: (dayKey: string, meal: MealKey) => void;
   onCopyWeek: () => void;
   onGoValidate: () => void;
-  /** F5b (Flow FTUE) : biblio vide → proposer d'installer une collection au lieu de partir en IA. */
-  onOpenCollections: (packId?: string) => void;
-  toast: (msg: string) => void;
+  toast: (m: string) => void;
 }
 
-export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, onOpenCollections, toast }: Props) {
+export default function SemaineView({ horizon, onHorizon, onOpenMeal, onCopyWeek, onGoValidate, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const weekOffset = useStore((s) => s.weekOffset);
   const navWeek = useStore((s) => s.navWeek);
   const objective = useStore((s) => s.settings.objective);
-  const setComponent = useStore((s) => s.setComponent);
-  const upsertRecipe = useStore((s) => s.upsertRecipe);
-  const [busy, setBusy] = useState(false);
+  const suivi = useStore((s) => s.suivi); // F2.2 : gouverne TOUT l'affichage nutrition
+  const copyDayInto = useStore((s) => s.copyDayInto);
 
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
   const dates = useMemo(() => weekDatesOffset(weekOffset), [weekOffset]);
@@ -101,190 +75,189 @@ export default function SemaineView({ onOpenMeal, onCopyWeek, onGoValidate, onOp
   const avgStatus = objectiveStatus(avg.kcal, objective);
   const avgPct = Math.min(100, Math.round((avg.kcal / (objective || 1)) * 100));
 
-  // FC16 — complète UNIQUEMENT les repas vides par IA, dimensionnés sous l'objectif.
-  const generate = async () => {
-    if (busy) return;
-    // F5b (Flow FTUE) : bibliothèque VIDE → générer partirait TOUT en IA (connexion +
-    // quota). On propose d'abord la collection — copie sobre, pas de blocage sec.
-    if (recipes.length === 0) {
-      toast('Ta bibliothèque est vide — installe d’abord une collection de recettes');
-      onOpenCollections('fonds-de-depart');
-      return;
-    }
-    if (!(await aiAvailable())) {
-      toast('Génération IA indisponible (hors-ligne / non connecté)');
-      return;
-    }
-    const tasks: { dayKey: string; mealKey: MealKey; role: RecipeRole; target: number }[] = [];
-    for (const j of SEED_CONFIG.jours) {
-      const d = week.days[j.key];
-      const empties = MEAL_KEYS.filter((k) => !d[k].plat);
-      if (empties.length === 0) continue;
-      const budgets = mealBudgets(empties, dayMacros(d, byId).kcal, objective);
-      for (const k of empties) {
-        tasks.push({ dayKey: j.key, mealKey: k, role: k === 'petitdej' ? 'petitdej' : 'plat', target: budgets[k] });
+  // Vue JOUR : l'index du jour affiché (le passage de semaine — dimanche soir →
+  // lundi suivant — est géré par CuisineView via weekOffset au changement d'horizon).
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const dayIdx = horizon === 'aujourdhui' ? todayIdx : (todayIdx + 1) % 7;
+
+  // F7.2 (amendement ① + Q4) : « Copier la journée précédente » = le DERNIER jour
+  // non vide avant le jour affiché (dans la semaine affichée) ; cible non vide →
+  // confirmation explicite, jamais d'écrasement silencieux.
+  const copyDay = () => {
+    const targetKey = SEED_CONFIG.jours[dayIdx].key;
+    let src: { key: string; nom: string; day: DayMenu } | null = null;
+    for (let i = dayIdx - 1; i >= 0; i--) {
+      const j = SEED_CONFIG.jours[i];
+      if (dayHasAny(week.days[j.key])) {
+        src = { key: j.key, nom: j.nom, day: week.days[j.key] };
+        break;
       }
     }
-    if (tasks.length === 0) {
-      toast('Aucun repas vide à compléter');
+    if (!src) {
+      toast('Rien à copier pour l’instant — compose ton premier repas');
       return;
     }
-    setBusy(true);
-    // FIX revue Q (P2) : le générateur consomme le quota IA SERVEUR — un 429
-    // « quota atteint » doit se dire clairement, pas en « indisponible » générique.
-    let quotaHit = false;
-    try {
-      const drafts = await runPool(
-        tasks,
-        async (t) => {
-          try {
-            const intention = `${ROLE_LABEL[t.role]} équilibré, sans gluten, ~${t.target} kcal pour 1 portion`;
-            return { t, d: await generateRecipeDraft(intention) };
-          } catch (e) {
-            if (/quota/i.test((e as Error)?.message ?? '')) quotaHit = true;
-            return null;
-          }
-        },
-        4,
-      );
-      const pool = [...recipes];
-      let n = 0;
-      for (const r of drafts) {
-        if (!r) continue;
-        const id = nextRecipeId(pool, r.t.role);
-        const rec = recipeFromDraft(id, r.t.role, r.d);
-        pool.push(rec);
-        upsertRecipe(rec);
-        setComponent(r.t.dayKey, r.t.mealKey, 'plat', id);
-        n++;
-      }
-      toast(
-        n
-          ? `${n} repas complété${n > 1 ? 's' : ''} par l’IA — à valider`
-          : quotaHit
-            ? 'Quota IA du mois atteint — réessaie le mois prochain'
-            : 'Génération indisponible',
-      );
-    } finally {
-      setBusy(false);
+    if (dayHasAny(week.days[targetKey]) && !window.confirm('Ce jour a déjà des repas — les remplacer ?')) {
+      return;
     }
+    copyDayInto(targetKey, src.day);
+    toast(`Journée copiée depuis ${src.nom}`);
+  };
+
+  const dayCard = (i: number) => {
+    const jour = SEED_CONFIG.jours[i];
+    const day = week.days[jour.key];
+    const hasAny = dayHasAny(day);
+    const dk = dayMacros(day, byId).kcal;
+    const status = objectiveStatus(dk, objective);
+    const pct = Math.min(100, Math.round((dk / (objective || 1)) * 100));
+    return (
+      <div className="cz-daycard" key={jour.key}>
+        <div className="cz-dayhead">
+          <span className="cz-dayname">{jour.nom}</span>
+          <span className="cz-daydate">{dayLabel(dates[i])}</span>
+        </div>
+
+        {MEAL_KEYS.map((k) => (
+          <MealRow
+            key={k}
+            label={MEAL_LABEL[k]}
+            meal={day[k]}
+            mealKey={k}
+            byId={byId}
+            suivi={suivi}
+            onClick={() => onOpenMeal(jour.key, k)}
+          />
+        ))}
+
+        {/* F2.2 : jauge du jour + bandeau « équilibre » (#8) = nutrition, sous le flag. */}
+        {suivi &&
+          (hasAny ? (
+            <div className="cz-gauge">
+              <div className="cz-gtrack">
+                <div className={'cz-gfill ' + status.cls} style={{ width: pct + '%' }} />
+                <div className="cz-gtick" style={{ left: '100%' }} />
+              </div>
+              <div className="cz-gmeta">
+                <span className="cz-gk">{fmt(dk)} kcal</span>
+                <span className={'cz-gstatus ' + status.cls}>{status.word}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="cz-gincomplete">Ajoute au moins un repas pour voir l’équilibre.</div>
+          ))}
+      </div>
+    );
   };
 
   return (
     <div>
-      <div className="cz-weeknav">
-        <button className="cz-navchev" aria-label="Précédente" onClick={() => void navWeek(-1)}>
-          <IconChevL size={16} />
-        </button>
-        <span className="cz-wk">
-          {weekLabelOffset(weekOffset)}
-          <small>{weekSub(weekOffset)}</small>
-        </span>
-        <button className="cz-navchev" aria-label="Suivante" onClick={() => void navWeek(1)}>
-          <IconChevR size={16} />
-        </button>
+      {/* F7.2 — l'horizon vit DANS le contenu (interdit : deux barres empilées).
+          Défaut à l'ouverture : Demain (posé par CuisineView). */}
+      <div className="cz-horizon" role="group" aria-label="Horizon du menu">
+        {HORIZONS.map((h) => (
+          <button key={h.key} className="cz-hbtn" aria-pressed={horizon === h.key} onClick={() => onHorizon(h.key)}>
+            {h.label}
+          </button>
+        ))}
       </div>
 
-      <div className="cz-pad">
-        <div className="cz-summary">
-          {avg.count === 0 ? (
-            <>
-              <div className="cz-slab">Cette semaine</div>
-              <div className="cz-sval">—</div>
-              <div className="cz-sempty">Semaine vide — compose tes repas ou lance une génération.</div>
-            </>
-          ) : (
-            <>
-              <div className="cz-sumtop">
-                <div>
-                  <div className="cz-slab">Moyenne / jour</div>
-                  <div className="cz-sval">
-                    {fmt(avg.kcal)}
-                    <small>kcal · obj. {fmt(objective)}</small>
-                  </div>
-                </div>
-                <div className="cz-sprot">
-                  {avg.prot} g<small>protéines</small>
-                </div>
+      {horizon === 'semaine' ? (
+        <>
+          <div className="cz-weeknav">
+            <button className="cz-navchev" aria-label="Précédente" onClick={() => void navWeek(-1)}>
+              <IconChevL size={16} />
+            </button>
+            {/* F1.3 : titre de vue = « menu de la semaine » (vocabulaire verrouillé) ; la date reste. */}
+            <span className="cz-wk">
+              Menu de la semaine
+              <small>
+                du {dayLabel(dates[0])} · {weekSub(weekOffset)}
+              </small>
+            </span>
+            <button className="cz-navchev" aria-label="Suivante" onClick={() => void navWeek(1)}>
+              <IconChevR size={16} />
+            </button>
+          </div>
+
+          {/* F2.2 #10 : le résumé nutritionnel n'existe que si le suivi est ON. */}
+          {(suivi || avg.count === 0) && (
+            <div className="cz-pad">
+              <div className="cz-summary">
+                {avg.count === 0 ? (
+                  <>
+                    <div className="cz-slab">Cette semaine</div>
+                    {suivi && <div className="cz-sval">—</div>}
+                    <div className="cz-sempty">Semaine vide — compose tes repas ou copie une semaine.</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="cz-sumtop">
+                      <div>
+                        <div className="cz-slab">Moyenne / jour</div>
+                        <div className="cz-sval">
+                          {fmt(avg.kcal)}
+                          <small>kcal · obj. {fmt(objective)}</small>
+                        </div>
+                      </div>
+                      <div className="cz-sprot">
+                        {avg.prot} g<small>protéines</small>
+                      </div>
+                    </div>
+                    <div className="cz-sgauge">
+                      <div
+                        className="cz-sgfill"
+                        style={{
+                          width: avgPct + '%',
+                          background:
+                            avgStatus.cls === 'ok' ? '#7BD3A0' : avgStatus.cls === 'warn' ? '#F4B860' : '#F0897A',
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="cz-sgauge">
-                <div
-                  className="cz-sgfill"
-                  style={{
-                    width: avgPct + '%',
-                    background: avgStatus.cls === 'ok' ? '#7BD3A0' : avgStatus.cls === 'warn' ? '#F4B860' : '#F0897A',
-                  }}
-                />
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      <button className="cz-genbtn" onClick={generate} disabled={busy}>
-        {busy ? <IconLoader size={18} className="cz-spin" /> : <IconSpark size={18} />}
-        {busy ? 'Génération des repas vides…' : 'Générer la semaine'}
-      </button>
-      <button className="cz-subgen" onClick={onCopyWeek}>
-        <IconCopy size={15} />
-        Copier une semaine précédente
-      </button>
-
-      {toValidate > 0 && (
-        <button className="cz-vbanner" onClick={onGoValidate}>
-          <span className="cz-vi">
-            <IconStar size={18} />
-          </span>
-          <span className="cz-vt">
-            {toValidate} recette{toValidate > 1 ? 's' : ''} à valider dans cette semaine
-          </span>
-          <IconChevR size={16} />
-        </button>
-      )}
-
-      <div className="cz-days">
-        {SEED_CONFIG.jours.map((jour, i) => {
-          const day = week.days[jour.key];
-          const hasAny = dayHasAny(day);
-          const dk = dayMacros(day, byId).kcal;
-          const status = objectiveStatus(dk, objective);
-          const pct = Math.min(100, Math.round((dk / (objective || 1)) * 100));
-          return (
-            <div className="cz-daycard" key={jour.key}>
-              <div className="cz-dayhead">
-                <span className="cz-dayname">{jour.nom}</span>
-                <span className="cz-daydate">{dayLabel(dates[i])}</span>
-              </div>
-
-              {MEAL_KEYS.map((k) => (
-                <MealRow
-                  key={k}
-                  label={MEAL_LABEL[k]}
-                  meal={day[k]}
-                  mealKey={k}
-                  byId={byId}
-                  onClick={() => onOpenMeal(jour.key, k)}
-                />
-              ))}
-
-              {hasAny ? (
-                <div className="cz-gauge">
-                  <div className="cz-gtrack">
-                    <div className={'cz-gfill ' + status.cls} style={{ width: pct + '%' }} />
-                    <div className="cz-gtick" style={{ left: '100%' }} />
-                  </div>
-                  <div className="cz-gmeta">
-                    <span className="cz-gk">{fmt(dk)} kcal</span>
-                    <span className={'cz-gstatus ' + status.cls}>{status.word}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="cz-gincomplete">Ajoute au moins un repas pour voir l’équilibre.</div>
-              )}
             </div>
-          );
-        })}
-      </div>
+          )}
+
+          <button className="cz-subgen" onClick={onCopyWeek}>
+            <IconCopy size={15} />
+            Copier une semaine précédente
+          </button>
+
+          {toValidate > 0 && (
+            <button className="cz-vbanner" onClick={onGoValidate}>
+              <span className="cz-vi">
+                <IconStar size={18} />
+              </span>
+              <span className="cz-vt">
+                {toValidate} recette{toValidate > 1 ? 's' : ''} à valider dans cette semaine
+              </span>
+              <IconChevR size={16} />
+            </button>
+          )}
+
+          <div className="cz-days">{SEED_CONFIG.jours.map((_, i) => dayCard(i))}</div>
+        </>
+      ) : (
+        <>
+          {/* F1.3 : titre de vue jour = « menu du jour ». État vide = composer
+              (les rangées « Ajouter » de la carte) + Copier — sans « Générer ». */}
+          <div className="cz-weeknav">
+            <span className="cz-wk">
+              Menu du jour
+              <small>
+                {horizon === 'aujourdhui' ? 'aujourd’hui' : 'demain'} · {dayLabel(dates[dayIdx])}
+              </small>
+            </span>
+          </div>
+          <div className="cz-days">{dayCard(dayIdx)}</div>
+          <button className="cz-subgen" onClick={copyDay}>
+            <IconCopy size={15} />
+            Copier la journée précédente
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -294,12 +267,14 @@ function MealRow({
   meal,
   mealKey,
   byId,
+  suivi,
   onClick,
 }: {
   label: string;
   meal: import('../types').MealSlot;
   mealKey: MealKey;
   byId: Map<string, Recipe>;
+  suivi: boolean;
   onClick: () => void;
 }) {
   const plat = meal.plat ? byId.get(meal.plat) : undefined;
@@ -343,7 +318,7 @@ function MealRow({
         </span>
         {sub.length > 0 && <span className="sub">{sub.join(' · ')}</span>}
       </span>
-      <span className="mk2">{fmt(mealMacros(meal, mealKey, byId).kcal)}</span>
+      {suivi && <span className="mk2">{fmt(mealMacros(meal, mealKey, byId).kcal)}</span>}
       <span className="chev">
         <IconChevR size={16} />
       </span>

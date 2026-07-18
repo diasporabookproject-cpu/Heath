@@ -1,7 +1,21 @@
 // Modèle métier — Cuisine v2 (brief FC11-FC19).
 
-/** Rôle d'une recette : sert au filtrage et à la composition des repas. */
-export type RecipeRole = 'petitdej' | 'entree' | 'plat' | 'acc';
+/**
+ * MOMENT d'une recette (F5.2, lot Cuisine T5) : le jeu passe de 4 à 8, FERMÉ.
+ * La clé stockée reste `role` — les recettes existantes gardent leur valeur
+ * (migration = identité). Composition v1 inchangée (créneaux petitdej/entree/
+ * plat/acc) : la soupe est éligible entrée ET plat au sélecteur (lib/picker) ;
+ * dessert / goûter / boisson vivent en bibliothèque + fiche, sans créneau.
+ */
+export type RecipeRole =
+  | 'petitdej'
+  | 'entree'
+  | 'plat'
+  | 'acc'
+  | 'dessert'
+  | 'soupe'
+  | 'gouter'
+  | 'boisson';
 export type RecipeStatus = 'Validé' | 'Écarté' | 'Test';
 export type CalciumFlag = 'Champion' | 'Moyen' | 'Faible';
 
@@ -10,6 +24,10 @@ export const ROLE_LABEL: Record<RecipeRole, string> = {
   entree: 'Entrée',
   plat: 'Plat',
   acc: 'Accompagnement',
+  dessert: 'Dessert',
+  soupe: 'Soupe',
+  gouter: 'Goûter',
+  boisson: 'Boisson',
 };
 
 export interface Recipe {
@@ -40,6 +58,15 @@ export interface Recipe {
   packId?: string;
   /** Favori (étoile). */
   fav?: boolean;
+  /** Nombre de portions telles qu'écrites (T4/F4.2 ; affiché en tag F5.2). */
+  portions?: number;
+  /** Tags F5.2 optionnels (pastilles de fiche — omises si absentes). */
+  cuisine?: string;
+  difficulte?: string;
+  temps?: string;
+  /** G3 (F4.4) : règles du foyer appliquées à l'import — la trace vit DANS le
+   * document et s'affiche à la relecture (« Adaptée selon : … »). */
+  adapteSelon?: string[];
   /** Darija marocaine (lettres arabes), pour l'espace cuisinière. */
   nom_ar?: string;
   ingredients_ar?: string;
@@ -121,6 +148,35 @@ export interface WeekMenu {
 }
 
 export type Feu = 'vert' | 'orange' | 'rouge';
+
+// ── Règles du foyer (lot Cuisine T3, F3.1 — décision D2 : UN SEUL endroit) ────
+// Restrictions posées au niveau du FOYER (jamais par personne) : appliquées aux
+// prochains imports de recettes (T4/F4.4) et signalées sur la page reçue
+// (T5/F5.5). Document unique synchronisé via `docs` (store 'foyer', façon
+// nounou) — LWW par document, lisible hors-ligne. La fiche enfant Nounou ne
+// bouge pas (passerelle parquée, D2).
+export interface ReglesFoyer {
+  /** Allergies / interdits libres (une entrée par ligne à la saisie). */
+  allergies: string[];
+  halal: boolean;
+  /** Régime du foyer (extensible) — 'végétarien' pour l'instant, null sinon. */
+  regime: string | null;
+}
+
+export const EMPTY_REGLES: ReglesFoyer = { allergies: [], halal: false, regime: null };
+
+/** Y a-t-il au moins une restriction posée ? (état vide = légal, F3.1) */
+export function reglesActives(r: ReglesFoyer): boolean {
+  return r.allergies.length > 0 || r.halal || r.regime !== null;
+}
+
+/** Les règles en liste lisible (« halal · végétarien · sans arachide ») — même
+ * format partout : Réglages (G1), ligne d'import (F4.4), trace de relecture (G3). */
+export function reglesList(r: ReglesFoyer): string[] {
+  return [r.halal ? 'halal' : null, r.regime, ...r.allergies.map((a) => `sans ${a}`)].filter(
+    (x): x is string => !!x,
+  );
+}
 
 /** Destinataire d'un brief (personnel de maison). Concept transverse réutilisable. */
 export interface Destinataire {

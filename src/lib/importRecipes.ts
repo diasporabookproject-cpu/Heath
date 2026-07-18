@@ -4,7 +4,10 @@ import type { CalciumFlag, Recipe, RecipeRole, RecipeStatus } from '../types';
 // Tolérant : objet seul ou tableau, normalise, génère les ids manquants,
 // dérive le flag calcium. Le RÔLE remplace l'ancien "type".
 
-const PREFIX: Record<RecipeRole, string> = { petitdej: 'PDJ', entree: 'ENT', plat: 'PLT', acc: 'ACC' };
+const PREFIX: Record<RecipeRole, string> = {
+  petitdej: 'PDJ', entree: 'ENT', plat: 'PLT', acc: 'ACC',
+  dessert: 'DES', soupe: 'SOU', gouter: 'GOU', boisson: 'BOI', // F5.2
+};
 const STATUTS: RecipeStatus[] = ['Validé', 'Écarté', 'Test'];
 const FLAGS: CalciumFlag[] = ['Champion', 'Moyen', 'Faible'];
 
@@ -12,8 +15,12 @@ const FLAGS: CalciumFlag[] = ['Champion', 'Moyen', 'Faible'];
 function normRole(v: unknown): RecipeRole {
   const s = String(v ?? '').trim().toLowerCase();
   if (s.startsWith('petit') || s.startsWith('pdj')) return 'petitdej';
+  if (s.startsWith('soupe') || s.startsWith('potage')) return 'soupe'; // F5.2
   if (s.startsWith('entr') || s.startsWith('coupe')) return 'entree';
   if (s.startsWith('acc') || s.startsWith('garniture')) return 'acc';
+  if (s.startsWith('dessert')) return 'dessert'; // F5.2
+  if (s.startsWith('go')) return 'gouter'; // goûter / gouter (F5.2)
+  if (s.startsWith('boisson') || s.startsWith('jus')) return 'boisson'; // F5.2
   // déjeuner/dîner/plat (et défaut) → plat
   return 'plat';
 }

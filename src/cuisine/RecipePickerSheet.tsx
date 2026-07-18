@@ -2,20 +2,24 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { ROLE_LABEL, type Recipe, type RecipeRole } from '../types';
-import { IconSearch, IconMic, IconFav } from './icons';
+import { pickable } from '../lib/picker';
+import { IconSearch, IconMic, IconFav, IconPlus } from './icons';
 
 interface Props {
   role: RecipeRole;
   sub: string;
   voiceIds: Set<string>;
   onPick: (id: string) => void;
+  /** Amendement ② (F4.1) : ouvre la feuille des voies — précieux sur l'état vide. */
+  onNewRecipe: () => void;
   onClose: () => void;
 }
 
 /** FC12/FC15 — Sélecteur d'un composant : recettes Validé du rôle, favoris en tête. */
-export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onClose }: Props) {
+export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onNewRecipe, onClose }: Props) {
   const recipes = useStore((s) => s.recipes);
   const toggleFav = useStore((s) => s.toggleFav);
+  const suivi = useStore((s) => s.suivi); // F2.2 : macros du sélecteur sous le flag
   const [q, setQ] = useState('');
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
@@ -27,8 +31,9 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onClose
 
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return recipes
-      .filter((r) => r.role === role && r.statut === 'Validé')
+    // Règle d'éligibilité EXTRAITE (lib/picker) : Validé seulement (verrou G2,
+    // testé) + soupe éligible entrée/plat (F5.2).
+    return pickable(recipes, role)
       .filter((r) => (needle ? r.nom.toLowerCase().includes(needle) : true))
       .sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || a.nom.localeCompare(b.nom, 'fr'));
   }, [recipes, role, q]);
@@ -63,6 +68,10 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onClose
             <IconSearch size={18} />
             <input placeholder="Rechercher…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
           </div>
+          {/* Amendement ② : créer sans quitter le geste de composition. */}
+          <button className="cz-addcomp" style={{ marginTop: 10 }} onClick={onNewRecipe}>
+            <IconPlus size={16} /> Nouvelle recette
+          </button>
           {list.length === 0 ? (
             <p className="cz-emptynote">Aucune recette validée pour ce rôle.</p>
           ) : (
@@ -87,15 +96,17 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onClose
                     </span>
                     <span className="cz-tag role">{ROLE_LABEL[r.role]}</span>
                   </div>
-                  <div className="cz-macros">
-                    <span>{macroText(r)}</span>
-                    {voiceIds.has(r.id) && (
-                      <span className="cz-vchip">
-                        <IconMic size={11} />
-                        vocal
-                      </span>
-                    )}
-                  </div>
+                  {(suivi || voiceIds.has(r.id)) && (
+                    <div className="cz-macros">
+                      {suivi && <span>{macroText(r)}</span>}
+                      {voiceIds.has(r.id) && (
+                        <span className="cz-vchip">
+                          <IconMic size={11} />
+                          vocal
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
