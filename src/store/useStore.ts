@@ -8,19 +8,17 @@ import {
   loadFoyerRegles,
   loadRecipes,
   loadSettings,
-  loadSuiviEquilibre,
   loadWeek,
   saveApp,
   saveFoyerRegles,
   saveRecipe,
   saveSettings,
-  saveSuiviEquilibre,
   saveWeek,
   type AppState,
   type Rappel,
 } from '../lib/db';
 import { consume, currentMonth, normalizeQuota } from '../lib/quota';
-import { emptyDay } from '../lib/nutrition';
+import { emptyDay } from '../lib/menu';
 import { weekId } from '../cuisine/dates';
 
 function freshWeek(id: string): WeekMenu {
@@ -54,10 +52,6 @@ interface State {
   week: WeekMenu;
   weekOffset: number;
   settings: CuisineSettings;
-  /** F2.1 — « Suivi de l'équilibre » : SEUL point de vérité de l'affichage
-   * nutrition (11 surfaces, F2.2). OFF par défaut ; préférence d'appareil
-   * (méta IDB), jamais synchronisée. Le CALCUL, lui, tourne toujours. */
-  suivi: boolean;
   /** T3 (F3.1) — règles du foyer (allergies, halal, régime). EMPTY_REGLES tant
    * que rien n'est posé (le doc IDB n'existe alors pas → rien ne se synchronise). */
   regles: ReglesFoyer;
@@ -76,9 +70,7 @@ interface State {
   copyDayInto: (targetKey: string, srcDay: DayMenu) => void;
   setComponent: (dayKey: string, meal: MealKey, slot: Slot, value: string | AccRef | null) => void;
   setAccQty: (dayKey: string, meal: MealKey, deltaG: number) => void;
-  setObjective: (n: number) => void;
   setPersons: (n: number) => void;
-  setSuivi: (v: boolean) => void;
   setRegles: (r: ReglesFoyer) => void;
   upsertRecipe: (recipe: Recipe) => void;
   setStatut: (id: string, statut: Recipe['statut']) => void;
@@ -92,17 +84,15 @@ export const useStore = create<State>((set, get) => ({
   week: freshWeek(weekId(0)),
   weekOffset: 0,
   settings: DEFAULT_SETTINGS,
-  suivi: false,
   regles: EMPTY_REGLES,
   app: {},
 
   async init() {
     await ensureSeeded();
-    const [recipes, week, settings, suivi, regles, loadedApp] = await Promise.all([
+    const [recipes, week, settings, regles, loadedApp] = await Promise.all([
       loadRecipes(),
       weekFor(weekId(0)),
       loadSettings(),
-      loadSuiviEquilibre(),
       loadFoyerRegles(),
       loadApp(),
     ]);
@@ -110,7 +100,7 @@ export const useStore = create<State>((set, get) => ({
     const aiQuota = normalizeQuota(loadedApp.aiQuota, currentMonth());
     const app: AppState = { ...loadedApp, aiQuota };
     if (loadedApp.aiQuota?.month !== aiQuota.month) void saveApp(app);
-    set({ recipes, week, weekOffset: 0, settings, suivi, regles: regles ?? EMPTY_REGLES, app, ready: true });
+    set({ recipes, week, weekOffset: 0, settings, regles: regles ?? EMPTY_REGLES, app, ready: true });
   },
 
   async refresh() {
@@ -197,13 +187,6 @@ export const useStore = create<State>((set, get) => ({
     });
   },
 
-  setObjective(n) {
-    set((s) => {
-      const settings = { ...s.settings, objective: Math.max(1000, Math.min(3500, n)) };
-      void saveSettings(settings);
-      return { settings };
-    });
-  },
 
   setPersons(n) {
     set((s) => {
@@ -211,11 +194,6 @@ export const useStore = create<State>((set, get) => ({
       void saveSettings(settings);
       return { settings };
     });
-  },
-
-  setSuivi(v) {
-    void saveSuiviEquilibre(v);
-    set({ suivi: v });
   },
 
   setRegles(r) {
@@ -242,7 +220,7 @@ export const useStore = create<State>((set, get) => ({
   validateRecipe(id) {
     const recipe = get().recipes.find((r) => r.id === id);
     if (!recipe) return;
-    get().upsertRecipe({ ...recipe, statut: 'Validé', macros_estimees: false });
+    get().upsertRecipe({ ...recipe, statut: 'Validé' });
   },
 
   toggleFav(id) {

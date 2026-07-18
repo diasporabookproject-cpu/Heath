@@ -9,12 +9,6 @@ const rec = (nom: string, statut: Recipe['statut'] = 'Validé', packId?: string)
   nom,
   role: 'plat',
   statut,
-  kcal: 500,
-  prot: 30,
-  gluc: 40,
-  lip: 15,
-  calcium: 200,
-  flag_calcium: 'Moyen',
   ingredients: 'x',
   packId,
 });
@@ -26,8 +20,8 @@ const pack: Pack = {
   description: '',
   version: 1,
   recettes: [
-    { nom: 'Alpha', role: 'plat', kcal: 400, prot: 20, gluc: 30, lip: 10, calcium: 100, flag_calcium: 'Moyen', ingredients: 'a' },
-    { nom: 'Beta', role: 'entree', kcal: 300, prot: 15, gluc: 20, lip: 8, calcium: 80, flag_calcium: 'Faible', ingredients: 'b' },
+    { nom: 'Alpha', role: 'plat', ingredients: 'a' },
+    { nom: 'Beta', role: 'entree', ingredients: 'b' },
   ],
 };
 

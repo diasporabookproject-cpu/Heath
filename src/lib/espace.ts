@@ -136,7 +136,7 @@ export async function publishEspace(
   // F5.5 : alertes allergènes du FOYER (règles T3) calculées À LA PUBLICATION —
   // page vivante : une règle ajoutée se reflète au prochain envoi.
   const regles = await loadFoyerRegles();
-  const menu = buildEspaceMenu(config, week, recipes, audioUrls, regles?.allergies);
+  const menu = buildEspaceMenu(config, week, recipes, audioUrls, regles?.nePasManger);
   const securite = await buildSecurite(dest, prefix, token);
 
   const payload: Espace = {
@@ -184,7 +184,7 @@ export async function previewEspace(
     if (blob) audioUrls.set(id, URL.createObjectURL(blob));
   }
   const regles = await loadFoyerRegles(); // F5.5 : l'aperçu montre les mêmes alertes
-  const menu = buildEspaceMenu(config, week, byId, audioUrls, regles?.allergies);
+  const menu = buildEspaceMenu(config, week, byId, audioUrls, regles?.nePasManger);
   const securite = await buildSecurite(dest, null, null);
   return {
     v: 1,

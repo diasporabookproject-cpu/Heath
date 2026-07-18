@@ -18,7 +18,7 @@ import {
   deleteById,
 } from '../db';
 import type { AppState } from '../db';
-import { normalizeDestinataire, type Recipe, type WeekMenu, type Destinataire, type SecuriteFiche, type NounouDoc, type CuisineSettings, type ReglesFoyer } from '../../types';
+import { normalizeDestinataire, normalizeRegles, type Recipe, type WeekMenu, type Destinataire, type SecuriteFiche, type NounouDoc, type CuisineSettings } from '../../types';
 import type { LocalDoc, SyncStore } from './plan';
 
 // Correspondance stores IndexedDB ↔ table `docs`. Par ligne pour
@@ -58,7 +58,7 @@ export async function collectLocalDocs(): Promise<LocalDoc[]> {
   // vide légal = pas de doc = pas de bruit).
   if (regles) docs.push({ store: 'foyer', docId: REGLES_DOC_ID, payload: regles });
   docs.push({ store: 'app', docId: APP_DOC_ID, payload: appForSync(app) });
-  // Réglages Cuisine (objectif kcal, personnes) — périmètre D4 « réglages ».
+  // Réglages Cuisine (nombre de personnes) — périmètre D4 « réglages ».
   docs.push({ store: 'settings', docId: 'settings', payload: settings });
   return docs;
 }
@@ -79,7 +79,9 @@ export async function applyRemote(store: SyncStore, _docId: string, payload: unk
     case 'nounou':
       return saveNounou(payload as NounouDoc);
     case 'foyer':
-      return saveFoyerRegles(payload as ReglesFoyer);
+      // Migration porte n°2 (lot simplification) : un appareil pas à jour peut
+      // pousser l'ancien format {allergies, regime} → normalisé à l'arrivée.
+      return saveFoyerRegles(normalizeRegles(payload));
     case 'settings':
       return saveSettings(payload as CuisineSettings);
     case 'app': {

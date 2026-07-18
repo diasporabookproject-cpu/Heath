@@ -3,11 +3,10 @@ import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import { loadAllWeeks } from '../lib/db';
-import { dayHasAny, dayMacros } from '../lib/nutrition';
+import { dayHasAny } from '../lib/menu';
 import type { Recipe, WeekMenu } from '../types';
 
 const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
-const fmt = (n: number) => Math.round(n).toLocaleString('fr-FR');
 
 /** « 23 juin » à partir d'un id de semaine YYYY-MM-DD. */
 function labelFromId(id: string): string {
@@ -25,7 +24,6 @@ interface Props {
 export default function CopyWeekSheet({ onClose, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const currentId = useStore((s) => s.week.id);
-  const suivi = useStore((s) => s.suivi); // F2.2 : ~kcal/j des candidates sous le flag
   const copyWeekInto = useStore((s) => s.copyWeekInto);
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r] as [string, Recipe])), [recipes]);
 
@@ -45,10 +43,7 @@ export default function CopyWeekSheet({ onClose, toast }: Props) {
       .map((w) => {
         const days = SEED_CONFIG.jours.map((j) => w.days[j.key]).filter(Boolean);
         const filled = days.filter(dayHasAny);
-        const avg = filled.length
-          ? filled.reduce((s, d) => s + dayMacros(d, byId).kcal, 0) / filled.length
-          : 0;
-        return { id: w.id, days: w.days, count: filled.length, avg };
+        return { id: w.id, days: w.days, count: filled.length };
       })
       .filter((c) => c.count > 0)
       .sort((a, b) => (a.id < b.id ? 1 : -1)); // plus récentes d'abord
@@ -92,15 +87,10 @@ export default function CopyWeekSheet({ onClose, toast }: Props) {
                       {labelFromId(c.id)}
                     </span>
                   </div>
-                  <div className="cz-macros">
+                  <div className="cz-cardmeta">
                     <span>
                       <b>{c.count}</b> jour{c.count > 1 ? 's' : ''}
                     </span>
-                    {suivi && c.avg > 0 && (
-                      <span>
-                        ~<b>{fmt(c.avg)}</b> kcal/j
-                      </span>
-                    )}
                   </div>
                 </button>
               ))}

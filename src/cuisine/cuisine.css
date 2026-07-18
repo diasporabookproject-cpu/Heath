@@ -183,14 +183,9 @@
   border-radius: 20px;
   transform: rotate(45deg);
 }
-.cz-sumtop { display: flex; align-items: flex-end; justify-content: space-between; position: relative; z-index: 1; }
 .cz-slab { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(244, 241, 233, 0.66); font-weight: 600; margin-bottom: 7px; }
 .cz-sval { font-family: var(--font-mono); font-size: 30px; font-weight: 500; line-height: 1; letter-spacing: -0.02em; }
 .cz-sval small { font-family: var(--font-body); font-size: 13px; color: rgba(244, 241, 233, 0.66); font-weight: 500; margin-left: 3px; }
-.cz-sprot { text-align: right; font-family: var(--font-mono); font-size: 18px; font-weight: 500; }
-.cz-sprot small { display: block; font-family: var(--font-body); font-size: 11px; color: rgba(244, 241, 233, 0.66); font-weight: 500; margin-top: 2px; }
-.cz-sgauge { margin-top: 13px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.16); overflow: hidden; position: relative; z-index: 1; }
-.cz-sgfill { height: 100%; border-radius: 3px; background: #7bd3a0; }
 
 /* ---- Bandeau à valider ---- */
 /* (F1.2 lot Cuisine : .cz-genbtn supprimé avec « Générer la semaine ».) */
@@ -249,20 +244,6 @@
 .cz-socle { display: flex; align-items: center; gap: 7px; margin: 8px 2px 0; padding: 7px 10px; background: var(--surface-2); border-radius: 9px; font-size: 11.5px; color: var(--muted); }
 .cz-socle svg { color: #b7ad9e; flex: none; }
 .cz-socle b { font-weight: 600; color: #82786b; }
-.cz-gauge { margin-top: 11px; padding-top: 12px; border-top: 1px solid var(--line); }
-.cz-gtrack { height: 5px; border-radius: 3px; background: #efeae0; position: relative; }
-.cz-gfill { height: 100%; border-radius: 3px; }
-.cz-gfill.ok { background: var(--ok); }
-.cz-gfill.warn { background: var(--warn); }
-.cz-gfill.bad { background: var(--bad); }
-.cz-gtick { position: absolute; top: -2.5px; width: 1.5px; height: 10px; background: #c9bfae; border-radius: 1px; }
-.cz-gmeta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
-.cz-gk { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
-.cz-gstatus { font-size: 12.5px; font-weight: 600; }
-.cz-gstatus.ok { color: #2e7a4c; }
-.cz-gstatus.warn { color: #a9691a; }
-.cz-gstatus.bad { color: #a63d2e; }
-.cz-gincomplete { padding-top: 12px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
 
 /* ---- FAB (Recettes uniquement) ---- */
 .cz-fab {
@@ -346,13 +327,9 @@
 .cz-sigrow .st b { display: block; font-size: 13.5px; font-weight: 700; }
 .cz-sigrow .st i { font-size: 12px; color: #8a7ba5; }
 .cz-sigrow .go { font-size: 12px; font-weight: 700; }
-.cz-caflag { font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
-.cz-caflag.champion { background: var(--saffron-tint); color: var(--saffron); }
-.cz-caflag.moyen { background: #efeae0; color: #8a7d63; }
-.cz-caflag.faible { background: #f1ece4; color: #a39a8c; }
 .cz-vchip { font-size: 10px; color: var(--petrol); display: inline-flex; align-items: center; gap: 3px; }
-.cz-macros { display: flex; gap: 14px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); align-items: center; }
-.cz-macros b { color: var(--ink); font-weight: 500; }
+.cz-cardmeta { display: flex; gap: 14px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); align-items: center; }
+.cz-cardmeta b { color: var(--ink); font-weight: 500; }
 
 /* ---- Bottom sheet ---- */
 .cz-overlay { position: fixed; inset: 0; background: rgba(28, 24, 20, 0.42); z-index: 40; opacity: 0; pointer-events: none; transition: 0.22s; }
@@ -426,16 +403,7 @@
 /* ---- Fiche recette (FC7) ---- */
 .cz-aibanner { display: flex; gap: 10px; align-items: flex-start; background: var(--draft-tint); border: 1px solid var(--draft-line); border-radius: 12px; padding: 13px; margin: 2px 0 4px; font-size: 13px; color: #5d4d79; line-height: 1.4; }
 .cz-aibanner svg { flex: none; margin-top: 1px; color: var(--draft); }
-.cz-dmacros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 6px 0 4px; }
-.cz-dmcell { background: var(--surface); border: 1px solid var(--line); border-radius: 11px; padding: 12px 8px; text-align: center; }
-.cz-dmcell .v { font-family: var(--font-mono); font-size: 18px; font-weight: 500; letter-spacing: -0.02em; }
-.cz-dmcell .l { font-size: 10.5px; color: var(--muted); margin-top: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
-.cz-dmcell.ca { background: var(--saffron-tint); border-color: #ead7ae; }
-.cz-dmcell.ca .v { color: var(--saffron); }
 .cz-estnote { font-size: 12px; color: var(--draft); font-weight: 600; display: flex; align-items: center; gap: 6px; margin: 2px 0 4px; }
-.cz-calcbtn { width: 100%; border: 1px dashed var(--draft-line); background: var(--draft-tint); color: var(--draft); font-family: var(--font-body); font-weight: 600; font-size: 14px; border-radius: 12px; padding: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.cz-calcbtn:active { transform: scale(0.995); }
-.cz-calcbtn:disabled { opacity: 0.6; cursor: default; }
 
 .cz-sect { font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 20px 0 9px; display: flex; align-items: center; justify-content: space-between; }
 .cz-badge-share { font-size: 10px; font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: var(--petrol); background: var(--petrol-tint); padding: 3px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
@@ -723,10 +691,6 @@
 .cz-mrow .chev { flex: none; color: #c7bdad; display: grid; place-items: center; }
 
 /* meal composer */
-.cz-mealmac { display: flex; align-items: center; justify-content: space-between; background: var(--petrol-tint); border-radius: 12px; padding: 13px 15px; margin: 8px 0 6px; }
-.cz-mealmac .l { font-size: 12px; font-weight: 600; color: var(--petrol-ink); }
-.cz-mealmac .v { font-family: var(--font-mono); font-size: 18px; font-weight: 500; color: var(--petrol-ink); }
-.cz-mealmac .v small { font-family: var(--font-body); font-size: 11px; color: var(--petrol); margin-left: 3px; }
 .cz-complist { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 4px 14px; box-shadow: var(--shadow); }
 .cz-comp { display: flex; align-items: center; gap: 12px; padding: 14px 2px; }
 .cz-comp + .cz-comp { border-top: 1px solid var(--line); }

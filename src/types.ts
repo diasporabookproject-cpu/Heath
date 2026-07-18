@@ -17,7 +17,6 @@ export type RecipeRole =
   | 'gouter'
   | 'boisson';
 export type RecipeStatus = 'Validé' | 'Écarté' | 'Test';
-export type CalciumFlag = 'Champion' | 'Moyen' | 'Faible';
 
 export const ROLE_LABEL: Record<RecipeRole, string> = {
   petitdej: 'Petit-déj',
@@ -36,22 +35,10 @@ export interface Recipe {
   /** Rôle (petit-déj / entrée / plat / accompagnement). */
   role: RecipeRole;
   statut: RecipeStatus;
-  /**
-   * Macros : PAR PORTION (1 portion = 1 personne) pour petitdej/entree/plat ;
-   * PAR 100 g pour les accompagnements (role === 'acc').
-   */
-  kcal: number;
-  prot: number;
-  gluc: number;
-  lip: number;
-  calcium: number;
-  flag_calcium: CalciumFlag;
   ingredients: string;
   /** Étapes de préparation (une par ligne). */
   etapes?: string;
   notes?: string;
-  /** Macros estimées automatiquement et non encore vérifiées (auto-macros). */
-  macros_estimees?: boolean;
   /** Née d'un « coup de main IA » (porte ③) → entre dans la file de relecture (L3-2/L3-3). */
   origineIA?: boolean;
   /** Provenance : id du pack de collections dont elle a été copiée (L3-4). */
@@ -64,17 +51,32 @@ export interface Recipe {
   cuisine?: string;
   difficulte?: string;
   temps?: string;
-  /** G3 (F4.4) : règles du foyer appliquées à l'import — la trace vit DANS le
-   * document et s'affiche à la relecture (« Adaptée selon : … »). */
+  /** G3 (F4.4) : règles du foyer appliquées à l'import — la DEMANDE, la trace vit
+   * DANS le document et s'affiche à la relecture (« On a demandé d'adapter selon… »).
+   * Fallback du bandeau v2 quand `adaptations` est absent (ancien edge). */
   adapteSelon?: string[];
+  /** Prompt v2 (lot simplification T2) — RAPPORT du modèle : ce qu'il DÉCLARE
+   * avoir changé pour respecter les règles. Optionnel = tolère l'ancien edge. */
+  adaptations?: RecipeAdaptation[];
+  /** Prompt v2 — quantités illisibles/absentes dans la source (jamais inventées). */
+  quantites_incertaines?: string[];
+  /** Prompt v2 — garde G3 lexical SERVEUR : interdit du foyer trouvé DANS les
+   * ingrédients produits malgré la règle (→ bandeau rouge). */
+  alerte_regles?: string[];
   /** Darija marocaine (lettres arabes), pour l'espace cuisinière. */
   nom_ar?: string;
   ingredients_ar?: string;
   etapes_ar?: string;
 }
 
+/** Prompt v2 — une modification déclarée par le modèle (regle concernée + action). */
+export interface RecipeAdaptation {
+  regle: string;
+  action: string;
+}
+
 /** Recette d'un pack (L3-4) : recette complète SANS identité ni statut (copiée chez l'utilisateur à l'installation). */
-export type RecipeSeed = Omit<Recipe, 'id' | 'statut' | 'fav' | 'packId' | 'origineIA' | 'macros_estimees' | 'notes'>;
+export type RecipeSeed = Omit<Recipe, 'id' | 'statut' | 'fav' | 'packId' | 'origineIA' | 'notes'>;
 
 /** Collection / pack éditorial de recettes prêtes (L3-4). Format réutilisable. */
 export interface Pack {
@@ -96,24 +98,13 @@ export interface AppConfig {
   jours: DayConfig[];
 }
 
-/** Réglages Cuisine : objectif calorique individuel + nombre de personnes au foyer. */
+/** Réglages Cuisine : nombre de personnes au foyer (mise à l'échelle des quantités). */
 export interface CuisineSettings {
-  /** Objectif calorique PAR PERSONNE / jour (plafond). */
-  objective: number;
   /** Nombre de personnes au foyer (mise à l'échelle des quantités). */
   persons: number;
 }
 
-export const DEFAULT_SETTINGS: CuisineSettings = { objective: 1800, persons: 4 };
-
-/** Macros agrégées. */
-export interface Macros {
-  kcal: number;
-  prot: number;
-  gluc: number;
-  lip: number;
-  calcium: number;
-}
+export const DEFAULT_SETTINGS: CuisineSettings = { persons: 4 };
 
 /** Référence à un accompagnement avec sa quantité (en grammes). */
 export interface AccRef {
@@ -147,35 +138,45 @@ export interface WeekMenu {
   days: Record<string, DayMenu>;
 }
 
-export type Feu = 'vert' | 'orange' | 'rouge';
-
-// ── Règles du foyer (lot Cuisine T3, F3.1 — décision D2 : UN SEUL endroit) ────
-// Restrictions posées au niveau du FOYER (jamais par personne) : appliquées aux
-// prochains imports de recettes (T4/F4.4) et signalées sur la page reçue
-// (T5/F5.5). Document unique synchronisé via `docs` (store 'foyer', façon
-// nounou) — LWW par document, lisible hors-ligne. La fiche enfant Nounou ne
-// bouge pas (passerelle parquée, D2).
+// ── Règles du foyer (lot Cuisine T3 · lot simplification : UN SEUL champ) ─────
+// Réglage de COMPOSITION de recette posé au niveau du FOYER (jamais par personne),
+// que le prompt lit pour adapter. Document unique synchronisé via `docs` (store
+// 'foyer') — LWW, lisible hors-ligne. La fiche enfant Nounou ne bouge pas (D2).
+// Lot simplification : `regime` + `allergies` fusionnés en `nePasManger` (liste
+// libre, « ce que le foyer ne mange pas ») — supprime par construction le double
+// « sans » (« sans Sans gluten »). `halal` reste un TOGGLE (concept fermé/composé :
+// pas de porc + alcool + viande halal — le prompt le traite structurellement).
 export interface ReglesFoyer {
-  /** Allergies / interdits libres (une entrée par ligne à la saisie). */
-  allergies: string[];
   halal: boolean;
-  /** Régime du foyer (extensible) — 'végétarien' pour l'instant, null sinon. */
-  regime: string | null;
+  /** Ce que le foyer ne mange pas — une entrée par ligne, brute (« gluten », « porc »…). */
+  nePasManger: string[];
 }
 
-export const EMPTY_REGLES: ReglesFoyer = { allergies: [], halal: false, regime: null };
+export const EMPTY_REGLES: ReglesFoyer = { halal: false, nePasManger: [] };
 
 /** Y a-t-il au moins une restriction posée ? (état vide = légal, F3.1) */
 export function reglesActives(r: ReglesFoyer): boolean {
-  return r.allergies.length > 0 || r.halal || r.regime !== null;
+  return r.halal || r.nePasManger.length > 0;
 }
 
-/** Les règles en liste lisible (« halal · végétarien · sans arachide ») — même
- * format partout : Réglages (G1), ligne d'import (F4.4), trace de relecture (G3). */
+/** Les règles en liste lisible (« halal · gluten · arachide ») — même format
+ * partout : Réglages (G1), ligne d'import (F4.4), trace de relecture (G3). */
 export function reglesList(r: ReglesFoyer): string[] {
-  return [r.halal ? 'halal' : null, r.regime, ...r.allergies.map((a) => `sans ${a}`)].filter(
-    (x): x is string => !!x,
-  );
+  return [r.halal ? 'halal' : null, ...r.nePasManger].filter((x): x is string => !!x);
+}
+
+/** Migration idempotente (lot simplification) : ancien format `{allergies, halal,
+ *  regime}` (IDB locale OU payload sync d'un appareil pas à jour) → `{halal,
+ *  nePasManger}`. Appliquée aux DEUX portes : `loadFoyerRegles` + `applyRemote`. */
+export function normalizeRegles(r: unknown): ReglesFoyer {
+  if (!r || typeof r !== 'object') return { ...EMPTY_REGLES };
+  const o = r as Record<string, unknown>;
+  if (Array.isArray(o.nePasManger)) {
+    return { halal: !!o.halal, nePasManger: (o.nePasManger as unknown[]).map(String) };
+  }
+  const allergies = Array.isArray(o.allergies) ? (o.allergies as unknown[]).map(String) : [];
+  const regime = typeof o.regime === 'string' && o.regime ? [o.regime] : [];
+  return { halal: !!o.halal, nePasManger: [...regime, ...allergies] };
 }
 
 /** Destinataire d'un brief (personnel de maison). Concept transverse réutilisable. */

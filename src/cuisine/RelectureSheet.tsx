@@ -3,6 +3,7 @@ import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { cleanText } from '../lib/sanitize';
 import { ROLE_LABEL } from '../types';
+import RelectureRapport from './RelectureRapport';
 
 // L3-3 — File de relecture des brouillons IA : validation regroupée en un flux
 // unique (proto v6.1 `sh-relecture`). Périmètre = recettes `statut: 'Test'`
@@ -21,7 +22,6 @@ export default function RelectureSheet({ startId, onClose, onOpenRecipe, toast }
   const recipes = useStore((s) => s.recipes);
   const validateRecipe = useStore((s) => s.validateRecipe);
   const setStatut = useStore((s) => s.setStatut);
-  const suivi = useStore((s) => s.suivi); // F2.2 : macros de la relecture sous le flag
 
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
@@ -91,21 +91,11 @@ export default function RelectureSheet({ startId, onClose, onOpenRecipe, toast }
                   <span className="nm clamp2" style={{ fontWeight: 600, flex: 1 }}>{cleanText(cur.nom)}</span>
                   <span className="cz-tag role">{ROLE_LABEL[cur.role]}</span>
                 </div>
-                {suivi && (
-                  <div className="cz-macros">
-                    <span><b>{cur.kcal}</b> kcal · <b>{cur.prot}</b>g P · <b>{cur.calcium}</b>mg Ca</span>
-                  </div>
-                )}
               </div>
 
-              {/* G3 (F4.4, libellé corrigé retour Q&A) : on trace une DEMANDE, pas un
-                  fait — la relecture doit vérifier que le modèle l'a vraiment suivie. */}
-              {cur.adapteSelon && cur.adapteSelon.length > 0 && (
-                <div className="cz-estnote" style={{ margin: '8px 0 0' }}>
-                  On a demandé d’adapter selon : {cur.adapteSelon.join(' · ')} — vérifie que c’est
-                  bien le cas.
-                </div>
-              )}
+              {/* Bandeau de relecture v2 (T2) : rapport du modèle si présent, sinon
+                  la DEMANDE (adapteSelon, G3). Tolère l'ancien edge. */}
+              <RelectureRapport recipe={cur} />
 
               <div className="cz-relbody">{cleanText(cur.ingredients) || 'Pas d’ingrédients.'}</div>
               {cur.etapes && <div className="cz-relbody">{cleanText(cur.etapes)}</div>}

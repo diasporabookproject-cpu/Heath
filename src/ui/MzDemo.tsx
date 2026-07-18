@@ -97,7 +97,6 @@ export default function MzDemo() {
             <h4>Kefta de bœuf, riz &amp; légumes</h4>
             <i>Plat · Marocain du quotidien</i>
           </span>
-          <span className="kv">710 kcal</span>
         </button>
         <button className="mz-mrow dash" onClick={() => toast('Vide')}>
           <span className="e" style={{ background: 'var(--mz-grnT)' }}>🍽️</span>

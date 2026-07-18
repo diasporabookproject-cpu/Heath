@@ -1,29 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { deriveFlag, parseRecipesJson } from './importRecipes';
+import { parseRecipesJson } from './importRecipes';
 import type { Recipe } from '../types';
 
 const existing: Recipe[] = [
-  { id: 'PLT-01', nom: 'X', role: 'plat', statut: 'Validé', kcal: 1, prot: 1, gluc: 1, lip: 1, calcium: 1, flag_calcium: 'Faible', ingredients: '' },
+  { id: 'PLT-01', nom: 'X', role: 'plat', statut: 'Validé', ingredients: '' },
 ];
-
-describe('deriveFlag', () => {
-  it('seuils Champion/Moyen/Faible', () => {
-    expect(deriveFlag(400)).toBe('Champion');
-    expect(deriveFlag(250)).toBe('Moyen');
-    expect(deriveFlag(100)).toBe('Faible');
-  });
-});
 
 describe('parseRecipesJson', () => {
   it('importe un tableau et génère un id sans collision', () => {
     const json = JSON.stringify([
-      { nom: 'Bowl test', role: 'plat', kcal: 700, prot: 60, calcium: 400, ingredients: 'riz 100g' },
+      { nom: 'Bowl test', role: 'plat', ingredients: 'riz 100g' },
     ]);
     const { recipes, errors } = parseRecipesJson(json, existing);
     expect(errors).toEqual([]);
     expect(recipes[0].id).toBe('PLT-02'); // PLT-01 déjà pris
     expect(recipes[0].role).toBe('plat');
-    expect(recipes[0].flag_calcium).toBe('Champion');
+    expect(recipes[0].ingredients).toBe('riz 100g');
   });
 
   it('tolère l’ancien "type" et le mappe au rôle', () => {
