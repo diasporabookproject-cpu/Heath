@@ -1,4 +1,4 @@
-import type { Destinataire, WeekMenu } from '../types';
+import { wireLangue, type Destinataire, type WeekMenu } from '../types';
 import { hashStr } from '../lib/hash';
 import type { PublishRecord } from '../lib/db';
 
@@ -6,9 +6,12 @@ import type { PublishRecord } from '../lib/db';
 // destinataire, comparée à la dernière signature enregistrée à l'envoi. Sans réseau.
 // (La signature Nounou vit dans nounou/partage.ts — nounouSig — pour éviter un cycle.)
 
-/** Signature du contenu Cuisine partagé (menu + langue + personnes + sécurité). */
+/** Signature du contenu Cuisine partagé (menu + langue + personnes + sécurité).
+ * T2 : la langue signée est celle du FIL (`wireLangue`) — la migration locale
+ * `'ar'`→`'dr'` ne change PAS la page publiée, elle ne doit pas faire basculer
+ * toutes les cartes darija en « modifié — à envoyer ». */
 export function cuisineSig(week: WeekMenu, persons: number, dest: Destinataire): string {
-  return hashStr(JSON.stringify({ d: week.days, l: dest.langue, p: persons, s: dest.securiteIds ?? [] }));
+  return hashStr(JSON.stringify({ d: week.days, l: wireLangue(dest.langue), p: persons, s: dest.securiteIds ?? [] }));
 }
 
 export type EnvoiState = 'uptodate' | 'modified' | 'never';

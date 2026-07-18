@@ -5,7 +5,7 @@ import { buildInstall } from '../lib/packs';
 import { importSecuriteSeed } from '../lib/securiteSeed';
 import { loadNounou, saveNounou, loadRecipes, saveRecipe, saveDestinataire, saveFtueDone, saveRolesActifs, type RoleActif } from '../lib/db';
 import { mergeNounouDoc, missingConduiteModeles, newToken, uid } from '../nounou/defaults';
-import type { NounouLangue } from '../types';
+import { normalizeDestLangue, type NounouLangue } from '../types';
 import { sendOtp, verifyOtp, acceptInvite } from '../lib/auth';
 import { isValidEmail, isValidOtp, normalizeOtp } from '../lib/otp';
 import { isNative, onBackButton, minimizeApp } from '../lib/platform';
@@ -52,14 +52,15 @@ async function populate(
     }
   }
   // Fiche D — Cuisine nommée : destinataire réel (le modèle cuisine ne connaît que
-  // fr|ar, et son « ar » S'AFFICHE darija partout — dr/ar → 'ar', en → 'fr').
+  // fr|dr (T2 : 'dr' = darija, vocabulaire catalogue) — dr/ar → 'dr', en → 'fr' ;
+  // 'ar' (arabe classique) n'existe pas encore côté Cuisine : D5 l'apportera (v:2).
   const cook = names.cuisine;
   if (roles.has('cuisine') && cook) {
     await saveDestinataire({
       id: crypto.randomUUID(),
       nom: cook.prenom,
       role: 'Cuisinière',
-      langue: cook.langue === 'dr' || cook.langue === 'ar' ? 'ar' : 'fr',
+      langue: normalizeDestLangue(cook.langue),
       token: newToken(),
       createdAt: Date.now(),
     });

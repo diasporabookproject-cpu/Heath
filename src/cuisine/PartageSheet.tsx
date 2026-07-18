@@ -129,7 +129,7 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
       id: crypto.randomUUID(),
       nom: '',
       role: 'Cuisinière',
-      langue: 'ar',
+      langue: 'dr',
       token: newToken(),
       createdAt: Date.now(),
     };
@@ -202,10 +202,20 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
     await refresh();
   };
 
+  // F1 (mini-lot destinataires) : le local n'est supprimé QUE si le serveur a
+  // confirmé — sinon la personne est conservée et le toast dit la vérité.
   const revoke = async (d: Destinataire) => {
     setBusy(true);
     try {
-      await revokeEspace(d.token);
+      const { error } = await revokeEspace(d.token);
+      if (error === 'session') {
+        toast(`Connecte-toi pour retirer ${d.nom} — son lien doit être coupé côté serveur.`);
+        return;
+      }
+      if (error) {
+        toast(`Impossible de révoquer maintenant — ${d.nom} est conservé, réessaie.`);
+        return;
+      }
       await deleteDestinataire(d.id);
       setSelId(null);
       await refresh();
@@ -280,7 +290,7 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
                   <div className="n">{selected.nom}</div>
                   <div className="r">
                     {selected.role} ·{' '}
-                    <span className="lang">{selected.langue === 'ar' ? 'الدارجة' : 'Français'}</span>
+                    <span className="lang">{selected.langue === 'dr' ? 'الدارجة' : 'Français'}</span>
                   </div>
                 </div>
                 <button className="ck-ch" onClick={() => setMode('list')}>
@@ -424,7 +434,7 @@ function EditForm({
           <button className="cz-dchip" aria-pressed={editing.langue === 'fr'} onClick={() => setEditing({ ...editing, langue: 'fr' })}>
             Français
           </button>
-          <button className="cz-dchip" aria-pressed={editing.langue === 'ar'} onClick={() => setEditing({ ...editing, langue: 'ar' })}>
+          <button className="cz-dchip" aria-pressed={editing.langue === 'dr'} onClick={() => setEditing({ ...editing, langue: 'dr' })}>
             الدارجة
           </button>
         </div>
@@ -497,7 +507,7 @@ function ListView({
               {d.nom}
             </span>
             <span className="cz-tag">{d.role}</span>
-            <span className="cz-tag">{d.langue === 'ar' ? 'الدارجة' : 'FR'}</span>
+            <span className="cz-tag">{d.langue === 'dr' ? 'الدارجة' : 'FR'}</span>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button className="cz-dchip" onClick={() => onPick(d.id)}>

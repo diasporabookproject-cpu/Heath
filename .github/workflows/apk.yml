@@ -7,7 +7,7 @@ name: APK Android (debug)
 on:
   workflow_dispatch:
   push:
-    branches: [lot-cuisine-v1]
+    branches: [mini-lot-destinataires-v1]
 
 jobs:
   apk:

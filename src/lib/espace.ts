@@ -6,7 +6,7 @@ import { buildEspaceMenu, usedRecipeIds, type SharedMenu } from './share';
 import { loadAudio, loadFoyerRegles, loadSecurite, recordPublished } from './db';
 import { cuisineSig } from '../maison/transmission';
 import { translateToDarija } from './ai';
-import { DEFAULT_SETTINGS, type AppConfig, type Destinataire, type Recipe, type SecuriteType, type WeekMenu } from '../types';
+import { DEFAULT_SETTINGS, wireLangue, type AppConfig, type Destinataire, type Recipe, type SecuriteType, type WeekMenu } from '../types';
 
 // Espace permanent par destinataire (keystone F1, cœur).
 // Contenu stocké dans la table Supabase `espaces` (upsert en place, lecture
@@ -27,6 +27,8 @@ export interface SecuritePublic {
 
 export interface Espace {
   v: 1;
+  /** Contrat du FIL v:1 — `'ar'` = DARIJA (perpétuel, liens distribués) ; l'arabe
+   *  standard n'a pas de code ici : D5 passera par `v: 2` (ETAT.md § Ouvert). */
   langue: 'fr' | 'ar';
   nom: string;
   role: string;
@@ -130,7 +132,7 @@ export async function publishEspace(
   const audioUrls = await uploadWeekAudios(config, week, prefix, token);
 
   // Traduction darija figée (best-effort) si le destinataire lit en darija.
-  const recipes = dest.langue === 'ar' ? await augmentDarija(config, week, byId) : byId;
+  const recipes = dest.langue === 'dr' ? await augmentDarija(config, week, byId) : byId;
   // F5.5 : alertes allergènes du FOYER (règles T3) calculées À LA PUBLICATION —
   // page vivante : une règle ajoutée se reflète au prochain envoi.
   const regles = await loadFoyerRegles();
@@ -139,7 +141,7 @@ export async function publishEspace(
 
   const payload: Espace = {
     v: 1,
-    langue: dest.langue,
+    langue: wireLangue(dest.langue), // fil v:1 : la darija voyage en 'ar' (perpétuel)
     nom: dest.nom,
     role: dest.role,
     persons,
@@ -186,7 +188,7 @@ export async function previewEspace(
   const securite = await buildSecurite(dest, null, null);
   return {
     v: 1,
-    langue: dest.langue,
+    langue: wireLangue(dest.langue), // même contrat que publishEspace (l'aperçu = la page)
     nom: dest.nom,
     role: dest.role,
     persons,
@@ -237,11 +239,31 @@ export async function lastEspaceOpen(token: string): Promise<string | null> {
   }
 }
 
-/** Révoque l'espace (supprime le contenu côté serveur → l'ancien lien ne donne plus rien). */
-export async function revokeEspace(token: string): Promise<void> {
+/**
+ * Révoque l'espace (supprime la ligne côté serveur → l'ancien lien ne donne plus rien).
+ *
+ * VÉRITÉ (mini-lot destinataires, F1) — succès = le serveur a RÉPONDU sans erreur,
+ * JAMAIS le rowcount : une personne jamais partagée n'a pas de ligne `espaces`
+ * (0 ligne = « rien à couper », pas un échec). Échec = on ne l'a pas joint
+ * (hors-ligne, session absente, erreur serveur).
+ * La session est exigée AVANT l'appel : la policy delete d'`espaces` (0006) est
+ * `to authenticated` + membre du foyer — sans session, RLS filtre EN SILENCE
+ * (200, 0 ligne, aucune erreur) et on retomberait dans le faux succès.
+ * Le local-first vaut pour le contenu, pas le contrôle d'accès : la vérité de
+ * « qui peut lire » vit là où le jeton est vérifié → « Retirer » exige la connexion.
+ */
+export async function revokeEspace(token: string): Promise<{ error?: 'session' | 'serveur' }> {
   const supa = getSupabase();
-  if (!supa) return;
-  await supa.from('espaces').delete().eq('token', token);
+  if (!supa) return { error: 'session' };
+  try {
+    const { data } = await supa.auth.getSession();
+    if (!data.session) return { error: 'session' };
+    const { error } = await supa.from('espaces').delete().eq('token', token);
+    if (error) return { error: 'serveur' };
+    return {};
+  } catch {
+    return { error: 'serveur' };
+  }
 }
 
 export function readEspaceToken(): string | null {

@@ -18,7 +18,7 @@ import {
   deleteById,
 } from '../db';
 import type { AppState } from '../db';
-import type { Recipe, WeekMenu, Destinataire, SecuriteFiche, NounouDoc, CuisineSettings, ReglesFoyer } from '../../types';
+import { normalizeDestinataire, type Recipe, type WeekMenu, type Destinataire, type SecuriteFiche, type NounouDoc, type CuisineSettings, type ReglesFoyer } from '../../types';
 import type { LocalDoc, SyncStore } from './plan';
 
 // Correspondance stores IndexedDB ↔ table `docs`. Par ligne pour
@@ -71,7 +71,9 @@ export async function applyRemote(store: SyncStore, _docId: string, payload: unk
     case 'weeks':
       return saveWeek(payload as WeekMenu);
     case 'destinataires':
-      return saveDestinataire(payload as Destinataire);
+      // T2 : un appareil PAS à jour peut encore pousser `langue: 'ar'` (= darija
+      // legacy) — normalisé à l'arrivée, même règle que la lecture IDB.
+      return saveDestinataire(normalizeDestinataire(payload as Destinataire));
     case 'securite':
       return saveSecurite(payload as SecuriteFiche);
     case 'nounou':

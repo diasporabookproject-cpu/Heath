@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import {
   DEFAULT_SETTINGS,
+  normalizeDestinataire,
   type CuisineSettings,
   type Destinataire,
   type NounouDoc,
@@ -48,6 +49,9 @@ export interface RecipeImage {
   blob: Blob;
   mime: string;
   updatedAt: number;
+  /** Sauvegarde cloud confirmée (mini-lot destinataires F4) : absent/faux = à
+   *  retenter au prochain montage de fiche — jamais de retry aveugle. */
+  backedUp?: boolean;
 }
 
 /** Trace locale du dernier envoi par destinataire (état « à envoyer », L1-4). */
@@ -319,6 +323,15 @@ export async function loadAudioKeys(): Promise<string[]> {
 export async function loadDestinataires(): Promise<Destinataire[]> {
   const db = await getDB();
   const all = await db.getAll('destinataires');
+  // Migration T2 (mini-lot destinataires) : `'ar'` legacy → `'dr'`, réécrit
+  // UNE fois en place (idempotent — les lectures suivantes ne touchent rien).
+  for (let i = 0; i < all.length; i++) {
+    const n = normalizeDestinataire(all[i]);
+    if (n !== all[i]) {
+      all[i] = n;
+      await db.put('destinataires', n);
+    }
+  }
   return all.sort((a, b) => a.createdAt - b.createdAt);
 }
 
@@ -378,7 +391,15 @@ export async function loadImage(recipeId: string): Promise<RecipeImage | undefin
 
 export async function saveImage(recipeId: string, blob: Blob, mime: string): Promise<void> {
   const db = await getDB();
+  // Nouvelle photo → `backedUp` retombe (absent) : elle devra être re-sauvée.
   await db.put('images', { recipeId, blob, mime, updatedAt: Date.now() });
+}
+
+/** Marque la photo comme sauvée au cloud (F4) — après confirmation d'upload seulement. */
+export async function markImageBackedUp(recipeId: string): Promise<void> {
+  const db = await getDB();
+  const rec = await db.get('images', recipeId);
+  if (rec) await db.put('images', { ...rec, backedUp: true });
 }
 
 // ── Règles du foyer (lot Cuisine T3) — document unique, clé fixe 'regles' ─────

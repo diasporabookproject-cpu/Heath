@@ -1,6 +1,7 @@
 import { getSupabase } from '../supabase';
 import { currentFoyerId } from '../auth';
 import { saveAudio } from '../db';
+import { isNotFound } from './storage-err';
 
 // Sauvegarde des notes vocales (S3′). Bucket PRIVÉ par foyer (`foyer-audio`,
 // objets préfixés par `foyer_id`, RLS = membres du foyer — cf. 0003). Chemin
@@ -29,6 +30,9 @@ export async function backupAudio(recipeId: string, blob: Blob, mime: string): P
 
 // Cache négatif de session : les recettes SANS audio cloud ne redéclenchent pas
 // un téléchargement raté à chaque montage (FIX revue Q, efficacité).
+// F5 (mini-lot destinataires) : ne retient QUE « l'objet n'existe pas » (404) —
+// un raté RÉSEAU ne doit pas faire paraître perdue toute la session une note
+// vocale présente au cloud.
 const missing = new Set<string>();
 
 /** Restaure une note vocale manquante localement depuis le bucket (paresseux). */
@@ -41,7 +45,7 @@ export async function restoreAudio(recipeId: string): Promise<Blob | null> {
     if (!foyer) return null;
     const { data, error } = await supa.storage.from(BUCKET).download(`${foyer}/${recipeId}`);
     if (error || !data) {
-      missing.add(recipeId);
+      if (isNotFound(error)) missing.add(recipeId);
       return null;
     }
     await saveAudio(recipeId, data, data.type || 'audio/webm');
