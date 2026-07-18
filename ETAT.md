@@ -1,5 +1,5 @@
 # ÉTAT — Manzil
-**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 18 juillet 2026 (clôture lot Cuisine, merge `lot-cuisine-v1` → défaut)**
+**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 18 juillet 2026 (ouverture mini-lot destinataires — read-back livré, ⏸ attente GO)**
 
 > **Rôle.** *Où on en est* (rapide). Le *quoi* (lent) = `PROJET_MAISON_OS.md` (côté PO). Le *journal* (append-only, détaillé) = `DEVLOG.md`.
 > **Rituel d'ouverture de thread : « Contexte = `PROJET_MAISON_OS.md` + `ETAT.md` ».**
@@ -9,16 +9,15 @@
 
 ## 🔵 En vol
 
-**Aucun lot en vol.** Prochain = **mini-lot destinataires** (file n°1, spec à écrire).
+**Mini-lot destinataires** (« les échecs silencieux ») — branche `mini-lot-destinataires-v1`, `apk.yml` pointé. **Read-back livré (`READBACK_MINI_LOT_DESTINATAIRES.md`) — ⏸ attente GO** (2 questions : `revoked` supprimer ou câbler · fil publié reste `'ar'`). T1 🟢 fiches 1·2·4·5 (revoke honnête, `backedUp?`, cache 404-only audio+images) → T2 🟡 remappage `'ar'`→`'dr'` (isolée, sa propre porte). Zéro fenêtre token. **Prérequis dur d'A7.**
 **Lot Cuisine : CLOS le 18/07** — T1→T7 + C1 + C2 (device foyer neuf ✓), **mergé au défaut**. 143 tests · portes structurelles en CI · 2 fenêtres token closes (0009 exhumée+corrigée · 0010+edge v13, parité 0). Récit : `DEVLOG.md` · audit : `READOUT_QUALITE_LOT_CUISINE.md`.
 
 ## ⚪ File d'attente — ordre verrouillé
 
-1. **Mini-lot destinataires** — `revokeEspace` fiabilisé · `revoked` (câbler ou supprimer) · remappage langue `'ar'`→`'dr'` *(tranche isolée, sa propre porte)* · `backupImage` (état `backedUp?`, pas de retry aveugle) · **cache audio négatif** (`missing.add()` sur 404 seulement — fix ~3 lignes) *(5 fiches — cause racine commune aux échecs silencieux : fire-and-forget sans état ni retour)*. **Prérequis dur d'A7.** Sources : readout A7 design v2 §5 (fiches 1-3, déjà instruites).
-2. **Audit sécurité §7.8** — + A7-C2/A7-C4 en durcissement · reliquat `create_foyer` (`public`/`anon`).
-3. **Lot simplification transverse** — purge nutrition (méthode gravée au DEVLOG : production d'abord, flag T2 = carte, porte par suppression) **+** prompt v2 **+ revue éditoriale du Fonds de départ** *(30 recettes = protocole personnel : « Msemmen SG », « batbout GF », « Creami (whey) » ×2 — même racine que le `SYSTEM` hardcodé. Premier contenu du chantier §7.2)*. *Signal = audit clos. Prérequis : poser « sans gluten » dans les Réglages du foyer PO **avant** la bascule.* → `PROPOSITION_PROMPT_V2_GENERATE_RECIPE.md` *(committé — schéma v2, règles au SYSTÈME, rapport `adaptations`, Opt-C darija à valider au read-back)*
-4. **Lot A7** — implémentation *(design clos ; film mesuré + spec §8 à venir)*.
-5. **Lot visuel « Riad moderne »** — passe 2, à part.
+1. **Audit sécurité §7.8** — + A7-C2/A7-C4 en durcissement · reliquat `create_foyer` (`public`/`anon`).
+2. **Lot simplification transverse** — purge nutrition (méthode gravée au DEVLOG : production d'abord, flag T2 = carte, porte par suppression) **+** prompt v2 **+ revue éditoriale du Fonds de départ** *(30 recettes = protocole personnel : « Msemmen SG », « batbout GF », « Creami (whey) » ×2 — même racine que le `SYSTEM` hardcodé. Premier contenu du chantier §7.2)*. *Signal = audit clos. Prérequis : poser « sans gluten » dans les Réglages du foyer PO **avant** la bascule.* → `PROPOSITION_PROMPT_V2_GENERATE_RECIPE.md` *(committé — schéma v2, règles au SYSTÈME, rapport `adaptations`, Opt-C darija à valider au read-back)*
+3. **Lot A7** — implémentation *(design clos ; film mesuré + spec §8 à venir)*.
+4. **Lot visuel « Riad moderne »** — passe 2, à part.
 
 ## 🟡 Chantier UX — passe 1 (simplicité & fluidité)
 
