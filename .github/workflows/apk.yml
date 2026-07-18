@@ -7,7 +7,7 @@ name: APK Android (debug)
 on:
   workflow_dispatch:
   push:
-    branches: [audit-securite-v1]
+    branches: [lot-simplification-v1]
 
 jobs:
   apk:
