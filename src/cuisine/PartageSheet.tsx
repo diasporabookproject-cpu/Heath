@@ -202,10 +202,20 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
     await refresh();
   };
 
+  // F1 (mini-lot destinataires) : le local n'est supprimé QUE si le serveur a
+  // confirmé — sinon la personne est conservée et le toast dit la vérité.
   const revoke = async (d: Destinataire) => {
     setBusy(true);
     try {
-      await revokeEspace(d.token);
+      const { error } = await revokeEspace(d.token);
+      if (error === 'session') {
+        toast(`Connecte-toi pour retirer ${d.nom} — son lien doit être coupé côté serveur.`);
+        return;
+      }
+      if (error) {
+        toast(`Impossible de révoquer maintenant — ${d.nom} est conservé, réessaie.`);
+        return;
+      }
       await deleteDestinataire(d.id);
       setSelId(null);
       await refresh();

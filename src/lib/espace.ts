@@ -237,11 +237,31 @@ export async function lastEspaceOpen(token: string): Promise<string | null> {
   }
 }
 
-/** Révoque l'espace (supprime le contenu côté serveur → l'ancien lien ne donne plus rien). */
-export async function revokeEspace(token: string): Promise<void> {
+/**
+ * Révoque l'espace (supprime la ligne côté serveur → l'ancien lien ne donne plus rien).
+ *
+ * VÉRITÉ (mini-lot destinataires, F1) — succès = le serveur a RÉPONDU sans erreur,
+ * JAMAIS le rowcount : une personne jamais partagée n'a pas de ligne `espaces`
+ * (0 ligne = « rien à couper », pas un échec). Échec = on ne l'a pas joint
+ * (hors-ligne, session absente, erreur serveur).
+ * La session est exigée AVANT l'appel : la policy delete d'`espaces` (0006) est
+ * `to authenticated` + membre du foyer — sans session, RLS filtre EN SILENCE
+ * (200, 0 ligne, aucune erreur) et on retomberait dans le faux succès.
+ * Le local-first vaut pour le contenu, pas le contrôle d'accès : la vérité de
+ * « qui peut lire » vit là où le jeton est vérifié → « Retirer » exige la connexion.
+ */
+export async function revokeEspace(token: string): Promise<{ error?: 'session' | 'serveur' }> {
   const supa = getSupabase();
-  if (!supa) return;
-  await supa.from('espaces').delete().eq('token', token);
+  if (!supa) return { error: 'session' };
+  try {
+    const { data } = await supa.auth.getSession();
+    if (!data.session) return { error: 'session' };
+    const { error } = await supa.from('espaces').delete().eq('token', token);
+    if (error) return { error: 'serveur' };
+    return {};
+  } catch {
+    return { error: 'serveur' };
+  }
 }
 
 export function readEspaceToken(): string | null {

@@ -1,10 +1,11 @@
 # READ-BACK — Mini-lot destinataires (« les échecs silencieux »)
 **18 juillet 2026 · file n°1 d'`ETAT.md` · prérequis dur d'A7 · read-back AVANT code — STOP en bas.**
 
-> **Source manquante au repo** : le *readout A7 design v2* (§5, fiches 1-3 « déjà instruites ») est un
-> doc côté PO, absent du dépôt. Les fiches 1-3 ci-dessous sont instruites depuis le code réel + le
-> backlog qualité + les décisions tracées (DEVLOG 15/07). **Si le readout dit autre chose, corrige à ce
-> STOP — et passe-moi le doc, je le committe (même règle que les maquettes).**
+> **Source** : `READOUT_A7_DESIGN.md` (v2, 15/07 — committé au GO T1). Trois points du readout sont
+> **périmés** depuis (tracés au DEVLOG, le doc n'est pas retouché) : ① §5 fiche 2 (câbler `revoked` +
+> file de retry) — tranchée dans l'autre sens au GO T1 (supprimer ; « Retirer » conditionné à la
+> connexion) ; ② §2 D12 « trois fiches » → cinq ; ③ §7 ne liste pas le piège D4+D10 (il vit dans
+> `ETAT.md` § Ouvert). **D6 du readout est portée dans la fiche T2 ci-dessous.**
 
 ## Ce que le lot répare — la cause racine
 
@@ -23,19 +24,29 @@ qui coûtera cher à A7 si on le laisse.
 delete est ignorée, et `if (!supa) return` fait qu'**hors connexion la révocation « réussit » sans rien
 faire**. `PartageSheet.tsx:205` supprime ensuite le destinataire local et toaste « son lien ne donne plus
 rien » — le lien peut être vivant.
-**Correctif** : `revokeEspace` retourne la vérité (lance en cas d'échec ; `!supa`/hors-ligne = échec,
-pas un succès). Le caller **ne supprime le destinataire local QUE si la révocation serveur a réussi** ;
-sinon toast honnête « Impossible de révoquer maintenant (hors-ligne ?) — la personne est conservée,
-réessaie » et rien n'est perdu. Cas « jamais publié » (0 ligne effacée) = succès légitime.
-**Porte** : le smoke Comptes tourne **déconnecté** — il assertera le refus honnête (aujourd'hui c'est le
-faux succès qui passerait). + test Vitest sur la sémantique du retour.
+**Correctif** : `revokeEspace` retourne la vérité. Le caller **ne supprime le destinataire local QUE si
+la révocation serveur a réussi** ; sinon toast honnête et rien n'est perdu.
+**Sémantique du succès (cas limite gravé au GO T1)** : **succès = le serveur a répondu sans erreur —
+jamais le rowcount.** Une personne jamais partagée n'a pas de ligne `espaces` : 0 ligne effacée n'est
+pas un échec, c'est « rien à couper ». Échec = on ne l'a pas joint (réseau, session, erreur).
+**Corollaire RLS** : la policy delete d'`espaces` (0006) est `to authenticated` + membre — un DELETE
+**sans session** répond 200 avec 0 ligne **sans erreur** (RLS filtre, elle n'erreure pas). « Le serveur
+a répondu » n'est donc honnête que **session exigée d'abord** : sans session → refus franc
+(« Connecte-toi pour retirer… »), pas d'appel aveugle.
+**Raison de fond (décision PO, gravée)** : l'invariant local-first vaut pour le **contenu**, pas pour le
+**contrôle d'accès** — l'appareil ne peut pas être la source de vérité de qui a le droit de lire une
+page ; cette vérité vit là où le jeton est vérifié. Conséquence : **« Retirer » est conditionné à la
+connexion** (le modèle A7 « disparition immédiate du hub + file de retry » meurt ici — le thread A7
+reprendra sa maquette).
+**Porte** : le smoke Comptes tourne **déconnecté** — il asserte le refus honnête (aujourd'hui c'est le
+faux succès qui passerait) et que la personne est conservée. + tests Vitest sur la sémantique du retour.
 
-### F2 — `revoked` : câbler ou supprimer → **je propose SUPPRIMER**
-**Constat** : `types.ts:194` — champ défini, **jamais lu, jamais écrit**. Or la révocation actuelle
-*supprime* le destinataire : un drapeau sur un enregistrement qui disparaît est mort par construction.
-Un soft-revoke (garder la personne, tuer le lien) = cycle de vie du token → c'est le chantier A7-C2
-(audit §7.8), pas ce mini-lot. Champ optionnel synchronisé : sa suppression est compat-safe (les
-anciens payloads l'ignorent). **Si tu veux le câbler au lieu de le supprimer, dis-le au GO.**
+### F2 — `revoked` : **SUPPRIMER — tranché au GO T1** (le §5 fiche 2 du readout est mort)
+**Constat** : `types.ts:194` — champ défini, **jamais lu, jamais écrit**. La révocation *supprime* le
+destinataire : un drapeau sur un enregistrement qui disparaît est mort par construction — et le modèle
+couper/créer plaidait déjà pour la suppression (question ③ que le readout laissait ouverte). Le
+soft-revoke (garder la personne, tuer le lien) = cycle de vie du token → A7-C2 (audit §7.8). Champ
+optionnel synchronisé : suppression compat-safe (les anciens payloads l'ignorent).
 
 ### F4 — `backupImage` : un état, jamais de retry aveugle (méthode gravée, décision PO 15/07)
 **Constat** : `FichePhoto.tsx` — `void backupImage(…)` fire-and-forget ; toute photo posée hors-ligne /
@@ -82,6 +93,17 @@ arabe standard (`types.ts:346`). A7 unifiera les personnes : deux codes pour la 
   isolée et derrière ta propre GO.
 - **Sa porte** : test « aucun code ne crée un destinataire `'ar'` » + test de normalisation (IDB +
   adoption sync) + test du mapping au publish + smoke inchangé (la page reçue rend toujours الدارجة).
+- **D6 (readout A7, obligation portée ici — c'est CETTE fiche qui fixe la sémantique, personne d'autre
+  ne le fera)** : la fiche définit noir sur blanc ce que chaque code signifie —
+  **`'fr'` = français · `'dr'` = darija marocaine (lettres arabes) · `'ar'` = arabe standard moderne
+  (fusha), libellé UI « Arabe classique » — PAS le registre coranique** (une nounou qui lit une consigne
+  d'urgence a besoin du MSA) · `'en'` = anglais. Rayon d'explosion sans remap : l'élargissement D5
+  ferait basculer tous les destinataires Cuisine `'ar'` de la darija vers l'arabe classique **en silence**.
+- **Question du fil, à ne pas laisser découvrir par l'élargissement** : `'ar'` sur le fil v:1 = darija,
+  pour toujours. Quel code portera l'arabe standard sur le fil ? **Proposition** : `v: 2` au moment de
+  D5 (le champ `v` existe déjà) — en v:2 `langue` adopte le vocabulaire catalogue (`'ar'` = MSA) ; les
+  lecteurs gardent à jamais l'interprétation v:1 (`'ar'` = darija quand `v === 1`). Tracé dans
+  `ETAT.md` § Ouvert, à valider.
 
 **Chiffrage T2 : 🟡 moyen-petit** (~60 lignes, mais 3 frontières : IDB, sync, fil publié).
 
@@ -95,11 +117,11 @@ arabe standard (`types.ts:346`). A7 unifiera les personnes : deux codes pour la 
   (T1 : refus honnête de révocation déconnectée).
 - **Branche** : `mini-lot-destinataires-v1` (créée, `apk.yml` pointé dessus selon le rituel).
 
-## Questions au GO (2)
+## Questions au GO — répondues (GO T1, 18/07)
 
-1. **F2 `revoked`** : je supprime le champ (recommandé — mort par construction, soft-revoke = A7-C2).
-   D'accord, ou tu veux le câbler ?
-2. **T2 fil publié** : je garde `'ar'` comme code darija SUR LE FIL (compat perpétuelle, remap local
-   seulement). D'accord, ou tu veux basculer le fil aussi (coût : versionner le payload) ?
+1. **F2 `revoked`** : **supprimer** — validé (rejoint la question ③ du readout : couper/créer plaide
+   pour la suppression). Raison de fond gravée dans la fiche F1.
+2. **T2 fil publié** : **`'ar'` reste le code darija sur le fil pour ce lot** — validé. La suite est
+   nommée dans la fiche T2 (proposition `v: 2` à l'élargissement D5) et tracée dans `ETAT.md` § Ouvert.
 
-**⏸ STOP read-back — j'attends ton GO (et le readout A7 §5 si ses fiches disent autre chose).**
+**GO T1 reçu le 18/07 — T2 après le STOP T1, tranche isolée avec sa propre porte.**

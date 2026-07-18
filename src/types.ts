@@ -191,7 +191,9 @@ export interface Destinataire {
   tel?: string;
   /** Ids des fiches Sécurité assignées à cette personne. */
   securiteIds?: string[];
-  revoked?: boolean;
+  // `revoked?` supprimé (mini-lot destinataires F2) : jamais câblé, et la
+  // révocation SUPPRIME la personne (couper/créer) — un drapeau sur un
+  // enregistrement qui disparaît est mort par construction. Soft-revoke = A7-C2.
   createdAt: number;
 }
 

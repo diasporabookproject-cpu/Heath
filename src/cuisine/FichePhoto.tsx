@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadImage, saveImage } from '../lib/db';
-import { backupImage, restoreImage } from '../lib/sync/images';
+import { backupImage, restoreImage, retryImageBackup } from '../lib/sync/images';
 import { prepareImage } from '../lib/image';
 import { isNative, pickPhoto as pickPhotoNative } from '../lib/platform';
 
@@ -27,7 +27,13 @@ export default function FichePhoto({ recipeId, toast }: { recipeId: string; toas
     let alive = true;
     void (async () => {
       const local = await loadImage(recipeId);
-      if (local && alive) return show(local.blob);
+      if (local && alive) {
+        show(local.blob);
+        // F4 : sauvegarde non confirmée (`backedUp` faux) → UNE retentative
+        // silencieuse ici — d'après l'état, jamais aveugle.
+        void retryImageBackup(recipeId);
+        return;
+      }
       const restored = await restoreImage(recipeId); // paresseux, best-effort
       if (restored && alive) show(restored);
     })();

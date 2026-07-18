@@ -9,7 +9,7 @@
 
 ## 🔵 En vol
 
-**Mini-lot destinataires** (« les échecs silencieux ») — branche `mini-lot-destinataires-v1`, `apk.yml` pointé. **Read-back livré (`READBACK_MINI_LOT_DESTINATAIRES.md`) — ⏸ attente GO** (2 questions : `revoked` supprimer ou câbler · fil publié reste `'ar'`). T1 🟢 fiches 1·2·4·5 (revoke honnête, `backedUp?`, cache 404-only audio+images) → T2 🟡 remappage `'ar'`→`'dr'` (isolée, sa propre porte). Zéro fenêtre token. **Prérequis dur d'A7.**
+**Mini-lot destinataires** (« les échecs silencieux ») — branche `mini-lot-destinataires-v1`, `apk.yml` pointé. Read-back accepté, **T1 livrée — ⏸ STOP T1** : revoke honnête (session exigée — RLS delete silencieuse ; succès = serveur répondu, jamais le rowcount), `revoked` supprimé, `backedUp?` + retentative au montage, cache négatif 404-only (audio + images). **Reste : GO T2** — remappage `'ar'`→`'dr'` (isolée, sa propre porte, D6 : sémantique des codes). Zéro fenêtre token. **Prérequis dur d'A7.**
 **Lot Cuisine : CLOS le 18/07** — T1→T7 + C1 + C2 (device foyer neuf ✓), **mergé au défaut**. 143 tests · portes structurelles en CI · 2 fenêtres token closes (0009 exhumée+corrigée · 0010+edge v13, parité 0). Récit : `DEVLOG.md` · audit : `READOUT_QUALITE_LOT_CUISINE.md`.
 
 ## ⚪ File d'attente — ordre verrouillé
@@ -52,4 +52,5 @@
 
 - **D4 + D10 contre le modèle** — un rôle sans écran dédié (Chauffeur/Entretien/Famille) ne doit voir que « La maison ». Or `PersonneKind = 'cuisine'|'nounou'` et le `menu` est **inconditionnel** dans `publishEspace` : un Chauffeur recevrait le menu, ou pire le planning des enfants. → 3ᵉ sorte ou payload conditionnel (≈ un pas vers l'option 2). **À trancher dans la spec A7.**
 - **Vocabulaire banni proposé par l'UI** — `PartageSheet.ROLES` (« Cuisinière »… + défaut de création rapide), idem FTUE. → **A7/D2** (neutralité, liste ouverte + « Autre… »).
+- **Le code de l'arabe standard SUR LE FIL** — `'ar'` dans les payloads `espaces` v:1 = darija, pour toujours (compat perpétuelle). L'élargissement D5 (4 langues Cuisine) devra porter le MSA sous un autre contrat : **proposition = `v: 2`** (champ existant) où `langue` adopte le vocabulaire catalogue ; lecteurs gardent l'interprétation v:1. **À valider avant D5 — que l'élargissement ne le découvre pas.**
 - **Tag Q3 : défaut ou filtre ?** — T6 filtre la **liste entière** des créneaux (l'amendement visait le seul défaut) ; le tag devient fonctionnel, or la chakchouka au petit-déj est un usage réel. **Senti au device C2 sans blocage signalé** — rouvrir si l'usage coince (le filtre redeviendrait un défaut).

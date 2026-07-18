@@ -76,6 +76,24 @@ await page.getByText('je continue sans compte', { exact: false }).click();
 await page.getByLabel('Compte et synchro').first().waitFor({ timeout: 5000 });
 console.log('Retour à l’app sans compte ✅');
 
+// 5) PORTE F1 (mini-lot destinataires) — le revoke HONNÊTE, déconnecté :
+//    sans session, « Révoquer » doit REFUSER franchement (la policy delete
+//    d'`espaces` est `to authenticated` — un DELETE anonyme répondrait 200 avec
+//    0 ligne SANS erreur : c'était le faux succès). La personne est CONSERVÉE.
+await page.getByLabel('Partager le menu').first().click();
+await page.getByText('Nouvelle personne').waitFor({ timeout: 5000 }); // 0 destinataire → mode édition
+await page.locator('.cz-inp').first().fill('Testouya');
+await page.getByRole('button', { name: 'Enregistrer' }).click();
+await page.getByText('Envoyer à Testouya').waitFor({ timeout: 5000 });
+await page.getByRole('button', { name: 'Changer' }).click();
+await page.getByRole('button', { name: 'Révoquer' }).click();
+await page.getByText('Connecte-toi pour retirer Testouya', { exact: false }).waitFor({ timeout: 5000 });
+if (await page.getByText('ne donne plus rien', { exact: false }).count()) {
+  throw new Error('PORTE F1 : le toast de succès est apparu sans session (faux succès)');
+}
+await page.getByText('Testouya').first().waitFor({ timeout: 5000 }); // conservée dans la liste
+console.log('Revoke honnête déconnecté : refus franc, personne conservée ✅');
+
 console.log(errors.length ? 'ERREURS:\n' + errors.join('\n') : 'Aucune erreur console/page ✅');
 await browser.close();
 if (errors.length) process.exit(1);
