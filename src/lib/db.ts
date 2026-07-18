@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import {
   DEFAULT_SETTINGS,
+  normalizeDestinataire,
   type CuisineSettings,
   type Destinataire,
   type NounouDoc,
@@ -322,6 +323,15 @@ export async function loadAudioKeys(): Promise<string[]> {
 export async function loadDestinataires(): Promise<Destinataire[]> {
   const db = await getDB();
   const all = await db.getAll('destinataires');
+  // Migration T2 (mini-lot destinataires) : `'ar'` legacy → `'dr'`, réécrit
+  // UNE fois en place (idempotent — les lectures suivantes ne touchent rien).
+  for (let i = 0; i < all.length; i++) {
+    const n = normalizeDestinataire(all[i]);
+    if (n !== all[i]) {
+      all[i] = n;
+      await db.put('destinataires', n);
+    }
+  }
   return all.sort((a, b) => a.createdAt - b.createdAt);
 }
 

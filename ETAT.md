@@ -9,7 +9,7 @@
 
 ## 🔵 En vol
 
-**Mini-lot destinataires** (« les échecs silencieux ») — branche `mini-lot-destinataires-v1`, `apk.yml` pointé. Read-back accepté, **T1 livrée — ⏸ STOP T1** : revoke honnête (session exigée — RLS delete silencieuse ; succès = serveur répondu, jamais le rowcount), `revoked` supprimé, `backedUp?` + retentative au montage, cache négatif 404-only (audio + images). **Reste : GO T2** — remappage `'ar'`→`'dr'` (isolée, sa propre porte, D6 : sémantique des codes). Zéro fenêtre token. **Prérequis dur d'A7.**
+**Mini-lot destinataires** (« les échecs silencieux ») — branche `mini-lot-destinataires-v1`. **T1 + T2 livrées — ⏸ STOP T2** : revoke honnête (session exigée, jamais le rowcount) · `revoked` supprimé · `backedUp?` + retentative au montage · cache 404-only (audio+images) · **remappage `'ar'`→`'dr'`** (migration idempotente aux 2 portes, fil v:1 intact via `wireLangue`, `cuisineSig` stable, D6 gravée, verrou statique). 163 tests · migration vérifiée live. **Reste : clôture** (merge → défaut → portes re-vérifiées). Zéro fenêtre token. **Prérequis dur d'A7.**
 **Lot Cuisine : CLOS le 18/07** — T1→T7 + C1 + C2 (device foyer neuf ✓), **mergé au défaut**. 143 tests · portes structurelles en CI · 2 fenêtres token closes (0009 exhumée+corrigée · 0010+edge v13, parité 0). Récit : `DEVLOG.md` · audit : `READOUT_QUALITE_LOT_CUISINE.md`.
 
 ## ⚪ File d'attente — ordre verrouillé

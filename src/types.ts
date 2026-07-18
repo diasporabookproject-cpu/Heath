@@ -184,7 +184,12 @@ export interface Destinataire {
   nom: string;
   /** Rôle indicatif : Cuisinière / Femme de ménage / Nounou / Autre. */
   role: string;
-  langue: 'fr' | 'ar';
+  /** Langue de lecture — vocabulaire du CATALOGUE (cf. D6 sur NounouLangue) :
+   *  `'dr'` = darija. L'ancien code Cuisine `'ar'` (qui SIGNIFIAIT darija) est
+   *  migré à la lecture (`normalizeDestLangue`) ; sur le FIL publié (payload
+   *  `espaces` v:1), la darija reste `'ar'` pour toujours (`wireLangue`) —
+   *  compat perpétuelle des liens distribués. */
+  langue: 'fr' | 'dr';
   /** Jeton d'accès (capability) pour le lien permanent de son espace. */
   token: string;
   /** Téléphone (format international, ex. 2126…) pour le rappel WhatsApp. */
@@ -195,6 +200,29 @@ export interface Destinataire {
   // révocation SUPPRIME la personne (couper/créer) — un drapeau sur un
   // enregistrement qui disparaît est mort par construction. Soft-revoke = A7-C2.
   createdAt: number;
+}
+
+// ── Remappage langue (mini-lot destinataires T2) ─────────────────────────────
+// Côté Cuisine, `'ar'` signifiait DARIJA ; côté catalogue, `'dr'` = darija et
+// `'ar'` = arabe standard. Sans remap, l'élargissement D5 aurait fait basculer
+// tous les destinataires `'ar'` de la darija vers l'arabe classique EN SILENCE.
+
+/** Migration idempotente du code langue d'un Destinataire : `'ar'` legacy → `'dr'`. */
+export function normalizeDestLangue(l: string): 'fr' | 'dr' {
+  return l === 'dr' || l === 'ar' ? 'dr' : 'fr';
+}
+
+/** Normalise un destinataire (IDB locale OU payload sync d'un appareil pas à jour). */
+export function normalizeDestinataire(d: Destinataire): Destinataire {
+  const langue = normalizeDestLangue(d.langue as string);
+  return langue === d.langue ? d : { ...d, langue };
+}
+
+/** Code langue sur le FIL publié (payload `espaces` v:1) : la darija y est `'ar'`,
+ *  pour toujours — les liens distribués sont perpétuels. L'arabe standard n'a PAS
+ *  de code en v:1 ; l'élargissement D5 passera par `v: 2` (cf. ETAT.md § Ouvert). */
+export function wireLangue(l: 'fr' | 'dr'): 'fr' | 'ar' {
+  return l === 'dr' ? 'ar' : 'fr';
 }
 
 // ── Nounou (page par rôle, brief FN0-FN5) ────────────────────────────────────
@@ -344,7 +372,13 @@ export interface UrgenceFiche {
   regles: ReglePerm[];
 }
 
-/** Langues disponibles pour la page reçue (darija distincte de l'arabe standard). */
+/** Langues disponibles pour la page reçue — LE catalogue (D5, liste fermée), et
+ * sa sémantique (D6, fixée par la fiche de remappage T2 — personne d'autre ne le fera) :
+ *   `'fr'` = français · `'dr'` = darija marocaine (lettres arabes) ·
+ *   `'ar'` = **arabe standard moderne (fusha)** — libellé UI « Arabe classique »,
+ *   JAMAIS le registre coranique (une consigne d'urgence se lit en MSA) ·
+ *   `'en'` = anglais.
+ * ⚠️ Ne pas confondre avec le FIL Cuisine (`wireLangue`) où `'ar'` = darija (v:1). */
 export type NounouLangue = 'fr' | 'dr' | 'ar' | 'en';
 
 export interface NounouLangInfo {
@@ -360,7 +394,7 @@ export interface NounouLangInfo {
 export const NOUNOU_LANGS: NounouLangInfo[] = [
   { code: 'fr', nom: 'Français', sub: "Langue d'auteur", rtl: false, author: true },
   { code: 'dr', nom: 'الدارجة', sub: 'Marocain', rtl: true },
-  { code: 'ar', nom: 'العربية', sub: 'Standard', rtl: true },
+  { code: 'ar', nom: 'العربية', sub: 'Arabe classique', rtl: true },
   { code: 'en', nom: 'English', sub: 'À activer si besoin', rtl: false },
 ];
 

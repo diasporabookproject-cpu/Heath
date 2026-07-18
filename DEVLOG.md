@@ -129,6 +129,18 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Mini-lot destinataires — Tranche 2 : remappage langue `'ar'` → `'dr'` (D6) — 2026-07-18
+**GO T2.** La tranche isolée du readout (§5 fiche 3) : côté Cuisine `'ar'` signifiait DARIJA — sans remap, l'élargissement D5 aurait basculé tous les destinataires darija vers l'arabe classique EN SILENCE.
+- **Modèle** : `Destinataire.langue: 'fr' | 'dr'` — création (`PartageSheet.blank`, FTUE via `normalizeDestLangue`) et affichages passés à `'dr'`.
+- **Migration** : `normalizeDestLangue`/`normalizeDestinataire` (pures, idempotentes, testées) appliquées aux DEUX portes d'entrée — `loadDestinataires` (réécrit le record UNE fois en place) et `applyRemote 'destinataires'` (un appareil pas à jour poussant `'ar'` est normalisé à l'arrivée). **Vérifiée en vrai** (Playwright) : record legacy `'ar'` posé brut en IDB → lu → réécrit `'dr'` → tag الدارجة intact.
+- **Le FIL ne bouge PAS** : payload `espaces` v:1, `'ar'` = darija pour toujours (liens perpétuels) — `wireLangue('dr') → 'ar'` aux deux points de publication (`publishEspace` + `previewEspace`, l'aperçu = la page). Contrat gravé sur l'interface `Espace`. La page reçue (`EspaceCuisine`) lit le fil : intouchée.
+- **Piège attrapé à l'instruction** : `cuisineSig` signait `dest.langue` — la migration aurait fait basculer TOUTES les cartes darija en « modifié — à envoyer » sans que la page ait changé. La signature signe désormais la langue DU FIL (`wireLangue`) : stable à travers la migration (testé contre le format d'hier, hash pour hash).
+- **D6 gravée au point de vérité** (`types.ts`, catalogue `NounouLangue`) : `'fr'` français · `'dr'` darija marocaine · **`'ar'` = arabe standard moderne (fusha), libellé UI « Arabe classique », JAMAIS le registre coranique** (une consigne d'urgence se lit en MSA) · `'en'` anglais. Libellé `NOUNOU_LANGS` aligné (« Standard » → « Arabe classique »). L'arabe standard n'a PAS de code sur le fil v:1 → proposition `v: 2` à D5, tracée `ETAT.md` § Ouvert.
+- **Sa porte** : verrou STATIQUE `langue-lock.test.ts` (aucun `langue: 'ar'` / `langue === 'ar'` dans src, commentaires exclus) — **a payé à sa première exécution** (attrapé `Ftue.tsx`, remplacé par `normalizeDestLangue`) · 6 tests langue (idempotence, fil, signature stable).
+- **Portes T2** : typecheck ✓ · **163/163** ✓ (157 + 6) · build web+natif ✓ · 3 smokes ✓ (F5.5 = la chaîne darija de bout en bout post-remap) · migration live vérifiée + capture (Rahma migrée, tag الدارجة).
+- 🟡 nommé au read-back, ACCEPTÉ PO : fenêtre de transition inter-appareils (un appareil pas à jour lisant `'dr'` afficherait FR pour une darijophone jusqu'à sa mise à jour — court, réversible, rien de perdu).
+- **⏸ STOP T2 — les 2 tranches sont livrées. Reste la clôture du mini-lot** : merge → défaut → portes re-vérifiées → ETAT réécrit.
+
 ### Rapport prod PO (capture 18/07, pendant le STOP T1) — 3 constats tracés, AUCUN code — 2026-07-18
 Capture device : feuille « À partir d'instructions », bannière « Failed to send a request to the Edge Function », compteur « 100 / 100 mises en forme ce mois », règles « halal · sans Sans gluten ».
 - **① Le compteur n'est PAS faux — il est ILLISIBLE.** L'affichage est `{restant} / {plafond}` (`AddRecipeSheet.tsx:490` et `:120`, `remaining()` de `lib/quota.ts`) : « 100 / 100 » = **100 restantes** — quota intact, ce que le PO confirmait. Mais la forme « N / 100 mises en forme ce mois » se lit spontanément comme du CONSOMMÉ. Deux lecteurs, deux sens opposés → backlog (fix candidat : « Encore N / 100 … »).
