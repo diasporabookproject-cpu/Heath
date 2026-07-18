@@ -9,7 +9,7 @@
 
 ## 🔵 En vol
 
-**Aucun lot en vol.** Prochain = **audit sécurité §7.8** (file n°1).
+**Audit sécurité §7.8** (Ambition A — fermer les fuites connues) — branche `audit-securite-v1`, `apk.yml` pointé. **Read-back livré (`READBACK_AUDIT_SECURITE.md`) — ⏸ attente décisions** (4 questions). Constat qui reforme le lot : **① fuite `espace_opens` et ② policies `espaces` DÉJÀ fermées par AS-2 (0006, en prod)** — reste les résidus + ③ A7-C2 (options instruites, non tranchées) · ④ cache page révoquée (trou client réel) · C4 « Retirer » Nounou (🟢) · ⑤ `create_foyer` · ⑥ registre RGPD. Ambition B (chasse offensive) = après, lancement public.
 **Mini-lot destinataires : CLOS le 18/07** — T1 « échecs silencieux » (revoke honnête session-d'abord · `revoked` supprimé · `backedUp?` · cache 404-only ×2) + T2 remappage `'ar'`→`'dr'` (migration idempotente 2 portes, fil v:1 intact, `cuisineSig` stable, D6, verrou statique). **Device migration ✓ 4/4** (appareil existant, destinataire darija d'avant), **mergé au défaut**. 163 tests · zéro fenêtre token. **Le prérequis dur d'A7 est levé.**
 **Lot Cuisine : CLOS le 18/07** — T1→T7 + C1 + C2 (device foyer neuf ✓), mergé au défaut. 143 tests · 2 fenêtres token closes (0009 · 0010+edge v13, parité 0). Récit : `DEVLOG.md` · audit : `READOUT_QUALITE_LOT_CUISINE.md`.
 
