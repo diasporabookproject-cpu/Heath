@@ -129,6 +129,11 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Mini-lot destinataires — CLÔTURE : device migration ✓ 4/4, MERGE au défaut — le lot est CLOS — 2026-07-18
+**STOP T2 validé PO** (vérifié au code : `cuisineSig` signe `wireLangue`, remap sur `'dr'`, fil `'ar'` aux 2 points + aperçu ; « le piège attrapé est le mécanisme exact du mensonge d'état — attrapé avant de naître ») puis **test device sur appareil EXISTANT** (APK `b57501b`, installé par-dessus — on teste la migration, pas un foyer neuf) : ① destinataire darija d'avant → chip الدارجة pressé (record réécrit `'dr'`) ② carte SANS bascule « modifié » (signature stable) ③ page reçue toujours darija ④ mode avion → Révoquer → refus franc, personne conservée. **4/4 → GO clôture.**
+- Au passage du test, question PO « je ne peux pas changer les langues à part fr et darija » → réponse tracée : c'est le produit ACTUEL (2 langues côté Cuisine) ; le catalogue à 4 arrive à l'élargissement **D5** — T2 existait précisément pour que ce jour-là ne casse rien.
+- **Merge `mini-lot-destinataires-v1` → défaut (`--no-ff`)** + portes re-vérifiées sur le défaut mergé (typecheck · 163 tests · build web+natif · 3 smokes) + Pages vérifié. `ETAT.md` réécrit : lot CLOS, bloquant `revokeEspace` silencieux LEVÉ, **prérequis dur d'A7 levé** — prochain = audit sécurité §7.8 (file n°1). *`apk.yml` pointe encore `mini-lot-destinataires-v1` ; le prochain lot le fera pointer sur sa branche, selon le rituel.*
+
 ### Mini-lot destinataires — Tranche 2 : remappage langue `'ar'` → `'dr'` (D6) — 2026-07-18
 **GO T2.** La tranche isolée du readout (§5 fiche 3) : côté Cuisine `'ar'` signifiait DARIJA — sans remap, l'élargissement D5 aurait basculé tous les destinataires darija vers l'arabe classique EN SILENCE.
 - **Modèle** : `Destinataire.langue: 'fr' | 'dr'` — création (`PartageSheet.blank`, FTUE via `normalizeDestLangue`) et affichages passés à `'dr'`.
