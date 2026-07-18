@@ -1,5 +1,5 @@
 # ÉTAT — Manzil
-**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 18 juillet 2026 (clôture mini-lot destinataires, merge `mini-lot-destinataires-v1` → défaut)**
+**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 18 juillet 2026 (clôture audit sécurité §7.8, merge `audit-securite-v1` → défaut)**
 
 > **Rôle.** *Où on en est* (rapide). Le *quoi* (lent) = `PROJET_MAISON_OS.md` (côté PO). Le *journal* (append-only, détaillé) = `DEVLOG.md`.
 > **Rituel d'ouverture de thread : « Contexte = `PROJET_MAISON_OS.md` + `ETAT.md` ».**
@@ -9,7 +9,8 @@
 
 ## 🔵 En vol
 
-**Aucun lot en vol.** Prochain = **audit sécurité §7.8** (file n°1).
+**Aucun lot en vol.** Prochain = **lot simplification transverse** (file n°1 — purge nutrition + prompt v2 + revue éditoriale du Fonds de départ).
+**Audit sécurité §7.8 : CLOS le 18/07** (Ambition A) — ④ cache d'une page révoquée coupé (complément client de F1) · C4 « Retirer » Nounou câblé · ⑥ registre RGPD complété. ①/② confirmés fermés par AS-2/0006 (rien recodé). ③⑤①-résidu au parking avec leur signal. **Mergé au défaut**, 172 tests · zéro fenêtre token. **Bloquant A7-C4 levé.** Récit : `DEVLOG.md` · fiche : `READBACK_AUDIT_SECURITE.md`. *(Ambition B — chasse offensive : avant lancement public.)*
 **Mini-lot destinataires : CLOS le 18/07** — T1 « échecs silencieux » (revoke honnête session-d'abord · `revoked` supprimé · `backedUp?` · cache 404-only ×2) + T2 remappage `'ar'`→`'dr'` (migration idempotente 2 portes, fil v:1 intact, `cuisineSig` stable, D6, verrou statique). **Device migration ✓ 4/4** (appareil existant, destinataire darija d'avant), **mergé au défaut**. 163 tests · zéro fenêtre token. **Le prérequis dur d'A7 est levé.**
 **Lot Cuisine : CLOS le 18/07** — T1→T7 + C1 + C2 (device foyer neuf ✓), mergé au défaut. 143 tests · 2 fenêtres token closes (0009 · 0010+edge v13, parité 0). Récit : `DEVLOG.md` · audit : `READOUT_QUALITE_LOT_CUISINE.md`.
 
@@ -27,8 +28,7 @@
 
 ## 🔴 Bloquants avant mise en ligne
 
-- **A7-C2** — le token survit au renommage (faille **symétrique** Cuisine + Nounou) → audit §7.8
-- **A7-C4** — destinataire Nounou immortel (`removeDest` sans UI) → lot A7
+- **A7-C2** — le token survit au renommage (faille **symétrique** Cuisine + Nounou) → durcissement des liens, parking « avant lancement public »
 - **Naming** — deadline dure = 1ᵉʳ upload store · **domaine `manzil.ma`** (bloque landing + branding des liens)
 - **RGPD** — registre des traitements : **ligne « allergies → relais IA » RÉDIGÉE** (DEVLOG, clôture C1) — à porter au registre (PO)
 
@@ -43,6 +43,9 @@
 | Passerelle allergies enfants ↔ foyer | D2 : un seul endroit | — |
 | Push natif · ICS · PIN/expiration des liens | §7.5 | — |
 | Gate de traduction du sensible | §7.4 — non bloquant aujourd'hui | **avant mise en ligne publique** |
+| **Durcissement des liens** (expiration · PIN · rotation) — audit §7.8 ③/A7-C2 | Protège du lien oublié/fuité — risques qui n'existent qu'avec du **trafic public**. Options instruites (`READBACK_AUDIT_SECURITE.md`). *Rotation au renommage DÉFINITIVEMENT écartée : une faute de frappe corrigée casserait le lien légitime (readout A7).* | **avant lancement public** |
+| **`create_foyer` — message d'erreur propre** — audit §7.8 ⑤ | Le spam est déjà borné à **1 foyer/compte** (`membres.unique(user_id)`) ; reste un échec *propre* au lieu d'une violation de contrainte. Ne vaut pas une fenêtre token maintenant. | **sous trafic réel** |
+| **Rate-limit des accusés anon** (`espace_opens insert`) — audit §7.8 ①-résidu | Insert anon volontaire (l'accusé s'écrit sans compte) → « Dernier accès » spammable. Nuisance, **pas une fuite** (la lecture est fermée, 0006). Ingénierie pour risque marginal. | **sous trafic réel** |
 | Module Entretien maison (socle référentiel→espace) | aucun demandeur | un foyer le demande · A7 ouvre la 3ᵉ sorte |
 | Kit d'installation (QR imprimable, aide iOS) | jamais réclamé depuis F1 | l'onboarding réel coince |
 | Repas verrouillés · export PDF · contenu sous nav-bar Android | jamais réclamés / lot visuel | l'usage · passe 2 |

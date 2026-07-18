@@ -4,7 +4,7 @@ import Sheet from './Sheet';
 import { IconPlusThin } from './icons';
 import { qrSvg } from './qr';
 import { publishNounouEspace } from './partage';
-import { buildEspaceUrl, lastEspaceOpen } from '../lib/espace';
+import { buildEspaceUrl, lastEspaceOpen, revokeEspace } from '../lib/espace';
 import { getSupabase, supabaseEnabled } from '../lib/supabase';
 import SecuriserVolet from '../components/SecuriserVolet';
 import { buildNounouDigest, type NounouScope } from '../maison/digest';
@@ -46,6 +46,7 @@ export default function PartageNounouSheet({
 }) {
   const doc = useNounou((s) => s.doc);
   const upsertDest = useNounou((s) => s.upsertDest);
+  const removeDest = useNounou((s) => s.removeDest);
 
   const [selId, setSelId] = useState<string>(
     (initialToken ? doc.destinataires.find((d) => d.token === initialToken)?.id : undefined) ??
@@ -184,6 +185,33 @@ export default function PartageNounouSheet({
       void lastEspaceOpen(dest.token).then(setLastOpen);
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Échec de la publication');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // A7-C4 (audit §7.8) — « Retirer » côté Nounou : jusqu'ici `removeDest` existait
+  // mais AUCUN écran ne l'appelait → destinataire immortel. Symétrique de F1
+  // (Cuisine) : coupe le lien SERVEUR d'abord (honnête, session exigée), puis
+  // supprime la personne en local SEULEMENT si le serveur a confirmé.
+  const retirer = async () => {
+    if (!dest) return;
+    setBusy(true);
+    try {
+      const { error } = await revokeEspace(dest.token);
+      if (error === 'session') {
+        toast(`Connecte-toi pour retirer ${dest.prenom} — son lien doit être coupé côté serveur.`);
+        return;
+      }
+      if (error) {
+        toast(`Impossible de retirer maintenant — ${dest.prenom} est conservé, réessaie.`);
+        return;
+      }
+      const reste = doc.destinataires.filter((d) => d.id !== dest.id);
+      removeDest(dest.id);
+      setSelId(reste[0]?.id ?? '');
+      setAdding(reste.length === 0);
+      toast(`${dest.prenom} retiré ; son lien ne donne plus rien.`);
     } finally {
       setBusy(false);
     }
@@ -415,6 +443,9 @@ export default function PartageNounouSheet({
           )}
           <button className="cz-cta ghost" onClick={copy}>
             Copier le lien
+          </button>
+          <button className="cz-cta ghost danger" onClick={retirer} disabled={busy}>
+            Retirer {dest.prenom}
           </button>
 
           <div className="nz-receipt">
