@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
-import { ROLE_LABEL, type Recipe, type RecipeRole } from '../types';
+import { ROLE_LABEL, type RecipeRole } from '../types';
 import { pickable } from '../lib/picker';
 import { IconSearch, IconMic, IconFav, IconPlus } from './icons';
 
@@ -19,7 +19,6 @@ interface Props {
 export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onNewRecipe, onClose }: Props) {
   const recipes = useStore((s) => s.recipes);
   const toggleFav = useStore((s) => s.toggleFav);
-  const suivi = useStore((s) => s.suivi); // F2.2 : macros du sélecteur sous le flag
   const [q, setQ] = useState('');
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
@@ -38,16 +37,6 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onNewRe
       .sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || a.nom.localeCompare(b.nom, 'fr'));
   }, [recipes, role, q]);
 
-  const macroText = (r: Recipe) =>
-    r.role === 'acc' ? (
-      <>
-        <b>{r.kcal}</b> kcal/100g · <b>{r.prot}</b>g P
-      </>
-    ) : (
-      <>
-        <b>{r.kcal}</b> kcal · <b>{r.prot}</b>g P
-      </>
-    );
 
   return (
     <>
@@ -96,9 +85,8 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onNewRe
                     </span>
                     <span className="cz-tag role">{ROLE_LABEL[r.role]}</span>
                   </div>
-                  {(suivi || voiceIds.has(r.id)) && (
-                    <div className="cz-macros">
-                      {suivi && <span>{macroText(r)}</span>}
+                  {voiceIds.has(r.id) && (
+                    <div className="cz-cardmeta">
                       {voiceIds.has(r.id) && (
                         <span className="cz-vchip">
                           <IconMic size={11} />

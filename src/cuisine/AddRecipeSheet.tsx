@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
-import { estimateMacros, generateRecipeDraft, importRecipeText, importRecipeImage, aiAvailable } from '../lib/ai';
+import { generateRecipeDraft, importRecipeText, importRecipeImage, aiAvailable } from '../lib/ai';
 import { prepareImage, type PreparedImage } from '../lib/image';
 import { isNative, pickPhoto as pickPhotoNative } from '../lib/platform';
 import { parseRecipesJson } from '../lib/importRecipes';
 import { nextRecipeId } from '../lib/recipeId';
 import { AI_MONTHLY_LIMIT, remaining, normalizeQuota, currentMonth } from '../lib/quota';
-import { ROLE_LABEL, reglesList, type CalciumFlag, type Recipe, type RecipeRole } from '../types';
+import { ROLE_LABEL, reglesList, type Recipe, type RecipeRole } from '../types';
 import { IconStar, IconLoader, IconCheck } from './icons';
 
 // F5.2 : les 8 moments disponibles à la création (jeu fermé).
@@ -39,7 +39,7 @@ interface Props {
 type Step = 'choose' | 'ecrire' | 'instructions' | 'importjson';
 
 /** Valeurs de départ pour « L'écrire » (duplication « copier puis adapter »). */
-type ManualSeed = Pick<Recipe, 'nom' | 'role' | 'ingredients' | 'etapes' | 'kcal' | 'prot' | 'gluc' | 'lip' | 'calcium' | 'flag_calcium'>;
+type ManualSeed = Pick<Recipe, 'nom' | 'role' | 'ingredients' | 'etapes'>;
 
 /**
  * F4.1 (lot Cuisine) — la feuille des TROIS VOIES (port maquette « Comment on
@@ -53,7 +53,6 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOp
   const [step, setStep] = useState<Step>('choose');
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
-  const suivi = useStore((s) => s.suivi); // F2.2 #2/#3 : MacroPreview + Calculer sous le flag
   const [canAi, setCanAi] = useState(false);
   const [seed] = useState<ManualSeed | null>(null);
   const app = useStore((s) => s.app);
@@ -89,7 +88,6 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOp
           <div className="ttl">
             {title}
             {step === 'choose' && <small>Comment on l’ajoute ?</small>}
-            {step === 'ecrire' && suivi && <small>Les macros sont calculées, pas saisies</small>}
           </div>
           <button className="cz-x" onClick={onClose} aria-label="Fermer">
             ✕
@@ -129,7 +127,7 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOp
             </div>
           )}
 
-          {step === 'ecrire' && <EcrireForm seed={seed} suivi={suivi} initialRole={initialRole} onCreated={onCreated} toast={toast} onJson={() => setStep('importjson')} />}
+          {step === 'ecrire' && <EcrireForm seed={seed} initialRole={initialRole} onCreated={onCreated} toast={toast} onJson={() => setStep('importjson')} />}
           {step === 'instructions' && (
             <InstructionsForm
               onCreated={onCreated}
@@ -145,31 +143,18 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOp
   );
 }
 
-function MacroPreview({ m }: { m: { kcal: number; prot: number; gluc: number; calcium: number } | null }) {
-  if (!m) return null;
-  return (
-    <div className="cz-dmacros" style={{ marginTop: 10 }}>
-      <div className="cz-dmcell"><div className="v">{m.kcal}</div><div className="l">kcal</div></div>
-      <div className="cz-dmcell"><div className="v">{m.prot}</div><div className="l">prot</div></div>
-      <div className="cz-dmcell"><div className="v">{m.gluc}</div><div className="l">gluc</div></div>
-      <div className="cz-dmcell ca"><div className="v">{m.calcium}</div><div className="l">calcium</div></div>
-    </div>
-  );
-}
 
 /** F4.2 — « L'écrire » : zones de texte NATURELLES (recettes de famille), la
  * structure (courses, ×personnes) est dérivée en coulisse. Zéro champ macro à
  * saisir ; zéro widget allergène (D2 — les restrictions vivent au foyer). */
 function EcrireForm({
   seed,
-  suivi,
   initialRole,
   onCreated,
   toast,
   onJson,
 }: {
   seed: ManualSeed | null;
-  suivi: boolean;
   initialRole?: RecipeRole;
   onCreated: (id: string) => void;
   toast: (m: string) => void;
@@ -184,28 +169,9 @@ function EcrireForm({
   const [portions, setPortions] = useState(4);
   const [ingredients, setIngredients] = useState(seed?.ingredients ?? '');
   const [etapes, setEtapes] = useState(seed?.etapes ?? '');
-  const [macros, setMacros] = useState<{ kcal: number; prot: number; gluc: number; lip: number; calcium: number; flag_calcium: CalciumFlag } | null>(
-    seed ? { kcal: seed.kcal, prot: seed.prot, gluc: seed.gluc, lip: seed.lip, calcium: seed.calcium, flag_calcium: seed.flag_calcium } : null,
-  );
-  const [calc, setCalc] = useState(false);
-
-  const compute = async () => {
-    if (!ingredients.trim()) return toast('Renseigne d’abord les ingrédients');
-    setCalc(true);
-    const m = await estimateMacros(ingredients, ROLE_LABEL[role]);
-    setMacros(m);
-    setCalc(false);
-    toast(m.source === 'ia' ? 'Macros estimées' : 'Macros estimées (base locale)');
-  };
 
   const save = async () => {
     if (!nom.trim() || !ingredients.trim()) return;
-    let m = macros;
-    if (!m) {
-      setCalc(true);
-      m = await estimateMacros(ingredients, ROLE_LABEL[role]);
-      setCalc(false);
-    }
     const id = nextRecipeId(recipes, role);
     // « L'écrire » = recette de l'auteur → naît « Validé » (jamais en relecture).
     upsertRecipe({
@@ -214,15 +180,8 @@ function EcrireForm({
       role,
       statut: 'Validé',
       portions,
-      kcal: m.kcal,
-      prot: m.prot,
-      gluc: m.gluc,
-      lip: m.lip,
-      calcium: m.calcium,
-      flag_calcium: m.flag_calcium,
       ingredients: ingredients.trim(),
       etapes: etapes.trim() || undefined,
-      macros_estimees: true,
     });
     toast('Enregistrée ✓ — c’est la tienne');
     onCreated(id);
@@ -265,7 +224,7 @@ function EcrireForm({
           className="cz-ta"
           rows={5}
           value={ingredients}
-          onChange={(e) => { setIngredients(e.target.value); setMacros(null); }}
+          onChange={(e) => setIngredients(e.target.value)}
           placeholder={'poulet 200 g\nriz cuit 110 g\nune bonne pincée de sel\nun filet d’huile d’olive'}
         />
       </div>
@@ -279,19 +238,7 @@ function EcrireForm({
           placeholder={'Fais revenir le poulet.\nAjoute le riz, laisse mijoter 15 min.\nSers bien chaud.'}
         />
       </div>
-      {/* F2.2 #2/#3 : bloc Macros sous le flag — OFF, l'estimation reste faite en
-          coulisse à l'enregistrement (save), rien n'est perdu. */}
-      {suivi && (
-        <div className="cz-block">
-          <div className="cz-blab">Macros</div>
-          <button className="cz-calcbtn" onClick={compute} disabled={calc}>
-            {calc ? <IconLoader size={16} className="cz-spin" /> : <IconStar size={16} />}
-            {calc ? 'Calcul…' : 'Calculer les macros à partir des ingrédients'}
-          </button>
-          <MacroPreview m={macros} />
-        </div>
-      )}
-      <button className="cz-cta" onClick={save} disabled={!nom.trim() || !ingredients.trim() || calc}>
+      <button className="cz-cta" onClick={save} disabled={!nom.trim() || !ingredients.trim()}>
         <IconCheck size={17} />
         Enregistrer
       </button>
@@ -383,15 +330,8 @@ function InstructionsForm({
         statut: 'Test',
         origineIA: true,
         adapteSelon: liste.length ? liste : undefined, // G3 : la trace vit dans le doc
-        kcal: Math.round(Number(d.kcal) || 0),
-        prot: Math.round(Number(d.prot) || 0),
-        gluc: Math.round(Number(d.gluc) || 0),
-        lip: Math.round(Number(d.lip) || 0),
-        calcium: Math.round(Number(d.calcium) || 0),
-        flag_calcium: (d.flag_calcium as CalciumFlag) || 'Moyen',
         ingredients: d.ingredients?.trim() || '',
         etapes: d.etapes?.trim() || undefined,
-        macros_estimees: true,
         nom_ar: d.nom_ar?.trim() || undefined,
         ingredients_ar: d.ingredients_ar?.trim() || undefined,
         etapes_ar: d.etapes_ar?.trim() || undefined,
@@ -523,8 +463,8 @@ function ImportForm({ onClose, toast }: { onClose: () => void; toast: (m: string
   return (
     <div>
       <div className="cz-review" style={{ marginTop: 8 }}>
-        Colle un tableau JSON de recettes (ou une seule). Les identifiants manquants sont générés ; le
-        flag calcium est déduit s’il est absent.
+        Colle un tableau JSON de recettes (ou une seule). Les identifiants manquants sont générés
+        automatiquement.
       </div>
       <div className="cz-block">
         <textarea
@@ -532,7 +472,7 @@ function ImportForm({ onClose, toast }: { onClose: () => void; toast: (m: string
           rows={9}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder='[ { "nom": "...", "type": "Déjeuner", "kcal": 750, ... } ]'
+          placeholder='[ { "nom": "...", "role": "plat", "ingredients": "..." } ]'
           style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}
         />
       </div>

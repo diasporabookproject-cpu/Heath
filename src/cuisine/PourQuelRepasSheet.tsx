@@ -74,7 +74,7 @@ export default function PourQuelRepasSheet({
                   <IconChevR size={16} />
                 </div>
                 {c.remplace && (
-                  <div className="cz-macros" style={{ marginTop: 4 }}>
+                  <div className="cz-cardmeta" style={{ marginTop: 4 }}>
                     <span>
                       remplacera : <b>{c.remplace}</b>
                     </span>

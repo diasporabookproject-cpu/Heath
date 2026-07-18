@@ -2,6 +2,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import {
   DEFAULT_SETTINGS,
   normalizeDestinataire,
+  normalizeRegles,
   type CuisineSettings,
   type Destinataire,
   type NounouDoc,
@@ -148,21 +149,6 @@ const SEED_VERSION = 4;
 // ── FTUE (F4) — méta LOCALES à l'appareil (le store `meta` n'est pas synchronisé) ──
 const FTUE_DONE_KEY = 'ftueDone';
 const ROLES_ACTIFS_KEY = 'rolesActifs';
-// F2.1 (lot Cuisine) — « Suivi de l'équilibre » : préférence d'AFFICHAGE, par
-// appareil, HORS sync de contenu (spec §8) — donc `meta`, pas `CuisineSettings`
-// (qui, lui, est synchronisé). Clé absente = OFF (défaut, foyers existants inclus).
-const SUIVI_EQUILIBRE_KEY = 'suiviEquilibre';
-
-/** Le suivi de l'équilibre (affichage nutrition) est-il activé sur CET appareil ? */
-export async function loadSuiviEquilibre(): Promise<boolean> {
-  const db = await getDB();
-  return (await db.get('meta', SUIVI_EQUILIBRE_KEY)) === true;
-}
-
-export async function saveSuiviEquilibre(v: boolean): Promise<void> {
-  const db = await getDB();
-  await db.put('meta', v, SUIVI_EQUILIBRE_KEY);
-}
 
 /** Rôles dont la carte est posée sur le hub (activés via FTUE ou « ＋ Une page pour… »). */
 export type RoleActif = 'cuisine' | 'nounou';
@@ -410,7 +396,13 @@ const REGLES_KEY = 'regles';
 
 export async function loadFoyerRegles(): Promise<ReglesFoyer | undefined> {
   const db = await getDB();
-  return (await db.get('foyer', REGLES_KEY)) as ReglesFoyer | undefined;
+  const raw = await db.get('foyer', REGLES_KEY);
+  if (raw === undefined) return undefined;
+  // Migration porte n°1 (lot simplification) : ancien format {allergies, regime}
+  // → {nePasManger}. Réécrit UNE fois en place (idempotent).
+  const norm = normalizeRegles(raw);
+  if (JSON.stringify(norm) !== JSON.stringify(raw)) await db.put('foyer', norm, REGLES_KEY);
+  return norm;
 }
 
 export async function saveFoyerRegles(r: ReglesFoyer): Promise<void> {

@@ -12,8 +12,8 @@ export function cleanText(input: string | undefined | null): string {
   let s = String(input);
   s = s.replace(MARKDOWN, '');
   s = s.replace(EMOJI, '');
-  // « Protéine : g » / « : » orphelins laissés par une extraction IA ratée.
-  s = s.replace(/\b\w+\s*:\s*(?=g\b|kcal\b|$)/gi, '');
+  // « quantité : g » / « : » orphelins laissés par une extraction IA ratée.
+  s = s.replace(/\b\w+\s*:\s*(?=g\b|$)/gi, '');
   s = s.replace(/\s{2,}/g, ' ');
   // séparateurs « · », « + », « - » en tête/queue ou en double.
   s = s.replace(/\s*([·+])\s*([·+])\s*/g, ' $1 ');

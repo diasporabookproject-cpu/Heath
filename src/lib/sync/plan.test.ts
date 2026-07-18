@@ -215,7 +215,7 @@ describe('sync/plan — planAdopt : dédup du contenu de pack (F5a-②)', () => 
 // pendant de l'anti-fuite F5a du lot FTUE, côté « ce qui DOIT voyager ».
 describe('sync/plan — planAdopt & pull : règles du foyer (store générique, T3)', () => {
   const at = '2026-01-01T00:00:00Z';
-  const REGLES = { allergies: ['arachide'], halal: true, regime: null };
+  const REGLES = { halal: true, nePasManger: ['arachide'] };
   const remoteRegles: RemoteDoc = {
     store: 'foyer',
     docId: 'regles',
@@ -241,7 +241,7 @@ describe('sync/plan — planAdopt & pull : règles du foyer (store générique, 
 
   it('collision (les deux ont des règles) : celles du FOYER rejoint font foi (cloud gagne)', () => {
     const local: LocalDoc[] = [
-      { store: 'foyer', docId: 'regles', payload: { allergies: [], halal: false, regime: 'végétarien' } },
+      { store: 'foyer', docId: 'regles', payload: { halal: false, nePasManger: ['végétarien'] } },
     ];
     const plan = planAdopt(local, [remoteRegles]);
     expect(plan.upload).toEqual([]); // les règles locales ne partent pas
@@ -267,7 +267,7 @@ describe('sync/plan — planAdopt & pull : règles du foyer (store générique, 
     const localDoc: LocalDoc = {
       store: 'foyer',
       docId: 'regles',
-      payload: { allergies: ['arachide', 'sésame'], halal: true, regime: null }, // édité localement
+      payload: { halal: true, nePasManger: ['arachide', 'sésame'] }, // édité localement
     };
     const synced: LocalDoc = { store: 'foyer', docId: 'regles', payload: REGLES };
     const remoteNewer: RemoteDoc = { ...remoteRegles, updatedAt: '2026-01-02T00:00:00Z' };

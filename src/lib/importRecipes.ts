@@ -1,15 +1,14 @@
-import type { CalciumFlag, Recipe, RecipeRole, RecipeStatus } from '../types';
+import type { Recipe, RecipeRole, RecipeStatus } from '../types';
 
 // Import en lot de recettes depuis du JSON (collé par l'utilisateur).
-// Tolérant : objet seul ou tableau, normalise, génère les ids manquants,
-// dérive le flag calcium. Le RÔLE remplace l'ancien "type".
+// Tolérant : objet seul ou tableau, normalise, génère les ids manquants.
+// Le RÔLE remplace l'ancien "type". (Lot simplification : macros ignorées.)
 
 const PREFIX: Record<RecipeRole, string> = {
   petitdej: 'PDJ', entree: 'ENT', plat: 'PLT', acc: 'ACC',
   dessert: 'DES', soupe: 'SOU', gouter: 'GOU', boisson: 'BOI', // F5.2
 };
 const STATUTS: RecipeStatus[] = ['Validé', 'Écarté', 'Test'];
-const FLAGS: CalciumFlag[] = ['Champion', 'Moyen', 'Faible'];
 
 /** Normalise un rôle, en tolérant les anciens "type" (Déjeuner/Dîner/Coupe-faim). */
 function normRole(v: unknown): RecipeRole {
@@ -23,18 +22,6 @@ function normRole(v: unknown): RecipeRole {
   if (s.startsWith('boisson') || s.startsWith('jus')) return 'boisson'; // F5.2
   // déjeuner/dîner/plat (et défaut) → plat
   return 'plat';
-}
-
-function num(v: unknown): number {
-  const n = typeof v === 'string' ? parseFloat(v.replace(',', '.')) : Number(v);
-  return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0;
-}
-
-/** Dérive le flag calcium si non fourni. */
-export function deriveFlag(calcium: number): CalciumFlag {
-  if (calcium >= 350) return 'Champion';
-  if (calcium >= 215) return 'Moyen';
-  return 'Faible';
 }
 
 function nextId(used: Set<string>, role: RecipeRole): string {
@@ -90,10 +77,6 @@ export function parseRecipesJson(text: string, existing: Recipe[]): ImportResult
     }
     const role = normRole(o.role ?? o.type);
     const statut = STATUTS.includes(o.statut as RecipeStatus) ? (o.statut as RecipeStatus) : 'Validé';
-    const calcium = num(o.calcium);
-    const flag = FLAGS.includes(o.flag_calcium as CalciumFlag)
-      ? (o.flag_calcium as CalciumFlag)
-      : deriveFlag(calcium);
 
     let id = String(o.id ?? '').trim();
     if (!id || used.has(id)) id = nextId(used, role);
@@ -104,12 +87,6 @@ export function parseRecipesJson(text: string, existing: Recipe[]): ImportResult
       nom,
       role,
       statut,
-      kcal: num(o.kcal),
-      prot: num(o.prot),
-      gluc: num(o.gluc),
-      lip: num(o.lip),
-      calcium,
-      flag_calcium: flag,
       ingredients: String(o.ingredients ?? '').trim(),
       etapes: o.etapes ? String(o.etapes).trim() : undefined,
       notes: o.notes ? String(o.notes).trim() : undefined,

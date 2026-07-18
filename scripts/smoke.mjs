@@ -72,11 +72,12 @@ if (await page.getByText('Générer la semaine').count())
   throw new Error('F1.2 : « Générer la semaine » ne doit plus exister');
 console.log('Hub Maison → Cuisine (sans « Générer ») ✅');
 
-// F2.1/F2.2 (lot Cuisine) — porte « opt-in nutrition » : OFF PAR DÉFAUT, donc
-// ZÉRO « kcal » à l'écran tant que « Suivi de l'équilibre » n'est pas activé.
+// Lot simplification — porte « la nutrition est SORTIE » : ZÉRO « kcal » à
+// l'écran, NULLE PART, jamais (plus de flag, plus d'opt-in — c'est parti).
+// Complète la porte grep statique (kcal|macro|calcium|prot dans le code).
 const assertNoKcal = async (ou) => {
   const n = await page.getByText(/kcal/i).count();
-  if (n) throw new Error(`F2.2 : ${n} « kcal » visibles (${ou}) alors que le suivi est OFF`);
+  if (n) throw new Error(`Nutrition SORTIE : ${n} « kcal » visibles (${ou}) — la purge a un trou`);
 };
 await assertNoKcal('vue Menu, arrivée');
 
@@ -114,48 +115,43 @@ await page.waitForTimeout(300);
 await page.locator('.cz-sheet.show .cz-x').first().click(); // fermer le composeur
 await lundi.locator('.cz-mrow:not(.empty)').first().waitFor({ timeout: 5000 });
 console.log('Compose : petit-déjeuner Lundi ajouté ✅');
-await assertNoKcal('vue Menu, repas composé'); // même rempli : rien tant que OFF
+await assertNoKcal('vue Menu, repas composé');
 await page.screenshot({ path: 'scripts/shot-semaine.png', fullPage: false });
 
-// 2) F2.1 + FC13 — Réglages ⚙ : OFF par défaut → ON restitue tout (pastille +
-// objectif réglable) → OFF re-masque tout. Le nombre de personnes reste toujours là.
+// 2) Réglages ⚙ (lot simplification) : plus de « Suivi de l'équilibre » ni
+// d'objectif — le nombre de personnes reste ; les restrictions du foyer sont UN
+// SEUL champ (« Ce que le foyer ne mange pas »), plus de toggle Végétarien.
 if (await page.locator('.cz-pill').count())
-  throw new Error('F2.2 #5 : la pastille Objectif ne doit pas exister quand le suivi est OFF');
+  throw new Error('Nutrition SORTIE : la pastille Objectif ne doit plus exister');
 await page.getByLabel('Réglages Cuisine').click();
-await page.getByText('Suivi de l’équilibre').first().waitFor({ timeout: 5000 });
-await page.getByText('Nombre de personnes', { exact: true }).waitFor({ timeout: 3000 }); // valeur foyer : toujours visible
+await page.getByText('Nombre de personnes', { exact: true }).waitFor({ timeout: 5000 });
+if (await page.getByText('Suivi de l’équilibre').count())
+  throw new Error('Nutrition SORTIE : « Suivi de l’équilibre » ne doit plus exister');
 if (await page.getByText('Objectif par personne').count())
-  throw new Error('F2.2 #6 : la section objectif doit être masquée quand le suivi est OFF');
-// (T3 : la feuille porte désormais 3 interrupteurs — cibler par aria-label.)
-const suiviSwitch = page.getByRole('switch', { name: 'Suivi de l’équilibre' });
-await suiviSwitch.click(); // ON
-await page.getByText('Objectif par personne').waitFor({ timeout: 3000 });
-await page.locator('.cz-objset button').first().click(); // -50
-await page.locator('.cz-sheet.show .cz-cta').click(); // OK
-await page.locator('.cz-pill', { hasText: 'kcal/pers.' }).waitFor({ timeout: 5000 }); // ON → pastille de retour
-console.log('Suivi de l’équilibre ON → objectif réglable, pastille visible ✅');
-await page.getByLabel('Réglages Cuisine').click();
-await suiviSwitch.click(); // OFF
+  throw new Error('Nutrition SORTIE : la section objectif ne doit plus exister');
+if (await page.getByText('Végétarien', { exact: true }).count())
+  throw new Error('Fusion régime : le toggle Végétarien doit avoir fondu dans le champ unique');
+await page.getByText('Ce que le foyer ne mange pas', { exact: false }).waitFor({ timeout: 3000 });
 await page.locator('.cz-sheet.show .cz-cta').click(); // OK
 await page.waitForTimeout(300);
-await assertNoKcal('retour OFF');
-console.log('Suivi de l’équilibre OFF → zéro nutrition (porte F2.2) ✅');
+await assertNoKcal('après Réglages');
+console.log('Réglages : nutrition sortie, restrictions en un seul champ ✅');
 
-// 2bis) T3 (F3.1/F3.2) — restrictions du foyer : pose (halal + allergie), résumé
+// 2bis) Restrictions du foyer (lot simplification : UN champ) — pose halal +
 // G1 affiché, puis PERSISTANCE prouvée après un reload complet (IDB v9).
 await page.getByLabel('Réglages Cuisine').click();
 await page.getByText('Restrictions du foyer').waitFor({ timeout: 5000 });
 await page.getByRole('switch', { name: 'Halal' }).click();
 await page.locator('.cz-sheet.show textarea').fill('arachide');
 await page.locator('.cz-sheet.show textarea').blur();
-await page.getByText('Règles actives : halal · sans arachide').waitFor({ timeout: 3000 }); // G1
+await page.getByText('Règles actives : halal · arachide').waitFor({ timeout: 3000 }); // G1
 await page.locator('.cz-sheet.show .cz-cta').click(); // OK
 await page.reload({ waitUntil: 'networkidle' });
 await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
 await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
 await page.getByText('Menu du jour').waitFor({ timeout: 10000 });
 await page.getByLabel('Réglages Cuisine').click();
-await page.getByText('Règles actives : halal · sans arachide').waitFor({ timeout: 5000 });
+await page.getByText('Règles actives : halal · arachide').waitFor({ timeout: 5000 });
 const halalOn = await page.getByRole('switch', { name: 'Halal' }).getAttribute('aria-checked');
 if (halalOn !== 'true') throw new Error('T3 : halal non persisté après reload');
 await page.locator('.cz-sheet.show .cz-cta').click(); // OK

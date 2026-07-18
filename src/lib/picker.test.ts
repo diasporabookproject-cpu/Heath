@@ -13,12 +13,6 @@ const rec = (id: string, role: RecipeRole, statut: Recipe['statut']): Recipe => 
   nom: id,
   role,
   statut,
-  kcal: 0,
-  prot: 0,
-  gluc: 0,
-  lip: 0,
-  calcium: 0,
-  flag_calcium: 'Moyen',
   ingredients: 'x',
 });
 

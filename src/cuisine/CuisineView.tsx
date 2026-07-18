@@ -42,8 +42,6 @@ interface Props {
 
 export default function CuisineView({ showAccount, connected, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
   const recipes = useStore((s) => s.recipes);
-  const objective = useStore((s) => s.settings.objective);
-  const suivi = useStore((s) => s.suivi);
   const setComponent = useStore((s) => s.setComponent);
   const navWeek = useStore((s) => s.navWeek);
 
@@ -79,7 +77,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialShareToken]);
-  const [objectiveOpen, setObjectiveOpen] = useState(false);
+  const [reglagesOpen, setReglagesOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
   const [recFilters, setRecFilters] = useState<string>('all');
   const [voiceIds, setVoiceIds] = useState<Set<string>>(new Set());
@@ -151,17 +149,10 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             Cuisine
           </div>
           <div className="cz-headicons">
-            {/* F2.2 #5 : la pastille Objectif n'existe que si le suivi est ON ;
-                la feuille Réglages (⚙), elle, reste toujours accessible. */}
-            {suivi && (
-              <button className="cz-pill" onClick={() => setObjectiveOpen(true)}>
-                Objectif {objective.toLocaleString('fr-FR')} kcal/pers.
-              </button>
-            )}
             <button
               className="cz-headicon"
               style={{ marginLeft: 8 }}
-              onClick={() => setObjectiveOpen(true)}
+              onClick={() => setReglagesOpen(true)}
               aria-label="Réglages Cuisine"
             >
               ⚙
@@ -269,7 +260,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
         />
       )}
 
-      {objectiveOpen && <ReglagesSheet onClose={() => setObjectiveOpen(false)} />}
+      {reglagesOpen && <ReglagesSheet onClose={() => setReglagesOpen(false)} />}
       {copyOpen && <CopyWeekSheet onClose={() => setCopyOpen(false)} toast={toast} />}
 
       {adding && (
@@ -292,7 +283,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             setOpenRecipeId(id);
           }}
           onCollections={() => openCollections()}
-          onOpenReglages={() => setObjectiveOpen(true)}
+          onOpenReglages={() => setReglagesOpen(true)}
           toast={toast}
         />
       )}

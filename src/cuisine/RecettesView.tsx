@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
-import { ROLE_LABEL, type Recipe } from '../types';
+import { ROLE_LABEL } from '../types';
 import { cleanText } from '../lib/sanitize';
 import { recipeEmoji } from '../lib/emoji';
 import { PACKS } from '../data/packs';
@@ -36,7 +36,6 @@ interface Props {
 export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe, onOpenCollections, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const toggleFav = useStore((s) => s.toggleFav);
-  const suivi = useStore((s) => s.suivi); // F2.2 #1 : kcal/gP des cartes sous le flag
   const [q, setQ] = useState('');
   const [relire, setRelire] = useState<{ startId?: string } | null>(null);
 
@@ -87,17 +86,6 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
           a.nom.localeCompare(b.nom, 'fr'),
       );
   }, [recipes, q, filter]);
-
-  const macro = (r: Recipe) =>
-    r.role === 'acc' ? (
-      <span>
-        <b>{r.kcal}</b> kcal/100g
-      </span>
-    ) : (
-      <span>
-        <b>{r.kcal}</b> kcal · <b>{r.prot}</b>g P
-      </span>
-    );
 
   return (
     <div>
@@ -168,15 +156,12 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
                   {draft && <span className="cz-tag draft">✦ À valider</span>}
                   <span className="cz-tag role">{ROLE_LABEL[r.role]}</span>
                 </div>
-                {(suivi || voiceIds.has(r.id)) && (
-                  <div className="cz-macros">
-                    {suivi && macro(r)}
-                    {voiceIds.has(r.id) && (
-                      <span className="cz-vchip">
-                        <IconMic size={11} />
-                        vocal
-                      </span>
-                    )}
+                {voiceIds.has(r.id) && (
+                  <div className="cz-cardmeta">
+                    <span className="cz-vchip">
+                      <IconMic size={11} />
+                      vocal
+                    </span>
                   </div>
                 )}
               </button>

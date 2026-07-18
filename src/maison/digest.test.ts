@@ -7,12 +7,6 @@ const recipe = (id: string, nom: string): Recipe => ({
   nom,
   role: 'plat',
   statut: 'Validé',
-  kcal: 500,
-  prot: 30,
-  gluc: 40,
-  lip: 15,
-  calcium: 200,
-  flag_calcium: 'Moyen',
   ingredients: '',
 });
 
