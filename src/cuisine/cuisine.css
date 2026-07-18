@@ -491,6 +491,7 @@
 .cz-cta:disabled { opacity: 0.55; cursor: default; box-shadow: none; }
 .cz-cta.draft { background: var(--draft); box-shadow: 0 6px 18px rgba(122, 90, 166, 0.3); }
 .cz-cta.ghost { background: var(--surface); color: var(--petrol); border: 1px solid var(--line); box-shadow: none; margin-top: 9px; }
+.cz-cta.ghost.danger { color: #b3402f; } /* Retirer (audit §7.8 C4) — geste discret mais explicite */
 .cz-spin { animation: czspin 0.8s linear infinite; }
 @keyframes czspin { to { transform: rotate(360deg); } }
 

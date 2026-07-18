@@ -20,7 +20,11 @@ Pour les foyers de l'UE, [représentant UE si requis].
 | Contenu du foyer (recettes, menus, destinataires, fiches sécurité, doc nounou, réglages) | Fournir l'app, sauvegarder, synchroniser entre appareils | Exécution du service |
 | Notes vocales | Fonction « voix = référence » ; sauvegarde (bucket privé) | Exécution du service |
 | Pages publiées (`espaces`) | Partager un espace au personnel via lien à jeton | Intérêt légitime / consentement de l'auteur |
+| Accusés de lecture (`espace_opens`) | Horodatage + jeton d'ouverture d'une page (« Dernier accès ») ; best-effort, aucun contenu | Intérêt légitime |
 | Quota IA (`ai_usage`) | Limiter les coûts, prévenir l'abus | Intérêt légitime |
+| **Règles du foyer → relais IA** (dont **allergies = donnée de santé potentielle**) | Les restrictions actives du foyer **transitent** dans la requête vers l'edge function `generate-recipe` (Supabase) puis l'API Anthropic pour **adapter** une recette. **NI stockées NI journalisées** côté serveur (table `docs` chiffrée au repos, RLS foyer ; le relais ne persiste rien). Photos importées ré-encodées côté client (**EXIF/GPS retirés**) avant envoi. Minimisation : seules les règles actives voyagent. | Intérêt légitime du foyer |
+| Cache local de page reçue (`espace:<token>`, navigateur du personnel) | Consultation **hors-ligne** de la page après une 1ʳᵉ ouverture. Effacé à la révocation du lien (audit §7.8 ④) ou par vidage du navigateur. Aucun compte, aucune collecte serveur. | Intérêt légitime / exécution du service |
+| Langue de lecture du destinataire (`fr`/`dr`) | Servir la page dans la langue choisie | Exécution du service |
 
 **Ce qu'on NE fait PAS.** Aucune analytics sur le **contenu** des pages ; pas de revente ;
 pas de profilage publicitaire. (Crash-reporting technique via Sentry, sans donnée de contenu.)

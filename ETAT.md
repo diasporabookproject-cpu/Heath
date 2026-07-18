@@ -9,7 +9,7 @@
 
 ## 🔵 En vol
 
-**Audit sécurité §7.8** (Ambition A — fermer les fuites connues) — branche `audit-securite-v1`, `apk.yml` pointé. **Read-back livré (`READBACK_AUDIT_SECURITE.md`) — ⏸ attente décisions** (4 questions). Constat qui reforme le lot : **① fuite `espace_opens` et ② policies `espaces` DÉJÀ fermées par AS-2 (0006, en prod)** — reste les résidus + ③ A7-C2 (options instruites, non tranchées) · ④ cache page révoquée (trou client réel) · C4 « Retirer » Nounou (🟢) · ⑤ `create_foyer` · ⑥ registre RGPD. Ambition B (chasse offensive) = après, lancement public.
+**Audit sécurité §7.8** (Ambition A) — branche `audit-securite-v1`. **T1 livrée — ⏸ STOP T1** : ④ cache d'une page révoquée coupé (complément client de F1 — `readEspace` discriminé, décision pure verrouillée) + C4 « Retirer » Nounou câblé (verrou statique) + ⑥ registre RGPD complété (allergies→IA · `espace_opens` · cache local). ① ② confirmés fermés par AS-2/0006 (rien recodé). ③⑤①-résidu DOCUMENTÉS au parking avec leur signal. 172 tests · zéro fenêtre token. **Reste : clôture.**
 **Mini-lot destinataires : CLOS le 18/07** — T1 « échecs silencieux » (revoke honnête session-d'abord · `revoked` supprimé · `backedUp?` · cache 404-only ×2) + T2 remappage `'ar'`→`'dr'` (migration idempotente 2 portes, fil v:1 intact, `cuisineSig` stable, D6, verrou statique). **Device migration ✓ 4/4** (appareil existant, destinataire darija d'avant), **mergé au défaut**. 163 tests · zéro fenêtre token. **Le prérequis dur d'A7 est levé.**
 **Lot Cuisine : CLOS le 18/07** — T1→T7 + C1 + C2 (device foyer neuf ✓), mergé au défaut. 143 tests · 2 fenêtres token closes (0009 · 0010+edge v13, parité 0). Récit : `DEVLOG.md` · audit : `READOUT_QUALITE_LOT_CUISINE.md`.
 
@@ -43,6 +43,9 @@
 | Passerelle allergies enfants ↔ foyer | D2 : un seul endroit | — |
 | Push natif · ICS · PIN/expiration des liens | §7.5 | — |
 | Gate de traduction du sensible | §7.4 — non bloquant aujourd'hui | **avant mise en ligne publique** |
+| **Durcissement des liens** (expiration · PIN · rotation) — audit §7.8 ③/A7-C2 | Protège du lien oublié/fuité — risques qui n'existent qu'avec du **trafic public**. Options instruites (`READBACK_AUDIT_SECURITE.md`). *Rotation au renommage DÉFINITIVEMENT écartée : une faute de frappe corrigée casserait le lien légitime (readout A7).* | **avant lancement public** |
+| **`create_foyer` — message d'erreur propre** — audit §7.8 ⑤ | Le spam est déjà borné à **1 foyer/compte** (`membres.unique(user_id)`) ; reste un échec *propre* au lieu d'une violation de contrainte. Ne vaut pas une fenêtre token maintenant. | **sous trafic réel** |
+| **Rate-limit des accusés anon** (`espace_opens insert`) — audit §7.8 ①-résidu | Insert anon volontaire (l'accusé s'écrit sans compte) → « Dernier accès » spammable. Nuisance, **pas une fuite** (la lecture est fermée, 0006). Ingénierie pour risque marginal. | **sous trafic réel** |
 | Module Entretien maison (socle référentiel→espace) | aucun demandeur | un foyer le demande · A7 ouvre la 3ᵉ sorte |
 | Kit d'installation (QR imprimable, aide iOS) | jamais réclamé depuis F1 | l'onboarding réel coince |
 | Repas verrouillés · export PDF · contenu sous nav-bar Android | jamais réclamés / lot visuel | l'usage · passe 2 |

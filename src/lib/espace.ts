@@ -197,13 +197,39 @@ export async function previewEspace(
   };
 }
 
+/**
+ * Résultat de lecture d'un espace (audit §7.8 ④). On DISTINGUE trois cas que
+ * l'ancien `Espace | null` écrasait — d'où le trou : une page révoquée était
+ * servie depuis le cache comme une page hors-ligne.
+ *  - `found`       : la ligne existe (requête réussie, payload présent).
+ *  - `revoked`     : requête RÉUSSIE, AUCUNE ligne → le lien a été coupé (F1).
+ *  - `unreachable` : pas de client / erreur réseau → l'offline légitime.
+ */
+export type EspaceRead = { status: 'found'; espace: Espace } | { status: 'revoked' } | { status: 'unreachable' };
+
 /** Lit l'espace d'un jeton (côté destinataire, lecture publique anonyme). */
-export async function readEspace(token: string): Promise<Espace | null> {
+export async function readEspace(token: string): Promise<EspaceRead> {
   const supa = getSupabase();
-  if (!supa) return null;
+  if (!supa) return { status: 'unreachable' };
   const { data, error } = await supa.from('espaces').select('payload').eq('token', token).maybeSingle();
-  if (error || !data) return null;
-  return data.payload as Espace;
+  if (error) return { status: 'unreachable' }; // réseau/erreur → le cache reste légitime
+  if (!data) return { status: 'revoked' }; // requête OK, 0 ligne → révoqué
+  return { status: 'found', espace: data.payload as Espace };
+}
+
+/**
+ * ④ (audit §7.8) — décision PURE d'affichage à partir du statut réseau et de la
+ * présence d'un cache local. Le point dur, verrouillé ici : une page `revoked`
+ * ne doit JAMAIS être servie depuis le cache (complément client de F1) ; seul
+ * l'`unreachable` (offline) sert le cache. L'appelant PURGE le cache sur 'revoked'.
+ */
+export function decideEspaceState(
+  status: EspaceRead['status'],
+  hasCache: boolean,
+): 'page-live' | 'page-cache' | 'revoked' | 'offline' {
+  if (status === 'found') return 'page-live';
+  if (status === 'revoked') return 'revoked'; // le cache éventuel est ignoré (et purgé par l'appelant)
+  return hasCache ? 'page-cache' : 'offline';
 }
 
 /**
