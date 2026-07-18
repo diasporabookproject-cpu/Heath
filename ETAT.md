@@ -43,6 +43,7 @@
 | Passerelle allergies enfants ↔ foyer | D2 : un seul endroit | — |
 | Push natif · ICS · PIN/expiration des liens | §7.5 | — |
 | Gate de traduction du sensible | §7.4 — non bloquant aujourd'hui | **avant mise en ligne publique** |
+| **Halal sans filet mécanique** (garde G3 lexical le couvre PAS) | Le halal est un concept COMPOSÉ (interdits + mode d'abattage invisible dans une liste d'ingrédients) — un garde lexical mentirait sur sa couverture. Repose sur le modèle + la relecture humaine. Décision lot simplification T2 (option (a)). | **chantier sécurité alimentaire** (pas ce lot) |
 | **Durcissement des liens** (expiration · PIN · rotation) — audit §7.8 ③/A7-C2 | Protège du lien oublié/fuité — risques qui n'existent qu'avec du **trafic public**. Options instruites (`READBACK_AUDIT_SECURITE.md`). *Rotation au renommage DÉFINITIVEMENT écartée : une faute de frappe corrigée casserait le lien légitime (readout A7).* | **avant lancement public** |
 | **`create_foyer` — message d'erreur propre** — audit §7.8 ⑤ | Le spam est déjà borné à **1 foyer/compte** (`membres.unique(user_id)`) ; reste un échec *propre* au lieu d'une violation de contrainte. Ne vaut pas une fenêtre token maintenant. | **sous trafic réel** |
 | **Rate-limit des accusés anon** (`espace_opens insert`) — audit §7.8 ①-résidu | Insert anon volontaire (l'accusé s'écrit sans compte) → « Dernier accès » spammable. Nuisance, **pas une fuite** (la lecture est fermée, 0006). Ingénierie pour risque marginal. | **sous trafic réel** |

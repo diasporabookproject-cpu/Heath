@@ -51,13 +51,28 @@ export interface Recipe {
   cuisine?: string;
   difficulte?: string;
   temps?: string;
-  /** G3 (F4.4) : règles du foyer appliquées à l'import — la trace vit DANS le
-   * document et s'affiche à la relecture (« Adaptée selon : … »). */
+  /** G3 (F4.4) : règles du foyer appliquées à l'import — la DEMANDE, la trace vit
+   * DANS le document et s'affiche à la relecture (« On a demandé d'adapter selon… »).
+   * Fallback du bandeau v2 quand `adaptations` est absent (ancien edge). */
   adapteSelon?: string[];
+  /** Prompt v2 (lot simplification T2) — RAPPORT du modèle : ce qu'il DÉCLARE
+   * avoir changé pour respecter les règles. Optionnel = tolère l'ancien edge. */
+  adaptations?: RecipeAdaptation[];
+  /** Prompt v2 — quantités illisibles/absentes dans la source (jamais inventées). */
+  quantites_incertaines?: string[];
+  /** Prompt v2 — garde G3 lexical SERVEUR : interdit du foyer trouvé DANS les
+   * ingrédients produits malgré la règle (→ bandeau rouge). */
+  alerte_regles?: string[];
   /** Darija marocaine (lettres arabes), pour l'espace cuisinière. */
   nom_ar?: string;
   ingredients_ar?: string;
   etapes_ar?: string;
+}
+
+/** Prompt v2 — une modification déclarée par le modèle (regle concernée + action). */
+export interface RecipeAdaptation {
+  regle: string;
+  action: string;
 }
 
 /** Recette d'un pack (L3-4) : recette complète SANS identité ni statut (copiée chez l'utilisateur à l'installation). */

@@ -7,10 +7,10 @@ import { cleanText, cleanQty } from '../lib/sanitize';
 import { ROLE_LABEL, type Recipe, type RecipeRole } from '../types';
 import ConsigneVocale from './ConsigneVocale';
 import FichePhoto from './FichePhoto';
+import RelectureRapport from './RelectureRapport';
 import {
   IconStar,
   IconCheck,
-  IconClock,
   IconShareUp,
   IconFav,
 } from './icons';
@@ -204,15 +204,9 @@ function DetailBody({
             </span>
           </div>
         )}
-        {/* G3 (F4.4, libellé corrigé retour Q&A) : adapteSelon trace la DEMANDE faite
-            au modèle, pas un fait accompli — le bandeau invite à vérifier, n'affirme pas. */}
-        {draft && recipe.adapteSelon && recipe.adapteSelon.length > 0 && (
-          <div className="cz-estnote">
-            <IconClock size={13} />
-            On a demandé d’adapter selon : {recipe.adapteSelon.join(' · ')} — vérifie que c’est bien
-            le cas.
-          </div>
-        )}
+        {/* Bandeau de relecture v2 (T2) : rapport d'adaptation du modèle si présent,
+            sinon la DEMANDE (adapteSelon, G3). Tolère l'ancien edge. */}
+        {draft && <RelectureRapport recipe={recipe} />}
 
         <div className="cz-sect">
           Consigne vocale pour la cuisinière

@@ -14,6 +14,11 @@ export interface RecipeDraft {
   nom_ar?: string;
   ingredients_ar?: string;
   etapes_ar?: string;
+  // Prompt v2 (lot simplification T2) — optionnels : ABSENTS avec l'ancien edge
+  // (tolérance bidirectionnelle : le client neuf tolère leur absence).
+  adaptations?: { regle?: string; action?: string }[];
+  quantites_incertaines?: string[];
+  alerte_regles?: string[];
 }
 
 /** F4.4 : règles du foyer (T3) + demande d'adaptation, jointes aux imports.

@@ -7,7 +7,7 @@ import { isNative, pickPhoto as pickPhotoNative } from '../lib/platform';
 import { parseRecipesJson } from '../lib/importRecipes';
 import { nextRecipeId } from '../lib/recipeId';
 import { AI_MONTHLY_LIMIT, remaining, normalizeQuota, currentMonth } from '../lib/quota';
-import { ROLE_LABEL, reglesList, type Recipe, type RecipeRole } from '../types';
+import { ROLE_LABEL, reglesList, type Recipe, type RecipeAdaptation, type RecipeRole } from '../types';
 import { IconStar, IconLoader, IconCheck } from './icons';
 
 // F5.2 : les 8 moments disponibles à la création (jeu fermé).
@@ -23,6 +23,21 @@ function roleFromDraft(v: unknown): RecipeRole {
   if (s.startsWith('go')) return 'gouter'; // goûter / gouter
   if (s.startsWith('boisson') || s.startsWith('jus')) return 'boisson';
   return 'plat';
+}
+
+// Prompt v2 (T2) — normalisation TOLÉRANTE de la sortie de l'edge : `undefined`
+// avec l'ancien edge (champs absents), `[]` filtré → `undefined` (rien à stocker).
+function cleanStrings(v: unknown): string[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const out = v.map((x) => String(x).trim()).filter(Boolean);
+  return out.length ? out : undefined;
+}
+function cleanAdaptations(v: unknown): RecipeAdaptation[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const out = v
+    .map((a) => ({ regle: String((a as { regle?: unknown })?.regle ?? '').trim(), action: String((a as { action?: unknown })?.action ?? '').trim() }))
+    .filter((a) => a.regle || a.action);
+  return out.length ? out : undefined;
 }
 
 interface Props {
@@ -329,7 +344,11 @@ function InstructionsForm({
         role: rr,
         statut: 'Test',
         origineIA: true,
-        adapteSelon: liste.length ? liste : undefined, // G3 : la trace vit dans le doc
+        adapteSelon: liste.length ? liste : undefined, // G3 : la DEMANDE (fallback bandeau v2)
+        // Prompt v2 (T2) — RAPPORT du modèle, ABSENT avec l'ancien edge (tolérance) :
+        adaptations: cleanAdaptations(d.adaptations),
+        quantites_incertaines: cleanStrings(d.quantites_incertaines),
+        alerte_regles: cleanStrings(d.alerte_regles),
         ingredients: d.ingredients?.trim() || '',
         etapes: d.etapes?.trim() || undefined,
         nom_ar: d.nom_ar?.trim() || undefined,

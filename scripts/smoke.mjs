@@ -168,6 +168,46 @@ await page.getByRole('tab', { name: 'Recettes' }); // (reste sur Recettes)
 await page.screenshot({ path: 'scripts/shot-biblio.png', fullPage: false });
 console.log('Bibliothèque ✅ (', nbRecettes, 'recettes)');
 
+// 3ter) T2a (lot simplification) — bandeau de relecture v2 : on INJECTE en IDB un
+// brouillon avec le RAPPORT du prompt v2 (adaptations + alerte du garde G3) et on
+// vérifie qu'il s'affiche à la relecture (tolérance : le champ est optionnel).
+await page.evaluate(
+  () =>
+    new Promise((resolve, reject) => {
+      const req = indexedDB.open('menu-semaine');
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('recipes', 'readwrite');
+        tx.objectStore('recipes').put({
+          id: 'SMOKE-V2',
+          nom: 'Tajine du smoke (adapté)',
+          role: 'plat',
+          statut: 'Test',
+          origineIA: true,
+          ingredients: 'poulet 200 g · graines de courge 20 g',
+          adapteSelon: ['sans arachide'],
+          adaptations: [{ regle: 'sans arachide', action: 'cacahuètes remplacées par graines de courge' }],
+          alerte_regles: ['"arachide" présent dans les ingrédients malgré la règle du foyer'],
+        });
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => reject(tx.error);
+      };
+      req.onerror = () => reject(req.error);
+    }),
+);
+await page.reload({ waitUntil: 'networkidle' });
+await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
+await page.getByRole('tab', { name: 'Recettes' }).click();
+await page.locator('.cz-librow.draft', { hasText: 'Tajine du smoke' }).first().click();
+await page.getByText('Adapté', { exact: false }).first().waitFor({ timeout: 5000 });
+await page.getByText('cacahuètes remplacées par graines de courge', { exact: false }).waitFor({ timeout: 3000 });
+await page.locator('.cz-relwarn', { hasText: 'arachide' }).first().waitFor({ timeout: 3000 }); // garde G3 serveur
+// Ferme la relecture ET nettoie l'injection : « Supprimer » écarte le brouillon
+// (file de 1 → terminée → feuille fermée).
+await page.locator('.cz-sheet.show').getByText('Supprimer', { exact: true }).click();
+await page.waitForTimeout(400);
+console.log('T2a : bandeau de relecture v2 (rapport + alerte G3) affiché ✅');
+
 // 3bis) T4a (F4.1/F4.2, GO ③) — FAB → feuille des 3 voies (langage banni ABSENT),
 // « L'écrire » crée une recette Validé qui atterrit dans la bibliothèque.
 await page.locator('.cz-chips .cz-chip', { hasText: 'Tous' }).click();
