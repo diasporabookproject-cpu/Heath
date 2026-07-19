@@ -1,5 +1,5 @@
 # ÉTAT — Manzil
-**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 18 juillet 2026 (clôture audit sécurité §7.8, merge `audit-securite-v1` → défaut)**
+**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 19 juillet 2026 (clôture lot simplification transverse, merge `lot-simplification-v1` → défaut, edge `generate-recipe` v2 en prod)**
 
 > **Rôle.** *Où on en est* (rapide). Le *quoi* (lent) = `PROJET_MAISON_OS.md` (côté PO). Le *journal* (append-only, détaillé) = `DEVLOG.md`.
 > **Rituel d'ouverture de thread : « Contexte = `PROJET_MAISON_OS.md` + `ETAT.md` ».**
@@ -9,17 +9,18 @@
 
 ## 🔵 En vol
 
-**Lot simplification transverse** — branche `lot-simplification-v1`. **T1 + T2a MERGÉES au défaut** (`ef13db2`, Pages déploie le client tolérant). **T2b (edge v2) CODÉE sur la branche, NON déployée — ⏸ attente vérif prod du client tolérant (PO) → GO fenêtre token.** Décisions : halal = (a) (au modèle, parqué) · Opt-C confirmée · **tolérance bidirectionnelle** = client tolérant déployé et vérifié AVANT la fenêtre. T2b : `SYSTEM` hardcode disparaît (→ `reglesSystem` dynamique), garde G3 lexical (`guard.ts`, testé CI, halal exclu), `adaptations[]` rapporté, `estimate` supprimé, Opt-C. Portes CI : `edge-no-hardcode` + `guard`. 179 tests. **Prérequis PO avant fenêtre : « gluten » dans `nePasManger`.** Reste : fenêtre token (déploiement edge, révocation, parité de clôture) → clôture lot.
+**Aucun lot en vol.** Prochain = file d'attente ci-dessous.
+
+**Lot simplification transverse : CLOS le 19/07** — app « foyer particulier » → **app généraliste**. T1 (purge nutrition : macros/calcium/calories/objectif retirés, porte grep **par suppression**) + T2a (client tolérant, bandeau relecture v2, merge intermédiaire `ef13db2`) + T2b (**edge `generate-recipe` v2 déployée en prod, version 14**) : hardcode « 100% SANS GLUTEN / calcium enjeu n°1 » **mort** → contraintes **dynamiques par foyer** via `reglesSystem` ; `guard.ts` (module pur testé CI : anti-injection `cleanRegles`, garde G3 lexical `alerteRegles`, **halal exclu**) ; `adaptations[]` rapporté ligne à ligne ; `estimate`/macros supprimés ; **Opt-C** darija conservée. Portes CI : `edge-no-hardcode` + `guard`. 185 tests. **1 fenêtre token** (staging ×2 idempotent → prod `201` v14 → invocation prod `401` propre → parité `0 écart` → token révoqué + **mort vérifiée 401**). Foyer sans règle → gluten possible (**hardcode mort prouvé**). Récit : `DEVLOG.md`.
 **Audit sécurité §7.8 : CLOS le 18/07** (Ambition A) — ④ cache d'une page révoquée coupé (complément client de F1) · C4 « Retirer » Nounou câblé · ⑥ registre RGPD complété. ①/② confirmés fermés par AS-2/0006 (rien recodé). ③⑤①-résidu au parking avec leur signal. **Mergé au défaut**, 172 tests · zéro fenêtre token. **Bloquant A7-C4 levé.** Récit : `DEVLOG.md` · fiche : `READBACK_AUDIT_SECURITE.md`. *(Ambition B — chasse offensive : avant lancement public.)*
 **Mini-lot destinataires : CLOS le 18/07** — T1 « échecs silencieux » (revoke honnête session-d'abord · `revoked` supprimé · `backedUp?` · cache 404-only ×2) + T2 remappage `'ar'`→`'dr'` (migration idempotente 2 portes, fil v:1 intact, `cuisineSig` stable, D6, verrou statique). **Device migration ✓ 4/4** (appareil existant, destinataire darija d'avant), **mergé au défaut**. 163 tests · zéro fenêtre token. **Le prérequis dur d'A7 est levé.**
 **Lot Cuisine : CLOS le 18/07** — T1→T7 + C1 + C2 (device foyer neuf ✓), mergé au défaut. 143 tests · 2 fenêtres token closes (0009 · 0010+edge v13, parité 0). Récit : `DEVLOG.md` · audit : `READOUT_QUALITE_LOT_CUISINE.md`.
 
 ## ⚪ File d'attente — ordre verrouillé
 
-1. **Audit sécurité §7.8** — + A7-C2/A7-C4 en durcissement · reliquat `create_foyer` (`public`/`anon`).
-2. **Lot simplification transverse** — purge nutrition (méthode gravée au DEVLOG : production d'abord, flag T2 = carte, porte par suppression) **+** prompt v2 **+ revue éditoriale du Fonds de départ** *(30 recettes = protocole personnel : « Msemmen SG », « batbout GF », « Creami (whey) » ×2 — même racine que le `SYSTEM` hardcodé. Premier contenu du chantier §7.2)*. *Signal = audit clos. Prérequis : poser « sans gluten » dans les Réglages du foyer PO **avant** la bascule.* → `PROPOSITION_PROMPT_V2_GENERATE_RECIPE.md` *(committé — schéma v2, règles au SYSTÈME, rapport `adaptations`, Opt-C darija à valider au read-back)*
-3. **Lot A7** — implémentation *(design clos ; film mesuré + spec §8 à venir)*.
-4. **Lot visuel « Riad moderne »** — passe 2, à part.
+1. **Revue éditoriale du Fonds de départ** — *HORS lot simplification (le moteur est déjà neutre : hardcode mort). Reste le **contenu** : 30 recettes = protocole personnel PO (« Msemmen SG », « batbout GF », « Creami (whey) » ×2 — même racine que l'ancien `SYSTEM`). Éditorial à neutraliser pour un foyer lambda. Chantier §7.2.*
+2. **Lot A7** — implémentation *(design clos ; film mesuré + spec §8 à venir)*.
+3. **Lot visuel « Riad moderne »** — passe 2, à part.
 
 ## 🟡 Chantier UX — passe 1 (simplicité & fluidité)
 
