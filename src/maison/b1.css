@@ -11,6 +11,8 @@
   color: var(--mz-ink);
   font-family: var(--mz-font);
 }
+/* Rythme horizontal du proto : 16px (mz-scroll est à 18px). */
+.mz.b1 .mz-scroll { padding-left: var(--mz-pad-screen); padding-right: var(--mz-pad-screen); }
 
 /* — En-tête — */
 .b1 .b1-greet { font-size: 11px; color: var(--mz-muted); font-weight: 600; }
@@ -30,7 +32,7 @@
 /* — Bande « Aujourd'hui » (rail plein-bord : marge négative sur le padding du scroll) — */
 .b1 .b1-band {
   display: flex; gap: 8px; overflow-x: auto;
-  margin: 0 -18px; padding: 6px 18px; /* marge verticale : l'anneau ne doit pas être rogné */
+  margin: 0 calc(-1 * var(--mz-pad-screen)); padding: 6px var(--mz-pad-screen); /* marge verticale : l'anneau ne doit pas être rogné */
   scrollbar-width: none;
 }
 .b1 .b1-band::-webkit-scrollbar { display: none; }
@@ -63,8 +65,6 @@
   display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 9px;
   background: var(--mz-card); border: 1px solid var(--mz-line); text-align: left;
 }
-/* Sans bande de jours (dimanche : la semaine courante est finie) → hauteur naturelle. */
-.b1 .b1-cuihero.nodots { min-height: 0; }
 .b1 .b1-chead { display: flex; align-items: center; gap: 13px; }
 .b1 .b1-cchip {
   width: 50px; height: 50px; border-radius: 13px; flex: none;

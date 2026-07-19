@@ -13,7 +13,7 @@ import { agendaToday, nowHHMM, type AgendaItem } from './prochain';
 import { MzScreen, MzScroll } from '../ui/primitives';
 import Em from '../ui/Em';
 import { dayTitleISO, todayISO } from '../nounou/dates';
-import type { Destinataire, SecuriteFiche } from '../types';
+import type { DayMenu, Destinataire, SecuriteFiche } from '../types';
 import './b1.css';
 
 /** Date ISO (YYYY-MM-DD) décalée de `n` jours, en heure locale (sûr aux passages de mois). */
@@ -117,12 +117,15 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
 
   // Signal « Planifier » (cuisine) : la semaine suivante est-elle vide ?
   // Précaution : jamais de fausse alerte — on ne conclut « vide » que si la
-  // semaine est absente OU chargée sans aucun plat.
+  // semaine est absente OU chargée sans aucun plat. On garde aussi ses JOURS :
+  // la bande du héros les lit quand les 4 prochains jours débordent la semaine.
+  const [nextWeekDays, setNextWeekDays] = useState<Record<string, DayMenu> | null>(null);
   useEffect(() => {
     let alive = true;
     void loadWeek(weekId(1)).then((w) => {
       if (!alive) return;
       if (!w) return setNextWeekEmpty(true);
+      setNextWeekDays(w.days);
       const hasAny = Object.values(w.days).some(
         (d) => d && (d.petitdej?.plat || d.dej?.plat || d.diner?.plat),
       );
@@ -133,18 +136,22 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
     };
   }, []);
 
-  // ── Héros Cuisine : points des jours restants de la semaine + sous-titre réel ──
-  const dayHasMeal = (key: string): boolean => {
-    const d = week.days[key];
-    return !!(d && (d.petitdej?.plat || d.dej?.plat || d.diner?.plat));
-  };
+  // ── Héros Cuisine : TOUJOURS les 4 prochains jours (réf. proto — la bande ne
+  // disparaît jamais), en franchissant la frontière de semaine si besoin. ──
   const cuisineHero = useMemo(() => {
     const dow = new Date().getDay(); // 0 = dim
-    const remaining = dow === 0 ? 0 : 7 - dow; // jours restants de la semaine courante
-    const days: { key: string; label: string; full: boolean }[] = [];
-    for (let n = 1; n <= Math.min(4, remaining); n++) {
+    const mondayIdx = (dow + 6) % 7; // 0 = lundi
+    const dayAt = (n: number) => {
       const key = DAY_KEYS[(dow + n) % 7];
-      days.push({ key, label: key.charAt(0).toUpperCase() + key.slice(1), full: dayHasMeal(key) });
+      // Jour au-delà de dimanche → semaine suivante (chargée ci-dessus, sinon inconnue = vide).
+      const src = mondayIdx + n <= 6 ? week.days : (nextWeekDays ?? {});
+      return { key, day: src[key] };
+    };
+    const hasMeal = (d?: DayMenu) => !!(d && (d.petitdej?.plat || d.dej?.plat || d.diner?.plat));
+    const days: { key: string; label: string; full: boolean }[] = [];
+    for (let n = 1; n <= 4; n++) {
+      const { key, day } = dayAt(n);
+      days.push({ key, label: key.charAt(0).toUpperCase() + key.slice(1), full: hasMeal(day) });
     }
     // Sous-titre : « Prêt jusqu'à X » (série pleine depuis demain) · « demain, {plat} ».
     let streakEnd: string | null = null;
@@ -153,22 +160,19 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
       else break;
     }
     let demain: string | null = null;
-    if (remaining >= 1) {
-      const tk = DAY_KEYS[(dow + 1) % 7];
-      const d = week.days[tk];
-      const platId = d?.dej?.plat || d?.diner?.plat || d?.petitdej?.plat;
+    {
+      const { day } = dayAt(1);
+      const platId = day?.dej?.plat || day?.diner?.plat || day?.petitdej?.plat;
       const r = platId ? recipesById.get(platId) : undefined;
       if (r) demain = cleanText(r.nom);
     }
     let sub: string;
-    if (remaining === 0) {
-      sub = nextWeekEmpty === true ? 'La semaine prochaine vous attend' : 'Semaine prochaine prête';
-    } else if (streakEnd && demain) sub = `Prêt jusqu’à ${streakEnd} · demain, ${demain}`;
+    if (streakEnd && demain) sub = `Prêt jusqu’à ${streakEnd} · demain, ${demain}`;
     else if (demain) sub = `Demain, ${demain}`;
     else if (streakEnd) sub = `Prêt jusqu’à ${streakEnd}`;
-    else sub = 'Rien de prévu pour demain';
+    else sub = nextWeekEmpty === true && mondayIdx === 6 ? 'La semaine prochaine vous attend' : 'Rien de prévu pour demain';
     return { days, sub };
-  }, [week, recipesById, nextWeekEmpty]);
+  }, [week, nextWeekDays, recipesById, nextWeekEmpty]);
 
   /** État de transmission d'une personne (signature courante vs dernier envoi). */
   const etat = (p: Personne): { state: EnvoiState; sub: string } => {
@@ -293,7 +297,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
         {/* VOTRE FOYER — Cuisine en héros, Les enfants + Infos clés en soutien */}
         <div className="b1-blab">Votre foyer</div>
         {cuisineActif && (
-          <button className={'b1-cuihero' + (cuisineHero.days.length === 0 ? ' nodots' : '')} onClick={() => onOpenPage('cuisine')}>
+          <button className="b1-cuihero" onClick={() => onOpenPage('cuisine')}>
             <span className="b1-chead">
               <span className="b1-cchip"><Em ch="🍲" size={38} /></span>
               <span>
