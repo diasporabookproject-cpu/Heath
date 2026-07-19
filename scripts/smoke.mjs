@@ -58,15 +58,17 @@ await page.locator('.b1-cuihero').click();
 // Menu est le bouton « Copier une semaine précédente ». + porte F1.2 : zéro « Générer ».
 // T7/F7.2 — portes structurelles : DÉFAUT = DEMAIN (vue jour), UNE seule barre
 // (l'en-tête n'a plus d'onglets, la nav vit au footer).
-await page.getByText('Menu du jour').waitFor({ timeout: 10000 });
-const demainOn = await page.locator('.cz-hbtn', { hasText: 'Demain' }).getAttribute('aria-pressed');
-if (demainOn !== 'true') throw new Error('F7.2 : le défaut doit être Demain');
+await page.locator('.cz-weekbtn').waitFor({ timeout: 10000 });
+// DA v2 (T2) : le jour sélectionné par défaut dans la bande = DEMAIN (sa date).
+const demainDate = String(new Date(Date.now() + 86400000).getDate());
+const selDn = await page.locator('.cz-day.on .dn').textContent();
+if (selDn !== demainDate) throw new Error(`F7.2 : le défaut doit être Demain (sélection ${selDn}, attendu ${demainDate})`);
 if (await page.locator('.cz-head [role="tab"]').count())
   throw new Error('F7.2 : l’en-tête ne doit plus porter d’onglets (une seule barre)');
 await page.locator('.cz-footbar').waitFor({ timeout: 3000 });
 console.log('F7.2 : défaut Demain, une seule barre (footer) ✅');
 // bascule Semaine pour dérouler le parcours historique
-await page.locator('.cz-hbtn', { hasText: 'Semaine' }).click();
+if (!(await page.locator('.cz-weekbtn.on').count())) await page.locator('.cz-weekbtn').click(); // toggle → idempotent
 await page.getByText('Copier une semaine précédente').waitFor({ timeout: 5000 });
 if (await page.getByText('Générer la semaine').count())
   throw new Error('F1.2 : « Générer la semaine » ne doit plus exister');
@@ -99,7 +101,7 @@ if (!(await page.locator('.cz-remoji').count()))
 console.log('F7.1 : rail replié (riche) + repères emoji ✅');
 // F1.3 : l'onglet s'appelle désormais « Menu ».
 await page.getByRole('tab', { name: 'Menu' }).click();
-await page.locator('.cz-hbtn', { hasText: 'Semaine' }).click();
+if (!(await page.locator('.cz-weekbtn.on').count())) await page.locator('.cz-weekbtn').click(); // toggle → idempotent
 await page.getByText('Copier une semaine précédente').waitFor({ timeout: 5000 });
 
 // 1) FC11/FC12 — composer le petit-déjeuner de Lundi via le composeur + sélecteur.
@@ -149,7 +151,7 @@ await page.locator('.cz-sheet.show .cz-cta').click(); // OK
 await page.reload({ waitUntil: 'networkidle' });
 await page.getByText('Votre foyer').waitFor({ timeout: 10000 });
 await page.locator('.b1-cuihero').click();
-await page.getByText('Menu du jour').waitFor({ timeout: 10000 });
+await page.locator('.cz-weekbtn').waitFor({ timeout: 10000 });
 await page.getByLabel('Réglages Cuisine').click();
 await page.getByText('Règles actives : halal · arachide').waitFor({ timeout: 5000 });
 const halalOn = await page.getByRole('switch', { name: 'Halal' }).getAttribute('aria-checked');
@@ -234,7 +236,7 @@ console.log('« L’écrire » : recette créée (Validé), dans la bibliothèqu
 // 3ter) Amendement ② — « ＋ Nouvelle recette » DANS le sélecteur de composant :
 // création avec rôle pré-rempli → prend directement le créneau (geste fini).
 await page.getByRole('tab', { name: 'Menu' }).click();
-await page.locator('.cz-hbtn', { hasText: 'Semaine' }).click();
+if (!(await page.locator('.cz-weekbtn.on').count())) await page.locator('.cz-weekbtn').click(); // toggle → idempotent
 const mardi = page.locator('.cz-daycard', { hasText: 'Mardi' });
 await mardi.locator('.cz-mrow.empty').first().click();
 await page.locator('.cz-sheet.show .cz-comp .cmid').first().click(); // « Choisir »

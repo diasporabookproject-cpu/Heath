@@ -4,7 +4,7 @@ import { SEED_CONFIG } from '../data';
 import { dayHasAny, mealHasDraft } from '../lib/menu';
 import type { DayMenu, MealKey, Recipe } from '../types';
 import { weekDatesOffset, weekSub, dayLabel } from './dates';
-import { IconChevL, IconChevR, IconStar, IconPlus, IconCopy } from './icons';
+import { IconChevL, IconChevR, IconStar, IconPlus, IconCopy, IconShareUp } from './icons';
 
 // F7.2 : repas = Matin / Midi / Soir (libellés seuls — les clés du modèle,
 // du digest et de la projection ne bougent pas : compat totale).
@@ -16,26 +16,22 @@ const MEAL_KEYS: MealKey[] = ['petitdej', 'dej', 'diner'];
 // collection), qui ne servait que ce bouton, meurt avec lui (réconcilié avec le
 // rapport Q&A 338abfb au read-back). Le rail Collections reste la voie d'entrée.
 
-/** F7.2 — horizon du Menu : pas-à-pas DANS le contenu (jamais une 2ᵉ barre). */
-export type Horizon = 'aujourdhui' | 'demain' | 'semaine';
-
-const HORIZONS: { key: Horizon; label: string }[] = [
-  { key: 'aujourdhui', label: 'Aujourd’hui' },
-  { key: 'demain', label: 'Demain' },
-  { key: 'semaine', label: 'Semaine' },
-];
-
 interface Props {
   voiceIds: Set<string>;
-  horizon: Horizon;
-  onHorizon: (h: Horizon) => void;
+  /** DA v2 (T2) — vue courante : jour (bande de jours) ou semaine (bouton dédié). */
+  view: 'jour' | 'semaine';
+  /** Index (0 = lundi) du jour sélectionné dans la semaine AFFICHÉE. */
+  dayIdx: number;
+  onSelectDay: (i: number) => void;
+  onToggleWeek: () => void;
+  onShare: () => void;
   onOpenMeal: (dayKey: string, meal: MealKey) => void;
   onCopyWeek: () => void;
   onGoValidate: () => void;
   toast: (m: string) => void;
 }
 
-export default function SemaineView({ horizon, onHorizon, onOpenMeal, onCopyWeek, onGoValidate, toast }: Props) {
+export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, onShare, onOpenMeal, onCopyWeek, onGoValidate, toast }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const weekOffset = useStore((s) => s.weekOffset);
@@ -65,10 +61,8 @@ export default function SemaineView({ horizon, onHorizon, onOpenMeal, onCopyWeek
     return ids.size;
   }, [week.days, byId]);
 
-  // Vue JOUR : l'index du jour affiché (le passage de semaine — dimanche soir →
-  // lundi suivant — est géré par CuisineView via weekOffset au changement d'horizon).
+  // Le point « aujourd'hui » ne se montre que sur la semaine courante.
   const todayIdx = (new Date().getDay() + 6) % 7;
-  const dayIdx = horizon === 'aujourdhui' ? todayIdx : (todayIdx + 1) % 7;
 
   // F7.2 (amendement ① + Q4) : « Copier la journée précédente » = le DERNIER jour
   // non vide avant le jour affiché (dans la semaine affichée) ; cible non vide →
@@ -118,19 +112,51 @@ export default function SemaineView({ horizon, onHorizon, onOpenMeal, onCopyWeek
     );
   };
 
-  return (
-    <div>
-      {/* F7.2 — l'horizon vit DANS le contenu (interdit : deux barres empilées).
-          Défaut à l'ouverture : Demain (posé par CuisineView). */}
-      <div className="cz-horizon" role="group" aria-label="Horizon du menu">
-        {HORIZONS.map((h) => (
-          <button key={h.key} className="cz-hbtn" aria-pressed={horizon === h.key} onClick={() => onHorizon(h.key)}>
-            {h.label}
+  // Datectx : contexte relatif + date pleine (proto : « **jeudi 16 juillet** »).
+  const rel =
+    weekOffset === 0 && dayIdx === todayIdx
+      ? 'aujourd’hui · '
+      : (weekOffset === 0 && dayIdx === (todayIdx + 1) % 7 && todayIdx !== 6) ||
+          (weekOffset === 1 && todayIdx === 6 && dayIdx === 0)
+        ? 'demain · '
+        : '';
+
+  const selector = (
+    <div className="cz-selector">
+      <button className={'cz-weekbtn' + (view === 'semaine' ? ' on' : '')} onClick={onToggleWeek} aria-pressed={view === 'semaine'}>
+        <svg viewBox="0 0 16 16" aria-hidden>
+          <rect x="1" y="1" width="6" height="6" rx="1.3" />
+          <rect x="9" y="1" width="6" height="6" rx="1.3" />
+          <rect x="1" y="9" width="6" height="6" rx="1.3" />
+          <rect x="9" y="9" width="6" height="6" rx="1.3" />
+        </svg>
+        <span className="wl">{view === 'semaine' ? 'Semaine' : 'Semaine ›'}</span>
+      </button>
+      <div className="cz-sep" />
+      <div className="cz-daystrip">
+        {SEED_CONFIG.jours.map((j, i) => (
+          <button
+            key={j.key}
+            className={'cz-day' + (view === 'jour' && i === dayIdx ? ' on' : '') + (view === 'semaine' ? ' dim' : '')}
+            onClick={() => view === 'jour' && onSelectDay(i)}
+            aria-pressed={view === 'jour' && i === dayIdx}
+          >
+            <span className="dl">{j.nom.slice(0, 3)}</span>
+            <span className="dn">{dates[i].getDate()}</span>
+            <span className="tdot">{weekOffset === 0 && i === todayIdx ? <i /> : null}</span>
           </button>
         ))}
       </div>
+    </div>
+  );
 
-      {horizon === 'semaine' ? (
+  return (
+    <div>
+      {/* F7.2 — le sélecteur vit DANS le contenu (jamais deux barres empilées).
+          Défaut à l'ouverture : Demain (posé par CuisineView). */}
+      {selector}
+
+      {view === 'semaine' ? (
         <>
           <div className="cz-weeknav">
             <button className="cz-navchev" aria-label="Précédente" onClick={() => void navWeek(-1)}>
@@ -175,24 +201,31 @@ export default function SemaineView({ horizon, onHorizon, onOpenMeal, onCopyWeek
           )}
 
           <div className="cz-days">{SEED_CONFIG.jours.map((_, i) => dayCard(i))}</div>
+
+          <button className="cz-shareprimary" onClick={onShare} aria-label="Partager le menu">
+            <IconShareUp size={17} /> Partager la semaine
+          </button>
+          <div className="cz-sharehint">Envoyer la semaine à la personne de votre choix.</div>
         </>
       ) : (
         <>
-          {/* F1.3 : titre de vue jour = « menu du jour ». État vide = composer
-              (les rangées « Ajouter » de la carte) + Copier — sans « Générer ». */}
-          <div className="cz-weeknav">
-            <span className="cz-wk">
-              Menu du jour
-              <small>
-                {horizon === 'aujourdhui' ? 'aujourd’hui' : 'demain'} · {dayLabel(dates[dayIdx])}
-              </small>
-            </span>
+          {/* DA v2 (T2, proto) : contexte de date sous le sélecteur ; état vide =
+              composer (les rangées « Ajouter » de la carte) + Copier — sans « Générer ». */}
+          <div className="cz-datectx">
+            {rel}
+            <b>
+              {SEED_CONFIG.jours[dayIdx].nom.toLowerCase()} {dayLabel(dates[dayIdx])}
+            </b>
           </div>
           <div className="cz-days">{dayCard(dayIdx)}</div>
-          <button className="cz-subgen" onClick={copyDay}>
+          <button className="cz-ghost" onClick={copyDay}>
             <IconCopy size={15} />
             Copier la journée précédente
           </button>
+          <button className="cz-shareprimary" onClick={onShare} aria-label="Partager le menu">
+            <IconShareUp size={17} /> Partager la journée
+          </button>
+          <div className="cz-sharehint">Envoyer le menu à la personne de votre choix.</div>
         </>
       )}
     </div>

@@ -4,7 +4,7 @@ import { SEED_CONFIG } from '../data';
 import { loadAudioKeys } from '../lib/db';
 import type { AccRef, MealKey, RecipeRole } from '../types';
 import CoursesCuisine from './CoursesCuisine';
-import SemaineView, { type Horizon } from './SemaineView';
+import SemaineView from './SemaineView';
 import RecettesView from './RecettesView';
 import MealComposerSheet from './MealComposerSheet';
 import RecipePickerSheet from './RecipePickerSheet';
@@ -18,7 +18,8 @@ import CopyWeekSheet from './CopyWeekSheet';
 import { slotForRole, type Creneau } from '../lib/creneaux';
 import type { Recipe } from '../types';
 import type { CuisineScope } from '../maison/digest';
-import { IconPlus, IconCheck, IconShareUp } from './icons';
+import { IconPlus, IconCheck } from './icons';
+import Em from '../ui/Em';
 import './cuisine.css';
 
 type Segment = 'semaine' | 'recettes' | 'courses';
@@ -28,6 +29,7 @@ type Pick = { dayKey: string; mealKey: MealKey; slot: 'plat' | 'entree' | 'acc';
 // F1.3 (lot Cuisine) : l'onglet s'appelle « Menu » (vocabulaire verrouillé) — la clé
 // interne `semaine` ne bouge pas. « Semaines favorites » : REPORTÉ au backlog (PO 14/07).
 const SEG_LABEL: Record<Segment, string> = { semaine: 'Menu', recettes: 'Recettes', courses: 'Courses' };
+const SEG_EMOJI: Record<Segment, string> = { semaine: '🍽️', recettes: '📖', courses: '🛒' };
 const dayNom = (key: string) => SEED_CONFIG.jours.find((j) => j.key === key)?.nom ?? '';
 
 interface Props {
@@ -46,10 +48,14 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const navWeek = useStore((s) => s.navWeek);
 
   const [seg, setSeg] = useState<Segment>('semaine');
-  // F7.2 — horizon du Menu, DÉFAUT DEMAIN à l'ouverture (le briefing de la
-  // cuisinière se prépare la veille — même si aujourd'hui est en cours).
-  const [horizon, setHorizon] = useState<Horizon>('demain');
+  // F7.2 (DA v2, T2) — le jour SÉLECTIONNÉ dans la bande, DÉFAUT DEMAIN à
+  // l'ouverture (le briefing de la cuisinière se prépare la veille) ; le mode
+  // Semaine vit sur le bouton dédié. La logique dimanche→lundi est conservée.
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const [menuView, setMenuView] = useState<'jour' | 'semaine'>('jour');
+  const [selDay, setSelDay] = useState<number>((todayIdx + 1) % 7);
   const weekOffset = useStore((s) => s.weekOffset);
+  const regles = useStore((s) => s.regles);
   const [composer, setComposer] = useState<Composer>(null);
   const [pick, setPick] = useState<Pick>(null);
   const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);
@@ -100,15 +106,26 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
     window.scrollTo({ top: 0 });
   };
 
-  // F7.2 — changer d'horizon recale la semaine chargée : les vues jour parlent
-  // du VRAI aujourd'hui/demain (dimanche soir : « Demain » = lundi suivant).
-  const changeHorizon = (h: Horizon) => {
-    setHorizon(h);
-    if (h === 'aujourdhui' && weekOffset !== 0) void navWeek(-weekOffset);
-    if (h === 'demain') {
-      const target = (new Date().getDay() + 6) % 7 === 6 ? 1 : 0;
-      if (weekOffset !== target) void navWeek(target - weekOffset);
-    }
+  // F7.2 — défaut Demain : dimanche soir, « demain » = lundi de la semaine
+  // SUIVANTE → recale la semaine chargée à l'ouverture (logique conservée).
+  useEffect(() => {
+    if (todayIdx === 6 && weekOffset === 0) void navWeek(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pastille « Règles alimentaires » (SPEC 2) : MONTRE les restrictions ;
+  // Q7 : aucune règle → état neutre visible (jamais masquée).
+  const ruleParts = [regles.halal ? 'halal' : null, ...regles.nePasManger.map((x) => `sans ${x}`)].filter(Boolean);
+  const ruleText = ruleParts.length ? ruleParts.join(' · ') : 'Aucune restriction';
+
+  // F6.2 — la portée du digest suit la vue (semaine / aujourd'hui / demain / jour).
+  const shareScopeNow = (): { scope: CuisineScope; dayKey?: string } => {
+    if (menuView === 'semaine') return { scope: 'semaine' };
+    const demainIdx = (todayIdx + 1) % 7;
+    if (weekOffset === 0 && selDay === todayIdx) return { scope: 'aujourdhui' };
+    const isDemain = todayIdx === 6 ? weekOffset === 1 && selDay === 0 : weekOffset === 0 && selDay === demainIdx;
+    if (isDemain) return { scope: 'demain' };
+    return { scope: 'jour', dayKey: SEED_CONFIG.jours[selDay].key };
   };
 
   // F6.1 (D1) — Partager depuis la fiche : ajout au menu PUIS partage, jamais
@@ -145,29 +162,12 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
                 ‹
               </button>
             )}
-            <span className="cz-mark" />
             Cuisine
           </div>
-          <div className="cz-headicons">
-            <button
-              className="cz-headicon"
-              style={{ marginLeft: 8 }}
-              onClick={() => setReglagesOpen(true)}
-              aria-label="Réglages Cuisine"
-            >
-              ⚙
-            </button>
-            <button
-              className="cz-headicon"
-              onClick={() => {
-                setShareToken(undefined);
-                // F6.2 branché sur l'horizon (T7) : la portée du digest suit la vue.
-                setShareScope(seg === 'semaine' ? { scope: horizon } : null);
-                setSharing(true);
-              }}
-              aria-label="Partager le menu"
-            >
-              <IconShareUp size={18} />
+          <div className="cz-headicons" style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+            <button className="cz-rulepill" onClick={() => setReglagesOpen(true)} aria-label="Réglages Cuisine">
+              <Em ch="🌿" size={12} />
+              <span className="txt">{ruleText}</span>
             </button>
             {showAccount && (
               <button
@@ -176,7 +176,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
                 aria-label="Compte et synchro"
                 title={connected ? 'Connecté' : 'Se connecter'}
               >
-                ☁︎
+                <Em ch="👤" size={18} />
               </button>
             )}
           </div>
@@ -189,8 +189,18 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
         {seg === 'semaine' ? (
           <SemaineView
             voiceIds={voiceIds}
-            horizon={horizon}
-            onHorizon={changeHorizon}
+            view={menuView}
+            dayIdx={selDay}
+            onSelectDay={(i) => {
+              setSelDay(i);
+              setMenuView('jour');
+            }}
+            onToggleWeek={() => setMenuView((v) => (v === 'jour' ? 'semaine' : 'jour'))}
+            onShare={() => {
+              setShareToken(undefined);
+              setShareScope(shareScopeNow());
+              setSharing(true);
+            }}
             onOpenMeal={(dayKey, mealKey) => setComposer({ dayKey, mealKey })}
             onCopyWeek={() => setCopyOpen(true)}
             onGoValidate={() => {
@@ -329,7 +339,8 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
       <nav className="cz-footbar" role="tablist" aria-label="Navigation Cuisine">
         {(['semaine', 'recettes', 'courses'] as Segment[]).map((s) => (
           <button key={s} className="cz-fbtn" role="tab" aria-selected={seg === s} onClick={() => switchSeg(s)}>
-            {SEG_LABEL[s]}
+            <Em ch={SEG_EMOJI[s]} size={22} />
+            <span>{SEG_LABEL[s]}</span>
           </button>
         ))}
       </nav>
