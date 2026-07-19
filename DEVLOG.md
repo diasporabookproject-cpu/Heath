@@ -129,6 +129,9 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot UI DA v2 — T1 avenant : état-vide « Mon équipe » conçu (retour device PO) — 2026-07-19
+**Retour device B1 (foyer neuf)** : le hub « faisait vide en bas » — la section « Mon équipe » était bien implémentée (lignes + pastilles, le smoke FTUE la voit avec Fatima) mais **masquée entièrement quand l'équipe est vide** (`list.length > 0 &&` cachait jusqu'au titre) ; ne restait que le bouton dashed flottant, sans section. **État-vide non conçu = le trou.** Correction (doctrine « les états vides sont des invitations, jamais muets ») : la section se rend **toujours** ; vide → **carte-invitation** « Ajoutez quelqu'un à votre équipe · Sa page dans sa langue, prête à partager » (＋ terracotta, un tap → même cible que « ＋ Une page pour quelqu'un d'autre », lequel est masqué dans ce cas — redondant). Équipe non vide : comportement inchangé (lignes + dashed). Portes : typecheck ✓ · 185/185 ✓ · build ✓ · 3 smokes ✓ · capture foyer neuf re-prise.
+
 ### Lot UI DA v2 — T1 : B1 (accueil) re-skinné, emoji Fluent EMBARQUÉ, purge mz.css — 2026-07-19
 **T1 livré — B1 est l'écran-socle de la DA v2.** Les trois points de vérification PO sont prouvés :
 - **① Offline réel** : jeu Fluent Emoji Flat **embarqué** — `@iconify-json/fluent-emoji-flat` (MIT) en devDependency, `scripts/gen-fluent.mjs` génère `src/assets/fluent-emoji.ts` (43 repères committés, ~56 Ko source), composant `src/ui/Em.tsx` (caractère → SVG inline, tolérant U+FE0F, repli caractère système). **Preuve Playwright : mode avion → reload → 5 SVG rendus, zéro requête CDN** ; grep `dist/` : zéro `iconify|googleapis|cdn.`. Le piège Google Fonts de T1-Cuisine n'est pas répété.

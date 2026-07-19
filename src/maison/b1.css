@@ -108,6 +108,9 @@
 }
 .b1 .b1-ini.grn { background: var(--mz-cuisine-tile); color: var(--mz-cuisine); }
 .b1 .b1-ini.vio { background: var(--mz-enfants-tile); color: var(--mz-enfants); }
+/* État vide = invitation (jamais muet) : ＋ terracotta dans le rond d'initiale. */
+.b1 .b1-ini.plus { background: color-mix(in srgb, var(--mz-accent) 14%, var(--mz-card)); color: var(--mz-accent); font-size: 15px; }
+.b1 .b1-invite .b1-ptx h4 { color: var(--mz-ink); }
 .b1 .b1-pip {
   position: absolute; top: -1px; right: -1px; width: 9px; height: 9px; border-radius: 50%;
   background: var(--mz-accent); border: 2px solid var(--mz-card);

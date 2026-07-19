@@ -332,8 +332,20 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
           </button>
         </div>
 
-        {/* MON ÉQUIPE — le personnel : une ligne par personne, pastille = action */}
-        {list.length > 0 && <div className="b1-blab">Mon équipe</div>}
+        {/* MON ÉQUIPE — le personnel : une ligne par personne, pastille = action.
+            La section se rend TOUJOURS ; vide, elle est une INVITATION (doctrine :
+            les états vides invitent, jamais muets — retour device PO, T1). */}
+        <div className="b1-blab">Mon équipe</div>
+        {list.length === 0 && (
+          <button className="b1-prow b1-invite" onClick={onNewPage}>
+            <span className="b1-ini plus">＋</span>
+            <span className="b1-ptx">
+              <h4>Ajoutez quelqu’un à votre équipe</h4>
+              <div className="st">Sa page dans sa langue, prête à partager</div>
+            </span>
+            <span className="b1-chev">›</span>
+          </button>
+        )}
         {list.map((p) => {
           const a = action(p);
           return (
@@ -365,9 +377,12 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
           );
         })}
 
-        <button className="b1-dashed" onClick={onNewPage} style={{ marginTop: 8 }}>
-          ＋ Une page pour quelqu’un d’autre
-        </button>
+        {/* Redondant avec l'invitation quand l'équipe est vide (même cible). */}
+        {list.length > 0 && (
+          <button className="b1-dashed" onClick={onNewPage} style={{ marginTop: 8 }}>
+            ＋ Une page pour quelqu’un d’autre
+          </button>
+        )}
         <div style={{ height: 16 }} />
       </MzScroll>
     </MzScreen>
