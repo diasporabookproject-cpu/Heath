@@ -254,10 +254,11 @@ export function buildShoppingList(
   for (const j of config.jours) {
     const day = week.days[j.key];
     if (!day) continue;
-    for (const key of ['petitdej', 'dej', 'diner'] as const) {
+    for (const key of ['petitdej', 'dej', 'gouter', 'diner'] as const) {
       const m = day[key];
+      if (!m) continue; // jour d'un client ancien : pas de clé `gouter`
       addRecipe(m.plat);
-      if (key !== 'petitdej') {
+      if (key === 'dej' || key === 'diner') {
         addRecipe(m.entree);
         addAcc(m.acc);
       }

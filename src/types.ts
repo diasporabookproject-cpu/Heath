@@ -112,12 +112,12 @@ export interface AccRef {
   g: number;
 }
 
-export type MealKey = 'petitdej' | 'dej' | 'diner';
+export type MealKey = 'petitdej' | 'dej' | 'gouter' | 'diner';
 
 /**
  * Un repas = conteneur de composants. `plat` = composant principal.
  * `entree` / `acc` optionnels (déjeuner & dîner seulement ; le petit-déjeuner
- * n'a que `plat`).
+ * et le goûter n'ont que `plat` — ruling PO T3, lot UI).
  */
 export interface MealSlot {
   plat: string | null;
@@ -129,6 +129,11 @@ export interface DayMenu {
   petitdej: MealSlot;
   dej: MealSlot;
   diner: MealSlot;
+  /** 4ᵉ moment (lot UI T3). OPTIONNEL À JAMAIS : les jours stockés avant le
+   * changement — et ceux ramenés par la SYNC depuis un client ancien — n'ont
+   * pas la clé. Tout lecteur DOIT tolérer son absence (tolérance
+   * bidirectionnelle, leçon du lot simplification — pas de migration). */
+  gouter?: MealSlot;
 }
 
 /** Une semaine = 7 jours, repérés par la clé du jour (lun, mar, …). */

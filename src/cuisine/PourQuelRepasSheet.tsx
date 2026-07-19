@@ -7,7 +7,7 @@ import type { MealKey, Recipe } from '../types';
 import { IconChevR } from './icons';
 
 // F7.2 : Matin / Midi / Soir (libellés seuls — clés du modèle inchangées).
-const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Matin', dej: 'Midi', diner: 'Soir' };
+const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit déjeuner', dej: 'Déjeuner', gouter: 'Goûter', diner: 'Dîner' };
 
 /**
  * F6.1 (D1) — « Pour quel repas ? » : le DÉFAUT (prochain repas compatible,

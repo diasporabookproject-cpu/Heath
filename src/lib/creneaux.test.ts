@@ -88,10 +88,21 @@ describe('lib/creneaux — défaut = prochain repas COMPATIBLE (Q3 amendée)', (
     expect(c.remplace).toBe('Tajine en place');
   });
 
-  it('dessert / goûter / boisson : AUCUN créneau (Q2) — slotForRole null, liste vide', () => {
-    for (const r of ['dessert', 'gouter', 'boisson'] as const) {
+  it('dessert / boisson : AUCUN créneau — slotForRole null, liste vide', () => {
+    for (const r of ['dessert', 'boisson'] as const) {
       expect(slotForRole(r)).toBeNull();
       expect(prochainsCreneaux(r, mercredi(9), CONFIG, emptyWeek(), byId)).toEqual([]);
     }
+  });
+
+  // T3 (lot UI) : le goûter est un moment PLEIN — il a gagné son créneau
+  // (plat seul, ruling PO). L'ancienne règle Q2 v1 le classait « sans créneau ».
+  it('goûter (T3) : créneau PLEIN — prochain goûter, jamais un autre moment', () => {
+    expect(slotForRole('gouter')).toBe('plat');
+    const avant = prochainsCreneaux('gouter', mercredi(9), CONFIG, emptyWeek(), byId);
+    expect(avant[0]).toMatchObject({ mealKey: 'gouter', dOffset: 0 }); // 9 h → goûter du jour
+    const apres = prochainsCreneaux('gouter', mercredi(18), CONFIG, emptyWeek(), byId);
+    expect(apres[0]).toMatchObject({ mealKey: 'gouter', dOffset: 1 }); // 18 h → demain
+    expect(apres.every((c) => c.mealKey === 'gouter')).toBe(true);
   });
 });

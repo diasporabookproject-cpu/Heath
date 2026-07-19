@@ -521,6 +521,38 @@
 .cz-fbtn { flex: 1; max-width: 160px; border: none; background: transparent; color: var(--muted); font-family: var(--font-body); font-weight: 600; font-size: 10.5px; border-radius: 12px; padding: 5px 2px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .cz-fbtn svg, .cz-fbtn .sysem { width: 25px; height: 25px; font-size: 22px; line-height: 25px; }
 .cz-fbtn[aria-selected='true'] { background: #f4efe6; color: var(--ink); font-weight: 800; }
+
+/* ---- T3 · Les 4 moments (SPEC 3, proto) ---- */
+/* Teintes de moment — la couleur EST le code de lecture. */
+.cz .s-petitdej .mchip { background: #fbe9d2; }
+.cz .s-petitdej .mlabel, .cz-wln .wk.s-petitdej { color: #b9781f; }
+.cz .s-dej .mchip { background: #e8efdf; }
+.cz .s-dej .mlabel, .cz-wln .wk.s-dej { color: #5f7a3f; }
+.cz .s-gouter .mchip { background: #fbe4e0; }
+.cz .s-gouter .mlabel, .cz-wln .wk.s-gouter { color: #b56a5a; }
+.cz .s-diner .mchip { background: #dfeeeb; }
+.cz .s-diner .mlabel, .cz-wln .wk.s-diner { color: #3f7d72; }
+
+/* Vue JOUR : une carte par moment. */
+.cz-meals { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 9px; }
+/* .cz-mrow.cz-mo : bat la base .cz-mrow définie plus bas (même leçon que .b1). */
+.cz-mrow.cz-mo { display: flex; align-items: center; gap: 11px; background: var(--surface); border: 1px solid var(--line); border-radius: 15px; padding: 11px 13px; }
+.cz-meals .cz-mrow + .cz-mrow { border-top: none; }
+.cz-mrow.cz-mo .mchip { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: none; }
+.cz-mrow.cz-mo .mchip .plus { color: var(--accent); font-size: 22px; line-height: 1; }
+.cz-mrow.cz-mo .mlabel { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+.cz-mrow.cz-mo .mn { font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+.cz-mrow.cz-mo .sub { font-size: 11.5px; }
+
+/* Vue SEMAINE (SPEC 4) : lignes compactes dans la carte du jour. */
+.cz-wdh { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px; }
+.cz-wdh .wtag { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--accent); }
+.cz-mrow.cz-wln { display: flex; align-items: center; gap: 8px; padding: 3px 0; border-radius: 6px; }
+.cz-daycard .cz-mrow + .cz-mrow { border-top: none; }
+.cz-mrow.cz-wln .wk { font-size: 7.5px; font-weight: 800; text-transform: uppercase; width: 34px; flex: none; }
+.cz-mrow.cz-wln .wv { font-size: 11.5px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 5px; min-width: 0; }
+.cz-mrow.cz-wln.empty .wv { color: var(--accent); font-weight: 700; }
+.cz-mrow.cz-wln .vio { color: var(--draft); display: inline-flex; }
 /* T7/F7.1 — rail replié (biblio riche) + repère emoji des cartes */
 .cz-collline { display: block; width: calc(100% - 32px); margin: 14px 16px 6px; border: 1.5px dashed var(--line); background: var(--surface); color: var(--petrol); font-family: var(--font-body); font-weight: 700; font-size: 14px; border-radius: 12px; padding: 12px; cursor: pointer; text-align: center; }
 .cz-remoji { flex: none; font-size: 17px; line-height: 1; }

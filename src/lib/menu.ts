@@ -14,16 +14,19 @@ export function dayHasAny(day: DayMenu): boolean {
     day.dej.plat ||
     day.dej.entree ||
     day.dej.acc ||
+    day.gouter?.plat ||
     day.diner.plat ||
     day.diner.entree ||
     day.diner.acc
   );
 }
 
-/** Un composant du repas est-il « à valider » (statut Test) ? */
-export function mealHasDraft(meal: MealSlot, key: MealKey, byId: Map<string, Recipe>): boolean {
+/** Un composant du repas est-il « à valider » (statut Test) ?
+ * `meal` peut être ABSENT (jour stocké/synchronisé sans `gouter`) → false. */
+export function mealHasDraft(meal: MealSlot | undefined, key: MealKey, byId: Map<string, Recipe>): boolean {
+  if (!meal) return false;
   const ids: (string | null | undefined)[] = [meal.plat];
-  if (key !== 'petitdej') {
+  if (key === 'dej' || key === 'diner') {
     ids.push(meal.entree);
     if (meal.acc) ids.push(meal.acc.id);
   }
@@ -39,5 +42,5 @@ export function emptyMeal(full: boolean): MealSlot {
 }
 
 export function emptyDay(): DayMenu {
-  return { petitdej: emptyMeal(false), dej: emptyMeal(true), diner: emptyMeal(true) };
+  return { petitdej: emptyMeal(false), dej: emptyMeal(true), gouter: emptyMeal(false), diner: emptyMeal(true) };
 }

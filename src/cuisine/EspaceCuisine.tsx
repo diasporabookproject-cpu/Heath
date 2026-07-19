@@ -9,13 +9,16 @@ import { IconPlate, IconMic, IconChevL, IconChevR, IconBack, IconPlay, IconTrans
 import './cuisine.css';
 
 type Lang = 'fr' | 'ar';
-type MK = 'petitdej' | 'dej' | 'diner';
-const MK_LIST: MK[] = ['petitdej', 'dej', 'diner'];
+type MK = 'petitdej' | 'dej' | 'gouter' | 'diner';
+// T3 (lot UI) : `gouter` AJOUTÉ — les pages publiées avant n'ont pas la clé ;
+// le rendu filtre sur la présence (`d[k]`), donc un lien ancien rend à
+// l'identique (lien perpétuel — test explicite espace-gouter.test).
+const MK_LIST: MK[] = ['petitdej', 'dej', 'gouter', 'diner'];
 
 const STR = {
   fr: {
     head: 'Cuisine', today: 'Aujourd’hui',
-    petitdej: 'Petit-déjeuner', dej: 'Déjeuner', diner: 'Dîner',
+    petitdej: 'Petit-déjeuner', dej: 'Déjeuner', gouter: 'Goûter', diner: 'Dîner',
     plat: 'Plat', entree: 'Entrée', acc: 'Accompagnement',
     voiceDot: 'Note vocale de Madame', voiceM: 'Écouter Madame', voiceS: 'Sa consigne vocale',
     noVoice: 'Pas de note vocale.', ing: 'Ingrédients', steps: 'Préparation',
@@ -24,7 +27,7 @@ const STR = {
   },
   ar: {
     head: 'الكوزينة', today: 'اليوم',
-    petitdej: 'الفطور', dej: 'الغدا', diner: 'العشا',
+    petitdej: 'الفطور', dej: 'الغدا', gouter: 'اللمجة', diner: 'العشا',
     plat: 'الطبق', entree: 'مقبّلات', acc: 'إضافة',
     voiceDot: 'تسجيل ديال مدام', voiceM: 'اسمع مدام', voiceS: 'التعليمات الصوتية',
     noVoice: 'ما كاينش تسجيل صوتي.', ing: 'المقادير', steps: 'الطريقة',

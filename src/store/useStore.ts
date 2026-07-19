@@ -163,7 +163,8 @@ export const useStore = create<State>((set, get) => ({
   setComponent(dayKey, meal, slot, value) {
     set((s) => {
       const day = { ...s.week.days[dayKey] };
-      const m = { ...day[meal] };
+      // Garde sync : un jour stocké/synchronisé AVANT T3 n'a pas la clé `gouter`.
+      const m = { plat: null, ...day[meal] };
       if (slot === 'acc') m.acc = value as AccRef | null;
       else if (slot === 'entree') m.entree = value as string | null;
       else m.plat = value as string | null;
@@ -177,7 +178,7 @@ export const useStore = create<State>((set, get) => ({
   setAccQty(dayKey, meal, deltaG) {
     set((s) => {
       const day = { ...s.week.days[dayKey] };
-      const m = { ...day[meal] };
+      const m = { plat: null, ...day[meal] };
       if (!m.acc) return s;
       m.acc = { ...m.acc, g: Math.max(25, m.acc.g + deltaG) };
       day[meal] = m;

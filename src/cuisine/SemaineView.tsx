@@ -2,14 +2,18 @@ import { useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import { dayHasAny, mealHasDraft } from '../lib/menu';
-import type { DayMenu, MealKey, Recipe } from '../types';
+import type { DayMenu, MealKey } from '../types';
 import { weekDatesOffset, weekSub, dayLabel } from './dates';
-import { IconChevL, IconChevR, IconStar, IconPlus, IconCopy, IconShareUp } from './icons';
+import { IconChevL, IconChevR, IconStar, IconCopy, IconShareUp } from './icons';
+import { recipeEmoji } from '../lib/emoji';
+import Em from '../ui/Em';
 
-// F7.2 : repas = Matin / Midi / Soir (libellés seuls — les clés du modèle,
-// du digest et de la projection ne bougent pas : compat totale).
-const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Matin', dej: 'Midi', diner: 'Soir' };
-const MEAL_KEYS: MealKey[] = ['petitdej', 'dej', 'diner'];
+// T3 (lot UI) : 4 moments, libellés alignés Menu ↔ page reçue (SPEC 3 —
+// les clés du modèle, du digest et de la projection ne bougent pas).
+const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit déjeuner', dej: 'Déjeuner', gouter: 'Goûter', diner: 'Dîner' };
+/** Libellés courts de la vue semaine (proto : P.déj / Déj / Goût / Dîner). */
+const MEAL_SHORT: Record<MealKey, string> = { petitdej: 'P.déj', dej: 'Déj', gouter: 'Goût', diner: 'Dîner' };
+const MEAL_KEYS: MealKey[] = ['petitdej', 'dej', 'gouter', 'diner'];
 
 // F1.2 (lot Cuisine, accord PO) : « Générer la semaine » est RETIRÉ — « proposer
 // un repas » part au backlog. Le garde-fou F5b (biblio vide → proposer la
@@ -51,6 +55,7 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
       const d = week.days[j.key];
       for (const k of MEAL_KEYS) {
         const m = d[k];
+        if (!m) continue; // jour d'un client ancien : pas de clé `gouter`
         for (const id of [m.plat, m.entree, m.acc?.id]) {
           if (!id) continue;
           const r = byId.get(id);
@@ -88,26 +93,85 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
     toast(`Journée copiée depuis ${src.nom}`);
   };
 
+  // Vue JOUR (proto) : une CARTE PAR MOMENT — chip tinté + label coloré +
+  // plat (emoji déterministe) ou « Ajouter un repas ». `day[k]` peut être
+  // absent (jour pré-T3) → traité comme vide.
+  const momentCards = (i: number) => {
+    const jour = SEED_CONFIG.jours[i];
+    const day = week.days[jour.key];
+    return MEAL_KEYS.map((k) => {
+      const meal = day[k];
+      const plat = meal?.plat ? byId.get(meal.plat) : undefined;
+      const sub: string[] = [];
+      if (meal && (k === 'dej' || k === 'diner')) {
+        if (meal.entree) {
+          const e = byId.get(meal.entree);
+          if (e) sub.push('Entrée : ' + e.nom);
+        }
+        if (meal.acc) {
+          const a = byId.get(meal.acc.id);
+          if (a) sub.push(`${a.nom} ${meal.acc.g} g`);
+        }
+      }
+      return (
+        <button key={k} className={'cz-mrow cz-mo s-' + k + (plat ? '' : ' empty')} onClick={() => onOpenMeal(jour.key, k)}>
+          <span className="mchip">{plat ? <Em ch={recipeEmoji(plat)} size={28} /> : <span className="plus">＋</span>}</span>
+          <span className="mid">
+            <span className="mlabel">{MEAL_LABEL[k]}</span>
+            <span className="mn">
+              {plat ? plat.nom : 'Ajouter un repas'}
+              {plat && mealHasDraft(meal, k, byId) && (
+                <span className="vio" title="à valider">
+                  <IconStar size={13} />
+                </span>
+              )}
+            </span>
+            {sub.length > 0 && <span className="sub">{sub.join(' · ')}</span>}
+          </span>
+          <span className="chev">
+            <IconChevR size={16} />
+          </span>
+        </button>
+      );
+    });
+  };
+
+  // Vue SEMAINE (SPEC 4, proto) : carte compacte par jour, une ligne par moment.
   const dayCard = (i: number) => {
     const jour = SEED_CONFIG.jours[i];
     const day = week.days[jour.key];
+    const isToday = weekOffset === 0 && i === todayIdx;
     return (
       <div className="cz-daycard" key={jour.key}>
-        <div className="cz-dayhead">
-          <span className="cz-dayname">{jour.nom}</span>
+        <div className="cz-wdh">
+          <span className="cz-dayname">
+            {jour.nom}
+            {isToday && <span className="wtag"> · auj.</span>}
+          </span>
           <span className="cz-daydate">{dayLabel(dates[i])}</span>
         </div>
 
-        {MEAL_KEYS.map((k) => (
-          <MealRow
-            key={k}
-            label={MEAL_LABEL[k]}
-            meal={day[k]}
-            mealKey={k}
-            byId={byId}
-            onClick={() => onOpenMeal(jour.key, k)}
-          />
-        ))}
+        {MEAL_KEYS.map((k) => {
+          const meal = day[k];
+          const plat = meal?.plat ? byId.get(meal.plat) : undefined;
+          return (
+            <button
+              key={k}
+              className={'cz-mrow cz-wln' + (plat ? '' : ' empty')}
+              onClick={() => onOpenMeal(jour.key, k)}
+            >
+              <span className={'wk s-' + k}>{MEAL_SHORT[k]}</span>
+              <span className="wv">
+                {plat ? plat.nom : '＋ Ajouter'}
+                {plat && mealHasDraft(meal, k, byId) && (
+                  <span className="vio" title="à valider">
+                    <IconStar size={12} />
+                  </span>
+                )}
+              </span>
+            </button>
+          );
+        })}
       </div>
     );
   };
@@ -222,7 +286,7 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
               {SEED_CONFIG.jours[dayIdx].nom.toLowerCase()} {dayLabel(dates[dayIdx])}
             </b>
           </div>
-          <div className="cz-days">{dayCard(dayIdx)}</div>
+          <div className="cz-meals">{momentCards(dayIdx)}</div>
           <button className="cz-ghost" onClick={copyDay}>
             <IconCopy size={15} />
             Copier la journée précédente
@@ -234,66 +298,5 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
         </>
       )}
     </div>
-  );
-}
-
-function MealRow({
-  label,
-  meal,
-  mealKey,
-  byId,
-  onClick,
-}: {
-  label: string;
-  meal: import('../types').MealSlot;
-  mealKey: MealKey;
-  byId: Map<string, Recipe>;
-  onClick: () => void;
-}) {
-  const plat = meal.plat ? byId.get(meal.plat) : undefined;
-  if (!plat) {
-    return (
-      <button className="cz-mrow empty" onClick={onClick}>
-        <span className="ml">{label}</span>
-        <span className="mid">
-          <span className="mn">
-            <IconPlus size={15} /> Ajouter
-          </span>
-        </span>
-        <span className="chev">
-          <IconChevR size={16} />
-        </span>
-      </button>
-    );
-  }
-  const sub: string[] = [];
-  if (mealKey !== 'petitdej') {
-    if (meal.entree) {
-      const e = byId.get(meal.entree);
-      if (e) sub.push('Entrée : ' + e.nom);
-    }
-    if (meal.acc) {
-      const a = byId.get(meal.acc.id);
-      if (a) sub.push(`${a.nom} ${meal.acc.g} g`);
-    }
-  }
-  return (
-    <button className="cz-mrow" onClick={onClick}>
-      <span className="ml">{label}</span>
-      <span className="mid">
-        <span className="mn">
-          {plat.nom}
-          {mealHasDraft(meal, mealKey, byId) && (
-            <span className="vio" title="à valider">
-              <IconStar size={13} />
-            </span>
-          )}
-        </span>
-        {sub.length > 0 && <span className="sub">{sub.join(' · ')}</span>}
-      </span>
-      <span className="chev">
-        <IconChevR size={16} />
-      </span>
-    </button>
   );
 }

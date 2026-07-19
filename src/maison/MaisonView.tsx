@@ -127,7 +127,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
       if (!w) return setNextWeekEmpty(true);
       setNextWeekDays(w.days);
       const hasAny = Object.values(w.days).some(
-        (d) => d && (d.petitdej?.plat || d.dej?.plat || d.diner?.plat),
+        (d) => d && (d.petitdej?.plat || d.dej?.plat || d.gouter?.plat || d.diner?.plat),
       );
       setNextWeekEmpty(!hasAny);
     });
@@ -147,7 +147,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
       const src = mondayIdx + n <= 6 ? week.days : (nextWeekDays ?? {});
       return { key, day: src[key] };
     };
-    const hasMeal = (d?: DayMenu) => !!(d && (d.petitdej?.plat || d.dej?.plat || d.diner?.plat));
+    const hasMeal = (d?: DayMenu) => !!(d && (d.petitdej?.plat || d.dej?.plat || d.gouter?.plat || d.diner?.plat));
     const days: { key: string; label: string; full: boolean }[] = [];
     for (let n = 1; n <= 4; n++) {
       const { key, day } = dayAt(n);
@@ -162,7 +162,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
     let demain: string | null = null;
     {
       const { day } = dayAt(1);
-      const platId = day?.dej?.plat || day?.diner?.plat || day?.petitdej?.plat;
+      const platId = day?.dej?.plat || day?.diner?.plat || day?.petitdej?.plat || day?.gouter?.plat;
       const r = platId ? recipesById.get(platId) : undefined;
       if (r) demain = cleanText(r.nom);
     }
