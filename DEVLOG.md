@@ -129,6 +129,9 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Doc — SYNTHESE_A7.md : rappel de lecture A7 (aide-mémoire, pas une décision) — 2026-07-19
+Aide-mémoire A7 « le turnover » demandé par le PO après la clôture du lot simplification. Dérivé de `READOUT_A7_DESIGN.md` v2 (source de vérité inchangée) + statut à jour : modèle couper/créer, D1–D12, cœur D7 (fiches Sécurité pour la Nounou en répliquant le patron multi-sections déjà en prod), **prérequis tous levés** (Cuisine + mini-lot destinataires + audit §7.8 clos), reste film mesuré → spec §8 (3ᵉ sorte de page + vocabulaire à trancher). **Ne décide rien.**
+
 ### Lot simplification — CLÔTURE : edge v2 déployée en prod, fenêtre token close, merge au défaut — 2026-07-19
 **Le lot est CLOS.** L'app passe « foyer particulier » → **généraliste**. Prérequis PO « poser gluten dans mon foyer » **retiré** en cours de route (le foyer de test doit être traité en foyer lambda — préserver le régime perso contredirait le but du lot). **Fenêtre token pour `generate-recipe` v2 (edge seul)** :
 - **Nouvelle variable de la fenêtre** : le déploiement est **multi-fichier** (`guard.ts` extrait de `index.ts`) — le script de déploiement uploade désormais tous les `.ts` du dossier (hors `*.test.ts`), `index.ts` = entrypoint. Dé-risqué par une invocation réelle de la fonction déployée (attendu : `401` propre, pas `500` d'import cassé).
