@@ -2,6 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import Boot from './ftue/Boot';
 import './assets/fonts.css';
+// DA v2 (lot UI, T0) — le socle de tokens partagé maquettes ↔ app. Importé AVANT
+// styles.css/mz.css : 3 noms `--mz-*` collident avec mz.css (card/ink/font, valeurs
+// quasi identiques) — mz.css, plus tard dans le graphe, garde la main jusqu'à sa
+// purge (tranche B1).
+import './tokens.css';
 import './styles.css';
 import { initSentry } from './lib/sentry';
 

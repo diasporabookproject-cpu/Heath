@@ -1,0 +1,75 @@
+/* ============================================================
+   Manzil — tokens.css  ·  v2 (18 juil. 2026)
+   Socle de la direction artistique, extrait de la référence B1
+   finalisée (proto-b1-reference.html).
+   ⚠️ Cette version REMPLACE l'ancienne palette « riad moderne »
+   (tadelakt / olive / Majorelle / safran + serif Fraunces).
+   Nouveau parti pris : base claire nette, accent terracotta unique,
+   typographie 100% sans, vouvoiement in-app.
+   Spine partagé : maquettes ↔ app réelle. Claude Code importe ce
+   fichier — MAIS vérifier d'abord s'il n'y est pas déjà.
+   ============================================================ */
+
+:root {
+  /* — Surfaces — */
+  --mz-paper:        #f8f6f4;  /* fond général (blanc cassé chaud) */
+  --mz-card:         #ffffff;  /* carte / tuile */
+  --mz-line:         #eeeae6;  /* bordure hairline */
+
+  /* — Encre (contraste haut = moderne) — */
+  --mz-ink:          #1c1815;  /* texte principal (quasi noir) */
+  --mz-muted:        #8f8a85;  /* texte secondaire */
+  --mz-faint:        #c9c3bb;  /* traits / états ténus */
+
+  /* — Accent UNIQUE (marque) — */
+  --mz-accent:       #d9622f;  /* terracotta : imminent, action, pastille */
+  --mz-accent-ink:   #c25528;  /* variante lisible sur clair (liens, "Gérer ›") */
+
+  /* — Domaines (couleur = code de lecture) — */
+  --mz-cuisine:      #d98a2e;  /* ambre */          --mz-cuisine-tile: #fbeed7;
+  --mz-enfants:      #4a84bd;  /* bleu (texte) */   --mz-enfants-tile: #e4eef8;  /* layette (fond) */
+  --mz-infos:        #7c5cf0;  /* violet */         --mz-infos-tint:   #efeafe;
+  /* NB enfants : le fond reste LAYETTE (pâle) ; le bleu du texte est foncé pour rester lisible. */
+
+  /* — Marqueur "repas posé" (points des jours) — */
+  --mz-dot:          #d98a2e;  /* plein = repas posé · vide = jour libre */
+
+  /* — Typographie (100% sans — plus de serif) — */
+  --mz-font: 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* titres : poids 800, letter-spacing ~-.02em ; UI : 600/700 ; labels de section : 800 MAJ */
+
+  /* — Rayons — */
+  --mz-r-card: 16px;
+  --mz-r-hero: 18px;
+  --mz-r-chip: 12px;
+  --mz-r-pill: 999px;
+
+  /* — Ombres (légères, chaudes) — */
+  --mz-shadow-card:  0 3px 11px rgba(28,24,21,.06);
+  --mz-shadow-float: 0 14px 34px rgba(20,22,30,.15);
+
+  /* — Rythme — */
+  --mz-pad-screen: 16px;
+  --mz-gap: 9px;
+
+  /* — Accents structurants — */
+  --mz-ring: 0 0 0 2.5px var(--mz-accent);  /* cerclage imminent / focus */
+  --mz-tap-min: 44px;                         /* cible tactile minimale (invariant) */
+}
+
+/* ---- Règles d'usage (pas des tokens, des lois) ----
+   • Emoji : jeu FLUENT PLAT embarqué (Microsoft, MIT) — identique Android/iOS.
+     JAMAIS l'emoji système (brillant, variable). JAMAIS un jeu d'icônes maison (fini, cliché).
+   • Attribution de l'emoji : dictionnaire mot-clé → emoji (local, déterministe, hors-ligne),
+     repli sur l'emoji du DOMAINE si rien ne matche, override utilisateur au rang 2.
+   • JAMAIS de filigrane, JAMAIS de dégradé décoratif. Cartes claires, fond clair.
+   • UN SEUL accent (terracotta) : ce qui est imminent OU l'action à faire. Rien d'autre en terracotta.
+   • Couleur de domaine = code de lecture : ambre=Cuisine, layette=Enfants, violet=Infos clés.
+   • Cerclage safran→terracotta pour l'imminent : PRÉVOIR la marge (l'overflow d'un rail coupe l'anneau).
+   • Photo = fiche recette, pas la bande d'aperçu.
+   • REGISTRE : vouvoiement in-app (« Votre foyer »). Salutation « Bonjour » / « Bonsoir » selon l'heure.
+   • VOCABULAIRE (corrigé PO 19 juil.) : le personnel s'affiche « Mon équipe » (destinataires, sans
+     compte). « membre » RESTE réservé aux comptes/co-gestionnaires (table `membres`, policies —
+     inchangé). NE JAMAIS renommer « membre → personnel ».
+   • Cibles ≥ 44px, RTL complet côté page reçue.
+------------------------------------------------------ */
