@@ -129,6 +129,9 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot UI DA v2 — T2 avenant : audit pixel proto ↔ app (demande PO) — 2026-07-19
+**Audit outillé** (proto committé + app dans le même Playwright, même viewport 314×684, `getBoundingClientRect` + styles calculés élément par élément). Résultat : **2 vrais écarts T2, corrigés** — ① chips du sélecteur +3px (le `line-height: 1.4` global de `.cz` vs ~1.2 du proto → resserré sur `dl/dn/wl/datectx`, reste 1,6px d'arrondi de `normal`, sous le seuil perceptible) ; ② **la bande de jours commence À AUJOURD'HUI** dans le proto (on planifie vers l'avant) — la nôtre montrait les jours passés de la semaine courante → filtrés (`weekOffset===0 → i >= todayIdx`). Le reste du différentiel mesuré : artefacts de sonde (conteneurs mappés différemment, ±2px de bordure du cadre proto, fontes CDN du proto absentes hors-ligne) et **périmètre T3 assumé** (cartes de moment individuelles teintées + goûter — le cœur de SPEC 3, `mrow/mchip/mlabel` divergent volontairement jusqu'à T3). Écart voulu conservé : le chip compte (invariant d'accès) — le proto n'en a pas. Portes : typecheck ✓ · 185/185 ✓ · build ✓ · 3 smokes ✓.
+
 ### Lot UI DA v2 — T2 : Cuisine socle (en-tête + pastille règles · sélecteur · footer) — 2026-07-19
 **T2 livré (SPEC 1+2+7)** — le module Cuisine passe sur le socle DA v2, réf. prototype cliquable :
 - **SPEC 1 (tokens)** : `.cz` boit `tokens.css` (`--paper/ink/muted/line` v2 + `--accent` terracotta + `--tan` du bouton Semaine + chip neutre `#f2eee7`). **Le dégradé vert de l'en-tête MEURT** (loi : zéro dégradé). Accent unique : FAB, CTA des feuilles, « ＋ Ajouter » des rangées, switch → terracotta. `--petrol` reste en LEGACY sur les écrans pas encore re-skinnés (meurt à T3-T5, écran par écran). *Micro-effet assumé : `EspaceCuisine` (page reçue) partage les tokens de base → glissement imperceptible (#f6f5f1→#f8f6f4…), smoke F5.5 vert.*

@@ -134,18 +134,23 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
       </button>
       <div className="cz-sep" />
       <div className="cz-daystrip">
-        {SEED_CONFIG.jours.map((j, i) => (
-          <button
-            key={j.key}
-            className={'cz-day' + (view === 'jour' && i === dayIdx ? ' on' : '') + (view === 'semaine' ? ' dim' : '')}
-            onClick={() => view === 'jour' && onSelectDay(i)}
-            aria-pressed={view === 'jour' && i === dayIdx}
-          >
-            <span className="dl">{j.nom.slice(0, 3)}</span>
-            <span className="dn">{dates[i].getDate()}</span>
-            <span className="tdot">{weekOffset === 0 && i === todayIdx ? <i /> : null}</span>
-          </button>
-        ))}
+        {/* Proto : la bande commence À AUJOURD'HUI (on planifie vers l'avant) —
+            les jours passés de la semaine courante n'y figurent pas. */}
+        {SEED_CONFIG.jours
+          .map((j, i) => ({ j, i }))
+          .filter(({ i }) => weekOffset !== 0 || i >= todayIdx)
+          .map(({ j, i }) => (
+            <button
+              key={j.key}
+              className={'cz-day' + (view === 'jour' && i === dayIdx ? ' on' : '') + (view === 'semaine' ? ' dim' : '')}
+              onClick={() => view === 'jour' && onSelectDay(i)}
+              aria-pressed={view === 'jour' && i === dayIdx}
+            >
+              <span className="dl">{j.nom.slice(0, 3)}</span>
+              <span className="dn">{dates[i].getDate()}</span>
+              <span className="tdot">{weekOffset === 0 && i === todayIdx ? <i /> : null}</span>
+            </button>
+          ))}
       </div>
     </div>
   );

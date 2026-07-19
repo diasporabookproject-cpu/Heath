@@ -479,7 +479,7 @@
 }
 .cz-weekbtn.on { background: var(--tan-ink); border-color: var(--tan-ink); color: #faf3e6; }
 .cz-weekbtn svg { width: 16px; height: 16px; fill: currentColor; }
-.cz-weekbtn .wl { font-size: 9.5px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
+.cz-weekbtn .wl { font-size: 9.5px; font-weight: 800; text-transform: uppercase; white-space: nowrap; line-height: 1.2; }
 .cz-sep { width: 1px; background: var(--line); margin: 3px 0; flex: none; }
 .cz-daystrip { display: flex; gap: 6px; overflow-x: auto; flex: 1; scrollbar-width: none; }
 .cz-daystrip::-webkit-scrollbar { display: none; }
@@ -488,15 +488,15 @@
   background: var(--surface); padding: 6px 0 5px; display: flex; flex-direction: column;
   align-items: center; gap: 2px; cursor: pointer; font-family: var(--font-body); color: var(--ink);
 }
-.cz-day .dl { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--muted); }
-.cz-day .dn { font-size: 14px; font-weight: 700; }
+.cz-day .dl { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--muted); line-height: 1.2; }
+.cz-day .dn { font-size: 14px; font-weight: 700; line-height: 1.2; }
 .cz-day .tdot { height: 5px; display: flex; align-items: center; justify-content: center; }
 .cz-day .tdot i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: block; }
 .cz-day.on { background: var(--accent); border-color: var(--accent); }
 .cz-day.on .dl { color: #f6d9c9; }
 .cz-day.on .dn { color: #fff; }
 .cz-day.dim { opacity: 0.5; cursor: default; }
-.cz-datectx { padding: 6px 18px; font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.cz-datectx { padding: 6px 18px; font-size: 12.5px; color: var(--muted); font-weight: 600; line-height: 1.2; }
 .cz-datectx b { color: var(--ink); font-weight: 700; }
 
 /* ---- Dispositions bas (proto) : copier fantôme + partage principal ---- */
