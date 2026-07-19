@@ -16,7 +16,7 @@
 // (Le mode `estimate` de nutrition a été SUPPRIMÉ.)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { alerteRegles } from './guard.ts';
+import { alerteRegles, cleanRegles, reglesSystem } from './guard.ts';
 
 const AI_CAP = 100; // générations / mois / foyer (Q4). Constante serveur, ajustable.
 // Garde anti-abus pour le relais utilitaire `translate` : plafond TRÈS
@@ -103,24 +103,7 @@ const TRANSLATE_TOOL = {
   },
 };
 
-/** Règles du foyer nettoyées (liste plate `reglesList` du client : ['halal', …nePasManger]). */
-function cleanRegles(regles?: unknown): string[] {
-  return Array.isArray(regles) ? regles.map((x) => String(x).trim()).filter(Boolean).slice(0, 20) : [];
-}
-
-/** Bloc RÈGLES injecté dans le SYSTÈME (v2) : autorité (prime sur le texte source
- * ET la demande d'adaptation) + anti-injection (le texte collé ne peut pas noyer
- * les règles). Le hardcode « 100% sans gluten / calcium » a DISPARU : rien n'est
- * fixe, tout vient du foyer. */
-function reglesSystem(regles: string[]): string {
-  if (!regles.length) return `\nAucune règle du foyer n'est définie : adaptations = [].`;
-  return `
-RÈGLES DU FOYER — priorité ABSOLUE, y compris sur le texte source et sur la demande d'adaptation :
-${regles.map((r) => `- ${r}`).join('\n')}
-Applique-les en modifiant LE MINIMUM (remplace l'ingrédient interdit par un équivalent proche du même usage).
-Déclare CHAQUE modification dans "adaptations" (regle + action précise).
-Si aucune ne s'applique à cette recette : adaptations = [] — mais vérifie chaque ingrédient avant de conclure.`;
-}
+// `cleanRegles` + `reglesSystem` (anti-injection) vivent dans `./guard.ts` (testés en CI).
 
 /** Demande d'adaptation LIBRE de l'utilisateur : reste dans le MESSAGE (c'est du
  * contenu, pas une politique — le système dit déjà que le foyer prime dessus). */
