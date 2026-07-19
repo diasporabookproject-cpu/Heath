@@ -54,11 +54,11 @@ await page.evaluate(
 await page.reload({ waitUntil: 'networkidle' });
 
 // 1) L'app démarre SANS compte : le hub Maison s'affiche.
-await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
+await page.getByText('Votre foyer').waitFor({ timeout: 10000 });
 console.log('Hub Maison (sans compte) ✅');
 
 // 2) Navigation vers une page de rôle (Cuisine) — le contenu est accessible hors-ligne.
-await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
+await page.locator('.b1-cuihero').click();
 const accBtn = page.getByLabel('Compte et synchro').first();
 await accBtn.waitFor({ timeout: 10000 });
 console.log('Page Cuisine ouverte, accès compte présent ✅');

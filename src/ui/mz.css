@@ -5,10 +5,12 @@
    qui meurent à la fin du Lot 2.
    ========================================================================== */
 
+/* DA v2 (lot UI, T1) : les 3 noms partagés avec src/tokens.css (--mz-card,
+   --mz-ink, --mz-font) sont PURGÉS d'ici — tokens.css v2 est leur unique
+   source (card identique, ink #1d1b16→#1c1815 imperceptible, même famille).
+   Le reste (palette Bento v1) meurt écran par écran avec le re-skin DA v2. */
 :root {
   --mz-bg: #f6f5f1;
-  --mz-card: #ffffff;
-  --mz-ink: #1d1b16;
   --mz-mut: #8b887c;
   --mz-ln: #ebe9e1;
   /* rôle nounou (violet) */
@@ -28,7 +30,6 @@
   /* formes */
   --mz-shadow: 0 3px 12px rgba(29, 27, 22, 0.06);
   --mz-shadow-lg: 0 12px 28px rgba(19, 107, 82, 0.28);
-  --mz-font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --mz-mono: 'JetBrains Mono', ui-monospace, monospace;
   --mz-naskh: 'Noto Naskh Arabic', serif;
   --mz-maxw: 480px;

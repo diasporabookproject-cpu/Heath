@@ -51,9 +51,9 @@ await page.evaluate(
 await page.reload({ waitUntil: 'networkidle' });
 console.log('FTUE court-circuitée (méta posées + reload) ✅');
 
-// 0) Hub Maison (L1-2) : entrer dans la page Cuisine depuis « Ton équipe ».
-await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
-await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
+// 0) Hub Maison (B1 DA v2) : entrer dans la page Cuisine depuis le héros « La Cuisine ».
+await page.getByText('Votre foyer').waitFor({ timeout: 10000 });
+await page.locator('.b1-cuihero').click();
 // F1.2 (lot Cuisine) : « Générer la semaine » n'existe plus — l'ancre de la vue
 // Menu est le bouton « Copier une semaine précédente ». + porte F1.2 : zéro « Générer ».
 // T7/F7.2 — portes structurelles : DÉFAUT = DEMAIN (vue jour), UNE seule barre
@@ -147,8 +147,8 @@ await page.locator('.cz-sheet.show textarea').blur();
 await page.getByText('Règles actives : halal · arachide').waitFor({ timeout: 3000 }); // G1
 await page.locator('.cz-sheet.show .cz-cta').click(); // OK
 await page.reload({ waitUntil: 'networkidle' });
-await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
-await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
+await page.getByText('Votre foyer').waitFor({ timeout: 10000 });
+await page.locator('.b1-cuihero').click();
 await page.getByText('Menu du jour').waitFor({ timeout: 10000 });
 await page.getByLabel('Réglages Cuisine').click();
 await page.getByText('Règles actives : halal · arachide').waitFor({ timeout: 5000 });
@@ -196,7 +196,7 @@ await page.evaluate(
     }),
 );
 await page.reload({ waitUntil: 'networkidle' });
-await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
+await page.locator('.b1-cuihero').click();
 await page.getByRole('tab', { name: 'Recettes' }).click();
 await page.locator('.cz-librow.draft', { hasText: 'Tajine du smoke' }).first().click();
 await page.getByText('Adapté', { exact: false }).first().waitFor({ timeout: 5000 });
