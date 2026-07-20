@@ -29,6 +29,11 @@ NNNN_slug.sql
 | `0008` | AS-2 Fiche 2 | `membres.owner_notice` + `dispose_foyer_for_deletion` (transfert de propriété au plus ancien membre) |
 | `0009` | AS-2b | `ack_owner_notice` (le client acquitte le bandeau — `membres` n'a pas de policy update) |
 
+## En ATTENTE de fenêtre (committées, appliquées NULLE PART)
+| Fichier | Lot | Contenu |
+|---|---|---|
+| `0011` | Partage+suivi T2 | `espace_checks` (journal insert-only des coches) — policies par JETON VIVANT (jointure d'existence sur `espaces`, exigence 🔴 read-back : révocation = coches illisibles). Protocole de répétition à blanc EN FIN DE FICHIER (5 preuves, dont « révoqué → select anon = 0 ») |
+
 ## Comment on applique
 1. **Staging d'abord** (`tryjcednzencepokodrs`) : via l'**API Management** (`/database/query`,
    token `sbp_` jetable — protocole : annonce « je vais écrire », application, vérification
