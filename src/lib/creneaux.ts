@@ -20,13 +20,14 @@ export interface Creneau {
   remplace?: string;
 }
 
-/** Le slot qu'occupe un moment dans un repas. null = pas de créneau en v1
- * (dessert / goûter / boisson — décision Q2) : le partage passe par les repas. */
+/** Le slot qu'occupe un moment dans un repas. null = pas de créneau
+ * (dessert / boisson) : le partage passe par les repas. T3 (lot UI) : le
+ * goûter est un moment PLEIN — il a son créneau (plat seul, ruling PO). */
 export function slotForRole(role: RecipeRole): 'plat' | 'entree' | 'acc' | null {
-  if (role === 'petitdej' || role === 'plat' || role === 'soupe') return 'plat';
+  if (role === 'petitdej' || role === 'plat' || role === 'soupe' || role === 'gouter') return 'plat';
   if (role === 'entree') return 'entree';
   if (role === 'acc') return 'acc';
-  return null; // dessert · gouter · boisson
+  return null; // dessert · boisson
 }
 
 /** Prochains créneaux compatibles, DÉFAUT EN TÊTE. `now` injecté (testable). */
@@ -49,6 +50,11 @@ export function prochainsCreneaux(
     for (let d = 0; d < 8 && cands.length < max; d++) {
       if (d === 0 && h >= 9) continue; // le matin d'aujourd'hui est passé
       cands.push({ d, meal: 'petitdej' });
+    }
+  } else if (role === 'gouter') {
+    for (let d = 0; d < 8 && cands.length < max; d++) {
+      if (d === 0 && h >= 17) continue; // le goûter d'aujourd'hui (16 h 30) est passé
+      cands.push({ d, meal: 'gouter' });
     }
   } else {
     for (let d = 0; d < 8 && cands.length < max; d++) {

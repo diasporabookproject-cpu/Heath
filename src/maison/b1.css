@@ -1,0 +1,144 @@
+/* ============================================================
+   B1 — l'Accueil · DA v2 (lot UI, T1)
+   Référence : docs/maquettes/proto-b1-reference.html (fait foi).
+   Boit les tokens de src/tokens.css (--mz-*). Préfixe b1- ; monté
+   SUR la racine .mz (reset boutons, safe-area, scroll) via
+   <MzScreen className="b1">.
+   ============================================================ */
+
+.mz.b1 {
+  background: var(--mz-paper);
+  color: var(--mz-ink);
+  font-family: var(--mz-font);
+}
+/* Rythme horizontal du proto : 16px (mz-scroll est à 18px). */
+.mz.b1 .mz-scroll { padding-left: var(--mz-pad-screen); padding-right: var(--mz-pad-screen); }
+
+/* — En-tête — */
+.b1 .b1-greet { font-size: 11px; color: var(--mz-muted); font-weight: 600; }
+.b1 .b1-big { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin-top: 1px; color: var(--mz-ink); }
+.b1 .b1-acc {
+  margin-left: auto; width: 34px; height: 34px; border-radius: 11px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--mz-ink) 8%, var(--mz-card));
+}
+
+/* — Label de bloc (AUJOURD'HUI / VOTRE FOYER / MON ÉQUIPE) — */
+.b1 .b1-blab {
+  font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--mz-muted); margin: 19px 0 3px; display: flex; align-items: baseline;
+}
+
+/* — Bande « Aujourd'hui » (rail plein-bord : marge négative sur le padding du scroll) — */
+.b1 .b1-band {
+  display: flex; gap: 8px; overflow-x: auto;
+  margin: 0 calc(-1 * var(--mz-pad-screen)); padding: 6px var(--mz-pad-screen); /* marge verticale : l'anneau ne doit pas être rogné */
+  scrollbar-width: none;
+}
+.b1 .b1-band::-webkit-scrollbar { display: none; }
+.b1 .b1-tile {
+  flex: none; width: 118px; height: 104px; border-radius: 16px;
+  border: 1px solid var(--mz-line); padding: 11px 12px;
+  display: flex; flex-direction: column; justify-content: space-between; position: relative;
+  background: var(--mz-card); text-align: left;
+}
+.b1 .b1-tile.meal { background: var(--mz-cuisine-tile); }
+.b1 .b1-tile.kid { background: var(--mz-enfants-tile); }
+.b1 .b1-tile.ring { box-shadow: var(--mz-ring); border-color: transparent; }
+.b1 .b1-tile.past { opacity: 0.45; }
+.b1 .b1-toprow { display: flex; justify-content: space-between; align-items: flex-start; }
+.b1 .b1-ec { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; }
+.b1 .b1-tt { font-size: 9px; font-weight: 800; }
+.b1 .b1-tile.meal .b1-tt { color: var(--mz-cuisine); }
+.b1 .b1-tile.kid .b1-tt { color: var(--mz-enfants); }
+.b1 .b1-nm { font-size: 13px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; color: var(--mz-ink); }
+
+/* — Carte vide (rien de prévu) — */
+.b1 .b1-emptycard {
+  background: var(--mz-card); border: 1px solid var(--mz-line); border-radius: var(--mz-r-card);
+  padding: 14px; text-align: center; color: var(--mz-muted); font-weight: 600; font-size: 13px;
+}
+
+/* — Héros Cuisine — */
+.b1 .b1-cuihero {
+  width: 100%; border-radius: var(--mz-r-hero); padding: 15px; min-height: 150px;
+  display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 9px;
+  background: var(--mz-card); border: 1px solid var(--mz-line); text-align: left;
+}
+.b1 .b1-chead { display: flex; align-items: center; gap: 13px; }
+.b1 .b1-cchip {
+  width: 50px; height: 50px; border-radius: 13px; flex: none;
+  display: flex; align-items: center; justify-content: center; background: var(--mz-cuisine-tile);
+}
+.b1 .b1-cn { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: var(--mz-ink); }
+.b1 .b1-csub { font-size: 10.5px; color: var(--mz-cuisine); font-weight: 700; margin-top: 1px; }
+.b1 .b1-dayrow { display: flex; gap: 6px; }
+.b1 .b1-dc {
+  flex: 1; border-radius: 11px; background: color-mix(in srgb, var(--mz-ink) 6%, var(--mz-card));
+  padding: 9px 0 8px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px;
+}
+.b1 .b1-dd { font-size: 10px; font-weight: 700; color: var(--mz-muted); }
+.b1 .b1-dot { width: 8px; height: 8px; border-radius: 50%; }
+.b1 .b1-dot.full { background: var(--mz-dot); }
+.b1 .b1-dot.empty { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--mz-ink) 25%, transparent); }
+
+/* — Duo de soutien (Les enfants · Infos clés) — */
+.b1 .b1-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.b1 .b1-duo.solo { grid-template-columns: 1fr; }
+.b1 .b1-mini {
+  border-radius: 16px; padding: 14px 13px; min-height: 98px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  border: 1px solid var(--mz-line); background: var(--mz-card); text-align: left;
+}
+.b1 .b1-mchip { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.b1 .b1-mchip.e { background: var(--mz-enfants-tile); }
+.b1 .b1-mchip.m { background: var(--mz-infos-tint); }
+.b1 .b1-mn { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: var(--mz-ink); }
+.b1 .b1-ms { font-size: 9.5px; color: var(--mz-muted); margin-top: 2px; }
+
+/* — Mon équipe — */
+.b1 .b1-prow {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  background: var(--mz-card); border: 1px solid var(--mz-line); border-radius: 12px;
+  padding: 10px 11px; margin-bottom: 7px; text-align: left; cursor: pointer;
+}
+.b1 .b1-ini {
+  width: 28px; height: 28px; border-radius: 50%; font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; position: relative; flex: none;
+}
+.b1 .b1-ini.grn { background: var(--mz-cuisine-tile); color: var(--mz-cuisine); }
+.b1 .b1-ini.vio { background: var(--mz-enfants-tile); color: var(--mz-enfants); }
+/* État vide = invitation (jamais muet) : ＋ terracotta dans le rond d'initiale. */
+.b1 .b1-ini.plus { background: color-mix(in srgb, var(--mz-accent) 14%, var(--mz-card)); color: var(--mz-accent); font-size: 15px; }
+.b1 .b1-invite .b1-ptx h4 { color: var(--mz-ink); }
+.b1 .b1-pip {
+  position: absolute; top: -1px; right: -1px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--mz-accent); border: 2px solid var(--mz-card);
+}
+.b1 .b1-ptx { flex: 1; min-width: 0; }
+.b1 .b1-ptx h4 { font-size: 13px; font-weight: 800; letter-spacing: -0.01em; color: var(--mz-ink); margin: 0; }
+.b1 .b1-ptx .st { font-size: 11px; color: var(--mz-muted); font-weight: 600; margin-top: 1px; }
+.b1 .b1-pill {
+  flex: none; background: var(--mz-accent); color: #fff; font-size: 11.5px; font-weight: 800;
+  border-radius: var(--mz-r-pill); padding: 8px 13px; min-height: 32px;
+  box-shadow: 0 4px 10px rgba(217, 98, 47, 0.28);
+}
+.b1 .b1-chev { flex: none; color: var(--mz-faint); font-size: 17px; }
+.b1 .b1-go { margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--mz-accent-ink); font-weight: 700; }
+
+.b1 .b1-dashed {
+  width: 100%; border: 1.5px dashed var(--mz-faint); border-radius: 13px; padding: 12px;
+  text-align: center; color: var(--mz-muted); font-size: 12.5px; font-weight: 700; margin-top: 4px;
+}
+
+/* Retirer depuis « Mon équipe » (retour device PO, lot UI). */
+.b1-more { flex: none; width: 32px; height: 32px; border-radius: 9px; border: none; background: none; color: #b8b0a4; font-size: 17px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
+.b1-more:hover { background: var(--mz-surface-2, #f3efe8); }
+.b1-revoke { display: flex; align-items: center; gap: 8px; margin: -4px 0 10px; padding: 10px 12px; background: #fdf3f0; border: 1px solid #f3d9d0; border-radius: 12px; }
+.b1-revoke .tx { flex: 1; font-size: 12px; font-weight: 600; color: #8a5045; line-height: 1.35; }
+.b1-revoke button { border: none; border-radius: 9px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.b1-revoke .no { background: #fff; color: #6b6459; border: 1px solid #e8e2d6; }
+.b1-revoke .yes { background: #b5533c; color: #fff; }
+
+/* Tampon de build (diagnostic device — retours PO). */
+.b1-build { text-align: center; font-size: 10px; font-weight: 600; color: #c6bfb2; padding-top: 14px; letter-spacing: 0.04em; }

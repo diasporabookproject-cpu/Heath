@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { AccRef, CuisineSettings, DayMenu, MealKey, Recipe, ReglesFoyer, WeekMenu } from '../types';
 import { DEFAULT_SETTINGS, EMPTY_REGLES } from '../types';
 import { SEED_CONFIG } from '../data';
-import {
+import { deleteRecipeDb,
   ensureSeeded,
   loadApp,
   loadFoyerRegles,
@@ -73,6 +73,8 @@ interface State {
   setPersons: (n: number) => void;
   setRegles: (r: ReglesFoyer) => void;
   upsertRecipe: (recipe: Recipe) => void;
+  /** Supprime VRAIMENT (IDB + état) et vide les créneaux de la semaine courante qui la référencent. */
+  deleteRecipe: (id: string) => void;
   setStatut: (id: string, statut: Recipe['statut']) => void;
   validateRecipe: (id: string) => void;
   toggleFav: (id: string) => void;
@@ -150,20 +152,58 @@ export const useStore = create<State>((set, get) => ({
     });
   },
 
-  // F7.2 (amendement ① — « Copier » = journée précédente) : copie PROFONDE d'un
-  // seul jour dans le jour cible de la semaine courante.
+  // F7.2 (amendement ① → retour PO n°4 : la SOURCE se CHOISIT) : copie
+  // PROFONDE d'un jour dans le jour cible. Les ids ORPHELINS (recette
+  // supprimée depuis — n°2) sont filtrés à la copie : jamais de créneau fantôme.
   copyDayInto(targetKey, srcDay) {
     set((s) => {
-      const week = { ...s.week, days: { ...s.week.days, [targetKey]: JSON.parse(JSON.stringify(srcDay)) } };
+      const known = new Set(s.recipes.map((r) => r.id));
+      const day: DayMenu = JSON.parse(JSON.stringify(srcDay));
+      for (const k of Object.keys(day) as (keyof DayMenu)[]) {
+        const m = day[k];
+        if (!m) continue;
+        if (m.plat && !known.has(m.plat)) m.plat = null;
+        if ('entree' in m && m.entree && !known.has(m.entree)) m.entree = null;
+        if ('acc' in m && m.acc && !known.has(m.acc.id)) m.acc = null;
+      }
+      const week = { ...s.week, days: { ...s.week.days, [targetKey]: day } };
       void saveWeek(week);
       return { week };
+    });
+  },
+
+  deleteRecipe(id) {
+    set((s) => {
+      void deleteRecipeDb(id);
+      // Purge de la semaine COURANTE (les semaines archivées gardent l'id ;
+      // copyDayInto filtre les orphelins à la relecture).
+      let touched = false;
+      const days = { ...s.week.days };
+      for (const dk of Object.keys(days)) {
+        const day = { ...days[dk] };
+        for (const mk of Object.keys(day) as (keyof DayMenu)[]) {
+          const m0 = day[mk];
+          if (!m0) continue;
+          const m = { ...m0 };
+          let hit = false;
+          if (m.plat === id) { m.plat = null; hit = true; }
+          if ('entree' in m && m.entree === id) { m.entree = null; hit = true; }
+          if ('acc' in m && m.acc?.id === id) { m.acc = null; hit = true; }
+          if (hit) { day[mk] = m; touched = true; }
+        }
+        days[dk] = day;
+      }
+      const week = touched ? { ...s.week, days } : s.week;
+      if (touched) void saveWeek(week);
+      return { recipes: s.recipes.filter((r) => r.id !== id), week };
     });
   },
 
   setComponent(dayKey, meal, slot, value) {
     set((s) => {
       const day = { ...s.week.days[dayKey] };
-      const m = { ...day[meal] };
+      // Garde sync : un jour stocké/synchronisé AVANT T3 n'a pas la clé `gouter`.
+      const m = { plat: null, ...day[meal] };
       if (slot === 'acc') m.acc = value as AccRef | null;
       else if (slot === 'entree') m.entree = value as string | null;
       else m.plat = value as string | null;
@@ -177,7 +217,7 @@ export const useStore = create<State>((set, get) => ({
   setAccQty(dayKey, meal, deltaG) {
     set((s) => {
       const day = { ...s.week.days[dayKey] };
-      const m = { ...day[meal] };
+      const m = { plat: null, ...day[meal] };
       if (!m.acc) return s;
       m.acc = { ...m.acc, g: Math.max(25, m.acc.g + deltaG) };
       day[meal] = m;

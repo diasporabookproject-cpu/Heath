@@ -1,4 +1,5 @@
 import { useNounou } from './useNounou';
+import Em from '../ui/Em';
 import Sheet from './Sheet';
 import MomentBrick from './MomentBrick';
 import { IconChevron, IconPlusThin } from './icons';
@@ -74,7 +75,7 @@ export default function ManageSheet({
         {doc.periodes.length ? (
           doc.periodes.map((p) => (
             <div key={p.id} className="nz-periodrow">
-              <span className="pi">{p.emoji}</span>
+              <span className="pi"><Em ch={p.emoji} size={20} /></span>
               <button className="pm" onClick={() => onOpenPeriode(p.id)}>
                 <div className="pl">{p.nom}</div>
                 <div className="ps">

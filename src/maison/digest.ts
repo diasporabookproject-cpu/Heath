@@ -31,9 +31,12 @@ const platName = (id: string | null | undefined, byId: Map<string, Recipe>): str
 /** Plats composés d'un jour (petit-déj/déj/dîner), noms nettoyés, dans l'ordre. */
 function dayPlats(day: WeekMenu['days'][string] | undefined, byId: Map<string, Recipe>): string[] {
   if (!day) return [];
-  return [platName(day.petitdej?.plat, byId), platName(day.dej?.plat, byId), platName(day.diner?.plat, byId)].filter(
-    Boolean,
-  );
+  return [
+    platName(day.petitdej?.plat, byId),
+    platName(day.dej?.plat, byId),
+    platName(day.gouter?.plat, byId),
+    platName(day.diner?.plat, byId),
+  ].filter(Boolean);
 }
 
 /** Lignes libellées d'un jour (« Déjeuner — X »). */
@@ -42,9 +45,11 @@ function dayLabeledLines(day: WeekMenu['days'][string] | undefined, byId: Map<st
   const out: string[] = [];
   const pdj = platName(day.petitdej?.plat, byId);
   const dej = platName(day.dej?.plat, byId);
+  const gou = platName(day.gouter?.plat, byId);
   const din = platName(day.diner?.plat, byId);
   if (pdj) out.push(`Petit-déj — ${pdj}`);
   if (dej) out.push(`Déjeuner — ${dej}`);
+  if (gou) out.push(`Goûter — ${gou}`);
   if (din) out.push(`Dîner — ${din}`);
   return out;
 }

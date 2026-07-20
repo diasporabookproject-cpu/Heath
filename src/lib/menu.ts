@@ -14,16 +14,25 @@ export function dayHasAny(day: DayMenu): boolean {
     day.dej.plat ||
     day.dej.entree ||
     day.dej.acc ||
+    day.gouter?.plat ||
     day.diner.plat ||
     day.diner.entree ||
     day.diner.acc
   );
 }
 
-/** Un composant du repas est-il « à valider » (statut Test) ? */
-export function mealHasDraft(meal: MealSlot, key: MealKey, byId: Map<string, Recipe>): boolean {
+/** Ce créneau a-t-il AU MOINS un composant ? (critère « vide » des cartes et
+ * du routage radial/composeur — un repas entrée-seule reste un repas.) */
+export function mealHasAny(meal: MealSlot | undefined): boolean {
+  return !!(meal && (meal.plat || meal.entree || meal.acc));
+}
+
+/** Un composant du repas est-il « à valider » (statut Test) ?
+ * `meal` peut être ABSENT (jour stocké/synchronisé sans `gouter`) → false. */
+export function mealHasDraft(meal: MealSlot | undefined, key: MealKey, byId: Map<string, Recipe>): boolean {
+  if (!meal) return false;
   const ids: (string | null | undefined)[] = [meal.plat];
-  if (key !== 'petitdej') {
+  if (key === 'dej' || key === 'diner') {
     ids.push(meal.entree);
     if (meal.acc) ids.push(meal.acc.id);
   }
@@ -39,5 +48,5 @@ export function emptyMeal(full: boolean): MealSlot {
 }
 
 export function emptyDay(): DayMenu {
-  return { petitdej: emptyMeal(false), dej: emptyMeal(true), diner: emptyMeal(true) };
+  return { petitdej: emptyMeal(false), dej: emptyMeal(true), gouter: emptyMeal(false), diner: emptyMeal(true) };
 }

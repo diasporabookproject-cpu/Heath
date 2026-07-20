@@ -9,13 +9,16 @@ import { IconPlate, IconMic, IconChevL, IconChevR, IconBack, IconPlay, IconTrans
 import './cuisine.css';
 
 type Lang = 'fr' | 'ar';
-type MK = 'petitdej' | 'dej' | 'diner';
-const MK_LIST: MK[] = ['petitdej', 'dej', 'diner'];
+type MK = 'petitdej' | 'dej' | 'gouter' | 'diner';
+// T3 (lot UI) : `gouter` AJOUTÉ — les pages publiées avant n'ont pas la clé ;
+// le rendu filtre sur la présence (`d[k]`), donc un lien ancien rend à
+// l'identique (lien perpétuel — test explicite espace-gouter.test).
+const MK_LIST: MK[] = ['petitdej', 'dej', 'gouter', 'diner'];
 
 const STR = {
   fr: {
     head: 'Cuisine', today: 'Aujourd’hui',
-    petitdej: 'Petit-déjeuner', dej: 'Déjeuner', diner: 'Dîner',
+    petitdej: 'Petit-déjeuner', dej: 'Déjeuner', gouter: 'Goûter', diner: 'Dîner',
     plat: 'Plat', entree: 'Entrée', acc: 'Accompagnement',
     voiceDot: 'Note vocale de Madame', voiceM: 'Écouter Madame', voiceS: 'Sa consigne vocale',
     noVoice: 'Pas de note vocale.', ing: 'Ingrédients', steps: 'Préparation',
@@ -24,7 +27,7 @@ const STR = {
   },
   ar: {
     head: 'الكوزينة', today: 'اليوم',
-    petitdej: 'الفطور', dej: 'الغدا', diner: 'العشا',
+    petitdej: 'الفطور', dej: 'الغدا', gouter: 'اللمجة', diner: 'العشا',
     plat: 'الطبق', entree: 'مقبّلات', acc: 'إضافة',
     voiceDot: 'تسجيل ديال مدام', voiceM: 'اسمع مدام', voiceS: 'التعليمات الصوتية',
     noVoice: 'ما كاينش تسجيل صوتي.', ing: 'المقادير', steps: 'الطريقة',
@@ -328,15 +331,21 @@ function CompBlock({
         </>
       )}
 
-      <div className={'ck-rlab' + (ar ? ' ar' : '')}>{t.ing}</div>
-      <ul className="ck-ingl">
-        {rows.map((r, i) => (
-          <li key={i}>
-            <span className={'nm' + (ar ? ' ar' : '')}>{r.name}</span>
-            {r.qty && <span className="q">{r.qty}</span>}
-          </li>
-        ))}
-      </ul>
+      {/* T4 (recette légère) : nom seul → la section Ingrédients est OMISE
+          proprement (pas d'en-tête orphelin), comme les étapes absentes. */}
+      {rows.length > 0 && (
+        <>
+          <div className={'ck-rlab' + (ar ? ' ar' : '')}>{t.ing}</div>
+          <ul className="ck-ingl">
+            {rows.map((r, i) => (
+              <li key={i}>
+                <span className={'nm' + (ar ? ' ar' : '')}>{r.name}</span>
+                {r.qty && <span className="q">{r.qty}</span>}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       {role !== 'acc' && (
         <>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSheetBack } from '../ui/primitives';
+import Em from '../ui/Em';
 import { useStore } from '../store/useStore';
 import { PACKS } from '../data/packs';
 import { buildInstall, isPackInstalled, missingSeeds, seedExists } from '../lib/packs';
@@ -85,7 +86,7 @@ export default function CollectionsSheet({ initialPackId, onClose, toast }: Prop
                 return (
                   <button key={p.id} className="cz-librow" style={{ marginBottom: 9 }} onClick={() => openPack(p)}>
                     <div className="cz-libtop">
-                      <span style={{ fontSize: 22 }}>{p.emoji}</span>
+                      <Em ch={p.emoji} size={22} />
                       <span className="nm" style={{ flex: 1, fontWeight: 600 }}>{p.nom}</span>
                       <span className={'cz-tag' + (installed ? ' ok' : ' draft')}>
                         {installed ? 'Installée ✓' : `Nouveau · ${miss}`}

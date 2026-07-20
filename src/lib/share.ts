@@ -32,6 +32,9 @@ export interface SharedDay {
   nom: string;
   petitdej?: SharedMealV2;
   dej?: SharedMealV2;
+  /** 4ᵉ moment (T3) — ADDITIF : les pages déjà publiées ne l'ont pas, le
+   * lecteur saute toute clé absente (lien perpétuel, test explicite). */
+  gouter?: SharedMealV2;
   diner?: SharedMealV2;
 }
 
@@ -46,10 +49,11 @@ export function usedRecipeIds(config: AppConfig, week: WeekMenu): string[] {
   for (const j of config.jours) {
     const day = week.days[j.key];
     if (!day) continue;
-    for (const key of ['petitdej', 'dej', 'diner'] as MealKey[]) {
+    for (const key of ['petitdej', 'dej', 'gouter', 'diner'] as MealKey[]) {
       const m = day[key];
+      if (!m) continue; // jour d'un client ancien : pas de clé `gouter`
       if (m.plat) ids.add(m.plat);
-      if (key !== 'petitdej') {
+      if (key === 'dej' || key === 'diner') {
         if (m.entree) ids.add(m.entree);
         if (m.acc) ids.add(m.acc.id);
       }
@@ -85,7 +89,7 @@ function buildMeal(
   const out: SharedMealV2 = {};
   const plat = slot.plat ? byId.get(slot.plat) : undefined;
   if (plat) out.plat = comp(plat, audioUrls, undefined, allergies);
-  if (key !== 'petitdej') {
+  if (key === 'dej' || key === 'diner') {
     const e = slot.entree ? byId.get(slot.entree) : undefined;
     if (e) out.entree = comp(e, audioUrls, undefined, allergies);
     if (slot.acc) {
@@ -111,11 +115,13 @@ export function buildEspaceMenu(
     const sd: SharedDay = { k: j.key, nom: j.nom };
     const pd = buildMeal(day.petitdej, 'petitdej', byId, audioUrls, allergies);
     const dj = buildMeal(day.dej, 'dej', byId, audioUrls, allergies);
+    const gt = day.gouter ? buildMeal(day.gouter, 'gouter', byId, audioUrls, allergies) : undefined;
     const dn = buildMeal(day.diner, 'diner', byId, audioUrls, allergies);
     if (pd) sd.petitdej = pd;
     if (dj) sd.dej = dj;
+    if (gt) sd.gouter = gt;
     if (dn) sd.diner = dn;
-    if (sd.petitdej || sd.dej || sd.diner) days.push(sd);
+    if (sd.petitdej || sd.dej || sd.gouter || sd.diner) days.push(sd);
   }
   return { v: 2, days };
 }

@@ -16,12 +16,14 @@ export interface AgendaItem {
 }
 
 // Heures d'affichage conventionnelles (décision produit — non réglables).
-const MEAL_HOURS: Record<MealKey, string> = { petitdej: '08:00', dej: '12:30', diner: '20:00' };
-const MEAL_PICTO: Record<MealKey, string> = { petitdej: '🥐', dej: '🥘', diner: '🌙' };
-const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit-déjeuner', dej: 'Déjeuner', diner: 'Dîner' };
+const MEAL_HOURS: Record<MealKey, string> = { petitdej: '08:00', dej: '12:30', gouter: '16:30', diner: '20:00' };
+const MEAL_PICTO: Record<MealKey, string> = { petitdej: '🥐', dej: '🥘', gouter: '🍪', diner: '🌙' };
+const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit-déjeuner', dej: 'Déjeuner', gouter: 'Goûter', diner: 'Dîner' };
 
 const MOMENT_PICTO: Record<string, string> = {
-  reveil: '⏰', ecole: '🏫', repas: '🍽️', sieste: '😴', gouter: '🍎',
+  // `repas` : 🍲 (glyphe repas VIF de la maquette bento) — 🍽️ (gris par
+  // design en Fluent 3D) rendait la vignette éteinte (retour device PO).
+  reveil: '⏰', ecole: '🏫', repas: '🍲', sieste: '😴', gouter: '🍎',
   bain: '🛁', sortie: '🧺', sante: '🩺', coucher: '🌙', activite: '⚽', autre: '•',
 };
 
@@ -35,7 +37,7 @@ export function agendaToday(doc: NounouDoc, week: WeekMenu, recipesById: Map<str
 
   const day = week.days[todayKey()];
   if (day) {
-    (['petitdej', 'dej', 'diner'] as MealKey[]).forEach((m) => {
+    (['petitdej', 'dej', 'gouter', 'diner'] as MealKey[]).forEach((m) => {
       const platId = day[m]?.plat;
       if (platId) {
         const r = recipesById.get(platId);

@@ -37,10 +37,10 @@ export function useSheetBack(onClose: () => void): void {
   }, []);
 }
 
-/** Racine d'un écran mz (gère le sens RTL). */
-export function MzScreen({ rtl = false, children }: { rtl?: boolean; children: ReactNode }) {
+/** Racine d'un écran mz (gère le sens RTL). `className` : variante DA (ex. `b1`). */
+export function MzScreen({ rtl = false, className, children }: { rtl?: boolean; className?: string; children: ReactNode }) {
   return (
-    <div className="mz" dir={rtl ? 'rtl' : 'ltr'}>
+    <div className={'mz' + (className ? ' ' + className : '')} dir={rtl ? 'rtl' : 'ltr'}>
       {children}
     </div>
   );

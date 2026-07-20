@@ -65,14 +65,14 @@ await page.getByRole('button', { name: 'Entrer', exact: true }).click();
 console.log('Traversée entry → domaines → personnes → welcome ✅');
 
 // 5) Hub : « Fatima · Cuisine » (destinataire RÉEL créé au #welcome, fiche D),
-// Nounou NON posée (pas touchée à la FTUE).
-await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
-if ((await page.locator('.mz-prow', { hasText: 'Fatima' }).count()) === 0) throw new Error('Destinataire nommé absent du hub');
-if ((await page.locator('.mz-prow', { hasText: 'Nounou' }).count()) !== 0) throw new Error('Carte Nounou posée à tort');
+// Nounou NON posée (pas touchée à la FTUE) — B1 : l'accès nounou = carte « Les enfants ».
+await page.getByText('Votre foyer').waitFor({ timeout: 10000 });
+if ((await page.locator('.b1-prow', { hasText: 'Fatima' }).count()) === 0) throw new Error('Destinataire nommé absent du hub');
+if ((await page.locator('.b1-mini', { hasText: 'Les enfants' }).count()) !== 0) throw new Error('Carte Nounou (Les enfants) posée à tort');
 console.log('Hub : « Fatima · Cuisine » posée (destinataire réel), Nounou non posée ✅');
 
 // 6) Le peuplement a suivi le choix : bibliothèque = 30 recettes de la collection.
-await page.locator('.mz-prow', { hasText: 'Cuisine' }).first().click();
+await page.locator('.b1-cuihero').click();
 await page.getByRole('tab', { name: 'Recettes' }).click();
 await page.locator('.cz-librow').first().waitFor({ timeout: 5000 });
 const nb = await page.locator('.cz-librow').count();
@@ -81,7 +81,7 @@ console.log('Collection installée par la FTUE ✅ (30 recettes)');
 
 // 7) ftueDone posé : un reload NE re-présente PAS la FTUE.
 await page.reload({ waitUntil: 'networkidle' });
-await page.getByText('Ton équipe').waitFor({ timeout: 10000 });
+await page.getByText('Votre foyer').waitFor({ timeout: 10000 });
 if (await page.getByText('Manzil vous aide', { exact: false }).count()) throw new Error('FTUE re-présentée après welcome');
 console.log('ftueDone posé — plus de FTUE au reload ✅');
 
@@ -108,9 +108,9 @@ await page2.evaluate(
     }),
 );
 await page2.reload({ waitUntil: 'networkidle' });
-await page2.getByText('Ton équipe').waitFor({ timeout: 10000 });
+await page2.getByText('Votre foyer').waitFor({ timeout: 10000 });
 if (await page2.getByText('Manzil vous aide', { exact: false }).count()) throw new Error('FTUE montrée à un appareil existant');
-if ((await page2.locator('.mz-prow', { hasText: 'Nounou' }).count()) === 0) throw new Error('Rôles non activés rétroactivement');
+if ((await page2.locator('.b1-mini', { hasText: 'Les enfants' }).count()) === 0) throw new Error('Rôles non activés rétroactivement');
 console.log('Migration one-shot : appareil existant → hub direct, rôles rétroactifs ✅');
 
 console.log(errors.length ? 'ERREURS:\n' + errors.join('\n') : 'Aucune erreur console/page ✅');

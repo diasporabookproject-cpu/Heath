@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { useNounou } from '../nounou/useNounou';
-import { loadDestinataires, loadPublished, loadWeek, type PublishRecord } from '../lib/db';
-import { lastEspaceOpen } from '../lib/espace';
+import { deleteDestinataire, loadDestinataires, loadPublished, loadSecurite, loadWeek, type PublishRecord } from '../lib/db';
+import { lastEspaceOpen, revokeEspace } from '../lib/espace';
 import { weekId } from '../cuisine/dates';
 import { cleanText } from '../lib/sanitize';
 import { DAY_LABELS } from '../lib/rappel';
 import { cuisineSig, envoiState, pillKind, type EnvoiState } from './transmission';
 import { nounouSig } from '../nounou/partage';
-import { personnes, KIND_LABEL, KIND_PICTO, type Personne, type PersonneKind } from './personnes';
-import { agendaToday, splitProchain, nowHHMM, type AgendaItem } from './prochain';
-import { MzScreen, MzScroll } from '../ui/primitives';
+import { personnes, KIND_LABEL, type Personne, type PersonneKind } from './personnes';
+import { agendaToday, nowHHMM, type AgendaItem } from './prochain';
+import { MzScreen, MzScroll, useToast } from '../ui/primitives';
+import Em from '../ui/Em';
 import { dayTitleISO, todayISO } from '../nounou/dates';
-import type { Destinataire } from '../types';
+import type { DayMenu, Destinataire, SecuriteFiche } from '../types';
+import './b1.css';
 
 /** Date ISO (YYYY-MM-DD) décalée de `n` jours, en heure locale (sûr aux passages de mois). */
 function isoPlusDays(iso: string, n: number): string {
@@ -21,7 +23,16 @@ function isoPlusDays(iso: string, n: number): string {
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 
-const ROLES: PersonneKind[] = ['nounou', 'cuisine'];
+// Séquence des clés de jour (même convention que cuisine/dates KEYS).
+const DAY_KEYS = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+const DAY_FULL: Record<string, string> = {
+  lun: 'lundi', mar: 'mardi', mer: 'mercredi', jeu: 'jeudi', ven: 'vendredi', sam: 'samedi', dim: 'dimanche',
+};
+
+/** Salutation DA v2 (registre décidé) : Bonjour / Bonsoir selon l'heure. */
+function salutation(ref: Date = new Date()): string {
+  return ref.getHours() >= 18 ? 'Bonsoir' : 'Bonjour';
+}
 
 interface Props {
   onOpenPage: (kind: 'cuisine' | 'nounou', person?: Personne, share?: boolean) => void;
@@ -30,7 +41,7 @@ interface Props {
   onOpenAccount: () => void;
   showAccount: boolean;
   /** F4 (Flow FTUE) : rôles dont la carte est posée sur le hub (les PERSONNES réelles
-   * s'affichent toujours ; seules les cartes de rôle SANS destinataire sont filtrées). */
+   * s'affichent toujours ; seuls les accès de rôle SANS destinataire sont filtrés). */
   rolesActifs: PersonneKind[];
 }
 
@@ -55,10 +66,44 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
   const nReady = useNounou((s) => s.ready);
   const nInit = useNounou((s) => s.init);
   const doc = useNounou((s) => s.doc);
+  const removeDest = useNounou((s) => s.removeDest);
+  const { toast, node: toastNode } = useToast();
+  // Retour device PO (lot UI) : RETIRER une personne DIRECTEMENT depuis
+  // « Mon équipe » — même sémantique F1 que les feuilles de partage :
+  // le serveur coupe le lien D'ABORD ; le local n'est supprimé qu'après.
+  const [confirmRevoke, setConfirmRevoke] = useState<Personne | null>(null);
+  const [revoking, setRevoking] = useState(false);
+  const retirer = async (p: Personne) => {
+    setRevoking(true);
+    try {
+      const { error } = await revokeEspace(p.token);
+      if (error === 'session') {
+        toast(`Connecte-toi pour retirer ${p.prenom} — son lien doit être coupé côté serveur.`);
+        return;
+      }
+      if (error) {
+        toast(`Impossible de retirer maintenant — ${p.prenom} est conservé, réessaie.`);
+        return;
+      }
+      if (p.kind === 'cuisine') {
+        const d = cuisineDests.find((x) => x.token === p.token);
+        if (d) await deleteDestinataire(d.id);
+        setCuisineDests(await loadDestinataires());
+      } else {
+        const d = doc.destinataires.find((x) => x.token === p.token);
+        if (d) removeDest(d.id);
+      }
+      toast(`${p.prenom} retiré ; son lien ne donne plus rien.`);
+    } finally {
+      setRevoking(false);
+      setConfirmRevoke(null);
+    }
+  };
 
   const [cuisineDests, setCuisineDests] = useState<Destinataire[]>([]);
   const [published, setPublished] = useState<Record<string, PublishRecord>>({});
   const [opens, setOpens] = useState<Record<string, string | null>>({});
+  const [fiches, setFiches] = useState<SecuriteFiche[]>([]);
   // Signal « Planifier » : la semaine suivante est-elle vide ? null = inconnu (⇒ pas de nudge).
   const [nextWeekEmpty, setNextWeekEmpty] = useState<boolean | null>(null);
 
@@ -69,6 +114,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
   useEffect(() => {
     void loadDestinataires().then(setCuisineDests);
     void loadPublished().then(setPublished);
+    void loadSecurite().then(setFiches);
   }, []);
 
   const list = useMemo(() => personnes(cuisineDests, doc.destinataires), [cuisineDests, doc.destinataires]);
@@ -89,7 +135,9 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
     () => (cuisineReady && nReady ? agendaToday(doc, week, recipesById) : []),
     [doc, week, recipesById, cuisineReady, nReady],
   );
-  const { prochain, timeline, done } = useMemo(() => splitProchain(agenda, nowHHMM()), [agenda]);
+  // Bande « Aujourd'hui » : l'imminent est CERCLÉ (pas de tag), le passé s'estompe.
+  const now = nowHHMM();
+  const ringIdx = useMemo(() => agenda.findIndex((i) => i.time >= now), [agenda, now]);
 
   // Signal « Briefer » (nounou) : ponctuel à venir dans les 7 jours (page à jour).
   const upcomingPonctuel = useMemo(() => {
@@ -102,14 +150,17 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
 
   // Signal « Planifier » (cuisine) : la semaine suivante est-elle vide ?
   // Précaution : jamais de fausse alerte — on ne conclut « vide » que si la
-  // semaine est absente OU chargée sans aucun plat.
+  // semaine est absente OU chargée sans aucun plat. On garde aussi ses JOURS :
+  // la bande du héros les lit quand les 4 prochains jours débordent la semaine.
+  const [nextWeekDays, setNextWeekDays] = useState<Record<string, DayMenu> | null>(null);
   useEffect(() => {
     let alive = true;
     void loadWeek(weekId(1)).then((w) => {
       if (!alive) return;
       if (!w) return setNextWeekEmpty(true);
+      setNextWeekDays(w.days);
       const hasAny = Object.values(w.days).some(
-        (d) => d && (d.petitdej?.plat || d.dej?.plat || d.diner?.plat),
+        (d) => d && (d.petitdej?.plat || d.dej?.plat || d.gouter?.plat || d.diner?.plat),
       );
       setNextWeekEmpty(!hasAny);
     });
@@ -117,6 +168,44 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
       alive = false;
     };
   }, []);
+
+  // ── Héros Cuisine : TOUJOURS les 4 prochains jours (réf. proto — la bande ne
+  // disparaît jamais), en franchissant la frontière de semaine si besoin. ──
+  const cuisineHero = useMemo(() => {
+    const dow = new Date().getDay(); // 0 = dim
+    const mondayIdx = (dow + 6) % 7; // 0 = lundi
+    const dayAt = (n: number) => {
+      const key = DAY_KEYS[(dow + n) % 7];
+      // Jour au-delà de dimanche → semaine suivante (chargée ci-dessus, sinon inconnue = vide).
+      const src = mondayIdx + n <= 6 ? week.days : (nextWeekDays ?? {});
+      return { key, day: src[key] };
+    };
+    const hasMeal = (d?: DayMenu) => !!(d && (d.petitdej?.plat || d.dej?.plat || d.gouter?.plat || d.diner?.plat));
+    const days: { key: string; label: string; full: boolean }[] = [];
+    for (let n = 1; n <= 4; n++) {
+      const { key, day } = dayAt(n);
+      days.push({ key, label: key.charAt(0).toUpperCase() + key.slice(1), full: hasMeal(day) });
+    }
+    // Sous-titre : « Prêt jusqu'à X » (série pleine depuis demain) · « demain, {plat} ».
+    let streakEnd: string | null = null;
+    for (const d of days) {
+      if (d.full) streakEnd = DAY_FULL[d.key];
+      else break;
+    }
+    let demain: string | null = null;
+    {
+      const { day } = dayAt(1);
+      const platId = day?.dej?.plat || day?.diner?.plat || day?.petitdej?.plat || day?.gouter?.plat;
+      const r = platId ? recipesById.get(platId) : undefined;
+      if (r) demain = cleanText(r.nom);
+    }
+    let sub: string;
+    if (streakEnd && demain) sub = `Prêt jusqu’à ${streakEnd} · demain, ${demain}`;
+    else if (demain) sub = `Demain, ${demain}`;
+    else if (streakEnd) sub = `Prêt jusqu’à ${streakEnd}`;
+    else sub = nextWeekEmpty === true && mondayIdx === 6 ? 'La semaine prochaine vous attend' : 'Rien de prévu pour demain';
+    return { days, sub };
+  }, [week, nextWeekDays, recipesById, nextWeekEmpty]);
 
   /** État de transmission d'une personne (signature courante vs dernier envoi). */
   const etat = (p: Personne): { state: EnvoiState; sub: string } => {
@@ -142,13 +231,14 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
   const relDay = (iso: string) => (iso === todayISO() ? 'aujourd’hui' : dayTitleISO(iso).toLowerCase());
 
   /**
-   * Une personne = un état = une action (proto v6.1). Priorité stricte :
+   * Une personne = un état = une action (proto v6.1 — modèle d'action INCHANGÉ à
+   * la DA v2 ; « Briefer » unique = hors lot). Priorité stricte :
    * Envoyer (rien n'est parti / du nouveau) > Briefer (à jour, mais un ponctuel
    * approche) > Planifier (à jour, mais la semaine suivante est vide) > ✓ chevron.
    * Précaution : les nudges Briefer/Planifier ne s'affichent QUE sur un signal
    * réel et sûr — sinon on retombe sur le chevron (jamais de fausse alerte).
    */
-  const action = (p: Personne): { pill?: string; onPill: () => void; sub: string; tone: 'w' | 'g' } => {
+  const action = (p: Personne): { pill?: string; onPill: () => void; sub: string } => {
     const { state, sub } = etat(p);
     const kind = pillKind({
       state,
@@ -162,15 +252,14 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
         // qu'il y a du nouveau, la mention rappelle le rendez-vous d'envoi —
         // PERSISTANTE jusqu'à l'envoi (pastille in-app, aucune notification).
         const r = rappels?.[p.kind];
-        const enriched = r ? `● Du nouveau — ton rendez-vous du ${DAY_LABELS[r.day]} ${r.time}` : sub;
-        return { pill: 'Envoyer', onPill: () => onOpenPage(p.kind, p, true), sub: enriched, tone: 'w' };
+        const enriched = r ? `● Du nouveau — votre rendez-vous du ${DAY_LABELS[r.day]} ${r.time}` : sub;
+        return { pill: 'Envoyer', onPill: () => onOpenPage(p.kind, p, true), sub: enriched };
       }
       case 'briefer':
         return {
           pill: 'Briefer',
           onPill: () => onOpenPage('nounou', p),
           sub: `📌 ${cleanText(upcomingPonctuel!.label)} · ${relDay(upcomingPonctuel!.date)}`,
-          tone: 'w',
         };
       case 'planifier':
         return {
@@ -179,136 +268,188 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
             void navWeek(1);
             onOpenPage('cuisine', p);
           },
-          sub: 'La semaine prochaine t’attend',
-          tone: 'w',
+          sub: 'La semaine prochaine vous attend',
         };
       default:
-        return { onPill: () => onOpenPage(p.kind, p), sub, tone: 'g' };
+        return { onPill: () => onOpenPage(p.kind, p), sub };
     }
   };
 
+  // Accès de domaine (doctrine planifier/exécuter du proto B1) : le héros Cuisine
+  // et la carte Les enfants portent l'accès aux pages de rôle — y compris sans
+  // destinataire (remplace les anciennes lignes de rôle), gatés par F4.
+  const cuisineActif = rolesActifs.includes('cuisine') || list.some((p) => p.kind === 'cuisine');
+  const nounouActif = rolesActifs.includes('nounou') || list.some((p) => p.kind === 'nounou');
+  const nounouCount = useMemo(() => agenda.filter((i) => i.kind === 'nounou').length, [agenda]);
+  const titleDate = useMemo(() => {
+    const s = dayTitleISO(todayISO());
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }, []);
+
   return (
-    <MzScreen>
+    <MzScreen className="b1">
       <MzScroll>
-        <div className="mz-hrow" style={{ marginBottom: 12 }}>
+        <div className="mz-hrow" style={{ marginBottom: 0 }}>
           <div>
-            <div className="mz-greet">Salam 👋</div>
-            <div className="mz-big">{dayTitleISO(todayISO())}</div>
+            <div className="b1-greet">{salutation()}</div>
+            <div className="b1-big">{titleDate}</div>
           </div>
           {showAccount && (
-            <button className="mz-av" onClick={onOpenAccount} aria-label="Compte et réglages">
-              ☁︎
+            <button className="b1-acc" onClick={onOpenAccount} aria-label="Compte et réglages">
+              <Em ch="👤" size={20} />
             </button>
           )}
         </div>
 
-        {/* AUJOURD'HUI */}
-        <div className="mz-lab" style={{ marginTop: 2 }}>Aujourd’hui</div>
-        {prochain ? (
-          <button
-            className={'mz-hero ' + (prochain.kind === 'cuisine' ? 'grn' : 'vio')}
-            onClick={() => onOpenPage(prochain.kind)}
-          >
-            <span className="halo" />
-            <span className="g">{prochain.picto}</span>
-            <span>
-              <span className="lab">PROCHAIN · {prochain.kind === 'cuisine' ? 'CUISINE' : 'NOUNOU'}</span>
-              <h3>{prochain.label}</h3>
-            </span>
-            <span className="t">{prochain.time}</span>
-          </button>
-        ) : done ? (
-          <div className="mz-card" style={{ textAlign: 'center', color: 'var(--mz-mut)', fontWeight: 700, fontSize: 14 }}>
-            Journée terminée 🌙
-          </div>
-        ) : (
-          <div className="mz-card" style={{ textAlign: 'center', color: 'var(--mz-mut)', fontWeight: 600, fontSize: 13 }}>
-            Rien de prévu aujourd’hui.
-          </div>
-        )}
-        {timeline.length > 0 && (
-          <div style={{ marginTop: 8 }}>
-            {timeline.map((i, k) => (
+        {/* AUJOURD'HUI — une seule bande, tuiles égales, l'imminent cerclé */}
+        <div className="b1-blab" style={{ marginTop: 16 }}>Aujourd’hui</div>
+        {agenda.length > 0 ? (
+          <div className="b1-band">
+            {agenda.map((i, idx) => (
               <button
-                key={k}
-                className={'mz-tlr' + (i.past ? ' past' : '')}
+                key={idx}
+                className={
+                  'b1-tile ' + (i.kind === 'cuisine' ? 'meal' : 'kid') +
+                  (idx === ringIdx ? ' ring' : '') +
+                  (ringIdx === -1 || idx < ringIdx ? ' past' : '')
+                }
                 onClick={() => onOpenPage(i.kind)}
               >
-                <span className="t">{i.time}</span>
-                <span className="e" style={{ background: i.kind === 'cuisine' ? 'var(--mz-grnT)' : 'var(--mz-vioT)' }}>
-                  {i.picto}
+                <span className="b1-toprow">
+                  <span className="b1-ec"><Em ch={i.picto} size={28} /></span>
+                  <span className="b1-tt">{i.time}</span>
                 </span>
-                <h4>{i.label}</h4>
+                <span className="b1-nm">{i.label}</span>
               </button>
             ))}
           </div>
+        ) : (
+          <div className="b1-emptycard" style={{ marginTop: 6 }}>Rien de prévu aujourd’hui.</div>
         )}
 
-        {/* TON ÉQUIPE — personnes réelles + accès aux pages de rôle sans destinataire */}
-        <div className="mz-lab">Ton équipe</div>
+        {/* VOTRE FOYER — Cuisine en héros, Les enfants + Infos clés en soutien */}
+        <div className="b1-blab">Votre foyer</div>
+        {cuisineActif && (
+          <button className="b1-cuihero" onClick={() => onOpenPage('cuisine')}>
+            <span className="b1-chead">
+              {/* Identité Cuisine = 🥘 (bento : bandeau prochain, avatar, en-tête). */}
+              <span className="b1-cchip"><Em ch="🥘" size={38} /></span>
+              <span>
+                <span className="b1-cn">La Cuisine</span>
+                <div className="b1-csub">{cuisineHero.sub}</div>
+              </span>
+            </span>
+            {cuisineHero.days.length > 0 && (
+              <span className="b1-dayrow">
+                {cuisineHero.days.map((d) => (
+                  <span className="b1-dc" key={d.key}>
+                    <span className="b1-dd">{d.label}</span>
+                    <span className={'b1-dot ' + (d.full ? 'full' : 'empty')} />
+                  </span>
+                ))}
+              </span>
+            )}
+          </button>
+        )}
+        <div className={'b1-duo' + (nounouActif ? '' : ' solo')}>
+          {nounouActif && (
+            <button className="b1-mini" onClick={() => onOpenPage('nounou')}>
+              <span className="b1-mchip e"><Em ch="🧸" size={32} /></span>
+              <span>
+                <div className="b1-mn">Les enfants</div>
+                <div className="b1-ms">{nounouCount > 0 ? `${nounouCount} moment${nounouCount > 1 ? 's' : ''} aujourd’hui` : 'Rythme habituel'}</div>
+              </span>
+            </button>
+          )}
+          <button className="b1-mini" onClick={onOpenSecurite}>
+            <span className="b1-mchip m"><Em ch="🛡️" size={32} /></span>
+            <span>
+              <div className="b1-mn">Infos clés</div>
+              <div className="b1-ms">{fiches.length > 0 ? `${fiches.length} fiche${fiches.length > 1 ? 's' : ''}` : 'À composer'}</div>
+            </span>
+          </button>
+        </div>
+
+        {/* MON ÉQUIPE — le personnel : une ligne par personne, pastille = action.
+            La section se rend TOUJOURS ; vide, elle est une INVITATION (doctrine :
+            les états vides invitent, jamais muets — retour device PO, T1). */}
+        <div className="b1-blab">Mon équipe</div>
+        {list.length === 0 && (
+          <button className="b1-prow b1-invite" onClick={onNewPage}>
+            <span className="b1-ini plus">＋</span>
+            <span className="b1-ptx">
+              <h4>Ajoutez quelqu’un à votre équipe</h4>
+              <div className="st">Sa page dans sa langue, prête à partager</div>
+            </span>
+            <span className="b1-chev">›</span>
+          </button>
+        )}
         {list.map((p) => {
           const a = action(p);
           return (
-            <div className="mz-prow" key={p.key} onClick={() => onOpenPage(p.kind, p)} role="button" tabIndex={0}>
-              <span className={'mz-tav ' + (p.kind === 'cuisine' ? 'grn' : 'vio')}>{KIND_PICTO[p.kind]}</span>
-              <span style={{ minWidth: 0 }}>
-                <h4>
-                  {p.prenom} · {KIND_LABEL[p.kind]}
-                </h4>
-                <div className={'st ' + a.tone}>
-                  <b>{a.sub}</b>
-                </div>
-              </span>
-              {a.pill ? (
+            <div key={p.key}>
+              <div className="b1-prow" onClick={() => onOpenPage(p.kind, p)} role="button" tabIndex={0}>
+                <span className={'b1-ini ' + (p.kind === 'cuisine' ? 'grn' : 'vio')}>
+                  {p.prenom.charAt(0).toUpperCase()}
+                  {a.pill && <span className="b1-pip" />}
+                </span>
+                <span className="b1-ptx">
+                  <h4>
+                    {p.prenom} · {KIND_LABEL[p.kind]}
+                  </h4>
+                  <div className="st">{a.sub}</div>
+                </span>
+                {a.pill && (
+                  <button
+                    className="b1-pill"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      a.onPill();
+                    }}
+                  >
+                    {a.pill}
+                  </button>
+                )}
+                {/* Retirer directement depuis l'équipe (retour device PO). */}
                 <button
-                  className="mz-pill"
+                  className="b1-more"
+                  aria-label={`Retirer ${p.prenom}`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    a.onPill();
+                    setConfirmRevoke(confirmRevoke?.key === p.key ? null : p);
                   }}
                 >
-                  {a.pill}
+                  ⋯
                 </button>
-              ) : (
-                <span className="chev">›</span>
+              </div>
+              {confirmRevoke?.key === p.key && (
+                <div className="b1-revoke">
+                  <span className="tx">
+                    Retirer {p.prenom} ? Son lien ne donnera plus rien.
+                  </span>
+                  <button className="no" disabled={revoking} onClick={() => setConfirmRevoke(null)}>
+                    Annuler
+                  </button>
+                  <button className="yes" disabled={revoking} onClick={() => void retirer(p)}>
+                    {revoking ? '…' : 'Retirer'}
+                  </button>
+                </div>
               )}
             </div>
           );
         })}
-        {/* Pages de rôle sans destinataire : accessibles pour préparer le contenu —
-            mais seulement si le rôle est ACTIVÉ (F4 : FTUE ou « ＋ Une page pour… »). */}
-        {ROLES.filter((k) => rolesActifs.includes(k) && !list.some((p) => p.kind === k)).map((k) => (
-          <div
-            className="mz-prow"
-            key={'role:' + k}
-            onClick={() => onOpenPage(k)}
-            role="button"
-            tabIndex={0}
-          >
-            <span className={'mz-tav ' + (k === 'cuisine' ? 'grn' : 'vio')}>{KIND_PICTO[k]}</span>
-            <span style={{ minWidth: 0 }}>
-              <h4>{KIND_LABEL[k]}</h4>
-              <div className="st">Prépare la page — personne à qui l’envoyer pour l’instant</div>
-            </span>
-            <span className="chev">›</span>
-          </div>
-        ))}
 
-        {/* La maison (référentiel Sécurité, décision A) */}
-        <button className="mz-prow" onClick={onOpenSecurite} style={{ marginTop: 2 }}>
-          <span className="mz-tav" style={{ background: '#F1EFE8', fontSize: 22 }}>🛡️</span>
-          <span>
-            <h4>La maison</h4>
-            <div className="st">Numéros, procédures, gestes — à assigner à qui tu veux</div>
-          </span>
-          <span className="chev">›</span>
-        </button>
-
-        <button className="mz-dashed" onClick={onNewPage} style={{ marginTop: 8 }}>
-          ＋ Une page pour quelqu’un d’autre
-        </button>
+        {/* Redondant avec l'invitation quand l'équipe est vide (même cible). */}
+        {list.length > 0 && (
+          <button className="b1-dashed" onClick={onNewPage} style={{ marginTop: 8 }}>
+            ＋ Une page pour quelqu’un d’autre
+          </button>
+        )}
+        {/* Tampon de build — discret mais TOUJOURS là : fin des tests en aveugle. */}
+        <div className="b1-build">build {import.meta.env.VITE_BUILD_SHA}</div>
         <div style={{ height: 16 }} />
       </MzScroll>
+      {toastNode}
     </MzScreen>
   );
 }

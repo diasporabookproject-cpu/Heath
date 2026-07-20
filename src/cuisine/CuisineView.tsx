@@ -4,10 +4,12 @@ import { SEED_CONFIG } from '../data';
 import { loadAudioKeys } from '../lib/db';
 import type { AccRef, MealKey, RecipeRole } from '../types';
 import CoursesCuisine from './CoursesCuisine';
-import SemaineView, { type Horizon } from './SemaineView';
+import SemaineView from './SemaineView';
 import RecettesView from './RecettesView';
 import MealComposerSheet from './MealComposerSheet';
 import RecipePickerSheet from './RecipePickerSheet';
+import RadialSheet, { type RadialWay } from './RadialSheet';
+import { mealHasAny } from '../lib/menu';
 import RecipeDetailSheet from './RecipeDetailSheet';
 import AddRecipeSheet from './AddRecipeSheet';
 import CollectionsSheet from './CollectionsSheet';
@@ -18,7 +20,8 @@ import CopyWeekSheet from './CopyWeekSheet';
 import { slotForRole, type Creneau } from '../lib/creneaux';
 import type { Recipe } from '../types';
 import type { CuisineScope } from '../maison/digest';
-import { IconPlus, IconCheck, IconShareUp } from './icons';
+import { IconPlus, IconCheck } from './icons';
+import Em from '../ui/Em';
 import './cuisine.css';
 
 type Segment = 'semaine' | 'recettes' | 'courses';
@@ -28,6 +31,7 @@ type Pick = { dayKey: string; mealKey: MealKey; slot: 'plat' | 'entree' | 'acc';
 // F1.3 (lot Cuisine) : l'onglet s'appelle « Menu » (vocabulaire verrouillé) — la clé
 // interne `semaine` ne bouge pas. « Semaines favorites » : REPORTÉ au backlog (PO 14/07).
 const SEG_LABEL: Record<Segment, string> = { semaine: 'Menu', recettes: 'Recettes', courses: 'Courses' };
+const SEG_EMOJI: Record<Segment, string> = { semaine: '🍽️', recettes: '📖', courses: '🛒' };
 const dayNom = (key: string) => SEED_CONFIG.jours.find((j) => j.key === key)?.nom ?? '';
 
 interface Props {
@@ -40,20 +44,36 @@ interface Props {
   onConsumeShare?: () => void;
 }
 
+/** Rôle du composant principal d'un créneau (petit-déj/goûter = plat seul). */
+const soloRole = (k: MealKey): RecipeRole => (k === 'petitdej' ? 'petitdej' : k === 'gouter' ? 'gouter' : 'plat');
+
 export default function CuisineView({ showAccount, connected, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
   const recipes = useStore((s) => s.recipes);
+  const week = useStore((s) => s.week);
   const setComponent = useStore((s) => s.setComponent);
   const navWeek = useStore((s) => s.navWeek);
 
   const [seg, setSeg] = useState<Segment>('semaine');
-  // F7.2 — horizon du Menu, DÉFAUT DEMAIN à l'ouverture (le briefing de la
-  // cuisinière se prépare la veille — même si aujourd'hui est en cours).
-  const [horizon, setHorizon] = useState<Horizon>('demain');
+  // F7.2 (DA v2, T2) — le jour SÉLECTIONNÉ dans la bande, DÉFAUT DEMAIN à
+  // l'ouverture (le briefing de la cuisinière se prépare la veille) ; le mode
+  // Semaine vit sur le bouton dédié. La logique dimanche→lundi est conservée.
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const [menuView, setMenuView] = useState<'jour' | 'semaine'>('jour');
+  const [selDay, setSelDay] = useState<number>((todayIdx + 1) % 7);
   const weekOffset = useStore((s) => s.weekOffset);
+  const regles = useStore((s) => s.regles);
   const [composer, setComposer] = useState<Composer>(null);
   const [pick, setPick] = useState<Pick>(null);
+  // T4 (SPEC 5) — le RADIAL : couche d'entrée d'un créneau VIDE. Il précède le
+  // composeur sans le contourner (créneau PLEIN → composeur direct, inchangé).
+  // `{ create: true }` = mode CRÉATION (FAB Recettes) : mêmes pétales de
+  // création, aucun créneau visé — la recette naît dans la bibliothèque.
+  const [radial, setRadial] = useState<Composer | { create: true }>(null);
+  // Cible posée par un pétale « créer » : la recette créée prend le créneau
+  // (même règle que l'amendement ② du sélecteur).
+  const [radialTarget, setRadialTarget] = useState<Pick>(null);
   const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState<{ step?: 'ecrire' | 'instructions' } | null>(null);
   const [collections, setCollections] = useState<{ packId?: string } | null>(null);
   const [sharing, setSharing] = useState(false);
   const [shareToken, setShareToken] = useState<string | undefined>(undefined);
@@ -63,7 +83,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const [shareFiche, setShareFiche] = useState<Recipe | null>(null);
 
   const openCollections = (packId?: string) => {
-    setAdding(false);
+    setAdding(null);
     setCollections({ packId });
   };
 
@@ -100,15 +120,26 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
     window.scrollTo({ top: 0 });
   };
 
-  // F7.2 — changer d'horizon recale la semaine chargée : les vues jour parlent
-  // du VRAI aujourd'hui/demain (dimanche soir : « Demain » = lundi suivant).
-  const changeHorizon = (h: Horizon) => {
-    setHorizon(h);
-    if (h === 'aujourdhui' && weekOffset !== 0) void navWeek(-weekOffset);
-    if (h === 'demain') {
-      const target = (new Date().getDay() + 6) % 7 === 6 ? 1 : 0;
-      if (weekOffset !== target) void navWeek(target - weekOffset);
-    }
+  // F7.2 — défaut Demain : dimanche soir, « demain » = lundi de la semaine
+  // SUIVANTE → recale la semaine chargée à l'ouverture (logique conservée).
+  useEffect(() => {
+    if (todayIdx === 6 && weekOffset === 0) void navWeek(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pastille « Règles alimentaires » (SPEC 2) : MONTRE les restrictions ;
+  // Q7 : aucune règle → état neutre visible (jamais masquée).
+  const ruleParts = [regles.halal ? 'halal' : null, ...regles.nePasManger.map((x) => `sans ${x}`)].filter(Boolean);
+  const ruleText = ruleParts.length ? ruleParts.join(' · ') : 'Aucune restriction';
+
+  // F6.2 — la portée du digest suit la vue (semaine / aujourd'hui / demain / jour).
+  const shareScopeNow = (): { scope: CuisineScope; dayKey?: string } => {
+    if (menuView === 'semaine') return { scope: 'semaine' };
+    const demainIdx = (todayIdx + 1) % 7;
+    if (weekOffset === 0 && selDay === todayIdx) return { scope: 'aujourdhui' };
+    const isDemain = todayIdx === 6 ? weekOffset === 1 && selDay === 0 : weekOffset === 0 && selDay === demainIdx;
+    if (isDemain) return { scope: 'demain' };
+    return { scope: 'jour', dayKey: SEED_CONFIG.jours[selDay].key };
   };
 
   // F6.1 (D1) — Partager depuis la fiche : ajout au menu PUIS partage, jamais
@@ -145,29 +176,12 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
                 ‹
               </button>
             )}
-            <span className="cz-mark" />
             Cuisine
           </div>
-          <div className="cz-headicons">
-            <button
-              className="cz-headicon"
-              style={{ marginLeft: 8 }}
-              onClick={() => setReglagesOpen(true)}
-              aria-label="Réglages Cuisine"
-            >
-              ⚙
-            </button>
-            <button
-              className="cz-headicon"
-              onClick={() => {
-                setShareToken(undefined);
-                // F6.2 branché sur l'horizon (T7) : la portée du digest suit la vue.
-                setShareScope(seg === 'semaine' ? { scope: horizon } : null);
-                setSharing(true);
-              }}
-              aria-label="Partager le menu"
-            >
-              <IconShareUp size={18} />
+          <div className="cz-headicons" style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+            <button className="cz-rulepill" onClick={() => setReglagesOpen(true)} aria-label="Réglages Cuisine">
+              <Em ch="🌿" size={12} />
+              <span className="txt">{ruleText}</span>
             </button>
             {showAccount && (
               <button
@@ -176,7 +190,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
                 aria-label="Compte et synchro"
                 title={connected ? 'Connecté' : 'Se connecter'}
               >
-                ☁︎
+                <Em ch="👤" size={18} />
               </button>
             )}
           </div>
@@ -189,9 +203,25 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
         {seg === 'semaine' ? (
           <SemaineView
             voiceIds={voiceIds}
-            horizon={horizon}
-            onHorizon={changeHorizon}
-            onOpenMeal={(dayKey, mealKey) => setComposer({ dayKey, mealKey })}
+            view={menuView}
+            dayIdx={selDay}
+            onSelectDay={(i) => {
+              setSelDay(i);
+              setMenuView('jour');
+            }}
+            onToggleWeek={() => setMenuView((v) => (v === 'jour' ? 'semaine' : 'jour'))}
+            onShare={() => {
+              setShareToken(undefined);
+              setShareScope(shareScopeNow());
+              setSharing(true);
+            }}
+            onOpenMeal={(dayKey, mealKey) => {
+              // Vide = AUCUN composant (le plat est retirable depuis le retour
+              // PO n°3 — une entrée seule reste un repas, donc composeur).
+              const meal = week.days[dayKey]?.[mealKey];
+              if (mealHasAny(meal)) setComposer({ dayKey, mealKey });
+              else setRadial({ dayKey, mealKey });
+            }}
             onCopyWeek={() => setCopyOpen(true)}
             onGoValidate={() => {
               setRecFilters('draft');
@@ -206,6 +236,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             setFilter={setRecFilters}
             onOpenRecipe={(id) => setOpenRecipeId(id)}
             onOpenCollections={openCollections}
+            onCreate={() => setAdding({})}
             toast={toast}
           />
         ) : (
@@ -214,9 +245,32 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
       </div>
 
       {seg === 'recettes' && (
-        <button className="cz-fab" aria-label="Ajouter une recette" onClick={() => setAdding(true)}>
+        <button className="cz-fab" aria-label="Ajouter une recette" onClick={() => setRadial({ create: true })}>
           <IconPlus size={24} />
         </button>
+      )}
+
+      {radial && (
+        <RadialSheet
+          mealKey={'create' in radial ? undefined : radial.mealKey}
+          dayNom={'create' in radial ? undefined : dayNom(radial.dayKey)}
+          libEmpty={recipes.length === 0}
+          onWay={(w: RadialWay) => {
+            // Mode création (FAB) : pas de créneau → la recette naît en
+            // bibliothèque (onCreated ouvre sa fiche, flux existant).
+            const target = 'create' in radial
+              ? null
+              : { dayKey: radial.dayKey, mealKey: radial.mealKey, slot: 'plat' as const, role: soloRole(radial.mealKey) };
+            setRadial(null);
+            if (w === 'biblio' && target) setPick(target);
+            else if (w === 'collection') openCollections();
+            else if (w === 'ecrire' || w === 'photo') {
+              setRadialTarget(target);
+              setAdding({ step: w === 'ecrire' ? 'ecrire' : 'instructions' });
+            }
+          }}
+          onClose={() => setRadial(null)}
+        />
       )}
 
       {composer && (
@@ -242,7 +296,8 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             setPick(null);
             toast('Composant ajouté');
           }}
-          onNewRecipe={() => setAdding(true)}
+          onNewRecipe={(step) => setAdding({ step })}
+          onCollections={() => openCollections()}
           onClose={() => setPick(null)}
         />
       )}
@@ -265,17 +320,23 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
 
       {adding && (
         <AddRecipeSheet
-          initialRole={pick?.role}
-          onClose={() => setAdding(false)}
+          initialRole={(pick ?? radialTarget)?.role}
+          initialStep={adding.step}
+          onClose={() => {
+            setAdding(null);
+            setRadialTarget(null);
+          }}
           onCreated={(id) => {
-            setAdding(false);
+            setAdding(null);
             refreshVoice();
-            // Amendement ② : créée depuis le sélecteur de composant et du bon
-            // rôle → elle prend directement le créneau (le geste se termine).
+            // Amendement ② (sélecteur) — étendu T4 au radial : créée depuis un
+            // créneau et du bon rôle → elle le prend directement (geste fini).
+            const target = pick ?? radialTarget;
             const created = useStore.getState().recipes.find((r) => r.id === id);
-            if (pick && created && created.statut === 'Validé' && created.role === pick.role) {
-              const value: string | AccRef = pick.slot === 'acc' ? { id, g: 100 } : id;
-              setComponent(pick.dayKey, pick.mealKey, pick.slot, value);
+            setRadialTarget(null);
+            if (target && created && created.statut === 'Validé' && created.role === target.role) {
+              const value: string | AccRef = target.slot === 'acc' ? { id, g: 100 } : id;
+              setComponent(target.dayKey, target.mealKey, target.slot, value);
               setPick(null);
               toast('Recette créée et ajoutée au repas');
               return;
@@ -329,7 +390,8 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
       <nav className="cz-footbar" role="tablist" aria-label="Navigation Cuisine">
         {(['semaine', 'recettes', 'courses'] as Segment[]).map((s) => (
           <button key={s} className="cz-fbtn" role="tab" aria-selected={seg === s} onClick={() => switchSeg(s)}>
-            {SEG_LABEL[s]}
+            <Em ch={SEG_EMOJI[s]} size={22} />
+            <span>{SEG_LABEL[s]}</span>
           </button>
         ))}
       </nav>

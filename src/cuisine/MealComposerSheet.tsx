@@ -4,8 +4,8 @@ import { useStore } from '../store/useStore';
 import type { MealKey, Recipe, RecipeRole } from '../types';
 import { IconPlus, IconClose } from './icons';
 
-// F7.2 : Matin / Midi / Soir (libellés seuls — clés du modèle inchangées).
-const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Matin', dej: 'Midi', diner: 'Soir' };
+// T3 (lot UI) : libellés alignés sur la page reçue — les clés ne bougent pas.
+const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit déjeuner', dej: 'Déjeuner', gouter: 'Goûter', diner: 'Dîner' };
 type Slot = 'plat' | 'entree' | 'acc';
 
 interface Props {
@@ -23,8 +23,10 @@ export default function MealComposerSheet({ dayKey, dayNom, mealKey, onPickSlot,
   const setComponent = useStore((s) => s.setComponent);
   const setAccQty = useStore((s) => s.setAccQty);
   const byId = new Map(recipes.map((r) => [r.id, r]));
-  const meal = week.days[dayKey][mealKey];
-  const full = mealKey !== 'petitdej';
+  // Garde sync : un jour stocké/synchronisé AVANT T3 n'a pas la clé `gouter`.
+  const meal = week.days[dayKey][mealKey] ?? { plat: null };
+  // Petit-déjeuner et goûter = plat seul (ruling PO) ; déj/dîner = multi-composant.
+  const full = mealKey === 'dej' || mealKey === 'diner';
 
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
@@ -72,7 +74,7 @@ export default function MealComposerSheet({ dayKey, dayNom, mealKey, onPickSlot,
           )}
         </>
       ) : (
-        <span className="cmid" onClick={() => onPickSlot(slot, slot === 'plat' ? (full ? 'plat' : 'petitdej') : (slot as RecipeRole))}>
+        <span className="cmid" onClick={() => onPickSlot(slot, slot === 'plat' ? (full ? 'plat' : mealKey === 'gouter' ? 'gouter' : 'petitdej') : (slot as RecipeRole))}>
           <span className="cn empty">
             <IconPlus size={14} /> Choisir
           </span>
@@ -97,7 +99,9 @@ export default function MealComposerSheet({ dayKey, dayNom, mealKey, onPickSlot,
         </div>
         <div className="cz-sheetbody">
           <div className="cz-complist">
-            <Row role={full ? 'Plat' : 'Petit-déj'} slot="plat" recipe={plat} />
+            {/* Retour device PO (lot UI n°3) : le PLAT aussi se retire — un
+                créneau posé n'est plus irrévocable. */}
+            <Row role={full ? 'Plat' : mealKey === 'gouter' ? 'Goûter' : 'Petit-déj'} slot="plat" recipe={plat} removable />
             {full && entree && <Row role="Entrée" slot="entree" recipe={entree} removable />}
             {full && acc && <Row role="Accomp." slot="acc" recipe={acc} removable />}
           </div>

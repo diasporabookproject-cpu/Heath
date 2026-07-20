@@ -1,6 +1,17 @@
+import { execSync } from 'node:child_process';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+
+// Tampon de build (retours device PO, lot UI) : le sha court, affiché
+// discrètement dans l'app — on sait TOUJOURS quelle version on teste.
+function buildSha(): string {
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim();
+  } catch {
+    return 'dev';
+  }
+}
 
 // PWA minimale dès le P0 pour pouvoir tester l'installation sur le téléphone.
 // Le travail offline/icônes soigné (cache fin, écran de démarrage) sera approfondi en P1.
@@ -32,6 +43,7 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_BUILD_TARGET': JSON.stringify(isNative ? 'native' : 'web'),
       'import.meta.env.VITE_WEB_BASE_URL': JSON.stringify(env.VITE_WEB_BASE_URL || ''),
       'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(env.VITE_SENTRY_DSN || ''),
+      'import.meta.env.VITE_BUILD_SHA': JSON.stringify(env.VITE_BUILD_SHA || buildSha()),
     },
     plugins: [
       react(),
