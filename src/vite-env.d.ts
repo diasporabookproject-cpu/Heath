@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_SENTRY_DSN?: string;
   /** 'native' (coquille Capacitor) ou 'web' — posé au build (vite.config define). */
   readonly VITE_BUILD_TARGET?: string;
+  /** Sha court du commit compilé — tampon de build visible (diagnostic device). */
+  readonly VITE_BUILD_SHA?: string;
   /** URL web publique de l'app, consommée en natif (liens publiés, redirects). */
   readonly VITE_WEB_BASE_URL?: string;
 }

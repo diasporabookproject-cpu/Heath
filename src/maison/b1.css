@@ -139,3 +139,6 @@
 .b1-revoke button { border: none; border-radius: 9px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
 .b1-revoke .no { background: #fff; color: #6b6459; border: 1px solid #e8e2d6; }
 .b1-revoke .yes { background: #b5533c; color: #fff; }
+
+/* Tampon de build (diagnostic device — retours PO). */
+.b1-build { text-align: center; font-size: 10px; font-weight: 600; color: #c6bfb2; padding-top: 14px; letter-spacing: 0.04em; }

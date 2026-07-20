@@ -444,6 +444,8 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
             ＋ Une page pour quelqu’un d’autre
           </button>
         )}
+        {/* Tampon de build — discret mais TOUJOURS là : fin des tests en aveugle. */}
+        <div className="b1-build">build {import.meta.env.VITE_BUILD_SHA}</div>
         <div style={{ height: 16 }} />
       </MzScroll>
       {toastNode}

@@ -129,6 +129,14 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot UI DA v2 — suite retours emojis : tampon de build + rendus bruts — 2026-07-20
+PO : « emoji toujours pas les bons sur mon téléphone » — or le rendu web des 43 repères 3D est correct (vérifié : captures + **zéro collision d'`id` SVG** sur 1213 ids). Hypothèse la plus probable : **on ne sait pas quelle version tourne sur le device** (boucle d'APK successifs). Réponse outillée plutôt que devinée :
+- **Tampon de build** : `VITE_BUILD_SHA` (sha court, `vite.config` → `define`, surchargeable par env en CI) affiché **en bas du hub B1** (`.b1-build`, discret). Fin des tests en aveugle — le PO lit la version installée à l'écran.
+- **2 rendus d'emoji BRUTS trouvés et corrigés** (caractère nu → rendu Noto/système sur Android au lieu de nos SVG) : les packs de `CollectionsSheet` et les protocoles de `ManageSheet` (Nounou) passent par `Em`. Les surfaces principales (B1, Recettes, radial, sélecteur) étaient déjà toutes sur `Em`.
+- Demandé au PO : vérifier le tampon (« build … ») après installation, et si un écran montre encore de mauvais emojis, **une capture de cet écran** — on diagnostiquera sur preuve.
+- Portes : typecheck ✓ · 203/203 ✓ · build ✓ · 3 smokes ✓.
+
+
 ### Lot UI DA v2 — retours device PO n°2 (4 points) — 2026-07-20
 - **① Emojis : flat → 3D — la VRAIE cause trouvée.** Les maquettes DA v2 committées chargent `fluent-emoji-flat`, mais la maquette **bento** (la référence visuelle du PO) rend des emoji **NATIFS** — sur son écran Windows, c'est le jeu **Fluent 3D** de Microsoft. Le flat (pâle) ne correspondait donc jamais à ce qu'il voyait. Bascule du set embarqué : `@iconify-json/fluent-emoji` (3D), générateur re-pointé, **43 repères régénérés** — mêmes caractères, mêmes noms, invariants intacts (embarqué, offline, identique Android/iOS). **Coût assumé : `fluent-emoji.ts` passe de ~100 Ko à 621 Ko** (SVG à dégradés ; gzip en absorbe une bonne part) — le rendu riche est un choix produit explicite du PO.
 - **② Supprimer une recette (bibliothèque)** : fiche → ⋯ → **« Supprimer »** (confirm) — la suppression est RÉELLE (`deleteRecipeDb`), distincte d'« Écarter » (masque). Invariants **testés** (3 tests, `deleteRecipe.test.ts`) : la semaine courante est **purgée** de toute référence (plat/entrée/acc — jamais de créneau fantôme) ; `copyDayInto` **filtre les ids orphelins** (une archive référençant une recette morte ne recrée pas de fantôme). Pages publiées = instantanés, non affectées.
