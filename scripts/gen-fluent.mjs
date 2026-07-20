@@ -1,6 +1,8 @@
 // DA v2 (lot UI, T1) — génère `src/assets/fluent-emoji.ts` : le sous-ensemble
-// EMBARQUÉ du jeu Fluent Emoji Flat (Microsoft, licence MIT, via
-// @iconify-json/fluent-emoji-flat). Invariant offline : JAMAIS de CDN dans
+// EMBARQUÉ du jeu Fluent Emoji 3D (Microsoft, licence MIT, via
+// @iconify-json/fluent-emoji). Retour device PO (lot UI, n°2) : la maquette
+// bento rend les emoji NATIFS — sur Windows c'est le jeu Fluent 3D ; le flat
+// (pâle) ne correspondait pas. Invariant offline inchangé : JAMAIS de CDN dans
 // l'app — le CDN des maquettes est une béquille d'aperçu, pas un modèle.
 //
 // Le fichier généré est COMMITTÉ (déterministe : même entrée → même sortie) ;
@@ -10,7 +12,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const set = JSON.parse(readFileSync(require.resolve('@iconify-json/fluent-emoji-flat/icons.json'), 'utf8'));
+const set = JSON.parse(readFileSync(require.resolve('@iconify-json/fluent-emoji/icons.json'), 'utf8'));
 
 // Caractère → nom Fluent. LA liste de curation : tous les pictos que l'app peut
 // afficher (emoji.ts, MEAL_PICTO, MOMENT_PICTO, KIND_PICTO, B1, footer Cuisine,

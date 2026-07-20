@@ -126,9 +126,21 @@ console.log('T4 : radial (3 pétales, biblio à gauche) → sélecteur → crén
 // Créneau PLEIN → le composeur s'ouvre directement (multi-composant intact).
 await lundi.locator('.cz-mrow:not(.empty)').first().click();
 await page.locator('.cz-sheet.show .cz-comp').first().waitFor({ timeout: 5000 });
+console.log('T4 : créneau plein → composeur direct (le radial ne contourne pas) ✅');
+// Retour device PO n°3 : le PLAT se RETIRE depuis le composeur → créneau vide.
+await page.locator('.cz-sheet.show .cz-comp .rm').first().click();
 await page.locator('.cz-sheet.show .cz-x').first().click();
 await page.waitForTimeout(300);
-console.log('T4 : créneau plein → composeur direct (le radial ne contourne pas) ✅');
+await lundi.locator('.cz-mrow.empty').first().waitFor({ timeout: 5000 });
+console.log('PO n°3 : plat retiré depuis le composeur — créneau redevenu vide ✅');
+// Re-remplir (le lundi sert à l'aperçu) : radial → biblio → pick.
+await lundi.locator('.cz-mrow.empty').first().click();
+await page.locator('.cz-radial.show').waitFor({ timeout: 5000 });
+await page.locator('.cz-petal', { hasText: 'Ma bibliothèque' }).click();
+await page.locator('.cz-sheet.show .cz-pick').first().waitFor({ timeout: 5000 });
+await page.locator('.cz-sheet.show .cz-pick').first().click();
+await page.waitForTimeout(300);
+await lundi.locator('.cz-mrow:not(.empty)').first().waitFor({ timeout: 5000 });
 await assertNoKcal('vue Menu, repas composé');
 await page.screenshot({ path: 'scripts/shot-semaine.png', fullPage: false });
 
@@ -299,6 +311,20 @@ await page.waitForTimeout(400);
 await mardi.getByText('Œufs du picker').waitFor({ timeout: 5000 });
 console.log('Amendement ② (T4) : 3 voies dépliées en place, créée et posée ✅');
 
+// 3ter-bis) Retour device PO n°4 — « Copier UNE journée précédente » : la
+// source se CHOISIT. Vue jour → mercredi → copier depuis Mardi (le yaourt).
+await page.locator('.cz-weekbtn').click(); // semaine → jour
+await page.locator('.cz-day', { hasText: 'Mer' }).click();
+await page.getByText('Copier une journée précédente').click();
+await page.getByText('Copier une journée', { exact: false }).first().waitFor({ timeout: 5000 });
+const candidats = await page.locator('.cz-copyday').count();
+if (candidats < 2) throw new Error(`PO n°4 : le choix doit lister les jours non vides (lu : ${candidats})`);
+await page.locator('.cz-copyday', { hasText: 'Mardi' }).click();
+await page.getByText('Journée copiée depuis Mardi').waitFor({ timeout: 5000 });
+await page.getByText('Yaourt').first().waitFor({ timeout: 5000 }); // le yaourt copié sur mercredi
+console.log('PO n°4 : copier UNE journée — source choisie (Mardi), contenu copié ✅');
+if (!(await page.locator('.cz-weekbtn.on').count())) await page.locator('.cz-weekbtn').click(); // retour semaine
+
 // 3quater) T5/F5.5 — alerte ALLERGÈNE bout-en-bout SANS backend : les règles du
 // foyer (« arachide », posées en 2bis) doivent ressortir sur la page cuisinière
 // via « Voir l'aperçu » (previewEspace = même buildEspaceMenu que la publication).
@@ -364,6 +390,20 @@ await page.locator('.cz-overlay.show').first().click({ position: { x: 8, y: 8 } 
 await page.waitForTimeout(400);
 console.log('F6.1 (D1) : Partager = posée au prochain repas, puis feuille d’envoi ✅');
 await page.getByRole('tab', { name: 'Recettes' }).click();
+
+// 4ter) Retour device PO n°2 — SUPPRIMER une recette depuis la bibliothèque :
+// fiche → ⋯ → Supprimer (confirm) → disparue de la liste.
+await page.getByRole('tab', { name: 'Recettes' }).click();
+await page.locator('.cz-librow', { hasText: 'Boat de concombre' }).first().click();
+await page.locator('.cz-fichetitle').waitFor({ timeout: 5000 });
+await page.getByLabel('Plus d’actions').click();
+page.once('dialog', (d) => d.accept());
+await page.locator('.cz-menu').getByText('Supprimer', { exact: true }).click();
+await page.getByText('Recette supprimée').waitFor({ timeout: 5000 });
+await page.waitForTimeout(400);
+if (await page.locator('.cz-librow', { hasText: 'Boat de concombre' }).count())
+  throw new Error('PO n°2 : la recette supprimée doit disparaître de la bibliothèque');
+console.log('PO n°2 : recette supprimée depuis la bibliothèque (fiche → ⋯ → Supprimer) ✅');
 
 // 5) FC8 — courses.
 await page.getByRole('tab', { name: 'Courses' }).click();

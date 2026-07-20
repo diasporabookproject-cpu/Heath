@@ -21,6 +21,12 @@ export function dayHasAny(day: DayMenu): boolean {
   );
 }
 
+/** Ce créneau a-t-il AU MOINS un composant ? (critère « vide » des cartes et
+ * du routage radial/composeur — un repas entrée-seule reste un repas.) */
+export function mealHasAny(meal: MealSlot | undefined): boolean {
+  return !!(meal && (meal.plat || meal.entree || meal.acc));
+}
+
 /** Un composant du repas est-il « à valider » (statut Test) ?
  * `meal` peut être ABSENT (jour stocké/synchronisé sans `gouter`) → false. */
 export function mealHasDraft(meal: MealSlot | undefined, key: MealKey, byId: Map<string, Recipe>): boolean {

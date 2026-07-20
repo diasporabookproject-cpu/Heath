@@ -9,6 +9,7 @@ import RecettesView from './RecettesView';
 import MealComposerSheet from './MealComposerSheet';
 import RecipePickerSheet from './RecipePickerSheet';
 import RadialSheet, { type RadialWay } from './RadialSheet';
+import { mealHasAny } from '../lib/menu';
 import RecipeDetailSheet from './RecipeDetailSheet';
 import AddRecipeSheet from './AddRecipeSheet';
 import CollectionsSheet from './CollectionsSheet';
@@ -215,8 +216,10 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
               setSharing(true);
             }}
             onOpenMeal={(dayKey, mealKey) => {
+              // Vide = AUCUN composant (le plat est retirable depuis le retour
+              // PO n°3 — une entrée seule reste un repas, donc composeur).
               const meal = week.days[dayKey]?.[mealKey];
-              if (meal?.plat) setComposer({ dayKey, mealKey });
+              if (mealHasAny(meal)) setComposer({ dayKey, mealKey });
               else setRadial({ dayKey, mealKey });
             }}
             onCopyWeek={() => setCopyOpen(true)}

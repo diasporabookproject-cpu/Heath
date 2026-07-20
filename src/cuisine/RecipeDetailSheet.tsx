@@ -36,6 +36,7 @@ export default function RecipeDetailSheet({ recipeId, voiceIds, onClose, onVoice
   const upsertRecipe = useStore((s) => s.upsertRecipe);
   const validateRecipe = useStore((s) => s.validateRecipe);
   const setStatut = useStore((s) => s.setStatut);
+  const deleteRecipe = useStore((s) => s.deleteRecipe);
 
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [shown, setShown] = useState(false);
@@ -80,6 +81,12 @@ export default function RecipeDetailSheet({ recipeId, voiceIds, onClose, onVoice
               toast('Recette écartée');
               onClose();
             }}
+            onDelete={() => {
+              if (!window.confirm(`Supprimer « ${recipe.nom} » ? Elle sera retirée de la bibliothèque et du menu.`)) return;
+              deleteRecipe(recipe.id);
+              toast('Recette supprimée');
+              onClose();
+            }}
             onVoiceChange={(has) => onVoiceChange(recipe.id, has)}
             toast={toast}
           />
@@ -110,6 +117,7 @@ function DetailBody({
   onShare,
   onValidate,
   onDiscard,
+  onDelete,
   onVoiceChange,
   toast,
 }: {
@@ -122,6 +130,7 @@ function DetailBody({
   onShare: () => void;
   onValidate: () => void;
   onDiscard: () => void;
+  onDelete: () => void;
   onVoiceChange: (has: boolean) => void;
   toast: (m: string) => void;
 }) {
@@ -169,6 +178,11 @@ function DetailBody({
                 )}
                 <button role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDiscard(); }}>
                   Écarter
+                </button>
+                {/* Retour device PO (lot UI n°2) : suppression RÉELLE depuis la
+                    bibliothèque — Écarter masque, ceci efface (confirmé). */}
+                <button role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}>
+                  Supprimer
                 </button>
               </div>
             </>

@@ -99,7 +99,9 @@ export default function MealComposerSheet({ dayKey, dayNom, mealKey, onPickSlot,
         </div>
         <div className="cz-sheetbody">
           <div className="cz-complist">
-            <Row role={full ? 'Plat' : mealKey === 'gouter' ? 'Goûter' : 'Petit-déj'} slot="plat" recipe={plat} />
+            {/* Retour device PO (lot UI n°3) : le PLAT aussi se retire — un
+                créneau posé n'est plus irrévocable. */}
+            <Row role={full ? 'Plat' : mealKey === 'gouter' ? 'Goûter' : 'Petit-déj'} slot="plat" recipe={plat} removable />
             {full && entree && <Row role="Entrée" slot="entree" recipe={entree} removable />}
             {full && acc && <Row role="Accomp." slot="acc" recipe={acc} removable />}
           </div>

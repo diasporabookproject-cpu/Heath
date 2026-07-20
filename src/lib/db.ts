@@ -263,6 +263,14 @@ export async function saveRecipe(recipe: Recipe): Promise<void> {
   notifyDataChanged();
 }
 
+/** Suppression RÉELLE (retour device PO, lot UI n°2) — « Écarter » masque,
+ * ceci efface. Les pages publiées sont des instantanés : non affectées. */
+export async function deleteRecipeDb(id: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('recipes', id);
+  notifyDataChanged();
+}
+
 export async function loadWeek(id: string): Promise<WeekMenu | undefined> {
   const db = await getDB();
   return db.get('weeks', id);

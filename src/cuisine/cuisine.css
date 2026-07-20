@@ -879,3 +879,7 @@
 
 /* Garde-fou layout (L0-3) : clamp 2 lignes + coupure propre des longs mots. */
 .clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+
+/* Feuille « Copier une journée » (retour PO n°4). */
+.cz-copyday { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+.cz-copyresume { font-size: 11.5px; color: var(--muted); font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

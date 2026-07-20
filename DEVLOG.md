@@ -129,6 +129,14 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot UI DA v2 — retours device PO n°2 (4 points) — 2026-07-20
+- **① Emojis : flat → 3D — la VRAIE cause trouvée.** Les maquettes DA v2 committées chargent `fluent-emoji-flat`, mais la maquette **bento** (la référence visuelle du PO) rend des emoji **NATIFS** — sur son écran Windows, c'est le jeu **Fluent 3D** de Microsoft. Le flat (pâle) ne correspondait donc jamais à ce qu'il voyait. Bascule du set embarqué : `@iconify-json/fluent-emoji` (3D), générateur re-pointé, **43 repères régénérés** — mêmes caractères, mêmes noms, invariants intacts (embarqué, offline, identique Android/iOS). **Coût assumé : `fluent-emoji.ts` passe de ~100 Ko à 621 Ko** (SVG à dégradés ; gzip en absorbe une bonne part) — le rendu riche est un choix produit explicite du PO.
+- **② Supprimer une recette (bibliothèque)** : fiche → ⋯ → **« Supprimer »** (confirm) — la suppression est RÉELLE (`deleteRecipeDb`), distincte d'« Écarter » (masque). Invariants **testés** (3 tests, `deleteRecipe.test.ts`) : la semaine courante est **purgée** de toute référence (plat/entrée/acc — jamais de créneau fantôme) ; `copyDayInto` **filtre les ids orphelins** (une archive référençant une recette morte ne recrée pas de fantôme). Pages publiées = instantanés, non affectées.
+- **③ Retirer un plat du menu** : le slot PLAT du composeur devient **retirable** (il ne l'a jamais été — seuls entrée/acc l'étaient). Conséquence assumée : un repas **entrée-seule est légal** → critère « créneau vide » élargi (`mealHasAny` : plat OU entrée OU acc) dans les cartes jour, les lignes semaine et le routage radial/composeur ; libellé « Sans plat » sur un créneau à composants sans plat (la page reçue gérait déjà ce cas).
+- **④ « Copier UNE journée précédente »** : le bouton (relibellé) ouvre une **feuille de choix** — les jours non vides de la semaine affichée, chacun avec son résumé (plats posés) → la source se **choisit** ; la confirmation d'écrasement demeure. L'automatisme « dernier jour non vide » est mort.
+- Portes : typecheck ✓ · **203/203** ✓ (+3) · build ✓ · **3 smokes ✓** (3 portes neuves : plat-retiré · copie-choisie · recette-supprimée) · captures 3D.
+
+
 ### Lot UI DA v2 — retours device PO n°1 (5 points) — 2026-07-20
 Test d'ensemble PO sur APK : 4 corrections + 1 validation (**n°5 : lien perpétuel OK sur device** ✔).
 - **① Emojis alignés maquette** : le dictionnaire (`lib/emoji.ts`) suivait des choix pré-DA v2 — corrigé sur le vocabulaire du proto : soupe/harira → **🥣** (bol-cuillère, plus le ramen 🍜), couscous/mezze → **🥘**, briouates/samoussa → **🥟** (nouveau mot-clé), repli plat → **🍴** (« Votre plat » du proto). Curation Fluent régénérée (43 repères : +dumpling, −steaming-bowl) ; tests emoji étendus (couscous, briouates). *Redécouverte au passage : `@iconify-json/fluent-emoji-flat` était bien en devDependency (T1) — c'est `node_modules` du container qui était incomplet.*

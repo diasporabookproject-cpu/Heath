@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
-import { dayHasAny, mealHasDraft } from '../lib/menu';
-import type { DayMenu, MealKey } from '../types';
+import { dayHasAny, mealHasAny, mealHasDraft } from '../lib/menu';
+import type { MealKey } from '../types';
 import { weekDatesOffset, weekSub, dayLabel } from './dates';
 import { IconChevL, IconChevR, IconStar, IconCopy, IconShareUp } from './icons';
 import { recipeEmoji } from '../lib/emoji';
@@ -36,6 +36,9 @@ interface Props {
 }
 
 export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, onShare, onOpenMeal, onCopyWeek, onGoValidate, toast }: Props) {
+  // Retour device PO (lot UI n°4) : « Copier UNE journée précédente » — la
+  // source se CHOISIT (mini-feuille), plus d'automatisme silencieux.
+  const [copyPick, setCopyPick] = useState(false);
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const weekOffset = useStore((s) => s.weekOffset);
@@ -69,28 +72,37 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
   // Le point « aujourd'hui » ne se montre que sur la semaine courante.
   const todayIdx = (new Date().getDay() + 6) % 7;
 
-  // F7.2 (amendement ① + Q4) : « Copier la journée précédente » = le DERNIER jour
-  // non vide avant le jour affiché (dans la semaine affichée) ; cible non vide →
-  // confirmation explicite, jamais d'écrasement silencieux.
-  const copyDay = () => {
-    const targetKey = SEED_CONFIG.jours[dayIdx].key;
-    let src: { key: string; nom: string; day: DayMenu } | null = null;
-    for (let i = dayIdx - 1; i >= 0; i--) {
-      const j = SEED_CONFIG.jours[i];
-      if (dayHasAny(week.days[j.key])) {
-        src = { key: j.key, nom: j.nom, day: week.days[j.key] };
-        break;
-      }
-    }
-    if (!src) {
+  // F7.2 amendement ① → retour PO n°4 : la source se CHOISIT. Candidats =
+  // les jours NON VIDES de la semaine affichée, sauf le jour cible ; cible non
+  // vide → confirmation explicite, jamais d'écrasement silencieux.
+  const copyCandidates = SEED_CONFIG.jours
+    .map((j, i) => ({ ...j, i }))
+    .filter(({ key, i }) => i !== dayIdx && week.days[key] && dayHasAny(week.days[key]));
+
+  const openCopyPick = () => {
+    if (copyCandidates.length === 0) {
       toast('Rien à copier pour l’instant — compose ton premier repas');
       return;
     }
+    setCopyPick(true);
+  };
+
+  const copyFrom = (srcKey: string, srcNom: string) => {
+    const targetKey = SEED_CONFIG.jours[dayIdx].key;
     if (dayHasAny(week.days[targetKey]) && !window.confirm('Ce jour a déjà des repas — les remplacer ?')) {
       return;
     }
-    copyDayInto(targetKey, src.day);
-    toast(`Journée copiée depuis ${src.nom}`);
+    copyDayInto(targetKey, week.days[srcKey]);
+    setCopyPick(false);
+    toast(`Journée copiée depuis ${srcNom}`);
+  };
+
+  /** Résumé d'un jour pour la feuille de choix (plats posés, dans l'ordre). */
+  const dayResume = (key: string): string => {
+    const day = week.days[key];
+    const noms = MEAL_KEYS.map((k) => day[k]?.plat).filter(Boolean)
+      .map((id) => byId.get(id as string)?.nom).filter(Boolean) as string[];
+    return noms.length ? noms.join(' · ') : 'Repas sans plat';
   };
 
   // Vue JOUR (proto) : une CARTE PAR MOMENT — chip tinté + label coloré +
@@ -102,6 +114,7 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
     return MEAL_KEYS.map((k) => {
       const meal = day[k];
       const plat = meal?.plat ? byId.get(meal.plat) : undefined;
+      const filled = mealHasAny(meal);
       const sub: string[] = [];
       if (meal && (k === 'dej' || k === 'diner')) {
         if (meal.entree) {
@@ -114,12 +127,12 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
         }
       }
       return (
-        <button key={k} className={'cz-mrow cz-mo s-' + k + (plat ? '' : ' empty')} onClick={() => onOpenMeal(jour.key, k)}>
+        <button key={k} className={'cz-mrow cz-mo s-' + k + (filled ? '' : ' empty')} onClick={() => onOpenMeal(jour.key, k)}>
           <span className="mchip">{plat ? <Em ch={recipeEmoji(plat)} size={28} /> : <span className="plus">＋</span>}</span>
           <span className="mid">
             <span className="mlabel">{MEAL_LABEL[k]}</span>
             <span className="mn">
-              {plat ? plat.nom : 'Ajouter un repas'}
+              {plat ? plat.nom : filled ? 'Sans plat' : 'Ajouter un repas'}
               {plat && mealHasDraft(meal, k, byId) && (
                 <span className="vio" title="à valider">
                   <IconStar size={13} />
@@ -154,15 +167,16 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
         {MEAL_KEYS.map((k) => {
           const meal = day[k];
           const plat = meal?.plat ? byId.get(meal.plat) : undefined;
+          const filled = mealHasAny(meal);
           return (
             <button
               key={k}
-              className={'cz-mrow cz-wln' + (plat ? '' : ' empty')}
+              className={'cz-mrow cz-wln' + (filled ? '' : ' empty')}
               onClick={() => onOpenMeal(jour.key, k)}
             >
               <span className={'wk s-' + k}>{MEAL_SHORT[k]}</span>
               <span className="wv">
-                {plat ? plat.nom : '＋ Ajouter'}
+                {plat ? plat.nom : filled ? 'Sans plat' : '＋ Ajouter'}
                 {plat && mealHasDraft(meal, k, byId) && (
                   <span className="vio" title="à valider">
                     <IconStar size={12} />
@@ -287,10 +301,37 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
             </b>
           </div>
           <div className="cz-meals">{momentCards(dayIdx)}</div>
-          <button className="cz-ghost" onClick={copyDay}>
+          <button className="cz-ghost" onClick={openCopyPick}>
             <IconCopy size={15} />
-            Copier la journée précédente
+            Copier une journée précédente
           </button>
+          {copyPick && (
+            <>
+              <div className="cz-overlay show" onClick={() => setCopyPick(false)} />
+              <div className="cz-sheet show" role="dialog" aria-modal="true">
+                <div className="cz-handle" />
+                <div className="cz-sheethead">
+                  <div className="ttl">
+                    Copier une journée
+                    <small>vers {SEED_CONFIG.jours[dayIdx].nom.toLowerCase()} {dayLabel(dates[dayIdx])}</small>
+                  </div>
+                  <button className="cz-x" onClick={() => setCopyPick(false)} aria-label="Fermer">
+                    ✕
+                  </button>
+                </div>
+                <div className="cz-sheetbody">
+                  <div style={{ paddingTop: 8 }}>
+                    {copyCandidates.map((j) => (
+                      <button key={j.key} className="cz-pick cz-copyday" onClick={() => copyFrom(j.key, j.nom)}>
+                        <span className="nm" style={{ fontWeight: 700 }}>{j.nom}</span>
+                        <span className="cz-copyresume">{dayResume(j.key)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
           <button className="cz-shareprimary" onClick={onShare} aria-label="Partager le menu">
             <IconShareUp size={17} /> Partager la journée
           </button>

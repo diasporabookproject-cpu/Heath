@@ -1,6 +1,6 @@
 import { FLUENT, type FluentIcon } from '../assets/fluent-emoji';
 
-// DA v2 (lot UI, T1) — repère emoji EMBARQUÉ : caractère → SVG Fluent Emoji Flat
+// DA v2 (lot UI, T1) — repère emoji EMBARQUÉ : caractère → SVG Fluent Emoji 3D
 // bundlé (rendu identique Android/iOS, zéro requête réseau — invariant offline).
 // Repli doux : caractère système si le repère n'est pas dans la carte.
 // Le choix du caractère reste au dictionnaire déterministe (lib/emoji.ts).
