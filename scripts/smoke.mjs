@@ -236,19 +236,23 @@ await page.locator('.cz-sheet.show').getByText('Supprimer', { exact: true }).cli
 await page.waitForTimeout(400);
 console.log('T2a : bandeau de relecture v2 (rapport + alerte G3) affiché ✅');
 
-// 3bis) T4a (F4.1/F4.2, GO ③) — FAB → feuille des 3 voies (langage banni ABSENT),
-// « L'écrire » crée une recette Validé qui atterrit dans la bibliothèque.
+// 3bis) Retour device PO (lot UI) — le FAB ouvre le RADIAL en mode CRÉATION :
+// 3 pétales de création, PAS de créneau source, langage banni absent.
 await page.locator('.cz-fab').click();
-await page.getByText('Comment on l’ajoute ?').waitFor({ timeout: 5000 });
-for (const voie of ['L’écrire', 'À partir d’instructions', 'Depuis une collection']) {
-  if (!(await page.getByText(voie, { exact: false }).count()))
-    throw new Error(`F4.1 : voie « ${voie} » absente de la feuille`);
+await page.locator('.cz-radial.show').waitFor({ timeout: 5000 });
+if ((await page.locator('.cz-petal').count()) !== 3)
+  throw new Error('FAB : le radial de création doit avoir TROIS pétales');
+if (await page.locator('.cz-srcrow').count())
+  throw new Error('FAB : pas de créneau source en mode création');
+for (const voie of ['L’écrire', 'Photo ou lien', 'Depuis une collection']) {
+  if (!(await page.locator('.cz-petal', { hasText: voie }).count()))
+    throw new Error(`FAB : pétale « ${voie} » absent du radial de création`);
 }
-const voiesTxt = await page.locator('.cz-sheet.show').last().innerText();
+const voiesTxt = await page.locator('.cz-radial').innerText();
 if (/\bIA\b|Générer|génération|✨/i.test(voiesTxt))
-  throw new Error('GO T4 ③ : langage banni (IA/Générer/✨) présent dans la feuille des voies');
-console.log('Feuille des 3 voies : complète, zéro langage banni ✅');
-await page.getByText('L’écrire', { exact: false }).click();
+  throw new Error('Langage banni (IA/Générer/✨) présent sur le radial de création');
+console.log('FAB → radial de création : 3 pétales, zéro source, zéro langage banni ✅');
+await page.locator('.cz-petal', { hasText: 'L’écrire' }).click();
 await page.getByText('Portions', { exact: true }).waitFor({ timeout: 5000 });
 await page.locator('.cz-sheet.show .cz-inp').first().fill('Soupe du smoke');
 await page.locator('.cz-sheet.show textarea').first().fill('courgette 200 g\nune bonne pincée de cumin');
@@ -368,6 +372,19 @@ const nbCourses = await page.locator('.cz-coitem').count();
 if (nbCourses === 0) throw new Error('Liste de courses vide');
 await page.screenshot({ path: 'scripts/shot-courses.png', fullPage: true });
 console.log('Courses ✅ (', nbCourses, 'articles)');
+
+// 6) Retour device PO (lot UI) — RETIRER depuis « Mon équipe » (B1).
+// Hors session, la sémantique F1 est honnête : refus expliqué, personne CONSERVÉE.
+await page.getByLabel('Retour à Maison').click();
+await page.getByText('Votre foyer').waitFor({ timeout: 5000 });
+await page.getByText('Fatima', { exact: false }).first().waitFor({ timeout: 5000 });
+await page.locator('.b1-more').first().click();
+await page.getByText('Son lien ne donnera plus rien', { exact: false }).waitFor({ timeout: 3000 });
+await page.locator('.b1-revoke .yes').click();
+await page.getByText('Connecte-toi pour retirer', { exact: false }).waitFor({ timeout: 5000 });
+if (!(await page.getByText('Fatima', { exact: false }).count()))
+  throw new Error('Revoke B1 : hors session, la personne doit être CONSERVÉE');
+console.log('B1 : Retirer depuis Mon équipe — refus honnête hors session, personne conservée ✅');
 
 console.log(errors.length ? 'ERREURS:\n' + errors.join('\n') : 'Aucune erreur console/page ✅');
 await browser.close();

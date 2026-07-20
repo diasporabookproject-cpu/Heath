@@ -3,6 +3,9 @@ import { useSheetBack } from '../ui/primitives';
 import { useStore } from '../store/useStore';
 import { ROLE_LABEL, type RecipeRole } from '../types';
 import { pickable } from '../lib/picker';
+import { cleanText } from '../lib/sanitize';
+import { recipeEmoji } from '../lib/emoji';
+import { SECTIONS } from './RecettesView';
 import { IconSearch, IconMic, IconFav, IconPlus } from './icons';
 import Em from '../ui/Em';
 
@@ -24,6 +27,7 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onNewRe
   const toggleFav = useStore((s) => s.toggleFav);
   const [q, setQ] = useState('');
   const [ways, setWays] = useState(false);
+  const [folded, setFolded] = useState<Set<RecipeRole>>(new Set());
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
 
@@ -32,14 +36,27 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onNewRe
     return () => cancelAnimationFrame(t);
   }, []);
 
-  const list = useMemo(() => {
+  const bySection = useMemo(() => {
     const needle = q.trim().toLowerCase();
     // Règle d'éligibilité EXTRAITE (lib/picker) : Validé seulement (verrou G2,
     // testé) + soupe éligible entrée/plat (F5.2).
-    return pickable(recipes, role)
+    const list = pickable(recipes, role)
       .filter((r) => (needle ? r.nom.toLowerCase().includes(needle) : true))
       .sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || a.nom.localeCompare(b.nom, 'fr'));
+    // Retour device PO (lot UI) : MÊME interface que l'onglet Recettes (T5) —
+    // sections par moment repliables, lignes chip-emoji + étoile fantôme.
+    return SECTIONS.map((s) => ({ ...s, items: list.filter((r) => r.role === s.role) })).filter(
+      (s) => s.items.length > 0,
+    );
   }, [recipes, role, q]);
+
+  const toggleFold = (r: RecipeRole) =>
+    setFolded((prev) => {
+      const next = new Set(prev);
+      if (next.has(r)) next.delete(r);
+      else next.add(r);
+      return next;
+    });
 
 
   return (
@@ -83,42 +100,55 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onNewRe
               <IconPlus size={16} /> Nouvelle recette
             </button>
           )}
-          {list.length === 0 ? (
+          {bySection.length === 0 ? (
             <p className="cz-emptynote">Aucune recette validée pour ce rôle.</p>
           ) : (
-            <div style={{ paddingTop: 10 }}>
-              {list.map((r) => (
-                <button key={r.id} className="cz-pick" onClick={() => onPick(r.id)}>
-                  <div className="cz-libtop">
-                    <span
-                      className={'cz-starbtn' + (r.fav ? ' on' : '')}
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Favori"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFav(r.id);
-                      }}
-                    >
-                      <IconFav size={16} filled={r.fav} />
-                    </span>
-                    <span className="nm" style={{ flex: 1, fontWeight: 600 }}>
-                      {r.nom}
-                    </span>
-                    <span className="cz-tag role">{ROLE_LABEL[r.role]}</span>
+            <div style={{ paddingTop: 6 }}>
+              {bySection.map((sec) => {
+                const open = !folded.has(sec.role);
+                return (
+                  <div key={sec.role}>
+                    <button className="cz-sech" style={{ padding: '8px 2px 6px' }} onClick={() => toggleFold(sec.role)} aria-expanded={open}>
+                      <b>{sec.label}</b>
+                      <span className="ct">{sec.items.length}</span>
+                      <span className="cv">{open ? '⌄' : '›'}</span>
+                    </button>
+                    {open &&
+                      sec.items.map((r) => (
+                        <button key={r.id} className="cz-librow cz-pick" onClick={() => onPick(r.id)}>
+                          <div className="cz-libtop">
+                            <span
+                              className={'cz-starbtn' + (r.fav ? ' on' : '')}
+                              role="button"
+                              tabIndex={0}
+                              aria-label="Favori"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFav(r.id);
+                              }}
+                            >
+                              <IconFav size={16} filled={r.fav} />
+                            </span>
+                            <span className="cz-remoji">
+                              <Em ch={recipeEmoji(r)} size={24} />
+                            </span>
+                            <span className="nm clamp2" style={{ flex: 1, fontWeight: 600 }}>
+                              {cleanText(r.nom)}
+                            </span>
+                          </div>
+                          {voiceIds.has(r.id) && (
+                            <div className="cz-cardmeta">
+                              <span className="cz-vchip">
+                                <IconMic size={11} />
+                                vocal
+                              </span>
+                            </div>
+                          )}
+                        </button>
+                      ))}
                   </div>
-                  {voiceIds.has(r.id) && (
-                    <div className="cz-cardmeta">
-                      {voiceIds.has(r.id) && (
-                        <span className="cz-vchip">
-                          <IconMic size={11} />
-                          vocal
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

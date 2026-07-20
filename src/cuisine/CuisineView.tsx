@@ -65,7 +65,9 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const [pick, setPick] = useState<Pick>(null);
   // T4 (SPEC 5) — le RADIAL : couche d'entrée d'un créneau VIDE. Il précède le
   // composeur sans le contourner (créneau PLEIN → composeur direct, inchangé).
-  const [radial, setRadial] = useState<Composer>(null);
+  // `{ create: true }` = mode CRÉATION (FAB Recettes) : mêmes pétales de
+  // création, aucun créneau visé — la recette naît dans la bibliothèque.
+  const [radial, setRadial] = useState<Composer | { create: true }>(null);
   // Cible posée par un pétale « créer » : la recette créée prend le créneau
   // (même règle que l'amendement ② du sélecteur).
   const [radialTarget, setRadialTarget] = useState<Pick>(null);
@@ -240,22 +242,26 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
       </div>
 
       {seg === 'recettes' && (
-        <button className="cz-fab" aria-label="Ajouter une recette" onClick={() => setAdding({})}>
+        <button className="cz-fab" aria-label="Ajouter une recette" onClick={() => setRadial({ create: true })}>
           <IconPlus size={24} />
         </button>
       )}
 
       {radial && (
         <RadialSheet
-          mealKey={radial.mealKey}
-          dayNom={dayNom(radial.dayKey)}
+          mealKey={'create' in radial ? undefined : radial.mealKey}
+          dayNom={'create' in radial ? undefined : dayNom(radial.dayKey)}
           libEmpty={recipes.length === 0}
           onWay={(w: RadialWay) => {
-            const target = { dayKey: radial.dayKey, mealKey: radial.mealKey, slot: 'plat' as const, role: soloRole(radial.mealKey) };
+            // Mode création (FAB) : pas de créneau → la recette naît en
+            // bibliothèque (onCreated ouvre sa fiche, flux existant).
+            const target = 'create' in radial
+              ? null
+              : { dayKey: radial.dayKey, mealKey: radial.mealKey, slot: 'plat' as const, role: soloRole(radial.mealKey) };
             setRadial(null);
-            if (w === 'biblio') setPick(target);
+            if (w === 'biblio' && target) setPick(target);
             else if (w === 'collection') openCollections();
-            else {
+            else if (w === 'ecrire' || w === 'photo') {
               setRadialTarget(target);
               setAdding({ step: w === 'ecrire' ? 'ecrire' : 'instructions' });
             }

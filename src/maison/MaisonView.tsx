@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { useNounou } from '../nounou/useNounou';
-import { loadDestinataires, loadPublished, loadSecurite, loadWeek, type PublishRecord } from '../lib/db';
-import { lastEspaceOpen } from '../lib/espace';
+import { deleteDestinataire, loadDestinataires, loadPublished, loadSecurite, loadWeek, type PublishRecord } from '../lib/db';
+import { lastEspaceOpen, revokeEspace } from '../lib/espace';
 import { weekId } from '../cuisine/dates';
 import { cleanText } from '../lib/sanitize';
 import { DAY_LABELS } from '../lib/rappel';
@@ -10,7 +10,7 @@ import { cuisineSig, envoiState, pillKind, type EnvoiState } from './transmissio
 import { nounouSig } from '../nounou/partage';
 import { personnes, KIND_LABEL, type Personne, type PersonneKind } from './personnes';
 import { agendaToday, nowHHMM, type AgendaItem } from './prochain';
-import { MzScreen, MzScroll } from '../ui/primitives';
+import { MzScreen, MzScroll, useToast } from '../ui/primitives';
 import Em from '../ui/Em';
 import { dayTitleISO, todayISO } from '../nounou/dates';
 import type { DayMenu, Destinataire, SecuriteFiche } from '../types';
@@ -66,6 +66,39 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
   const nReady = useNounou((s) => s.ready);
   const nInit = useNounou((s) => s.init);
   const doc = useNounou((s) => s.doc);
+  const removeDest = useNounou((s) => s.removeDest);
+  const { toast, node: toastNode } = useToast();
+  // Retour device PO (lot UI) : RETIRER une personne DIRECTEMENT depuis
+  // « Mon équipe » — même sémantique F1 que les feuilles de partage :
+  // le serveur coupe le lien D'ABORD ; le local n'est supprimé qu'après.
+  const [confirmRevoke, setConfirmRevoke] = useState<Personne | null>(null);
+  const [revoking, setRevoking] = useState(false);
+  const retirer = async (p: Personne) => {
+    setRevoking(true);
+    try {
+      const { error } = await revokeEspace(p.token);
+      if (error === 'session') {
+        toast(`Connecte-toi pour retirer ${p.prenom} — son lien doit être coupé côté serveur.`);
+        return;
+      }
+      if (error) {
+        toast(`Impossible de retirer maintenant — ${p.prenom} est conservé, réessaie.`);
+        return;
+      }
+      if (p.kind === 'cuisine') {
+        const d = cuisineDests.find((x) => x.token === p.token);
+        if (d) await deleteDestinataire(d.id);
+        setCuisineDests(await loadDestinataires());
+      } else {
+        const d = doc.destinataires.find((x) => x.token === p.token);
+        if (d) removeDest(d.id);
+      }
+      toast(`${p.prenom} retiré ; son lien ne donne plus rien.`);
+    } finally {
+      setRevoking(false);
+      setConfirmRevoke(null);
+    }
+  };
 
   const [cuisineDests, setCuisineDests] = useState<Destinataire[]>([]);
   const [published, setPublished] = useState<Record<string, PublishRecord>>({});
@@ -353,29 +386,53 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
         {list.map((p) => {
           const a = action(p);
           return (
-            <div className="b1-prow" key={p.key} onClick={() => onOpenPage(p.kind, p)} role="button" tabIndex={0}>
-              <span className={'b1-ini ' + (p.kind === 'cuisine' ? 'grn' : 'vio')}>
-                {p.prenom.charAt(0).toUpperCase()}
-                {a.pill && <span className="b1-pip" />}
-              </span>
-              <span className="b1-ptx">
-                <h4>
-                  {p.prenom} · {KIND_LABEL[p.kind]}
-                </h4>
-                <div className="st">{a.sub}</div>
-              </span>
-              {a.pill ? (
+            <div key={p.key}>
+              <div className="b1-prow" onClick={() => onOpenPage(p.kind, p)} role="button" tabIndex={0}>
+                <span className={'b1-ini ' + (p.kind === 'cuisine' ? 'grn' : 'vio')}>
+                  {p.prenom.charAt(0).toUpperCase()}
+                  {a.pill && <span className="b1-pip" />}
+                </span>
+                <span className="b1-ptx">
+                  <h4>
+                    {p.prenom} · {KIND_LABEL[p.kind]}
+                  </h4>
+                  <div className="st">{a.sub}</div>
+                </span>
+                {a.pill && (
+                  <button
+                    className="b1-pill"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      a.onPill();
+                    }}
+                  >
+                    {a.pill}
+                  </button>
+                )}
+                {/* Retirer directement depuis l'équipe (retour device PO). */}
                 <button
-                  className="b1-pill"
+                  className="b1-more"
+                  aria-label={`Retirer ${p.prenom}`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    a.onPill();
+                    setConfirmRevoke(confirmRevoke?.key === p.key ? null : p);
                   }}
                 >
-                  {a.pill}
+                  ⋯
                 </button>
-              ) : (
-                <span className="b1-chev">›</span>
+              </div>
+              {confirmRevoke?.key === p.key && (
+                <div className="b1-revoke">
+                  <span className="tx">
+                    Retirer {p.prenom} ? Son lien ne donnera plus rien.
+                  </span>
+                  <button className="no" disabled={revoking} onClick={() => setConfirmRevoke(null)}>
+                    Annuler
+                  </button>
+                  <button className="yes" disabled={revoking} onClick={() => void retirer(p)}>
+                    {revoking ? '…' : 'Retirer'}
+                  </button>
+                </div>
               )}
             </div>
           );
@@ -389,6 +446,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
         )}
         <div style={{ height: 16 }} />
       </MzScroll>
+      {toastNode}
     </MzScreen>
   );
 }

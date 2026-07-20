@@ -14,7 +14,7 @@ import RelectureSheet from './RelectureSheet';
 // Q4 : dépliées par défaut). Les collections quittent la tête → « Besoin
 // d'inspiration ? » en bas (plein) ou grandes tuiles (vide).
 
-const SECTIONS: { role: RecipeRole; label: string }[] = [
+export const SECTIONS: { role: RecipeRole; label: string }[] = [
   { role: 'petitdej', label: 'Petit-déj' },
   { role: 'entree', label: 'Entrées' },
   { role: 'plat', label: 'Plats' },

@@ -6,13 +6,17 @@ import type { Recipe, RecipeRole } from '../types';
 
 const MOTS: [RegExp, string][] = [
   [/tajine|tagine/, '🍲'],
-  [/soupe|harira|potage|bouillon/, '🍜'],
+  // Proto DA v2 : la soupe est un BOL À CUILLÈRE (🥣), pas un ramen asiatique.
+  [/soupe|harira|potage|bouillon/, '🥣'],
+  // Proto DA v2 : couscous/mezze = plat mijoté large (🥘) — pas le bol de riz.
+  [/couscous|mezze|mezzé|paella/, '🥘'],
+  [/briouate|samoussa|nem\b|raviole/, '🥟'],
   [/poulet|dinde|volaille/, '🍗'],
   [/poisson|dorade|sardine|saumon|lotte|crevette|mer\b/, '🐟'],
   [/bœuf|boeuf|kefta|kefta|viande|agneau|brochette/, '🥩'],
   [/salade|crudité/, '🥗'],
   [/œuf|oeuf|omelette|frittata|chakchouka/, '🍳'],
-  [/riz|semoule|couscous|pâtes|pates/, '🍚'],
+  [/riz|semoule|pâtes|pates/, '🍚'],
   [/pain|msemmen|batbout|sandwich|galette/, '🥖'],
   [/yaourt|fromage|laitage|creami|whey/, '🥛'],
   // AVANT la ligne fruit : « pommes de terre » matchait /pomme/ → 🍓 (découverte
@@ -27,10 +31,10 @@ const MOTS: [RegExp, string][] = [
 const PAR_ROLE: Record<RecipeRole, string> = {
   petitdej: '🍳',
   entree: '🥗',
-  plat: '🍽️',
+  plat: '🍴', // proto : « Votre plat » naît 🍴 (couverts nus, pas l'assiette du footer)
   acc: '🍚',
   dessert: '🍰',
-  soupe: '🍜',
+  soupe: '🥣',
   gouter: '🍪',
   boisson: '🥤',
 };

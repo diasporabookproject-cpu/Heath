@@ -129,6 +129,16 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot UI DA v2 — retours device PO n°1 (5 points) — 2026-07-20
+Test d'ensemble PO sur APK : 4 corrections + 1 validation (**n°5 : lien perpétuel OK sur device** ✔).
+- **① Emojis alignés maquette** : le dictionnaire (`lib/emoji.ts`) suivait des choix pré-DA v2 — corrigé sur le vocabulaire du proto : soupe/harira → **🥣** (bol-cuillère, plus le ramen 🍜), couscous/mezze → **🥘**, briouates/samoussa → **🥟** (nouveau mot-clé), repli plat → **🍴** (« Votre plat » du proto). Curation Fluent régénérée (43 repères : +dumpling, −steaming-bowl) ; tests emoji étendus (couscous, briouates). *Redécouverte au passage : `@iconify-json/fluent-emoji-flat` était bien en devDependency (T1) — c'est `node_modules` du container qui était incomplet.*
+- **② Retirer depuis « Mon équipe » (B1)** : bouton **⋯** discret par personne → barre de confirmation inline (« Retirer X ? Son lien ne donnera plus rien ») → **même sémantique F1 que les feuilles de partage** (serveur d'abord ; hors session → refus expliqué, personne conservée ; succès → suppression locale par sorte cuisine/nounou + toast). Porte smoke : hors session, refus honnête + personne conservée.
+- **③ FAB Recettes → RADIAL de création** : `RadialSheet` gagne un mode sans créneau (pétales = les 3 voies écrire/photo/collection, **pas de rangée source** — rien n'est rempli), le FAB l'ouvre. La recette créée naît en bibliothèque (fiche s'ouvre — flux existant). Porte smoke : 3 pétales, zéro source, zéro langage banni.
+- **④ Sélecteur = interface Recettes** : `RecipePickerSheet` rend désormais **les mêmes sections par moment repliables et les mêmes lignes** (chip-emoji 42×42, nom 13,5/700, étoile fantôme fonctionnelle) que l'onglet Recettes (T5) — le tag de rôle meurt aussi ici. `SECTIONS` exporté de RecettesView (un seul vocabulaire). Classe `cz-pick` conservée (ancres smoke intactes).
+- Incident container : redémarrage sur l'ancienne branche → `git checkout -B lot-ui-v1 origin/lot-ui-v1` (aucune perte, tout était poussé) ; `.env` local (non versionné) recréé — sans lui, `showAccount` disparaît et smoke-comptes échoue (diagnostic utile : le smoke a bien attrapé la régression d'environnement).
+- Portes : typecheck ✓ · **200/200** ✓ · build ✓ · **3 smokes ✓** (2 portes neuves : FAB-radial · revoke B1) · captures 4 points.
+
+
 ### Lot UI DA v2 — T5 avenant : audit esthétique proto↔app écran par écran (demande PO) — 2026-07-20
 **Audit outillé complet** (proto committé + app, même viewport 314×684, mesure homologue élément par élément sur toutes les pièces neuves : cartes de moment T3, radial T4, recettes T5). **3 divergences RÉELLES trouvées et corrigées :**
 - **Lignes Recettes** (le gros écart) : l'emoji était **nu (24px)** ; le proto l'enchâsse dans un **carré tinté 42×42** (`.rchip`). + nom ramené à **13,5px/700** (était 16/600) et ligne `10px 12px` / radius 14 (proto). `.cz-remoji` restylé en chip.

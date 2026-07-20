@@ -130,3 +130,12 @@
   width: 100%; border: 1.5px dashed var(--mz-faint); border-radius: 13px; padding: 12px;
   text-align: center; color: var(--mz-muted); font-size: 12.5px; font-weight: 700; margin-top: 4px;
 }
+
+/* Retirer depuis « Mon équipe » (retour device PO, lot UI). */
+.b1-more { flex: none; width: 32px; height: 32px; border-radius: 9px; border: none; background: none; color: #b8b0a4; font-size: 17px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
+.b1-more:hover { background: var(--mz-surface-2, #f3efe8); }
+.b1-revoke { display: flex; align-items: center; gap: 8px; margin: -4px 0 10px; padding: 10px 12px; background: #fdf3f0; border: 1px solid #f3d9d0; border-radius: 12px; }
+.b1-revoke .tx { flex: 1; font-size: 12px; font-weight: 600; color: #8a5045; line-height: 1.35; }
+.b1-revoke button { border: none; border-radius: 9px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.b1-revoke .no { background: #fff; color: #6b6459; border: 1px solid #e8e2d6; }
+.b1-revoke .yes { background: #b5533c; color: #fff; }

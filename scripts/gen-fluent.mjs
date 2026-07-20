@@ -40,8 +40,8 @@ const CHARS = {
   '🩺': 'stethoscope',
   '⚽': 'soccer-ball',
   // — dictionnaire recettes (emoji.ts : MOTS + PAR_ROLE) —
-  '🍜': 'steaming-bowl',
   '🍗': 'poultry-leg',
+  '🥟': 'dumpling',
   '🐟': 'fish',
   '🥩': 'cut-of-meat',
   '🥗': 'green-salad',

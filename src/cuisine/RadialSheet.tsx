@@ -14,8 +14,10 @@ const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit déjeuner', dej: 
 const MEAL_PHRASE: Record<MealKey, string> = { petitdej: 'Le petit déjeuner', dej: 'Le déjeuner', gouter: 'Le goûter', diner: 'Le dîner' };
 
 interface Props {
-  mealKey: MealKey;
-  dayNom: string;
+  /** Créneau visé — ABSENT en mode création (FAB Recettes : la recette naît
+   * dans la bibliothèque, aucun créneau n'est rempli). */
+  mealKey?: MealKey;
+  dayNom?: string;
   /** Bibliothèque vide → pas de pétale « Ma bibliothèque » (le sélecteur serait sans objet). */
   libEmpty: boolean;
   onWay: (w: RadialWay) => void;
@@ -31,8 +33,9 @@ export default function RadialSheet({ mealKey, dayNom, libEmpty, onWay, onClose 
   }, []);
 
   // TOUJOURS 3 pétales. Bibliothèque remplie : « Ma bibliothèque » À GAUCHE
-  // (Q5 tranchée — côté pouce) ; vide : la collection prend le 3ᵉ pétale.
-  const petals: { way: RadialWay; ch: string; label: string }[] = libEmpty
+  // (Q5 tranchée — côté pouce) ; vide OU mode création (pas de créneau à
+  // remplir → piocher dans la bibliothèque n'aurait pas de sens) : les 3 voies.
+  const petals: { way: RadialWay; ch: string; label: string }[] = libEmpty || !mealKey
     ? [
         { way: 'ecrire', ch: '✏️', label: 'L’écrire' },
         { way: 'photo', ch: '📸', label: 'Photo ou lien' },
@@ -57,17 +60,20 @@ export default function RadialSheet({ mealKey, dayNom, libEmpty, onWay, onClose 
           </button>
         ))}
       </div>
-      {/* Le créneau SOURCE, visible et surligné — on sait toujours ce qu'on remplit. */}
-      <div className={'cz-srcrow s-' + mealKey}>
-        <span className="ml2">{MEAL_LABEL[mealKey]}</span>
-        <span className="mchip">
-          <span className="plus">＋</span>
-        </span>
-        <span className="mn">
-          {MEAL_PHRASE[mealKey]}
-          <small> · {dayNom}</small>
-        </span>
-      </div>
+      {/* Le créneau SOURCE, visible et surligné — on sait toujours ce qu'on
+          remplit. En mode création (FAB), pas de source : rien n'est rempli. */}
+      {mealKey && (
+        <div className={'cz-srcrow s-' + mealKey}>
+          <span className="ml2">{MEAL_LABEL[mealKey]}</span>
+          <span className="mchip">
+            <span className="plus">＋</span>
+          </span>
+          <span className="mn">
+            {MEAL_PHRASE[mealKey]}
+            {dayNom && <small> · {dayNom}</small>}
+          </span>
+        </div>
+      )}
       <button className="cz-radclose" onClick={onClose} aria-label="Fermer">
         ✕
       </button>

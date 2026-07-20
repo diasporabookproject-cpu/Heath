@@ -4,12 +4,14 @@ import { recipeEmoji } from './emoji';
 describe('lib/emoji — repère déterministe des cartes (F7.1)', () => {
   it('mot-clé du nom prioritaire (tajine, soupe, poisson…)', () => {
     expect(recipeEmoji({ nom: 'Tagine de poulet', role: 'plat' })).toBe('🍲'); // tajine avant poulet
-    expect(recipeEmoji({ nom: 'Soupe de légumes', role: 'entree' })).toBe('🍜');
+    expect(recipeEmoji({ nom: 'Soupe de légumes', role: 'entree' })).toBe('🥣'); // proto : bol-cuillère
+    expect(recipeEmoji({ nom: 'Couscous du vendredi', role: 'plat' })).toBe('🥘'); // proto
+    expect(recipeEmoji({ nom: 'Briouates au fromage', role: 'entree' })).toBe('🥟'); // proto
     expect(recipeEmoji({ nom: 'Dorade rôtie au four', role: 'plat' })).toBe('🐟');
   });
 
   it('repli par RÔLE quand aucun mot-clé', () => {
-    expect(recipeEmoji({ nom: 'Assiette mystère', role: 'plat' })).toBe('🍽️');
+    expect(recipeEmoji({ nom: 'Assiette mystère', role: 'plat' })).toBe('🍴'); // proto : « Votre plat »
     expect(recipeEmoji({ nom: 'Truc du matin', role: 'petitdej' })).toBe('🍳');
     expect(recipeEmoji({ nom: 'Chose sucrée', role: 'gouter' })).toBe('🍪');
   });
