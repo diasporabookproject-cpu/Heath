@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNounou } from './useNounou';
 import Sheet from './Sheet';
 import { IconPlusThin } from './icons';
-import { qrSvg } from './qr';
+import { qrSvg } from '../lib/qr';
 import { publishNounouEspace } from './partage';
 import { buildEspaceUrl, lastEspaceOpen, revokeEspace } from '../lib/espace';
 import { getSupabase, supabaseEnabled } from '../lib/supabase';

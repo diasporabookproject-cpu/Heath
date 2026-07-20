@@ -84,7 +84,7 @@ await page.getByLabel('Partager le menu').first().click();
 await page.getByText('Nouvelle personne').waitFor({ timeout: 5000 }); // 0 destinataire → mode édition
 await page.locator('.cz-inp').first().fill('Testouya');
 await page.getByRole('button', { name: 'Enregistrer' }).click();
-await page.getByText('Envoyer à Testouya').waitFor({ timeout: 5000 });
+await page.getByText('Partager avec Testouya').waitFor({ timeout: 5000 }); // titre feuille v2 (T1 lot partage)
 await page.getByRole('button', { name: 'Changer' }).click();
 await page.getByRole('button', { name: 'Révoquer' }).click();
 await page.getByText('Connecte-toi pour retirer Testouya', { exact: false }).waitFor({ timeout: 5000 });

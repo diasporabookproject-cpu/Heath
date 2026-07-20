@@ -351,8 +351,9 @@ if (await shareSheet.locator('input').count()) {
   await shareSheet.getByText('Enregistrer', { exact: false }).first().click();
   await page.waitForTimeout(600);
 }
-await shareSheet.getByText('Aperçu · QR', { exact: false }).click();
+await shareSheet.getByText('Accès permanent', { exact: false }).click();
 await page.locator('.cz-preview-overlay').waitFor({ timeout: 8000 });
+await page.locator('.ck-qrblock svg').waitFor({ timeout: 5000 }); // T1 : QR permanent dans l'aperçu
 // La destinataire naît en darija → l'alerte s'affiche d'abord en ARABE (RTL),
 // puis on bascule FR : les DEUX registres du gate sont ainsi couverts.
 await page.locator('.ck-warn', { hasText: 'arachide' }).first().waitFor({ timeout: 5000 });
@@ -385,7 +386,7 @@ await page.getByText('Pour quel repas ?').waitFor({ timeout: 5000 });
 await page.getByText('Prochain repas', { exact: true }).waitFor({ timeout: 3000 }); // défaut marqué
 await page.locator('.cz-sheet.show', { hasText: 'Pour quel repas ?' }).locator('.cz-pick').first().click(); // UN tap
 await page.getByText('Ajoutée au repas — à toi d’envoyer').waitFor({ timeout: 5000 });
-await page.getByText('L’essentiel dans WhatsApp', { exact: false }).waitFor({ timeout: 5000 }); // partage ouvert
+await page.getByText('Accès permanent', { exact: false }).waitFor({ timeout: 5000 }); // feuille d'envoi ouverte (T1)
 await page.locator('.cz-overlay.show').first().click({ position: { x: 8, y: 8 } }).catch(() => {});
 await page.waitForTimeout(400);
 console.log('F6.1 (D1) : Partager = posée au prochain repas, puis feuille d’envoi ✅');

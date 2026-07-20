@@ -23,13 +23,15 @@ import SecuriserVolet from '../components/SecuriserVolet';
 import { todayKey } from './dates';
 import { buildCuisineDigest, type CuisineScope } from '../maison/digest';
 import { DigestBlock, type ScopeOption } from '../ui/DigestBlock';
+import { qrSvg } from '../lib/qr';
 import { rappelLabel } from '../lib/rappel';
 import RappelSheet from './RappelSheet';
 import type { Destinataire, SecuriteFiche } from '../types';
 import EspaceCuisine from './EspaceCuisine';
 import { IconSend, IconEye, IconLoader, IconCheck } from './icons';
 
-const ROLES = ['Cuisinière', 'Femme de ménage', 'Nounou', 'Autre'];
+// Registre neutre (lot partage T1) : le métier, jamais le genre présumé.
+const ROLES = ['Cuisine', 'Ménage', 'Nounou', 'Autre'];
 const digits = (s?: string) => (s ?? '').replace(/\D/g, '');
 const CUISINE_SCOPES: ScopeOption[] = [
   { key: 'semaine', label: 'La semaine' },
@@ -66,6 +68,8 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
   const [secFiches, setSecFiches] = useState<SecuriteFiche[]>([]);
   const [lastOpen, setLastOpen] = useState<string | null>(null);
   const [preview, setPreview] = useState<Espace | null>(null);
+  // T1 (lot partage) : le QR de l'accès permanent, rendu dans l'aperçu.
+  const [qr, setQr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // F4-bis fiche B : volet « Sécuriser » inline (création de compte transparente).
   const [securiser, setSecuriser] = useState(false);
@@ -128,7 +132,7 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
     return {
       id: crypto.randomUUID(),
       nom: '',
-      role: 'Cuisinière',
+      role: 'Cuisine',
       langue: 'dr',
       token: newToken(),
       createdAt: Date.now(),
@@ -187,9 +191,21 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
     if (!selected) return;
     setBusy(true);
     try {
+      // Le QR encode le LIEN PERMANENT (le jeton) — il ne change jamais (F1).
+      setQr(await qrSvg(buildEspaceUrl(selected.token)).catch(() => null));
       setPreview(await previewEspace(selected, SEED_CONFIG, week, byId, persons));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const copyLink = async () => {
+    if (!selected) return;
+    try {
+      await navigator.clipboard.writeText(buildEspaceUrl(selected.token));
+      toast('Lien copié ✓ — il ne change jamais');
+    } catch {
+      toast('Impossible de copier ici — passe par Envoyer');
     }
   };
 
@@ -232,7 +248,13 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
         <div className="cz-handle" />
         <div className="cz-sheethead">
           <div className="ttl">
-            {mode === 'edit' ? (editing && dests.some((d) => d.id === editing.id) ? 'Modifier la personne' : 'Nouvelle personne') : 'Partager le menu'}
+            {mode === 'edit'
+              ? editing && dests.some((d) => d.id === editing.id)
+                ? 'Modifier la personne'
+                : 'Nouvelle personne'
+              : mode === 'send' && selected
+                ? `Partager avec ${selected.nom}`
+                : 'Partager le menu'}
           </div>
           <button className="cz-x" onClick={onClose} aria-label="Fermer" disabled={busy}>
             ✕
@@ -279,48 +301,79 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
             />
           ) : selected ? (
             <div className="ck-send">
-              <h1 style={{ marginBottom: 2 }}>Envoyer à {selected.nom}</h1>
-              <div className="mz-sm" style={{ marginBottom: 10 }}>
-                L’essentiel dans WhatsApp — et toute sa page à jour, en un lien.
-              </div>
-
+              {/* T1 (lot partage, maquette) — relief et aisance, pas contrôle :
+                  la personne, puis LE MESSAGE en héros, puis l'accès permanent. */}
               <div className="ck-recip">
                 <div className="ck-ava">{selected.nom.charAt(0).toUpperCase() || '?'}</div>
                 <div className="ck-ri">
                   <div className="n">{selected.nom}</div>
-                  <div className="r">
-                    {selected.role} ·{' '}
-                    <span className="lang">{selected.langue === 'dr' ? 'الدارجة' : 'Français'}</span>
-                  </div>
+                  <span className="ck-langpill">
+                    Reçoit en{' '}
+                    {selected.langue === 'dr' ? <span className="ar">الدارجة</span> : 'français'}
+                  </span>
                 </div>
                 <button className="ck-ch" onClick={() => setMode('list')}>
                   Changer
                 </button>
               </div>
 
-              <DigestBlock
-                role="cuisine"
-                scopes={CUISINE_SCOPES}
-                active={scope}
-                onScope={(k) => setScope(k as CuisineScope)}
-                value={digest}
-                onChange={setDigest}
-              />
-              {scope === 'jour' && (
-                <div className="mz-digest grn">
-                  <div className="mz-scope" style={{ marginTop: 8 }}>
-                    {SEED_CONFIG.jours.map((j) => (
-                      <button
-                        key={j.key}
-                        className={'mz-sc' + (dayKey === j.key ? ' on' : '')}
-                        onClick={() => setDayKey(j.key)}
-                      >
-                        {j.nom.slice(0, 3)}
-                      </button>
-                    ))}
-                  </div>
+              <div className="ck-msgcard">
+                <div className="mtop">
+                  <IconSend size={15} />
+                  Message
                 </div>
-              )}
+                <DigestBlock
+                  role="cuisine"
+                  scopes={CUISINE_SCOPES}
+                  active={scope}
+                  onScope={(k) => setScope(k as CuisineScope)}
+                  value={digest}
+                  onChange={setDigest}
+                />
+                {scope === 'jour' && (
+                  <div className="mz-digest grn">
+                    <div className="mz-scope" style={{ marginTop: 8 }}>
+                      {SEED_CONFIG.jours.map((j) => (
+                        <button
+                          key={j.key}
+                          className={'mz-sc' + (dayKey === j.key ? ' on' : '')}
+                          onClick={() => setDayKey(j.key)}
+                        >
+                          {j.nom.slice(0, 3)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <button className="ck-wabtn" onClick={send} disabled={busy}>
+                  {busy ? <IconLoader size={18} className="cz-spin" /> : <IconSend size={17} />}
+                  {busy
+                    ? 'Envoi…'
+                    : confirmEmpty
+                      ? 'Rien de prévu — envoyer quand même'
+                      : hasPhone
+                        ? 'Envoyer sur WhatsApp'
+                        : 'Publier + copier le message'}
+                </button>
+              </div>
+
+              <div className="ck-tierbreak" />
+
+              <div className="ck-optcard">
+                <button className="head" onClick={openPreview} disabled={busy}>
+                  <span className="oi">
+                    <IconEye size={17} />
+                  </span>
+                  <span className="ct">
+                    <b>Accès permanent</b>
+                    <i>Sa page, avec un QR code à coller sur le frigo — le lien ne change jamais.</i>
+                  </span>
+                  <span className="chev">›</span>
+                </button>
+                <button className="qrcopy" onClick={copyLink}>
+                  Copier le lien
+                </button>
+              </div>
 
               <button className="cz-cfgrow" onClick={() => setRappelOpen(true)}>
                 <span className="e">🔔</span>
@@ -331,28 +384,12 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
                 <span className="go">{rappel ? 'Modifier' : 'Activer'}</span>
               </button>
 
-              <button className="ck-prev" onClick={openPreview} disabled={busy} style={{ marginTop: 12 }}>
-                <IconEye size={16} />
-                Aperçu · QR
-              </button>
-
               <div className="ck-receipt">
                 <IconEye size={15} />
                 <span>
                   <b>Dernier accès :</b> {lastOpen ? formatWhen(lastOpen) : '—'}
                 </span>
               </div>
-
-              <button className="cz-cta" onClick={send} disabled={busy}>
-                {busy ? <IconLoader size={18} className="cz-spin" /> : <IconSend size={18} />}
-                {busy
-                  ? 'Envoi…'
-                  : confirmEmpty
-                    ? 'Rien de prévu — envoyer quand même'
-                    : hasPhone
-                      ? `Envoyer à ${selected.nom}`
-                      : 'Publier + copier le message'}
-              </button>
             </div>
           ) : (
             <p className="cz-emptynote">Ajoute une personne pour partager le menu.</p>
@@ -371,6 +408,15 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
             </button>
           </div>
           <div className="cz-preview-body">
+            {qr && (
+              <div className="ck-qrblock">
+                <div className="q" dangerouslySetInnerHTML={{ __html: qr }} />
+                <div className="t">
+                  <b>Accès permanent</b>
+                  À coller sur le frigo — le lien ne change jamais.
+                </div>
+              </div>
+            )}
             <EspaceCuisine espace={preview} />
           </div>
         </div>

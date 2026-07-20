@@ -59,7 +59,7 @@ async function populate(
     await saveDestinataire({
       id: crypto.randomUUID(),
       nom: cook.prenom,
-      role: 'Cuisinière',
+      role: 'Cuisine', // registre neutre (lot partage T1)
       langue: normalizeDestLangue(cook.langue),
       token: newToken(),
       createdAt: Date.now(),

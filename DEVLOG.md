@@ -129,6 +129,16 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage + suivi des tâches — T1 : feuille d'envoi v2 (labels, maquette) — 2026-07-21
+**Lot ouvert sur GO architecture PO** (read-back validé : journal insert-only `espace_checks`, LWW par item, patron `gouter?` pour le payload — **exigence 🔴 intégrée à la spec T2 : la policy select anon de 0011 porte la jointure d'existence sur `espaces`**, test bloquant n°4 « jeton révoqué → select anon = vide »). Branche `lot-partage-v1`, `apk.yml` repointée.
+**T1 livré (partie A — refonte visuelle sur fonctions existantes, maquette `partagelabels`)** :
+- Feuille d'envoi restructurée : titre **« Partager avec {nom} »**, destinataire + **« Reçoit en الدارجة/français »** (langpill), **carte Message héros** — portées existantes + digest habillé en **bulle WhatsApp** (DigestBlock intact, partagé Nounou — habillage CSS scopé) + **bouton vert** (« Envoyer sur WhatsApp » avec numéro · « Publier + copier le message » sans), **carte « Accès permanent »** (aperçu + **QR à coller sur le frigo — le lien ne change jamais**) + **« Copier le lien »** (nouveau geste trivial sur l'URL existante), rappel d'envoi et dernier accès conservés.
+- **QR côté Cuisine** : `qr.ts` déplacé `nounou/` → `lib/` (réutilisation propre), le QR du lien permanent s'affiche EN TÊTE de l'aperçu (porte smoke).
+- **Registre neutre** : `ROLES` dégenré (« Cuisine », « Ménage » — plus « Cuisinière »/« Femme de ménage »), défauts `blank()`/FTUE alignés ; les destinataires stockés gardent leur libellé (pas de migration d'un champ libre).
+- **Écart maquette assumé** : le toggle Français|الدارجة du MESSAGE n'est pas livré — le digest n'a pas de variante darija aujourd'hui (la maquette elle-même le marque « brouillon ») ; à trancher au bloc traduction, pas inventé ici.
+- Portes : typecheck ✓ · 203/203 ✓ · build ✓ · 3 smokes ✓ (ancres mises à jour : « Partager avec », « Accès permanent », + porte QR-dans-aperçu) · captures. **STOP — T2 (socle données 0011 + lib checks) au GO ; la fenêtre prod se planifie ensemble.**
+
+
 ### CLÔTURE — Lot UI DA v2 « cœur testable » — 2026-07-20
 **Mergé au défaut** (`770f945`, merge --no-ff de `lot-ui-v1`) après GO clôture PO (device validé sur build tamponné). Périmètre livré : T0 pack DA v2 → T1 B1 → T2 Cuisine socle → T3 les 4 moments (2 tests bloquants : lien perpétuel + sync ancien client) → T4 radial + recette légère (critère Q2 prouvé) → T5 Recettes vide/plein — **plus 3 vagues de retours device PO** (n°1 : emojis proto + Retirer équipe + FAB radial + sélecteur unifié · n°2 : Fluent **3D** + Supprimer recette + plat retirable + copier au choix · n°3 : vocabulaire bento + tampon de build + 3 fuites de caractères bruts). Portes re-vérifiées sur le mergé avant push (typecheck · 203 tests · build · 3 smokes). `apk.yml` **repointé au défaut** (règle : la branche de lot active, sinon le défaut). `ETAT.md` réécrit (un seul écrivain, au commit de clôture). Prod : push défaut → Pages (run vérifié, tampon de build visible en bas du hub = vérité de version en prod aussi).
 
