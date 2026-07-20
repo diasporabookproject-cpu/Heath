@@ -129,6 +129,10 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### CLÔTURE — Lot UI DA v2 « cœur testable » — 2026-07-20
+**Mergé au défaut** (`770f945`, merge --no-ff de `lot-ui-v1`) après GO clôture PO (device validé sur build tamponné). Périmètre livré : T0 pack DA v2 → T1 B1 → T2 Cuisine socle → T3 les 4 moments (2 tests bloquants : lien perpétuel + sync ancien client) → T4 radial + recette légère (critère Q2 prouvé) → T5 Recettes vide/plein — **plus 3 vagues de retours device PO** (n°1 : emojis proto + Retirer équipe + FAB radial + sélecteur unifié · n°2 : Fluent **3D** + Supprimer recette + plat retirable + copier au choix · n°3 : vocabulaire bento + tampon de build + 3 fuites de caractères bruts). Portes re-vérifiées sur le mergé avant push (typecheck · 203 tests · build · 3 smokes). `apk.yml` **repointé au défaut** (règle : la branche de lot active, sinon le défaut). `ETAT.md` réécrit (un seul écrivain, au commit de clôture). Prod : push défaut → Pages (run vérifié, tampon de build visible en bas du hub = vérité de version en prod aussi).
+
+
 ### Lot UI DA v2 — retours emojis, dernier réglage : le VOCABULAIRE bento — 2026-07-20
 Capture device PO (build 0b4715d confirmé à l'écran — le tampon fait son travail) : le 3D est là, mais **deux vignettes jurent** et la capture les montre. Diagnostic sur preuve :
 - **Agenda « Déjeuner » (moment enfants)** : `MOMENT_PICTO.repas` était **🍽️** — un glyphe GRIS PAR DESIGN en Fluent 3D → vignette éteinte. La timeline bento n'utilise jamais 🍽️ ; son glyphe repas vif est **🍲** → remplacé.
