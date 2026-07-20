@@ -332,7 +332,8 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
         {cuisineActif && (
           <button className="b1-cuihero" onClick={() => onOpenPage('cuisine')}>
             <span className="b1-chead">
-              <span className="b1-cchip"><Em ch="🍲" size={38} /></span>
+              {/* Identité Cuisine = 🥘 (bento : bandeau prochain, avatar, en-tête). */}
+              <span className="b1-cchip"><Em ch="🥘" size={38} /></span>
               <span>
                 <span className="b1-cn">La Cuisine</span>
                 <div className="b1-csub">{cuisineHero.sub}</div>

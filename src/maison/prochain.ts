@@ -21,7 +21,9 @@ const MEAL_PICTO: Record<MealKey, string> = { petitdej: '🥐', dej: '🥘', gou
 const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit-déjeuner', dej: 'Déjeuner', gouter: 'Goûter', diner: 'Dîner' };
 
 const MOMENT_PICTO: Record<string, string> = {
-  reveil: '⏰', ecole: '🏫', repas: '🍽️', sieste: '😴', gouter: '🍎',
+  // `repas` : 🍲 (glyphe repas VIF de la maquette bento) — 🍽️ (gris par
+  // design en Fluent 3D) rendait la vignette éteinte (retour device PO).
+  reveil: '⏰', ecole: '🏫', repas: '🍲', sieste: '😴', gouter: '🍎',
   bain: '🛁', sortie: '🧺', sante: '🩺', coucher: '🌙', activite: '⚽', autre: '•',
 };
 

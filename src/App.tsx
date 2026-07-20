@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import Em from './ui/Em';
 import { useStore } from './store/useStore';
 import MaisonView from './maison/MaisonView';
 import CuisineView from './cuisine/CuisineView';
@@ -195,8 +196,8 @@ export default function App() {
                   setNewPageOpen(false);
                 }}
               >
-                <span className="mz-tav" style={{ background: '#F1EFE8', fontSize: 20 }}>
-                  {r === 'cuisine' ? '🍲' : '🧸'}
+                <span className="mz-tav" style={{ background: '#F1EFE8' }}>
+                  <Em ch={r === 'cuisine' ? '🥘' : '🧸'} size={22} />
                 </span>
                 <span>
                   <h4>{r === 'cuisine' ? 'Cuisine' : 'Nounou'}</h4>

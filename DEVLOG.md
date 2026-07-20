@@ -129,6 +129,15 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot UI DA v2 — retours emojis, dernier réglage : le VOCABULAIRE bento — 2026-07-20
+Capture device PO (build 0b4715d confirmé à l'écran — le tampon fait son travail) : le 3D est là, mais **deux vignettes jurent** et la capture les montre. Diagnostic sur preuve :
+- **Agenda « Déjeuner » (moment enfants)** : `MOMENT_PICTO.repas` était **🍽️** — un glyphe GRIS PAR DESIGN en Fluent 3D → vignette éteinte. La timeline bento n'utilise jamais 🍽️ ; son glyphe repas vif est **🍲** → remplacé.
+- **Identité Cuisine** : B1 affichait **🍲** (hérité de `proto-b1-reference`) mais la maquette bento — LA référence visuelle du PO — met **🥘 partout** (bandeau prochain, avatar Khadija, en-tête de page) et `KIND_PICTO`/`MEAL_PICTO.dej` étaient déjà 🥘 → héros B1 aligné 🥘 (cohérence totale).
+- **3ᵉ fuite de caractère BRUT** : la liste FTUE « une page pour… » (`App.tsx`) rendait 🍲/🧸 en texte (Noto sur Android) → `Em` + 🥘.
+- 🍽️ reste dans la curation (footer Menu de Cuisine, conforme au proto DA v2 qui le déclare explicitement pour cet onglet).
+- Portes : typecheck ✓ · 203/203 ✓ · build ✓ · 3 smokes ✓ · capture B1 (héros 🥘 vif).
+
+
 ### Lot UI DA v2 — suite retours emojis : tampon de build + rendus bruts — 2026-07-20
 PO : « emoji toujours pas les bons sur mon téléphone » — or le rendu web des 43 repères 3D est correct (vérifié : captures + **zéro collision d'`id` SVG** sur 1213 ids). Hypothèse la plus probable : **on ne sait pas quelle version tourne sur le device** (boucle d'APK successifs). Réponse outillée plutôt que devinée :
 - **Tampon de build** : `VITE_BUILD_SHA` (sha court, `vite.config` → `define`, surchargeable par env en CI) affiché **en bas du hub B1** (`.b1-build`, discret). Fin des tests en aveugle — le PO lit la version installée à l'écran.
