@@ -129,6 +129,18 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot UI DA v2 — T5 : Recettes, états vide + plein (SPEC 6) — 2026-07-20
+**T5 livré — la dernière tranche du lot.** Sortir du « bordélique » (3 mécanismes empilés) :
+- **Les chips de filtre MEURENT** (porte smoke : `.cz-chips` interdit) → **SECTIONS PAR MOMENT repliables** — **Q3 : ordre des repas** (Petit-déj → Entrées → Plats → Accompagnements → Soupes → Goûters → Desserts → Boissons), **Q4 : dépliées par défaut** (porte smoke : replier cache les lignes). Lignes **épurées** : étoile + emoji Fluent (`Em`) + nom — **le tag de rôle meurt** (la section porte l'info) ; ✦ À valider reste ; vocal reste.
+- **Recherche + toggle favoris** (étoile à droite de la recherche — porte smoke : étoiler une ligne → toggle → elle seule reste).
+- **Les collections quittent la tête** (rail et ligne repliée F7.1 MORTS — porte smoke) → **« Besoin d'inspiration ? » en bas** : carrousel de cartes vendeuses (une teinte par pack, gros emoji, description, compte) + « Voir toutes les collections → ».
+- **État VIDE conçu** (proto) : héros 🧑‍🍳 « Votre bibliothèque est vide » → collections en **grandes tuiles** tintées (badge NOUVEAU, description, compte — classe `cz-pkt` conservée, smoke intact) + « — ou — Créer ma première recette » (→ les 3 voies).
+- **Compat `filter='draft'`** : « X à valider » de la vue semaine ouvre désormais la **file de relecture** directement (les chips n'existent plus).
+- Bandeau relecture, `RelectureSheet`, `CollectionsSheet` : **réutilisés**, pas réécrits. FAB inchangé (3 voies). Piège attrapé à la capture : `.cz-pkt i` (héritage rail) imposait la mono aux descriptions → `font-family` explicite sur `.cz-cx`/`.cz-cc`.
+- *Tracé, hors lot : les descriptions des packs tutoient et parlent « sans gluten/protéines » — c'est le CONTENU éditorial (revue du Fonds de départ, file d'attente n°1), pas le moteur.*
+- Portes : typecheck ✓ · **200/200** ✓ · build ✓ · **3 smokes ✓** (portes T5 : chips mortes · collections en bas · sections repliables · favoris opérants) · captures vide/plein/inspiration. **STOP — le lot UI est code-complet (T0→T5) : test d'ensemble PO sur device, puis clôture du lot (merge au défaut + ETAT).**
+
+
 ### Lot UI DA v2 — T4 : le geste radial + la recette légère — 2026-07-20
 **T4 livré (SPEC 5)** — T2/T3 validés device + lien perpétuel par le PO avant ouverture.
 - **① Radial (`RadialSheet.tsx`)** : créneau VIDE → fond assombri, **3 pétales en arc** (jamais 4 — porte smoke), **« Ma bibliothèque » à GAUCHE côté pouce** (Q5, porte smoke), créneau source **visible et surligné** (bord terracotta, chip tinté du moment, « Le goûter · Mardi »), fermer. **Couche d'ENTRÉE, pas de réécriture** : pétale biblio → `RecipePickerSheet` existant ; pétales créer → `AddRecipeSheet` **directement sur la voie** (`initialStep`, garde hors-ligne/quota conservée avec repli honnête vers les 3 voies) ; collection → `CollectionsSheet`. **Créneau PLEIN → composeur DIRECT, inchangé** (porte smoke : « le radial ne contourne pas ») ; le multi-composant reste dans `MealComposerSheet`. Bibliothèque vide → pétales écrire/photo/collection (pas de sélecteur sans objet). Amendement ② **étendu** : une recette créée depuis un pétale prend le créneau (même règle que depuis le sélecteur — `radialTarget`).

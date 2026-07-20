@@ -92,13 +92,16 @@ await page.locator('.cz-sheet.show .cz-cta').waitFor({ timeout: 5000 });
 await page.locator('.cz-sheet.show .cz-cta').click(); // « Ajouter les 30 recettes »
 await page.locator('.cz-librow').first().waitFor({ timeout: 5000 }); // bibliothèque peuplée
 console.log('Collection « Fonds de départ » installée ✅');
-// T7/F7.1 — biblio RICHE (>12) : le rail se replie en ligne ; repère emoji posé.
-await page.locator('.cz-collline').waitFor({ timeout: 3000 });
-if (await page.locator('.cz-rail').count())
-  throw new Error('F7.1 : le rail doit être replié quand la bibliothèque est riche (>12)');
+// T5 (SPEC 6) — les chips MEURENT, les collections vivent EN BAS (« Besoin
+// d'inspiration ? ») ; le repère emoji reste ; plus jamais de rail en tête.
+if (await page.locator('.cz-chips').count())
+  throw new Error('T5 : les chips de filtre doivent avoir disparu (sections par moment)');
+if (await page.locator('.cz-rail').count() || await page.locator('.cz-collline').count())
+  throw new Error('T5 : plus de rail ni de ligne Collections en tête — elles vivent en bas');
+await page.locator('.cz-inspi').waitFor({ timeout: 3000 });
 if (!(await page.locator('.cz-remoji').count()))
   throw new Error('F7.1 : repère emoji absent des cartes');
-console.log('F7.1 : rail replié (riche) + repères emoji ✅');
+console.log('T5 : chips mortes, collections en bas (inspiration), repères emoji ✅');
 // F1.3 : l'onglet s'appelle désormais « Menu ».
 await page.getByRole('tab', { name: 'Menu' }).click();
 if (!(await page.locator('.cz-weekbtn.on').count())) await page.locator('.cz-weekbtn').click(); // toggle → idempotent
@@ -168,16 +171,30 @@ if (halalOn !== 'true') throw new Error('T3 : halal non persisté après reload'
 await page.locator('.cz-sheet.show .cz-cta').click(); // OK
 console.log('Restrictions du foyer : posées, affichées (G1), persistées au reload ✅');
 
-// 3) FC5 — bibliothèque (rôles + favoris).
+// 3) FC5 (T5) — bibliothèque : SECTIONS PAR MOMENT (Q3 ordre des repas,
+// Q4 dépliées par défaut, repliables) + favoris opérants (étoile + toggle).
 await page.getByRole('tab', { name: 'Recettes' }).click();
 await page.locator('.cz-librow').first().waitFor({ timeout: 5000 });
 const nbRecettes = await page.locator('.cz-librow').count();
 if (nbRecettes === 0) throw new Error('Bibliothèque vide');
-await page.locator('.cz-chips .cz-chip', { hasText: 'Petit-déj' }).click(); // filtre par rôle
+await page.locator('.cz-sech', { hasText: 'Plats' }).waitFor({ timeout: 3000 }); // sections présentes
+await page.locator('.cz-sech', { hasText: 'Plats' }).click(); // replier
 await page.waitForTimeout(200);
-await page.getByRole('tab', { name: 'Recettes' }); // (reste sur Recettes)
+const nbApresRepli = await page.locator('.cz-librow').count();
+if (nbApresRepli >= nbRecettes) throw new Error('Q4 : replier une section doit cacher ses lignes');
+await page.locator('.cz-sech', { hasText: 'Plats' }).click(); // redéplier
+await page.waitForTimeout(200);
+// Favoris opérants : étoile sur la 1ʳᵉ ligne → toggle favoris → elle seule reste.
+await page.locator('.cz-librow .cz-starbtn').first().click();
+await page.locator('.cz-startog').click();
+await page.waitForTimeout(200);
+if ((await page.locator('.cz-librow').count()) !== 1)
+  throw new Error('T5 : le toggle favoris doit ne montrer que les recettes étoilées');
+await page.locator('.cz-startog').click(); // retour
+await page.locator('.cz-librow .cz-starbtn').first().click(); // dé-étoiler
+await page.waitForTimeout(200);
 await page.screenshot({ path: 'scripts/shot-biblio.png', fullPage: false });
-console.log('Bibliothèque ✅ (', nbRecettes, 'recettes)');
+console.log('T5 : sections par moment (repliables) + favoris opérants ✅ (', nbRecettes, 'recettes)');
 
 // 3ter) T2a (lot simplification) — bandeau de relecture v2 : on INJECTE en IDB un
 // brouillon avec le RAPPORT du prompt v2 (adaptations + alerte du garde G3) et on
@@ -221,7 +238,6 @@ console.log('T2a : bandeau de relecture v2 (rapport + alerte G3) affiché ✅');
 
 // 3bis) T4a (F4.1/F4.2, GO ③) — FAB → feuille des 3 voies (langage banni ABSENT),
 // « L'écrire » crée une recette Validé qui atterrit dans la bibliothèque.
-await page.locator('.cz-chips .cz-chip', { hasText: 'Tous' }).click();
 await page.locator('.cz-fab').click();
 await page.getByText('Comment on l’ajoute ?').waitFor({ timeout: 5000 });
 for (const voie of ['L’écrire', 'À partir d’instructions', 'Depuis une collection']) {
@@ -324,7 +340,6 @@ console.log('F5.5 : alerte allergène du foyer visible sur la page cuisinière (
 
 // 4) FC7 — ouvrir une fiche.
 await page.getByRole('tab', { name: 'Recettes' }).click();
-await page.locator('.cz-chips .cz-chip', { hasText: 'Tous' }).click();
 await page.locator('.cz-librow').first().click();
 await page.getByText('Ingrédients', { exact: false }).first().waitFor({ timeout: 5000 });
 // T5 (F5.1/F5.4) — porte fiche : titre Fraunces + tags + zone photo + Partager dominant.

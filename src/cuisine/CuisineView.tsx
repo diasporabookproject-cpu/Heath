@@ -231,6 +231,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             setFilter={setRecFilters}
             onOpenRecipe={(id) => setOpenRecipeId(id)}
             onOpenCollections={openCollections}
+            onCreate={() => setAdding({})}
             toast={toast}
           />
         ) : (
