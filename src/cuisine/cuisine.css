@@ -553,6 +553,34 @@
 .cz-mrow.cz-wln .wv { font-size: 11.5px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 5px; min-width: 0; }
 .cz-mrow.cz-wln.empty .wv { color: var(--accent); font-weight: 700; }
 .cz-mrow.cz-wln .vio { color: var(--draft); display: inline-flex; }
+
+/* ---- T4 · Le geste radial (SPEC 5, proto) ---- */
+.cz-radial { position: fixed; inset: 0; z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.18s; }
+.cz-radial.show { opacity: 1; pointer-events: auto; }
+.cz-radial .dim { position: absolute; inset: 0; background: rgba(24, 20, 16, 0.5); backdrop-filter: blur(1.5px); }
+.cz-petals { position: absolute; left: 50%; transform: translateX(-50%); top: 24%; display: flex; align-items: flex-end; gap: 22px; }
+.cz-petal { position: relative; width: 94px; display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; padding: 0; }
+/* L'arc : le pétale central monte (proto p2). */
+.cz-petal:nth-child(2) { transform: translateY(-38px); }
+.cz-petal .pb { width: 62px; height: 62px; border-radius: 21px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24); }
+.cz-petal .pl { font-family: var(--font-body); font-size: 11px; font-weight: 800; color: #fff; text-align: center; line-height: 1.25; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5); }
+.cz-srcrow { position: absolute; left: 50%; transform: translateX(-50%); top: calc(24% + 128px); width: min(calc(100% - 32px), calc(var(--maxw) - 32px)); display: flex; align-items: center; gap: 11px; background: #fff; border: 1.5px solid var(--accent); border-radius: 15px; padding: 12px 13px; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18); }
+.cz-srcrow .ml2 { font-family: var(--font-body); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
+.cz-srcrow.s-petitdej .ml2 { color: #b9781f; }
+.cz-srcrow.s-dej .ml2 { color: #5f7a3f; }
+.cz-srcrow.s-gouter .ml2 { color: #b56a5a; }
+.cz-srcrow.s-diner .ml2 { color: #3f7d72; }
+.cz-srcrow .mchip { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: none; }
+.cz-srcrow .mchip .plus { color: var(--accent); font-size: 22px; line-height: 1; }
+.cz-srcrow .mn { font-family: var(--font-body); font-size: 14px; font-weight: 700; color: var(--ink); flex: 1; }
+.cz-srcrow .mn small { font-weight: 600; color: var(--muted); font-size: 12px; }
+.cz-radclose { position: absolute; left: 50%; transform: translateX(-50%); top: calc(24% + 220px); width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); border: 1.5px solid rgba(255, 255, 255, 0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 19px; cursor: pointer; }
+
+/* Les 3 voies DÉPLIÉES en place (sélecteur, T4). */
+.cz-ways { display: flex; gap: 8px; }
+.cz-way { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 6px; cursor: pointer; }
+.cz-way .we { width: 38px; height: 38px; border-radius: 11px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; }
+.cz-way b { font-family: var(--font-body); font-size: 10.5px; font-weight: 800; text-align: center; line-height: 1.2; color: #443f38; }
 /* T7/F7.1 — rail replié (biblio riche) + repère emoji des cartes */
 .cz-collline { display: block; width: calc(100% - 32px); margin: 14px 16px 6px; border: 1.5px dashed var(--line); background: var(--surface); color: var(--petrol); font-family: var(--font-body); font-weight: 700; font-size: 14px; border-radius: 12px; padding: 12px; cursor: pointer; text-align: center; }
 .cz-remoji { flex: none; font-size: 17px; line-height: 1; }

@@ -104,19 +104,28 @@ await page.getByRole('tab', { name: 'Menu' }).click();
 if (!(await page.locator('.cz-weekbtn.on').count())) await page.locator('.cz-weekbtn').click(); // toggle → idempotent
 await page.getByText('Copier une semaine précédente').waitFor({ timeout: 5000 });
 
-// 1) FC11/FC12 — composer le petit-déjeuner de Lundi via le composeur + sélecteur.
-// (F2.2 : « Total du repas » n'existe plus quand le suivi est OFF — ancre = la
-// rangée de composant « Choisir ».)
+// 1) T4 (SPEC 5) — créneau VIDE → RADIAL (3 pétales) → « Ma bibliothèque »
+// → sélecteur → pick. Puis créneau PLEIN → COMPOSEUR direct : le radial
+// précède le composeur, il ne le contourne pas (porte du read-back).
 const lundi = page.locator('.cz-daycard', { hasText: 'Lundi' });
 await lundi.locator('.cz-mrow.empty').first().click();
-await page.locator('.cz-sheet.show .cz-comp').first().waitFor({ timeout: 5000 });
-await page.locator('.cz-sheet.show .cz-comp .cmid').first().click(); // « Choisir » le plat
+await page.locator('.cz-radial.show').waitFor({ timeout: 5000 });
+if ((await page.locator('.cz-petal').count()) !== 3)
+  throw new Error('SPEC 5 : le radial doit avoir TROIS pétales, jamais 4');
+// Q5 : bibliothèque remplie → le pétale « Ma bibliothèque » est le PREMIER (gauche, côté pouce).
+const firstPetal = await page.locator('.cz-petal .pl').first().textContent();
+if (!/bibliothèque/i.test(firstPetal ?? '')) throw new Error(`Q5 : pétale gauche = Ma bibliothèque (lu : ${firstPetal})`);
+await page.locator('.cz-petal', { hasText: 'Ma bibliothèque' }).click();
 await page.locator('.cz-sheet.show .cz-pick').first().waitFor({ timeout: 5000 });
 await page.locator('.cz-sheet.show .cz-pick').first().click();
-await page.waitForTimeout(300);
-await page.locator('.cz-sheet.show .cz-x').first().click(); // fermer le composeur
 await lundi.locator('.cz-mrow:not(.empty)').first().waitFor({ timeout: 5000 });
-console.log('Compose : petit-déjeuner Lundi ajouté ✅');
+console.log('T4 : radial (3 pétales, biblio à gauche) → sélecteur → créneau rempli ✅');
+// Créneau PLEIN → le composeur s'ouvre directement (multi-composant intact).
+await lundi.locator('.cz-mrow:not(.empty)').first().click();
+await page.locator('.cz-sheet.show .cz-comp').first().waitFor({ timeout: 5000 });
+await page.locator('.cz-sheet.show .cz-x').first().click();
+await page.waitForTimeout(300);
+console.log('T4 : créneau plein → composeur direct (le radial ne contourne pas) ✅');
 await assertNoKcal('vue Menu, repas composé');
 await page.screenshot({ path: 'scripts/shot-semaine.png', fullPage: false });
 
@@ -233,35 +242,50 @@ await page.locator('.cz-fichebar .cz-back').click(); // fermer la fiche (F5.4 : 
 await page.locator('.cz-librow', { hasText: 'Soupe du smoke' }).waitFor({ timeout: 5000 });
 console.log('« L’écrire » : recette créée (Validé), dans la bibliothèque ✅');
 
-// 3ter) Amendement ② — « ＋ Nouvelle recette » DANS le sélecteur de composant :
-// création avec rôle pré-rempli → prend directement le créneau (geste fini).
+// 3ter) T4 — radial → « L'écrire » (formulaire DIRECT, pas d'écran de choix) +
+// RECETTE LÉGÈRE (Q2, ruling PO) : « Yaourt », NOM SEUL, zéro ingrédient →
+// enregistrée comme vraie recette ET posée dans le créneau (geste fini).
 await page.getByRole('tab', { name: 'Menu' }).click();
 if (!(await page.locator('.cz-weekbtn.on').count())) await page.locator('.cz-weekbtn').click(); // toggle → idempotent
 const mardi = page.locator('.cz-daycard', { hasText: 'Mardi' });
 await mardi.locator('.cz-mrow.empty').first().click();
-await page.locator('.cz-sheet.show .cz-comp .cmid').first().click(); // « Choisir »
-await page.locator('.cz-sheet.show').last().getByText('Nouvelle recette').waitFor({ timeout: 5000 });
+await page.locator('.cz-radial.show').waitFor({ timeout: 5000 });
+await page.locator('.cz-petal', { hasText: 'L’écrire' }).click();
+await page.getByText('Portions', { exact: true }).waitFor({ timeout: 5000 }); // formulaire direct
+if (await page.getByText('Comment on l’ajoute ?').count())
+  throw new Error('T4 : le pétale « L’écrire » doit ouvrir le formulaire DIRECTEMENT');
+await page.locator('.cz-sheet.show').last().locator('.cz-inp').first().fill('Yaourt');
+// ZÉRO ingrédient — c'est la porte Q2 : le bouton doit être actif quand même.
+await page.locator('.cz-sheet.show').last().getByText('Enregistrer', { exact: true }).click();
+await page.getByText('Recette créée et ajoutée au repas').waitFor({ timeout: 5000 });
+await page.waitForTimeout(400);
+await mardi.getByText('Yaourt').waitFor({ timeout: 5000 });
+console.log('T4/Q2 : recette LÉGÈRE (nom seul) créée via le radial, posée dans le créneau ✅');
+// Amendement ② toujours vivant DANS le sélecteur : dépli des 3 voies EN PLACE.
+await mardi.locator('.cz-mrow.empty').first().click(); // Déj de mardi (vide)
+await page.locator('.cz-radial.show').waitFor({ timeout: 5000 });
+await page.locator('.cz-petal', { hasText: 'Ma bibliothèque' }).click();
 await page.locator('.cz-sheet.show').last().getByText('Nouvelle recette').click();
-await page.getByText('Comment on l’ajoute ?').waitFor({ timeout: 5000 });
-await page.locator('.cz-sheet.show').last().getByText('L’écrire', { exact: false }).click();
+await page.locator('.cz-way', { hasText: 'L’écrire' }).waitFor({ timeout: 3000 }); // 3 voies EN PLACE
+if (await page.getByText('Comment on l’ajoute ?').count())
+  throw new Error('T4 : les 3 voies se déplient EN PLACE, pas une 2ᵉ feuille de choix');
+await page.locator('.cz-way', { hasText: 'L’écrire' }).click();
 await page.getByText('Portions', { exact: true }).waitFor({ timeout: 5000 });
 await page.locator('.cz-sheet.show').last().locator('.cz-inp').first().fill('Œufs du picker');
 await page.locator('.cz-sheet.show').last().locator('textarea').first().fill('œufs 2\nune noisette de beurre');
 await page.locator('.cz-sheet.show').last().getByText('Enregistrer', { exact: true }).click();
 await page.getByText('Recette créée et ajoutée au repas').waitFor({ timeout: 5000 });
-await page.locator('.cz-sheet.show .cz-x').first().click().catch(() => {}); // fermer le composeur
 await page.waitForTimeout(400);
 await mardi.getByText('Œufs du picker').waitFor({ timeout: 5000 });
-console.log('Amendement ② : créée depuis le sélecteur, posée dans le créneau ✅');
+console.log('Amendement ② (T4) : 3 voies dépliées en place, créée et posée ✅');
 
 // 3quater) T5/F5.5 — alerte ALLERGÈNE bout-en-bout SANS backend : les règles du
 // foyer (« arachide », posées en 2bis) doivent ressortir sur la page cuisinière
 // via « Voir l'aperçu » (previewEspace = même buildEspaceMenu que la publication).
 const merc = page.locator('.cz-daycard', { hasText: 'Mercredi' });
 await merc.locator('.cz-mrow.empty').nth(1).click(); // Déjeuner (plat)
-await page.locator('.cz-sheet.show .cz-comp .cmid').first().click(); // « Choisir »
-await page.locator('.cz-sheet.show').last().getByText('Nouvelle recette').click();
-await page.locator('.cz-sheet.show').last().getByText('L’écrire', { exact: false }).click();
+await page.locator('.cz-radial.show').waitFor({ timeout: 5000 });
+await page.locator('.cz-petal', { hasText: 'L’écrire' }).click();
 await page.getByText('Portions', { exact: true }).waitFor({ timeout: 5000 });
 await page.locator('.cz-sheet.show').last().locator('.cz-inp').first().fill('Poulet sauce arachide');
 await page.locator('.cz-sheet.show').last().locator('textarea').first().fill('pâte d’arachide 50 g\npoulet 200 g');
@@ -288,6 +312,9 @@ await page.locator('.cz-preview-overlay').waitFor({ timeout: 8000 });
 await page.locator('.ck-warn', { hasText: 'arachide' }).first().waitFor({ timeout: 5000 });
 await page.locator('.cz-preview-overlay').getByText('FR', { exact: true }).click();
 await page.getByText('Attention — contient : arachide').first().waitFor({ timeout: 5000 });
+// T4/Q2 (critère de fini) : la recette LÉGÈRE arrive sur la page reçue.
+await page.locator('.cz-preview-overlay').getByText('Yaourt').first().waitFor({ timeout: 5000 });
+console.log('T4/Q2 : le yaourt (nom seul) est sur la page cuisinière ✅');
 await page.screenshot({ path: 'scripts/shot-espace-alerte.png', fullPage: false });
 await page.locator('.cz-preview-bar .cz-x').click(); // fermer l'aperçu
 await page.waitForTimeout(300);

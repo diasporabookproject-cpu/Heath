@@ -49,6 +49,8 @@ interface Props {
   toast: (m: string) => void;
   /** Rôle pré-sélectionné pour « L'écrire » (amendement ② : entrée depuis le sélecteur). */
   initialRole?: RecipeRole;
+  /** T4 (radial / dépli en place) : arriver DIRECTEMENT sur une voie, sans l'écran « choose ». */
+  initialStep?: 'ecrire' | 'instructions';
 }
 
 type Step = 'choose' | 'ecrire' | 'instructions' | 'importjson';
@@ -64,8 +66,8 @@ type ManualSeed = Pick<Recipe, 'nom' | 'role' | 'ingredients' | 'etapes'>;
  * ③ du GO T4 : le mot « IA » (et Générer/génération/✨) n'apparaît NULLE PART
  * ici — on nomme la source (lien, texte, photo), jamais l'outil.
  */
-export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOpenReglages, toast, initialRole }: Props) {
-  const [step, setStep] = useState<Step>('choose');
+export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOpenReglages, toast, initialRole, initialStep }: Props) {
+  const [step, setStep] = useState<Step>(initialStep ?? 'choose');
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
   const [canAi, setCanAi] = useState(false);
@@ -75,8 +77,17 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOp
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setShown(true));
-    void aiAvailable().then(setCanAi);
+    void aiAvailable().then((ok) => {
+      setCanAi(ok);
+      // Entrée directe « Photo ou lien » : même garde que le bouton de l'écran
+      // choose (hors-ligne / quota) — repli honnête vers les 3 voies.
+      if (initialStep === 'instructions' && !ok) {
+        setStep('choose');
+        toast('Connecte-toi (☁︎) et sois en ligne pour importer des instructions');
+      }
+    });
     return () => cancelAnimationFrame(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openInstructions = () => {
@@ -186,7 +197,10 @@ function EcrireForm({
   const [etapes, setEtapes] = useState(seed?.etapes ?? '');
 
   const save = async () => {
-    if (!nom.trim() || !ingredients.trim()) return;
+    // Q2 (T4, recette LÉGÈRE — ruling PO) : un NOM SEUL suffit (« yaourt »).
+    // Le modèle l'accepte déjà (`ingredients: ''` type-valide) ; seule cette
+    // porte UI l'interdisait. Enregistrée comme vraie recette, jamais éphémère.
+    if (!nom.trim()) return;
     const id = nextRecipeId(recipes, role);
     // « L'écrire » = recette de l'auteur → naît « Validé » (jamais en relecture).
     upsertRecipe({
@@ -234,7 +248,7 @@ function EcrireForm({
         </div>
       </div>
       <div className="cz-block">
-        <div className="cz-blab">Ingrédients (une ligne = un ingrédient{role === 'acc' ? ' · pour 100 g' : ''})</div>
+        <div className="cz-blab">Ingrédients — facultatif (une ligne = un ingrédient{role === 'acc' ? ' · pour 100 g' : ''})</div>
         <textarea
           className="cz-ta"
           rows={5}
@@ -253,7 +267,7 @@ function EcrireForm({
           placeholder={'Fais revenir le poulet.\nAjoute le riz, laisse mijoter 15 min.\nSers bien chaud.'}
         />
       </div>
-      <button className="cz-cta" onClick={save} disabled={!nom.trim() || !ingredients.trim()}>
+      <button className="cz-cta" onClick={save} disabled={!nom.trim()}>
         <IconCheck size={17} />
         Enregistrer
       </button>

@@ -331,15 +331,21 @@ function CompBlock({
         </>
       )}
 
-      <div className={'ck-rlab' + (ar ? ' ar' : '')}>{t.ing}</div>
-      <ul className="ck-ingl">
-        {rows.map((r, i) => (
-          <li key={i}>
-            <span className={'nm' + (ar ? ' ar' : '')}>{r.name}</span>
-            {r.qty && <span className="q">{r.qty}</span>}
-          </li>
-        ))}
-      </ul>
+      {/* T4 (recette légère) : nom seul → la section Ingrédients est OMISE
+          proprement (pas d'en-tête orphelin), comme les étapes absentes. */}
+      {rows.length > 0 && (
+        <>
+          <div className={'ck-rlab' + (ar ? ' ar' : '')}>{t.ing}</div>
+          <ul className="ck-ingl">
+            {rows.map((r, i) => (
+              <li key={i}>
+                <span className={'nm' + (ar ? ' ar' : '')}>{r.name}</span>
+                {r.qty && <span className="q">{r.qty}</span>}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       {role !== 'acc' && (
         <>

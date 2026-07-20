@@ -8,6 +8,7 @@ import SemaineView from './SemaineView';
 import RecettesView from './RecettesView';
 import MealComposerSheet from './MealComposerSheet';
 import RecipePickerSheet from './RecipePickerSheet';
+import RadialSheet, { type RadialWay } from './RadialSheet';
 import RecipeDetailSheet from './RecipeDetailSheet';
 import AddRecipeSheet from './AddRecipeSheet';
 import CollectionsSheet from './CollectionsSheet';
@@ -42,8 +43,12 @@ interface Props {
   onConsumeShare?: () => void;
 }
 
+/** Rôle du composant principal d'un créneau (petit-déj/goûter = plat seul). */
+const soloRole = (k: MealKey): RecipeRole => (k === 'petitdej' ? 'petitdej' : k === 'gouter' ? 'gouter' : 'plat');
+
 export default function CuisineView({ showAccount, connected, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
   const recipes = useStore((s) => s.recipes);
+  const week = useStore((s) => s.week);
   const setComponent = useStore((s) => s.setComponent);
   const navWeek = useStore((s) => s.navWeek);
 
@@ -58,8 +63,14 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const regles = useStore((s) => s.regles);
   const [composer, setComposer] = useState<Composer>(null);
   const [pick, setPick] = useState<Pick>(null);
+  // T4 (SPEC 5) — le RADIAL : couche d'entrée d'un créneau VIDE. Il précède le
+  // composeur sans le contourner (créneau PLEIN → composeur direct, inchangé).
+  const [radial, setRadial] = useState<Composer>(null);
+  // Cible posée par un pétale « créer » : la recette créée prend le créneau
+  // (même règle que l'amendement ② du sélecteur).
+  const [radialTarget, setRadialTarget] = useState<Pick>(null);
   const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState<{ step?: 'ecrire' | 'instructions' } | null>(null);
   const [collections, setCollections] = useState<{ packId?: string } | null>(null);
   const [sharing, setSharing] = useState(false);
   const [shareToken, setShareToken] = useState<string | undefined>(undefined);
@@ -69,7 +80,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const [shareFiche, setShareFiche] = useState<Recipe | null>(null);
 
   const openCollections = (packId?: string) => {
-    setAdding(false);
+    setAdding(null);
     setCollections({ packId });
   };
 
@@ -201,7 +212,11 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
               setShareScope(shareScopeNow());
               setSharing(true);
             }}
-            onOpenMeal={(dayKey, mealKey) => setComposer({ dayKey, mealKey })}
+            onOpenMeal={(dayKey, mealKey) => {
+              const meal = week.days[dayKey]?.[mealKey];
+              if (meal?.plat) setComposer({ dayKey, mealKey });
+              else setRadial({ dayKey, mealKey });
+            }}
             onCopyWeek={() => setCopyOpen(true)}
             onGoValidate={() => {
               setRecFilters('draft');
@@ -224,9 +239,28 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
       </div>
 
       {seg === 'recettes' && (
-        <button className="cz-fab" aria-label="Ajouter une recette" onClick={() => setAdding(true)}>
+        <button className="cz-fab" aria-label="Ajouter une recette" onClick={() => setAdding({})}>
           <IconPlus size={24} />
         </button>
+      )}
+
+      {radial && (
+        <RadialSheet
+          mealKey={radial.mealKey}
+          dayNom={dayNom(radial.dayKey)}
+          libEmpty={recipes.length === 0}
+          onWay={(w: RadialWay) => {
+            const target = { dayKey: radial.dayKey, mealKey: radial.mealKey, slot: 'plat' as const, role: soloRole(radial.mealKey) };
+            setRadial(null);
+            if (w === 'biblio') setPick(target);
+            else if (w === 'collection') openCollections();
+            else {
+              setRadialTarget(target);
+              setAdding({ step: w === 'ecrire' ? 'ecrire' : 'instructions' });
+            }
+          }}
+          onClose={() => setRadial(null)}
+        />
       )}
 
       {composer && (
@@ -252,7 +286,8 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             setPick(null);
             toast('Composant ajouté');
           }}
-          onNewRecipe={() => setAdding(true)}
+          onNewRecipe={(step) => setAdding({ step })}
+          onCollections={() => openCollections()}
           onClose={() => setPick(null)}
         />
       )}
@@ -275,17 +310,23 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
 
       {adding && (
         <AddRecipeSheet
-          initialRole={pick?.role}
-          onClose={() => setAdding(false)}
+          initialRole={(pick ?? radialTarget)?.role}
+          initialStep={adding.step}
+          onClose={() => {
+            setAdding(null);
+            setRadialTarget(null);
+          }}
           onCreated={(id) => {
-            setAdding(false);
+            setAdding(null);
             refreshVoice();
-            // Amendement ② : créée depuis le sélecteur de composant et du bon
-            // rôle → elle prend directement le créneau (le geste se termine).
+            // Amendement ② (sélecteur) — étendu T4 au radial : créée depuis un
+            // créneau et du bon rôle → elle le prend directement (geste fini).
+            const target = pick ?? radialTarget;
             const created = useStore.getState().recipes.find((r) => r.id === id);
-            if (pick && created && created.statut === 'Validé' && created.role === pick.role) {
-              const value: string | AccRef = pick.slot === 'acc' ? { id, g: 100 } : id;
-              setComponent(pick.dayKey, pick.mealKey, pick.slot, value);
+            setRadialTarget(null);
+            if (target && created && created.statut === 'Validé' && created.role === target.role) {
+              const value: string | AccRef = target.slot === 'acc' ? { id, g: 100 } : id;
+              setComponent(target.dayKey, target.mealKey, target.slot, value);
               setPick(null);
               toast('Recette créée et ajoutée au repas');
               return;

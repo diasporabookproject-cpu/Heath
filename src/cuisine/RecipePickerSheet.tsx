@@ -4,22 +4,26 @@ import { useStore } from '../store/useStore';
 import { ROLE_LABEL, type RecipeRole } from '../types';
 import { pickable } from '../lib/picker';
 import { IconSearch, IconMic, IconFav, IconPlus } from './icons';
+import Em from '../ui/Em';
 
 interface Props {
   role: RecipeRole;
   sub: string;
   voiceIds: Set<string>;
   onPick: (id: string) => void;
-  /** Amendement ② (F4.1) : ouvre la feuille des voies — précieux sur l'état vide. */
-  onNewRecipe: () => void;
+  /** T4 (SPEC 5) : « ＋ Nouvelle recette » DÉPLIE les 3 voies EN PLACE (pas de
+   * 2ᵉ feuille de choix) — chaque voie ouvre directement son formulaire. */
+  onNewRecipe: (step: 'ecrire' | 'instructions') => void;
+  onCollections: () => void;
   onClose: () => void;
 }
 
 /** FC12/FC15 — Sélecteur d'un composant : recettes Validé du rôle, favoris en tête. */
-export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onNewRecipe, onClose }: Props) {
+export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onNewRecipe, onCollections, onClose }: Props) {
   const recipes = useStore((s) => s.recipes);
   const toggleFav = useStore((s) => s.toggleFav);
   const [q, setQ] = useState('');
+  const [ways, setWays] = useState(false);
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
 
@@ -57,10 +61,28 @@ export default function RecipePickerSheet({ role, sub, voiceIds, onPick, onNewRe
             <IconSearch size={18} />
             <input placeholder="Rechercher…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
           </div>
-          {/* Amendement ② : créer sans quitter le geste de composition. */}
-          <button className="cz-addcomp" style={{ marginTop: 10 }} onClick={onNewRecipe}>
-            <IconPlus size={16} /> Nouvelle recette
-          </button>
+          {/* Amendement ② + T4 : créer sans quitter le geste — les 3 voies se
+              déplient ICI (jamais une 2ᵉ feuille de choix). */}
+          {ways ? (
+            <div className="cz-ways" style={{ marginTop: 10 }}>
+              <button className="cz-way" onClick={() => onNewRecipe('ecrire')}>
+                <span className="we"><Em ch="✏️" size={20} /></span>
+                <b>L’écrire</b>
+              </button>
+              <button className="cz-way" onClick={() => onNewRecipe('instructions')}>
+                <span className="we"><Em ch="📸" size={20} /></span>
+                <b>Photo ou lien</b>
+              </button>
+              <button className="cz-way" onClick={onCollections}>
+                <span className="we"><Em ch="📚" size={20} /></span>
+                <b>Une collection</b>
+              </button>
+            </div>
+          ) : (
+            <button className="cz-addcomp" style={{ marginTop: 10 }} onClick={() => setWays(true)}>
+              <IconPlus size={16} /> Nouvelle recette
+            </button>
+          )}
           {list.length === 0 ? (
             <p className="cz-emptynote">Aucune recette validée pour ce rôle.</p>
           ) : (
