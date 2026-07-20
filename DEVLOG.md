@@ -129,6 +129,15 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot UI DA v2 — T5 avenant : audit esthétique proto↔app écran par écran (demande PO) — 2026-07-20
+**Audit outillé complet** (proto committé + app, même viewport 314×684, mesure homologue élément par élément sur toutes les pièces neuves : cartes de moment T3, radial T4, recettes T5). **3 divergences RÉELLES trouvées et corrigées :**
+- **Lignes Recettes** (le gros écart) : l'emoji était **nu (24px)** ; le proto l'enchâsse dans un **carré tinté 42×42** (`.rchip`). + nom ramené à **13,5px/700** (était 16/600) et ligne `10px 12px` / radius 14 (proto). `.cz-remoji` restylé en chip.
+- **Pétales du radial** : labels sur 1 ligne → **2 lignes** comme le proto (`max-width: 72px` sur `.pl`).
+- **Carrousel « inspiration »** : teintes alignées sur le proto (**gold/sage/rose**, l'état vide restant amber/gold/sage) ; `radclose` : padding par défaut du bouton mis à zéro.
+**Deltas restants = artefacts ou contenu, PAS du style** : ±2px partout (bordure 1px du cadre `.phone` du proto) ; `recName`/`cc` plus HAUTS car mes données réelles sont plus longues que les échantillons du proto (« Msemmen SG, œufs & fromage » vs « Tajine » ; descriptions de packs = phrases complètes vs pitches courts « Ftour & shour ») — **le pitch court des cartes carrousel relève de la revue éditoriale du Fonds de départ (file n°1), pas du CSS**. Portes : typecheck ✓ · 200/200 ✓ · build ✓ · 3 smokes ✓ · captures re-prises.
+**⚠️ Un point à trancher (PO), pas décidé unilatéralement** : le proto affiche les lignes Recettes **sans étoile par ligne** (chip + nom seuls) ; l'app garde l'**étoile de favori par ligne** (fonction existante — favoriter depuis la liste). Le brief dit « lignes épurées (emoji + nom) ». Retirer l'étoile = perdre le favori-depuis-la-liste (il resterait sur la fiche). **Conservé pour ne pas supprimer une fonction en silence — à confirmer.**
+
+
 ### Lot UI DA v2 — T5 : Recettes, états vide + plein (SPEC 6) — 2026-07-20
 **T5 livré — la dernière tranche du lot.** Sortir du « bordélique » (3 mécanismes empilés) :
 - **Les chips de filtre MEURENT** (porte smoke : `.cz-chips` interdit) → **SECTIONS PAR MOMENT repliables** — **Q3 : ordre des repas** (Petit-déj → Entrées → Plats → Accompagnements → Soupes → Goûters → Desserts → Boissons), **Q4 : dépliées par défaut** (porte smoke : replier cache les lignes). Lignes **épurées** : étoile + emoji Fluent (`Em`) + nom — **le tag de rôle meurt** (la section porte l'info) ; ✦ À valider reste ; vocal reste.

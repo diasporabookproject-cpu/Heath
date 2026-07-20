@@ -25,8 +25,9 @@ const SECTIONS: { role: RecipeRole; label: string }[] = [
   { role: 'boisson', label: 'Boissons' },
 ];
 
-/** Teintes des cartes collection (une teinte par pack, en rotation). */
-const PACK_TINTS = ['amber', 'gold', 'sage'];
+/** Teintes proto : tuiles de l'état vide (amber/gold/sage) ; carrousel « inspiration » (gold/sage/rose). */
+const TILE_TINTS = ['amber', 'gold', 'sage'];
+const CARO_TINTS = ['gold', 'sage', 'rose'];
 
 interface Props {
   voiceIds: Set<string>;
@@ -100,7 +101,7 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
         <div className="cz-startlabel">Pour démarrer · les collections</div>
         <div className="cz-collsv">
           {PACKS.map((p, i) => (
-            <button key={p.id} className={'cz-pkt cz-cx ' + PACK_TINTS[i % PACK_TINTS.length]} onClick={() => onOpenCollections(p.id)}>
+            <button key={p.id} className={'cz-pkt cz-cx ' + TILE_TINTS[i % TILE_TINTS.length]} onClick={() => onOpenCollections(p.id)}>
               {!isPackInstalled(p, recipes) && <span className="newb2">NOUVEAU</span>}
               <span className="cxe">
                 <Em ch={p.emoji} size={32} />
@@ -229,7 +230,7 @@ export default function RecettesView({ voiceIds, filter, setFilter, onOpenRecipe
         <div className="isub">Des collections à copier, puis à adapter.</div>
         <div className="cz-carousel">
           {PACKS.map((p, i) => (
-            <button key={p.id} className={'cz-cc ' + PACK_TINTS[i % PACK_TINTS.length]} onClick={() => onOpenCollections(p.id)}>
+            <button key={p.id} className={'cz-cc ' + CARO_TINTS[i % CARO_TINTS.length]} onClick={() => onOpenCollections(p.id)}>
               <span className="cce">
                 <Em ch={p.emoji} size={28} />
               </span>

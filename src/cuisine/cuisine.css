@@ -379,7 +379,9 @@
 
 /* ---- Bibliothèque (FC5) ---- */
 .cz-lib { display: flex; flex-direction: column; gap: 9px; padding-top: 8px; }
-.cz-librow { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 13px; cursor: pointer; box-shadow: var(--shadow); width: 100%; text-align: left; font-family: var(--font-body); color: var(--ink); }
+.cz-librow { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; cursor: pointer; box-shadow: var(--shadow); width: 100%; text-align: left; font-family: var(--font-body); color: var(--ink); }
+.cz-librow .cz-libtop { margin-bottom: 0; }
+.cz-librow .nm { font-size: 13.5px !important; font-weight: 700 !important; }
 .cz-librow.draft { border-color: var(--draft-line); background: #fcfafe; }
 .cz-librow:active { transform: scale(0.995); }
 .cz-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 7px; border-radius: 6px; background: var(--surface-2); color: var(--muted); }
@@ -563,7 +565,7 @@
 /* L'arc : le pétale central monte (proto p2). */
 .cz-petal:nth-child(2) { transform: translateY(-38px); }
 .cz-petal .pb { width: 62px; height: 62px; border-radius: 21px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24); }
-.cz-petal .pl { font-family: var(--font-body); font-size: 11px; font-weight: 800; color: #fff; text-align: center; line-height: 1.25; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5); }
+.cz-petal .pl { font-family: var(--font-body); font-size: 11px; font-weight: 800; color: #fff; text-align: center; line-height: 1.25; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5); max-width: 72px; }
 .cz-srcrow { position: absolute; left: 50%; transform: translateX(-50%); top: calc(24% + 128px); width: min(calc(100% - 32px), calc(var(--maxw) - 32px)); display: flex; align-items: center; gap: 11px; background: #fff; border: 1.5px solid var(--accent); border-radius: 15px; padding: 12px 13px; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18); }
 .cz-srcrow .ml2 { font-family: var(--font-body); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
 .cz-srcrow.s-petitdej .ml2 { color: #b9781f; }
@@ -574,7 +576,7 @@
 .cz-srcrow .mchip .plus { color: var(--accent); font-size: 22px; line-height: 1; }
 .cz-srcrow .mn { font-family: var(--font-body); font-size: 14px; font-weight: 700; color: var(--ink); flex: 1; }
 .cz-srcrow .mn small { font-weight: 600; color: var(--muted); font-size: 12px; }
-.cz-radclose { position: absolute; left: 50%; transform: translateX(-50%); top: calc(24% + 220px); width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); border: 1.5px solid rgba(255, 255, 255, 0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 19px; cursor: pointer; }
+.cz-radclose { position: absolute; left: 50%; transform: translateX(-50%); top: calc(24% + 220px); width: 44px; height: 44px; padding: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.16); border: 1.5px solid rgba(255, 255, 255, 0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 19px; cursor: pointer; }
 
 /* Les 3 voies DÉPLIÉES en place (sélecteur, T4). */
 .cz-ways { display: flex; gap: 8px; }
@@ -607,6 +609,7 @@
 .cz-cc.amber { background: #fbe9d2; color: #7a5518; }
 .cz-cc.gold { background: #f6eccd; color: #7c6620; }
 .cz-cc.sage { background: #e8efdf; color: #4c6532; }
+.cz-cc.rose { background: #fbe4e0; color: #8a5045; }
 .cz-allink { display: block; width: 100%; text-align: center; color: var(--accent-ink); font-size: 12.5px; font-weight: 700; padding: 12px 8px 6px; background: none; border: none; cursor: pointer; font-family: var(--font-body); }
 
 /* État VIDE — héros + collections en grandes tuiles + créer. */
@@ -625,6 +628,7 @@
 .cz-cx.amber { background: #fbe9d2; color: #7a5518; }
 .cz-cx.gold { background: #f6eccd; color: #7c6620; }
 .cz-cx.sage { background: #e8efdf; color: #4c6532; }
+.cz-cx.rose { background: #fbe4e0; color: #8a5045; }
 .cz-cx .newb2 { position: absolute; top: 12px; right: 14px; background: rgba(255, 255, 255, 0.75); color: #7a4020; font-size: 8px; font-weight: 800; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 6px; }
 .cz-orcreate { text-align: center; padding: 12px 18px 20px; }
 .cz-orcreate .ol { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 10px; }
@@ -632,7 +636,7 @@
 .cz-createbtn .p { color: var(--accent); font-size: 17px; }
 /* T7/F7.1 — rail replié (biblio riche) + repère emoji des cartes */
 .cz-collline { display: block; width: calc(100% - 32px); margin: 14px 16px 6px; border: 1.5px dashed var(--line); background: var(--surface); color: var(--petrol); font-family: var(--font-body); font-weight: 700; font-size: 14px; border-radius: 12px; padding: 12px; cursor: pointer; text-align: center; }
-.cz-remoji { flex: none; font-size: 17px; line-height: 1; }
+.cz-remoji { flex: none; width: 42px; height: 42px; border-radius: 12px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; }
 
 /* T5 — fiche recette : barre du haut (F5.4), titre Fraunces (F5.1), tags, étapes */
 .cz-fichebar { display: flex; align-items: center; gap: 8px; padding: 10px 14px 2px; }
