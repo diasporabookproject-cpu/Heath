@@ -129,6 +129,17 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Fenêtre 0011 — STAGING appliqué + 5 preuves ✅ · STOP avant PROD — 2026-07-21
+Migration `0011_espace_checks.sql` **APPROUVÉE PO** (relue ligne à ligne). Fenêtre ouverte (token jetable, Management API `/database/query`, canal de `parity:check`). **STAGING (`tryjcednzencepokodrs`) — PROD NON TOUCHÉE.**
+- **Idempotence (F-a)** : migration appliquée **deux fois** → HTTP 201 / 201 (rejouable, conforme).
+- **Preuve 1** — `set local role anon` + insert sur jeton VIVANT (`__probe_0011__` créé en postgres) → **accepté**.
+- **Preuve 3** — anon select sur jeton vivant → **n=1** (lit ses coches).
+- **Preuve 2** — anon insert sur jeton INCONNU → **violation RLS (refusé)** — l'insert borné aux jetons vivants tient.
+- **Preuve 4 (BLOQUANTE)** — révocation (delete de la ligne `espaces`) → anon select = **n=0** ; **corollaire** : postgres voit encore **n=1** → ce sont bien les POLICIES qui cachent, pas une suppression. **La révocation rend les coches illisibles PAR CONSTRUCTION** (exigence 🔴 prouvée en base).
+- **Parité (delta exact)** : staging en avance de `espace_checks` UNIQUEMENT — 5 colonnes (id/token/item/done/at), 2 policies (insert + select, **chacune `exists(select 1 from espaces e where e.token = espace_checks.token)`**), `rls=true`, 2 index (pkey, token_idx). Fonctions/triggers/buckets/edge **identiques**. Zéro dérive hors delta.
+- **STOP — GO PROD explicite du PO requis.** Après GO : appliquer 0011 en prod (fenêtre annoncée) → re-preuve 4 sur prod → **révocation du token** → mort vérifiée (401) → `parity:check` de clôture = 0 écart. Puis T4 (lecture des coches côté employeur — désormais sur une table qui existera en prod).
+
+
 ### Lot partage — T1 avenant 3 : feuille = maquette stricte (retraits) + preuve URL — 2026-07-21
 Retours device PO :
 - **« Rappel d'envoi » et « Dernier accès » RETIRÉS** de la feuille — absents de la maquette (qui s'arrête à « Copier le lien »). Code mort nettoyé (RappelSheet/rappelLabel/lastEspaceOpen/formatWhen/IconEye + états). **L'état côté employeur (dernier accès + coches « fait à HH:MM ») reviendra en T4** (« retour employeur »), là où il a sa place. La feuille est désormais : personne → message → checklist → accès permanent, point.
