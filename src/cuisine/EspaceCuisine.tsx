@@ -282,13 +282,15 @@ function Home({
   const t = STR[lang];
   const others = days.filter((d) => d !== today);
 
-  // T3 : la case vit sur les repas d'AUJOURD'HUI (le geste quotidien) — la clé
-  // porte l'empreinte du NOM FR (`n`, stable quelle que soit la langue lue).
+  // T3 (corrigé — retour device PO) : la case vit sur CHAQUE repas du menu, tous
+  // les jours (décision ① « le menu : Harira, Tajine… »), pas seulement
+  // aujourd'hui — l'app compose souvent pour demain/la semaine, la coche doit
+  // suivre. La clé porte le jour + l'empreinte du NOM FR (`n`, stable en darija).
   const cards = (d: SharedDay) =>
     MK_LIST.filter((k) => d[k]).map((k) => {
       const meal = d[k] as SharedMealV2;
       const comp = meal.plat ?? meal.entree;
-      const withCheck = checklist && d === today && comp;
+      const withCheck = checklist && comp;
       const item = withCheck ? mealItemKey(d.k, k, comp.n) : null;
       return (
         <MealCard

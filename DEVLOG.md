@@ -129,6 +129,10 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage — T3 correctif : les cases sur TOUS les jours (retour device PO) — 2026-07-21
+PO : « je ne vois pas de coche dans la page partagée ». **Vrai bug** trouvé : `EspaceCuisine` ne posait la case que si `d === today` (`cards()`), or l'app compose par DÉFAUT pour **demain** → « aujourd'hui » vide → **aucune case** alors que le menu de demain/la semaine est là. Ma restriction « aujourd'hui seulement » contredisait la décision PO ① (« le menu : Harira, Tajine… » = tout le menu). Corrigé : `withCheck = checklist && comp` (le jour ne conditionne plus) — la case vit sur **chaque repas composé, tous les jours** ; la clé porte déjà `d.k` (distincte par jour). Le « reste de la semaine » rendait déjà via le même `cards()`, donc les cases y apparaissent sans autre changement. Test neuf : menu 2 jours (Tajine lundi + Harira mardi) → **≥ 2 cases** (le composé de demain compte). 223 tests · build ✓ · 3 smokes ✓. **STOP — device : compose (même pour demain), active la checklist, envoie → la page doit montrer les cases sur les jours composés.**
+
+
 ### Lot partage — T4 : l'état des coches côté employeur (aperçu) — 2026-07-21
 Placement (décidé, expliqué au PO) : dans l'**aperçu** (« ce que voit {nom} »), PAS une rangée de plus sur la feuille qu'on a épurée à la maquette — c'est littéralement « l'employeur voit l'état quand il consulte » (cadrage PO).
 - **`EspaceCuisine` mode VUE EMPLOYEUR** : nouveau prop `viewChecksToken` — quand présent (et `token` absent), lit l'état RÉEL via `readChecks` en **lecture seule** (pas de file, pas de flush ; cases inertes car aucun `onToggle`). La page reçue (avec `token`) reste interactive, inchangée.

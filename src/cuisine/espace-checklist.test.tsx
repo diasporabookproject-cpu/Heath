@@ -72,3 +72,28 @@ describe('non-traduction des tâches (décision PO ③ — contrat espace-legere
     expect(html).toContain('Arroser les plantes'); // contenu fr, visible, jamais perdu
   });
 });
+
+describe('cases sur TOUS les jours du menu (retour device PO — pas seulement aujourd’hui)', () => {
+  it('un menu de plusieurs jours coche chaque jour (le composé de demain/semaine aussi)', () => {
+    const espace: Espace = {
+      v: 1,
+      langue: 'fr',
+      nom: 'Fatima',
+      role: 'Cuisine',
+      persons: 4,
+      cl: 1,
+      menu: {
+        v: 2,
+        days: [
+          { k: 'lun', nom: 'Lundi', dej: { plat: { n: 'Tajine', i: '' } } },
+          { k: 'mar', nom: 'Mardi', dej: { plat: { n: 'Harira', i: '' } } },
+        ],
+      },
+    };
+    const html = renderToStaticMarkup(<EspaceCuisine espace={espace} />);
+    // les deux jours apparaissent ET chacun porte une case (≥ 2 cases au total)
+    expect(html).toContain('Tajine');
+    expect(html).toContain('Harira');
+    expect((html.match(/ck-check/g) ?? []).length).toBeGreaterThanOrEqual(2);
+  });
+});
