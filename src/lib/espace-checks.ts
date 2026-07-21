@@ -169,20 +169,46 @@ export async function flushPending(
   }
 }
 
-/** Lit le journal d'un jeton (ordre d'arrivée). Erreur/absence → [] (la page
- * reste servable : les coches sont un plus, jamais un préalable). */
-export async function readChecks(token: string): Promise<CheckEvent[]> {
+/** Lit le journal d'un jeton (ordre d'arrivée). `null` = INJOIGNABLE (réseau/
+ * indispo) — distinct de « vraiment vide » : l'appelant sert alors son cache. */
+export async function readChecks(token: string): Promise<CheckEvent[] | null> {
   const supa = getSupabase();
-  if (!supa) return [];
+  if (!supa) return null;
   try {
     const { data, error } = await supa
       .from('espace_checks')
       .select('item, done, at')
       .eq('token', token)
       .order('at', { ascending: true });
-    if (error || !data) return [];
+    if (error || !data) return null;
     return data as CheckEvent[];
   } catch {
+    return null;
+  }
+}
+
+/* ── Cache local du journal (la page OFFLINE montre le dernier état connu) ── */
+
+const cacheEventsKey = (token: string) => `espace-checks-cache:${token}`;
+
+export function loadCachedEvents(token: string, store: StoreLike | null = defaultStore()): CheckEvent[] {
+  if (!store) return [];
+  try {
+    const raw = store.getItem(cacheEventsKey(token));
+    return raw ? (JSON.parse(raw) as CheckEvent[]) : [];
+  } catch {
     return [];
+  }
+}
+
+export function saveCachedEvents(
+  token: string,
+  events: CheckEvent[],
+  store: StoreLike | null = defaultStore(),
+): void {
+  try {
+    store?.setItem(cacheEventsKey(token), JSON.stringify(events));
+  } catch {
+    /* stockage plein / privé : le cache est un confort */
   }
 }

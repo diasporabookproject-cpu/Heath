@@ -68,6 +68,8 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
   const [secFiches, setSecFiches] = useState<SecuriteFiche[]>([]);
   const [lastOpen, setLastOpen] = useState<string | null>(null);
   const [preview, setPreview] = useState<Espace | null>(null);
+  // T3 : brouillon du champ « Ajouter une tâche » (validé → tasks du destinataire).
+  const [taskDraft, setTaskDraft] = useState('');
   // T1 (lot partage) : le QR de l'accès permanent, rendu dans l'aperçu.
   const [qr, setQr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -197,6 +199,28 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
     } finally {
       setBusy(false);
     }
+  };
+
+  // T3 — suivi des tâches : réglages PAR PERSONNE, persistés au destinataire
+  // (IDB) ; ils partent sur la page au prochain envoi (page vivante, comme F5.5).
+  const toggleChecklist = async () => {
+    if (!selected) return;
+    await saveDestinataire({ ...selected, checklist: !selected.checklist });
+    await refresh();
+  };
+
+  const addTask = async () => {
+    if (!selected || !taskDraft.trim()) return;
+    const tasks = [...(selected.tasks ?? []), { id: crypto.randomUUID().slice(0, 8), t: taskDraft.trim() }];
+    await saveDestinataire({ ...selected, tasks });
+    setTaskDraft('');
+    await refresh();
+  };
+
+  const removeTask = async (id: string) => {
+    if (!selected) return;
+    await saveDestinataire({ ...selected, tasks: (selected.tasks ?? []).filter((t) => t.id !== id) });
+    await refresh();
   };
 
   const copyLink = async () => {
@@ -358,6 +382,85 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
               </div>
 
               <div className="ck-tierbreak" />
+
+              {/* T3 — suivi des tâches (maquette) : le toggle, puis l'accordéon
+                  quand c'est actif — menu du jour (préview passif, les vraies
+                  cases vivent sur SA page) + tâches libres éditables. */}
+              <div className="ck-optcard">
+                <div className="head">
+                  <span className="oi">
+                    <IconCheck size={17} />
+                  </span>
+                  <span className="ct">
+                    <b>Activer la checklist</b>
+                    <i>{selected.nom} pourra confirmer que les tâches sont accomplies.</i>
+                  </span>
+                  <button
+                    className={'ck-sw' + (selected.checklist ? ' on' : '')}
+                    role="switch"
+                    aria-checked={!!selected.checklist}
+                    aria-label="Activer la checklist"
+                    onClick={toggleChecklist}
+                  />
+                </div>
+                {selected.checklist && (
+                  <div className="ck-clacc">
+                    <div className="g">
+                      Le menu du jour <span className="au">à cocher</span>
+                    </div>
+                    {(() => {
+                      const jk = scope === 'jour' ? dayKey : todayKey();
+                      const day = week.days[jk];
+                      const rows = (['petitdej', 'dej', 'gouter', 'diner'] as const)
+                        .map((k) => {
+                          const m = day?.[k];
+                          const id = m?.plat ?? ('entree' in (m ?? {}) ? (m as { entree?: string | null }).entree : null);
+                          const r = id ? byId.get(id) : undefined;
+                          return r ? { k, nom: r.nom } : null;
+                        })
+                        .filter((x): x is { k: 'petitdej' | 'dej' | 'gouter' | 'diner'; nom: string } => !!x);
+                      const TAG: Record<string, string> = { petitdej: 'P.déj', dej: 'Déj', gouter: 'Goût.', diner: 'Dîner' };
+                      return rows.length ? (
+                        rows.map((r) => (
+                          <div className="crow" key={r.k}>
+                            <span className="ckbx" />
+                            <span className={'ctag s-' + r.k}>{TAG[r.k]}</span>
+                            <span className="ct2">{r.nom}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="crow">
+                          <span className="ct2 mut">Rien au menu de ce jour pour l’instant.</span>
+                        </div>
+                      );
+                    })()}
+                    <div className="g">Tâches en plus</div>
+                    {(selected.tasks ?? []).map((task) => (
+                      <div className="crow" key={task.id}>
+                        <span className="ckbx" />
+                        <span className="ct2">{task.t}</span>
+                        <button className="cx" aria-label={`Retirer « ${task.t} »`} onClick={() => void removeTask(task.id)}>
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <div className="addrow">
+                      <input
+                        className="cz-inp"
+                        placeholder="Ajouter une tâche…"
+                        value={taskDraft}
+                        onChange={(e) => setTaskDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') void addTask();
+                        }}
+                      />
+                      <button className="go" onClick={() => void addTask()} disabled={!taskDraft.trim()}>
+                        ＋
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="ck-optcard">
                 <button className="head" onClick={openPreview} disabled={busy}>

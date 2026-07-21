@@ -105,7 +105,7 @@ export default function EspaceView({ token }: { token: string }) {
     );
   }
 
-  return isNounou(espace) ? <NounouEspaceView espace={espace} /> : <EspaceCuisine espace={espace} />;
+  return isNounou(espace) ? <NounouEspaceView espace={espace} /> : <EspaceCuisine espace={espace} token={token} />;
 }
 
 function readCache(token: string): Payload | null {

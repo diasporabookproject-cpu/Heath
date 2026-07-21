@@ -1,6 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Espace } from '../lib/espace';
 import type { SharedComp, SharedDay, SharedMealV2 } from '../lib/share';
+import {
+  flushPending,
+  loadCachedEvents,
+  loadPending,
+  mealItemKey,
+  mergePending,
+  queuePending,
+  readChecks,
+  reduceChecks,
+  saveCachedEvents,
+  sendCheck,
+  taskItemKey,
+  type CheckEvent,
+  type CheckState,
+} from '../lib/espace-checks';
 import { scaledRows, splitSteps } from '../lib/ingredients';
 import { DAY_AR } from '../lib/cuisineLabels';
 import { todayKey, todayLabel } from './dates';
@@ -24,6 +39,7 @@ const STR = {
     noVoice: 'Pas de note vocale.', ing: 'Ingrédients', steps: 'Préparation',
     noSteps: 'Pas d’étapes — suis la note vocale.', rest: 'Le reste de la semaine', offline: 'Hors-ligne',
     trans: 'Texte traduit automatiquement. La note vocale est la voix de Madame.',
+    tasks: 'Tâches en plus', check: 'Fait', tosync: 'Coché — se transmettra avec le réseau',
   },
   ar: {
     head: 'الكوزينة', today: 'اليوم',
@@ -33,13 +49,18 @@ const STR = {
     noVoice: 'ما كاينش تسجيل صوتي.', ing: 'المقادير', steps: 'الطريقة',
     noSteps: 'ما كايناش مراحل — تبع التسجيل.', rest: 'باقي الأسبوع', offline: 'بلا أنترنت',
     trans: 'الترجمة أوتوماتيكية. التسجيل الصوتي هو صوت مدام.',
+    tasks: 'مهام زايدة', check: 'تدارت', tosync: 'تسجّلات — غادي توصل ملي يرجع الإنترنت',
   },
 };
 
-export default function EspaceCuisine({ espace }: { espace: Espace }) {
+/** `token` absent = APERÇU côté employeur : cases visibles, non interactives. */
+export default function EspaceCuisine({ espace, token }: { espace: Espace; token?: string }) {
   const [lang, setLang] = useState<Lang>(espace.langue);
   const [sel, setSel] = useState<{ dayKey: string; meal: MK } | null>(null);
   const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  // T3 (lot partage) — l'état des coches : serveur (ou cache) ⊕ file locale.
+  const [checks, setChecks] = useState<Map<string, CheckState>>(new Map());
+  const checklist = espace.cl === 1;
   const ar = lang === 'ar';
   const t = STR[lang];
   const persons = espace.persons ?? 4;
@@ -55,6 +76,39 @@ export default function EspaceCuisine({ espace }: { espace: Espace }) {
       window.removeEventListener('offline', off);
     };
   }, []);
+
+  // Coches : rejouer la file, lire le journal (ou le cache si injoignable),
+  // fusionner avec les gestes locaux en attente. Re-tenté au retour du réseau.
+  useEffect(() => {
+    if (!token || !checklist) return;
+    let alive = true;
+    const sync = async () => {
+      await flushPending(token);
+      const server = await readChecks(token);
+      if (server) saveCachedEvents(token, server);
+      const base = server ?? loadCachedEvents(token);
+      if (alive) setChecks(mergePending(reduceChecks(base), loadPending(token)));
+    };
+    void sync();
+    window.addEventListener('online', sync);
+    return () => {
+      alive = false;
+      window.removeEventListener('online', sync);
+    };
+  }, [token, checklist]);
+
+  /** Le geste : optimiste à l'écran, transmis best-effort, sinon en file. */
+  const toggleCheck = (item: string) => {
+    if (!token) return; // aperçu employeur : inerte
+    const next = !checks.get(item)?.done;
+    const ev: CheckEvent = { item, done: next, at: new Date().toISOString() };
+    setChecks((prev) => mergePending(prev, [ev]));
+    void sendCheck(token, ev).then((res) => {
+      if (res === 'ok') saveCachedEvents(token, [...loadCachedEvents(token), ev]);
+      else if (res === 'offline') queuePending(token, ev);
+      // 'rejected' (lien coupé) : rien — la page basculera « retirée » au prochain chargement.
+    });
+  };
 
   const today = useMemo(() => {
     const k = todayKey();
@@ -99,6 +153,10 @@ export default function EspaceCuisine({ espace }: { espace: Espace }) {
             securite={espace.securite}
             dayName={dayName}
             compName={compName}
+            checklist={checklist}
+            tasks={espace.tasks}
+            checks={checks}
+            onToggle={token ? toggleCheck : undefined}
           />
         )}
       </div>
@@ -116,12 +174,16 @@ function MealCard({
   lang,
   compName,
   onClick,
+  check,
 }: {
   label: string;
   meal: SharedMealV2;
   lang: Lang;
   compName: (c: SharedComp) => string;
   onClick: () => void;
+  /** T3 : case « fait » (repas d'aujourd'hui, checklist active). `on` = état ;
+   *  `onToggle` absent = aperçu (case visible, inerte). */
+  check?: { on: boolean; onToggle?: () => void };
 }) {
   const ar = lang === 'ar';
   const t = STR[lang];
@@ -156,6 +218,21 @@ function MealCard({
           </span>
         )}
       </span>
+      {check && (
+        <span
+          className={'ck-check' + (check.on ? ' on' : '') + (check.onToggle ? '' : ' ro')}
+          role="checkbox"
+          aria-checked={check.on}
+          aria-label={t.check}
+          tabIndex={check.onToggle ? 0 : -1}
+          onClick={(e) => {
+            e.stopPropagation();
+            check.onToggle?.();
+          }}
+        >
+          {check.on ? '✓' : ''}
+        </span>
+      )}
       <span className="ck-chev">{ar ? <IconChevL size={18} /> : <IconChevR size={18} />}</span>
     </button>
   );
@@ -169,6 +246,10 @@ function Home({
   securite,
   dayName,
   compName,
+  checklist,
+  tasks,
+  checks,
+  onToggle,
 }: {
   days: SharedDay[];
   today: SharedDay | undefined;
@@ -177,15 +258,68 @@ function Home({
   securite?: Espace['securite'];
   dayName: (d: SharedDay) => string;
   compName: (c: SharedComp) => string;
+  /** T3 — suivi des tâches (absent sur une page publiée avant : rendu inchangé). */
+  checklist?: boolean;
+  tasks?: Espace['tasks'];
+  checks?: Map<string, CheckState>;
+  onToggle?: (item: string) => void;
 }) {
   const ar = lang === 'ar';
   const t = STR[lang];
   const others = days.filter((d) => d !== today);
 
+  // T3 : la case vit sur les repas d'AUJOURD'HUI (le geste quotidien) — la clé
+  // porte l'empreinte du NOM FR (`n`, stable quelle que soit la langue lue).
   const cards = (d: SharedDay) =>
-    MK_LIST.filter((k) => d[k]).map((k) => (
-      <MealCard key={k} label={t[k]} meal={d[k] as SharedMealV2} lang={lang} compName={compName} onClick={() => onOpen(d.k, k)} />
-    ));
+    MK_LIST.filter((k) => d[k]).map((k) => {
+      const meal = d[k] as SharedMealV2;
+      const comp = meal.plat ?? meal.entree;
+      const withCheck = checklist && d === today && comp;
+      const item = withCheck ? mealItemKey(d.k, k, comp.n) : null;
+      return (
+        <MealCard
+          key={k}
+          label={t[k]}
+          meal={meal}
+          lang={lang}
+          compName={compName}
+          onClick={() => onOpen(d.k, k)}
+          check={
+            item
+              ? { on: !!checks?.get(item)?.done, onToggle: onToggle ? () => onToggle(item) : undefined }
+              : undefined
+          }
+        />
+      );
+    });
+
+  // Tâches libres (texte de l'employeur — fr SEUL, décision ③ : visible tel
+  // quel côté darija, jamais masqué — même contrat qu'espace-legere).
+  const taskRows =
+    checklist && tasks && tasks.length > 0 ? (
+      <>
+        <div className={'ck-today ck-tasklab' + (ar ? ' ar' : '')}>{t.tasks}</div>
+        {tasks.map((task) => {
+          const item = taskItemKey(task.id);
+          const on = !!checks?.get(item)?.done;
+          return (
+            <button
+              key={task.id}
+              className={'ck-taskrow' + (on ? ' on' : '')}
+              onClick={onToggle ? () => onToggle(item) : undefined}
+              disabled={!onToggle}
+            >
+              <span className={'ck-check' + (on ? ' on' : '') + (onToggle ? '' : ' ro')} aria-hidden>
+                {on ? '✓' : ''}
+              </span>
+              <span className="tx" dir="ltr">
+                {task.t}
+              </span>
+            </button>
+          );
+        })}
+      </>
+    ) : null;
 
   return (
     <>
@@ -199,6 +333,7 @@ function Home({
           <div className={'ck-today' + (ar ? ' ar' : '')}>{t.today}</div>
           <div className={'ck-todaybig' + (ar ? ' ar' : '')}>{ar ? dayName(today) : todayLabel()}</div>
           {cards(today)}
+          {taskRows}
         </>
       ) : (
         <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '30px 0' }}>

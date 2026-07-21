@@ -351,9 +351,28 @@ if (await shareSheet.locator('input').count()) {
   await shareSheet.getByText('Enregistrer', { exact: false }).first().click();
   await page.waitForTimeout(600);
 }
+// T3 (lot partage) — SUIVI DES TÂCHES : registre neutre, toggle, tâche libre.
+{
+  const feuille = await shareSheet.innerText();
+  if (/elle cochera/i.test(feuille))
+    throw new Error('T3 : genre présumé (« elle cochera ») — le registre doit rester neutre');
+}
+await shareSheet.locator('.ck-sw').click(); // activer la checklist
+await shareSheet.locator('.ck-clacc').waitFor({ timeout: 5000 });
+await shareSheet.getByText('à cocher', { exact: false }).waitFor({ timeout: 3000 }); // tag neutre
+await shareSheet.getByText('Tâches en plus').waitFor({ timeout: 3000 });
+await shareSheet.getByPlaceholder('Ajouter une tâche…').fill('Arroser les plantes');
+await shareSheet.locator('.ck-clacc .addrow .go').click();
+await shareSheet.locator('.ck-clacc .crow', { hasText: 'Arroser les plantes' }).waitFor({ timeout: 3000 });
+console.log('T3 : checklist activée, tâche libre ajoutée (registre neutre) ✅');
 await shareSheet.getByText('Accès permanent', { exact: false }).click();
 await page.locator('.cz-preview-overlay').waitFor({ timeout: 8000 });
 await page.locator('.ck-qrblock svg').waitFor({ timeout: 5000 }); // T1 : QR permanent dans l'aperçu
+// T3 : la page (aperçu, darija d'abord) montre la TÂCHE EN FRANÇAIS (décision ③)
+await page.locator('.cz-preview-overlay').getByText('Arroser les plantes').waitFor({ timeout: 5000 });
+if (!(await page.locator('.cz-preview-overlay .ck-check').count()))
+  throw new Error('T3 : cases absentes de la page alors que la checklist est active');
+console.log('T3 : cases sur la page + tâche fr visible côté darija ✅');
 // La destinataire naît en darija → l'alerte s'affiche d'abord en ARABE (RTL),
 // puis on bascule FR : les DEUX registres du gate sont ainsi couverts.
 await page.locator('.ck-warn', { hasText: 'arachide' }).first().waitFor({ timeout: 5000 });

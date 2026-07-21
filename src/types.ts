@@ -185,6 +185,12 @@ export function normalizeRegles(r: unknown): ReglesFoyer {
 }
 
 /** Destinataire d'un brief (personnel de maison). Concept transverse réutilisable. */
+/** Tâche libre de la checklist (texte de l'employeur — fr seul, décision ③). */
+export interface TaskItem {
+  id: string;
+  t: string;
+}
+
 export interface Destinataire {
   id: string;
   nom: string;
@@ -202,6 +208,10 @@ export interface Destinataire {
   tel?: string;
   /** Ids des fiches Sécurité assignées à cette personne. */
   securiteIds?: string[];
+  /** T3 (lot partage) : suivi des tâches activé pour cette personne. */
+  checklist?: boolean;
+  /** Tâches libres, publiées avec la page quand la checklist est active. */
+  tasks?: TaskItem[];
   // `revoked?` supprimé (mini-lot destinataires F2) : jamais câblé, et la
   // révocation SUPPRIME la personne (couper/créer) — un drapeau sur un
   // enregistrement qui disparaît est mort par construction. Soft-revoke = A7-C2.
