@@ -129,6 +129,13 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage — T1 avenant 3 : feuille = maquette stricte (retraits) + preuve URL — 2026-07-21
+Retours device PO :
+- **« Rappel d'envoi » et « Dernier accès » RETIRÉS** de la feuille — absents de la maquette (qui s'arrête à « Copier le lien »). Code mort nettoyé (RappelSheet/rappelLabel/lastEspaceOpen/formatWhen/IconEye + états). **L'état côté employeur (dernier accès + coches « fait à HH:MM ») reviendra en T4** (« retour employeur »), là où il a sa place. La feuille est désormais : personne → message → checklist → accès permanent, point.
+- **« pourquoi du localhost ? »** — FAUSSE ALERTE, prouvé : `platform.ts:14-19` renvoie `VITE_WEB_BASE_URL` (github.io) en natif, `window.location.origin` (localhost) seulement en web. Le bundle NATIF committé contient `diasporabookproject-cpu.github.io/Heath` et **zéro `localhost:4173`** (grep à l'appui). Le localhost n'apparaît que dans les captures de preview ; l'APK génère le vrai lien.
+- Portes : typecheck ✓ · 221/221 ✓ · build ✓ · 3 smokes ✓ · capture (feuille = maquette).
+
+
 ### Lot partage — T1 avenant 2 : le message EST la maquette (mot court + toggle langue) — 2026-07-21
 PO : « pas exactement semblable ». Comparaison défaut↔défaut au pixel → la partie A n'était pas finie : la maquette n'est pas « le digest habillé », c'est **la « bulle de message préremplie »** du brief = un mot COURT et chaleureux + le lien (le détail vit sur la page, « il est ici 👇 »). Restructuration :
 - **Message** : `buildCuisineGreeting(prenom, link, lang)` — fr définitif (« Bonjour {nom} 👋 / Le menu est prêt, il est ici 👇 / {lien} »), **darija premier jet** (« سلام {nom} 👋 / المنيو ديالك واجد، شوفيه هنا 👇 » — brouillon à relire, cohérent avec le parking §7.4). Éditable. **Chips de portée RETIRÉES** (un bonjour ne dépend pas du jour ; la page publie toujours la semaine complète — donc aucune fonction utile perdue) → tout le câblage `scope`/`shareScope`/`shareScopeNow` mort supprimé de PartageSheet + CuisineView.

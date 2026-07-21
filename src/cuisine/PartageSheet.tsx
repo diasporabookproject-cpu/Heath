@@ -14,7 +14,6 @@ import {
   publishEspace,
   previewEspace,
   revokeEspace,
-  lastEspaceOpen,
   type Espace,
 } from '../lib/espace';
 import { isNative, shareText } from '../lib/platform';
@@ -23,11 +22,9 @@ import SecuriserVolet from '../components/SecuriserVolet';
 import { todayKey } from './dates';
 import { buildCuisineGreeting } from '../maison/digest';
 import { qrSvg } from '../lib/qr';
-import { rappelLabel } from '../lib/rappel';
-import RappelSheet from './RappelSheet';
 import type { Destinataire, SecuriteFiche } from '../types';
 import EspaceCuisine from './EspaceCuisine';
-import { IconEye, IconLoader, IconCheck, IconCopy } from './icons';
+import { IconLoader, IconCheck, IconCopy } from './icons';
 
 // Registre neutre (lot partage T1) : le métier, jamais le genre présumé.
 const ROLES = ['Cuisine', 'Ménage', 'Nounou', 'Autre'];
@@ -45,9 +42,7 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const persons = useStore((s) => s.settings.persons);
-  const rappel = useStore((s) => s.app.rappels?.cuisine);
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
-  const [rappelOpen, setRappelOpen] = useState(false);
 
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
@@ -56,7 +51,6 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const [mode, setMode] = useState<'send' | 'list' | 'edit'>('send');
   const [editing, setEditing] = useState<Destinataire | null>(null);
   const [secFiches, setSecFiches] = useState<SecuriteFiche[]>([]);
-  const [lastOpen, setLastOpen] = useState<string | null>(null);
   const [preview, setPreview] = useState<Espace | null>(null);
   // T3 : brouillon du champ « Ajouter une tâche » (validé → tasks du destinataire).
   const [taskDraft, setTaskDraft] = useState('');
@@ -95,11 +89,6 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   }, []);
 
   const selected = dests.find((d) => d.id === selId) ?? null;
-
-  useEffect(() => {
-    setLastOpen(null);
-    if (selected) void lastEspaceOpen(selected.token).then(setLastOpen);
-  }, [selId, selected?.token]);
 
   // Message recomposé quand la personne ou la langue du message change.
   // (L'édition manuelle prime ensuite : elle écrit directement `digest`.)
@@ -159,7 +148,6 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
         }
         toast('Publié ✓ — message copié (pas de numéro)');
       }
-      void lastEspaceOpen(selected.token).then(setLastOpen);
     } catch (e) {
       toast((e as Error).message);
     } finally {
@@ -472,29 +460,12 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
                 </button>
               </div>
 
-              <button className="cz-cfgrow" onClick={() => setRappelOpen(true)}>
-                <span className="e">🔔</span>
-                <span className="st">
-                  <b>Rappel d’envoi</b>
-                  <i>{rappel ? rappelLabel(rappel) : 'Désactivé'}</i>
-                </span>
-                <span className="go">{rappel ? 'Modifier' : 'Activer'}</span>
-              </button>
-
-              <div className="ck-receipt">
-                <IconEye size={15} />
-                <span>
-                  <b>Dernier accès :</b> {lastOpen ? formatWhen(lastOpen) : '—'}
-                </span>
-              </div>
             </div>
           ) : (
             <p className="cz-emptynote">Ajoute une personne pour partager le menu.</p>
           )}
         </div>
       </div>
-
-      {rappelOpen && <RappelSheet kind="cuisine" onClose={() => setRappelOpen(false)} toast={toast} />}
 
       {preview && (
         <div className="cz-preview-overlay">
@@ -520,19 +491,6 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
       )}
     </>
   );
-}
-
-function formatWhen(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const today = new Date();
-    const sameDay = d.toDateString() === today.toDateString();
-    const hh = `${d.getHours()}h${String(d.getMinutes()).padStart(2, '0')}`;
-    if (sameDay) return `aujourd’hui, ${hh}`;
-    return `${d.getDate()}/${d.getMonth() + 1}, ${hh}`;
-  } catch {
-    return '—';
-  }
 }
 
 function EditForm({
