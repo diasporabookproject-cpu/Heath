@@ -129,6 +129,13 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### CLÔTURE — Lot Partage + suivi des tâches — 2026-07-21
+**Mergé au défaut** (`ba84403`, merge --no-ff de `lot-partage-v1`) après GO clôture PO (read-back `READBACK_PARTAGE.md` validé). Périmètre : A feuille refondue + B suivi des tâches (premier flux bidirectionnel). **`0011` en prod** (fenêtre close, parité 0, token mort). Bout-en-bout validé device.
+- **Les DEUX workflows repointés au défaut** : `deploy.yml` **et** `apk.yml` (les deux suivaient `lot-partage-v1` — deploy pour tester la page reçue sur Pages, apk pour l'APK ; sans les deux, le défaut n'aurait ni Pages à jour ni APK). Rappel PO retenu.
+- **Vérif de clôture spécifique** (miroir du « rien à cocher ») : après merge + `deploy.yml` repointé au défaut, la page reçue en prod doit TOUJOURS servir les cases — le défaut post-merge contient bien le code checklist (vérifié ci-dessous).
+- Portes re-vérifiées sur le mergé (typecheck · 223 tests · build · 3 smokes) avant push. `ETAT.md` réécrit. Tag impossible (proxy) → sha `ba84403` au DEVLOG (comme au lot UI).
+
+
 ### Lot partage — BOUT-EN-BOUT VALIDÉ device (page reçue déployée sur Pages) — 2026-07-21
 Retour device PO « rien à cocher » sur la page de la cuisinière → **diagnostic** : ce n'était pas un bug de code (tests + aperçu le prouvaient) mais de **déploiement**. La page reçue est servie par **GitHub Pages = branche par défaut**, qui n'avait pas le code checklist (`git grep` = 0 sur le défaut, 8 sur `lot-partage-v1`). L'APK publiait bien `cl:1`, mais l'ancienne web app l'ignorait → aucune case.
 - **GO PO** : `deploy.yml` repointé **temporairement** sur `lot-partage-v1` (comme `apk.yml`) → Pages redéployé (`build 56f9183`, `viewChecksToken`/`ck-check` vérifiés présents dans le bundle en ligne).

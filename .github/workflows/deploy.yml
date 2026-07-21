@@ -4,7 +4,7 @@ on:
   push:
     # Déploiement de la prod uniquement. La refonte Bento→Manzil a été fusionnée ici
     # (merge --no-ff, 2026-07-05) ; retour arrière trivial via le tag `pre-bento`.
-    branches: [lot-partage-v1]  # TEMPORAIRE (lot partage) : déploie la branche du lot sur Pages pour tester la page reçue (checklist). À REPOINTER au défaut à la clôture.
+    branches: [claude/jolly-wozniak-s83str]
   workflow_dispatch:
 
 permissions:
