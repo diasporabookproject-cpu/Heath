@@ -129,6 +129,15 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Fenêtre 0011 — PROD appliqué, 5 preuves sur la vraie base, parité 0 · attend révocation token — 2026-07-21
+**GO PROD du PO** (relecture finale : jointure d'existence insert L49 + select L56, idempotence, journal strict). Appliqué en **prod (`pqeilsuqglmrvijndrwa`)** :
+- Idempotence prod : 0011 appliqué **2×** → 201 / 201.
+- **Les 5 preuves REJOUÉES sur la vraie base** : anon insert jeton vivant OK · select lit (n=1) · **insert jeton inconnu → violation RLS** · **preuve 4 bloquante : révoqué → anon select = 0** ; corollaire postgres n=1 (la policy cache, elle ne supprime pas).
+- **Prod propre** : sonde `__probe_0011__` nettoyée (n=0 résiduel) ; **invariant lecture publique `espaces` (anon) intact** (0011 n'ajoute qu'une table, ne touche pas `espaces`).
+- **`parity:check` de clôture = 0 écart** — staging == prod (38 colonnes, 24 policies, 8 RLS, 14 index, 10 fonctions, 2 triggers, 3 buckets, 5 edge alignés).
+- **RESTE** : le PO révoque le token → je vérifie la mort (401 Management API) → je supprime le token du scratchpad. README migrations à passer « 0011 = STAGING+PROD, parité prouvée ». Puis **T4**.
+
+
 ### Fenêtre 0011 — STAGING appliqué + 5 preuves ✅ · STOP avant PROD — 2026-07-21
 Migration `0011_espace_checks.sql` **APPROUVÉE PO** (relue ligne à ligne). Fenêtre ouverte (token jetable, Management API `/database/query`, canal de `parity:check`). **STAGING (`tryjcednzencepokodrs`) — PROD NON TOUCHÉE.**
 - **Idempotence (F-a)** : migration appliquée **deux fois** → HTTP 201 / 201 (rejouable, conforme).
