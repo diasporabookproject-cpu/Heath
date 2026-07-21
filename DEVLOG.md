@@ -129,6 +129,13 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage — BOUT-EN-BOUT VALIDÉ device (page reçue déployée sur Pages) — 2026-07-21
+Retour device PO « rien à cocher » sur la page de la cuisinière → **diagnostic** : ce n'était pas un bug de code (tests + aperçu le prouvaient) mais de **déploiement**. La page reçue est servie par **GitHub Pages = branche par défaut**, qui n'avait pas le code checklist (`git grep` = 0 sur le défaut, 8 sur `lot-partage-v1`). L'APK publiait bien `cl:1`, mais l'ancienne web app l'ignorait → aucune case.
+- **GO PO** : `deploy.yml` repointé **temporairement** sur `lot-partage-v1` (comme `apk.yml`) → Pages redéployé (`build 56f9183`, `viewChecksToken`/`ck-check` vérifiés présents dans le bundle en ligne).
+- **VALIDÉ sur device** (PO) : après rechargement de la page reçue, **les cases s'affichent** (repas + tâches, tous les jours) **et la cuisinière coche** — la remontée est vive (0011 en prod). Le premier flux BIDIRECTIONNEL du produit fonctionne bout-en-bout.
+- **À la clôture** : merge `lot-partage-v1` → défaut (Pages redéploie proprement le défaut), **repointer `deploy.yml` ET `apk.yml` au défaut**, réécrire `ETAT.md`, tag. Read-back de clôture rédigé (`READBACK_PARTAGE.md`).
+
+
 ### Lot partage — T3 correctif : les cases sur TOUS les jours (retour device PO) — 2026-07-21
 PO : « je ne vois pas de coche dans la page partagée ». **Vrai bug** trouvé : `EspaceCuisine` ne posait la case que si `d === today` (`cards()`), or l'app compose par DÉFAUT pour **demain** → « aujourd'hui » vide → **aucune case** alors que le menu de demain/la semaine est là. Ma restriction « aujourd'hui seulement » contredisait la décision PO ① (« le menu : Harira, Tajine… » = tout le menu). Corrigé : `withCheck = checklist && comp` (le jour ne conditionne plus) — la case vit sur **chaque repas composé, tous les jours** ; la clé porte déjà `d.k` (distincte par jour). Le « reste de la semaine » rendait déjà via le même `cards()`, donc les cases y apparaissent sans autre changement. Test neuf : menu 2 jours (Tajine lundi + Harira mardi) → **≥ 2 cases** (le composé de demain compte). 223 tests · build ✓ · 3 smokes ✓. **STOP — device : compose (même pour demain), active la checklist, envoie → la page doit montrer les cases sur les jours composés.**
 
