@@ -62,6 +62,14 @@ export function reduceChecks(events: CheckEvent[]): Map<string, CheckState> {
   return out;
 }
 
+/** Combien d'items sont FAITS dans un journal (réduit LWW puis compte les done).
+ * Le compteur du « retour employeur » (T4). */
+export function countDone(events: CheckEvent[]): number {
+  let n = 0;
+  for (const st of reduceChecks(events).values()) if (st.done) n++;
+  return n;
+}
+
 /** L'état rendu = serveur ⊕ file locale : le geste local (plus récent, pas
  * encore transmis) PRIME sur ce que le serveur connaît. */
 export function mergePending(

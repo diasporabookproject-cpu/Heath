@@ -53,8 +53,9 @@ const STR = {
   },
 };
 
-/** `token` absent = APERÇU côté employeur : cases visibles, non interactives. */
-export default function EspaceCuisine({ espace, token }: { espace: Espace; token?: string }) {
+/** `token` = page reçue (coches interactives). `viewChecksToken` = APERÇU
+ * employeur : lit l'état RÉEL des coches en lecture seule (cases inertes). */
+export default function EspaceCuisine({ espace, token, viewChecksToken }: { espace: Espace; token?: string; viewChecksToken?: string }) {
   const [lang, setLang] = useState<Lang>(espace.langue);
   const [sel, setSel] = useState<{ dayKey: string; meal: MK } | null>(null);
   const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -96,6 +97,19 @@ export default function EspaceCuisine({ espace, token }: { espace: Espace; token
       window.removeEventListener('online', sync);
     };
   }, [token, checklist]);
+
+  // T4 (lot partage) — VUE EMPLOYEUR : lecture SEULE de l'état réel (aperçu).
+  // Pas de file, pas de flush ; les cases restent inertes (aucun `onToggle`).
+  useEffect(() => {
+    if (!viewChecksToken || !checklist || token) return;
+    let alive = true;
+    void readChecks(viewChecksToken).then((server) => {
+      if (alive && server) setChecks(reduceChecks(server));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [viewChecksToken, checklist, token]);
 
   /** Le geste : optimiste à l'écran, transmis best-effort, sinon en file. */
   const toggleCheck = (item: string) => {

@@ -970,3 +970,6 @@
 .ck-optcard .oi.qr { padding: 4px; color: var(--ink); }
 .ck-optcard .oi.qr svg { width: 100%; height: 100%; }
 .ck-optcard .qrcopy svg { flex: none; }
+
+/* T4 · résumé de l'état côté employeur dans la barre d'aperçu. */
+.ck-vustate { display: block; font-size: 11px; font-weight: 600; opacity: 0.72; margin-top: 2px; }

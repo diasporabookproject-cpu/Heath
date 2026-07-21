@@ -14,8 +14,10 @@ import {
   publishEspace,
   previewEspace,
   revokeEspace,
+  lastEspaceOpen,
   type Espace,
 } from '../lib/espace';
+import { readChecks, countDone } from '../lib/espace-checks';
 import { isNative, shareText } from '../lib/platform';
 import { getSupabase, supabaseEnabled } from '../lib/supabase';
 import SecuriserVolet from '../components/SecuriserVolet';
@@ -56,6 +58,9 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const [taskDraft, setTaskDraft] = useState('');
   // T1 (lot partage) : le QR de l'accès permanent, rendu dans l'aperçu.
   const [qr, setQr] = useState<string | null>(null);
+  // T4 : résumé de l'état côté employeur (coches faites + dernier accès), dans l'aperçu.
+  const [previewDone, setPreviewDone] = useState<number | null>(null);
+  const [previewOpen, setPreviewOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // F4-bis fiche B : volet « Sécuriser » inline (création de compte transparente).
   const [securiser, setSecuriser] = useState(false);
@@ -162,6 +167,15 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
       // Le QR encode le LIEN PERMANENT (le jeton) — il ne change jamais (F1).
       setQr(await qrSvg(buildEspaceUrl(selected.token)).catch(() => null));
       setPreview(await previewEspace(selected, SEED_CONFIG, week, byId, persons));
+      // T4 : l'état RÉEL — chargé APRÈS l'ouverture, jamais bloquant (le réseau
+      // ne doit pas retarder l'aperçu ; le résumé se remplit quand il résout).
+      setPreviewDone(null);
+      setPreviewOpen(null);
+      if (selected.checklist) {
+        const tok = selected.token;
+        void readChecks(tok).then((evs) => setPreviewDone(evs ? countDone(evs) : null));
+        void lastEspaceOpen(tok).then(setPreviewOpen);
+      }
     } finally {
       setBusy(false);
     }
@@ -470,7 +484,15 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
       {preview && (
         <div className="cz-preview-overlay">
           <div className="cz-preview-bar">
-            <span>Aperçu — ce que voit {selected?.nom}</span>
+            <span>
+              Aperçu — ce que voit {selected?.nom}
+              {previewDone !== null && (
+                <small className="ck-vustate">
+                  {previewDone > 0 ? `${previewDone} coché${previewDone > 1 ? 's' : ''}` : 'Rien de coché encore'}
+                  {previewOpen ? ` · vu ${formatWhen(previewOpen)}` : ''}
+                </small>
+              )}
+            </span>
             <button className="cz-x" onClick={() => setPreview(null)} aria-label="Fermer l’aperçu">
               ✕
             </button>
@@ -485,12 +507,25 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
                 </div>
               </div>
             )}
-            <EspaceCuisine espace={preview} />
+            <EspaceCuisine espace={preview} viewChecksToken={selected?.token} />
           </div>
         </div>
       )}
     </>
   );
+}
+
+function formatWhen(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const today = new Date();
+    const sameDay = d.toDateString() === today.toDateString();
+    const hh = `${d.getHours()}h${String(d.getMinutes()).padStart(2, '0')}`;
+    if (sameDay) return `aujourd’hui, ${hh}`;
+    return `${d.getDate()}/${d.getMonth() + 1}, ${hh}`;
+  } catch {
+    return '—';
+  }
 }
 
 function EditForm({

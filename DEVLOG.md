@@ -129,6 +129,14 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage — T4 : l'état des coches côté employeur (aperçu) — 2026-07-21
+Placement (décidé, expliqué au PO) : dans l'**aperçu** (« ce que voit {nom} »), PAS une rangée de plus sur la feuille qu'on a épurée à la maquette — c'est littéralement « l'employeur voit l'état quand il consulte » (cadrage PO).
+- **`EspaceCuisine` mode VUE EMPLOYEUR** : nouveau prop `viewChecksToken` — quand présent (et `token` absent), lit l'état RÉEL via `readChecks` en **lecture seule** (pas de file, pas de flush ; cases inertes car aucun `onToggle`). La page reçue (avec `token`) reste interactive, inchangée.
+- **Résumé dans la barre d'aperçu** : « N coché(s) · vu HH:MM » quand la checklist est active — chargé **APRÈS l'ouverture, jamais bloquant** (le réseau ne retarde pas l'aperçu ; `readChecks` best-effort → null = ligne masquée, dégradation propre). `countDone` (helper pur, réduction LWW puis compte des `done`) testé.
+- **222 tests** (+1 countDone) · build ✓ · 3 smokes ✓ (un piège attrapé : `openPreview` attendait `readChecks` avant d'ouvrir l'overlay → réseau lent = aperçu jamais ouvert ; rendu non bloquant).
+- **Limite du capture offline** : le navigateur de smoke n'atteint pas la prod → `readChecks` null → résumé masqué et cases vides (comportement correct). Le **retour peuplé (coches vertes + « N coché »)** se vérifie **device contre prod** : la remontée T3 est vive depuis la fenêtre 0011. **STOP — device foyer neuf : publier → cocher sur la page reçue → rouvrir l'aperçu → voir l'état.** Après validation : clôture du lot.
+
+
 ### Fenêtre 0011 — PROD appliqué, 5 preuves sur la vraie base, parité 0 · attend révocation token — 2026-07-21
 **GO PROD du PO** (relecture finale : jointure d'existence insert L49 + select L56, idempotence, journal strict). Appliqué en **prod (`pqeilsuqglmrvijndrwa`)** :
 - Idempotence prod : 0011 appliqué **2×** → 201 / 201.

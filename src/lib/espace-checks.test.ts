@@ -26,6 +26,7 @@ import {
   sendCheck,
   taskItemKey,
   type CheckEvent,
+  countDone,
 } from './espace-checks';
 
 /** Stockage en mémoire (l'injection évite localStorage — absent en node). */
@@ -129,5 +130,13 @@ describe('sendCheck — classification des issues', () => {
     expect(await sendCheck('t', ev('a', true, '1'))).toBe('rejected');
     insertMock.mockResolvedValueOnce({ error: { code: '08006', message: 'connection failure' } });
     expect(await sendCheck('t', ev('a', true, '1'))).toBe('offline');
+  });
+});
+
+describe('countDone (T4 — retour employeur)', () => {
+  it('compte les items FAITS après réduction LWW', () => {
+    expect(countDone([ev('a', true, '1'), ev('b', true, '2'), ev('a', false, '3')])).toBe(1);
+    expect(countDone([ev('a', true, '1'), ev('b', true, '2')])).toBe(2);
+    expect(countDone([])).toBe(0);
   });
 });
