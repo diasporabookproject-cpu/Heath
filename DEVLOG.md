@@ -129,6 +129,15 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage — T1 avenant : fidélité maquette de la carte Message (retour device PO) — 2026-07-21
+PO : « visuellement on y est pas ». Comparaison au pixel (maquette rendue vs app, viewport identique) → 3 écarts réels de la feuille d'envoi, corrigés vers la maquette qui fait foi :
+- **Avatar** : rond saffron → **carré arrondi couleur tuile** (`#f7e3d7`, encre accent), comme la maquette.
+- **Message** : le `DigestBlock` générique (chips « tabs » + zone « Quoi envoyer / Son message ») → **vraie bulle WhatsApp** (fond vert clair, bordure, **queue** en bas-gauche) contenant le digest préretempli ÉDITABLE. Côté Cuisine on n'utilise plus `DigestBlock` (Nounou le garde intact) — rendu direct pour coller à la maquette.
+- **Portée** : conservée (fonction jour/semaine préservée) mais en **pilules discrètes** au-dessus de la bulle (register « aisance, pas contrôle ») au lieu d'onglets proéminents.
+- **Décisions prises sans re-arbitrer** (maquette = référence ; le PO a interrompu la question pour dire « continue ») : bulle = le digest habillé (on GARDE le détail des plats + lien, valeur du message WhatsApp) ; **toggle Français|الدارجة NON construit** (la maquette le note « brouillon » ; darija du message parquée §7.4 — la page reçue, elle, reste bilingue).
+- Portes : typecheck ✓ · 219/219 ✓ · build ✓ · 3 smokes ✓ · capture (feuille fidèle maquette).
+
+
 ### Lot partage + suivi — T3 : la page reçue coche (payload + cases + offline + tâches) — 2026-07-21
 - **Payload (patron `gouter?`, lien perpétuel)** : `Espace.cl?: 1` + `Espace.tasks?: TaskItem[]` — champs **ABSENTS** (pas null) hors checklist active (`checklistFields`, testé : une page « avant » et une page « checklist off » sont identiques). `Destinataire.checklist?/tasks?` persistés IDB (champs optionnels — zéro migration).
 - **Feuille d'envoi** : carte « **Activer la checklist** » (switch) + accordéon — **menu du jour** en préview passif (jour de la portée, tag neutre « **à cocher** ») + **tâches libres** éditables (ajout Enter/＋, retrait ✕) ; réglages PAR PERSONNE, publiés au prochain envoi (page vivante, comme F5.5).

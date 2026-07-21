@@ -22,7 +22,7 @@ import { getSupabase, supabaseEnabled } from '../lib/supabase';
 import SecuriserVolet from '../components/SecuriserVolet';
 import { todayKey } from './dates';
 import { buildCuisineDigest, type CuisineScope } from '../maison/digest';
-import { DigestBlock, type ScopeOption } from '../ui/DigestBlock';
+import { type ScopeOption } from '../ui/DigestBlock';
 import { qrSvg } from '../lib/qr';
 import { rappelLabel } from '../lib/rappel';
 import RappelSheet from './RappelSheet';
@@ -341,34 +341,47 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
                 </button>
               </div>
 
+              {/* Maquette : « Message » héros = bulle WhatsApp préremplie (le digest,
+                  éditable) + bouton vert. La portée reste (jour/semaine) mais
+                  DISCRÈTE au-dessus — le register est « aisance », pas « contrôle ». */}
               <div className="ck-msgcard">
                 <div className="mtop">
                   <IconSend size={15} />
                   Message
                 </div>
-                <DigestBlock
-                  role="cuisine"
-                  scopes={CUISINE_SCOPES}
-                  active={scope}
-                  onScope={(k) => setScope(k as CuisineScope)}
-                  value={digest}
-                  onChange={setDigest}
-                />
+                <div className="ck-scoperow">
+                  {CUISINE_SCOPES.map((sc) => (
+                    <button
+                      key={sc.key}
+                      className={'ck-scp' + (scope === sc.key ? ' on' : '')}
+                      aria-pressed={scope === sc.key}
+                      onClick={() => setScope(sc.key as CuisineScope)}
+                    >
+                      {sc.label}
+                    </button>
+                  ))}
+                </div>
                 {scope === 'jour' && (
-                  <div className="mz-digest grn">
-                    <div className="mz-scope" style={{ marginTop: 8 }}>
-                      {SEED_CONFIG.jours.map((j) => (
-                        <button
-                          key={j.key}
-                          className={'mz-sc' + (dayKey === j.key ? ' on' : '')}
-                          onClick={() => setDayKey(j.key)}
-                        >
-                          {j.nom.slice(0, 3)}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="ck-scoperow days">
+                    {SEED_CONFIG.jours.map((j) => (
+                      <button
+                        key={j.key}
+                        className={'ck-scp' + (dayKey === j.key ? ' on' : '')}
+                        onClick={() => setDayKey(j.key)}
+                      >
+                        {j.nom.slice(0, 3)}
+                      </button>
+                    ))}
                   </div>
                 )}
+                <div className="ck-bubble">
+                  <textarea
+                    value={digest}
+                    onChange={(e) => setDigest(e.target.value)}
+                    rows={5}
+                    aria-label="Message WhatsApp à envoyer (modifiable)"
+                  />
+                </div>
                 <button className="ck-wabtn" onClick={send} disabled={busy}>
                   {busy ? <IconLoader size={18} className="cz-spin" /> : <IconSend size={17} />}
                   {busy

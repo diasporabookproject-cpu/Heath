@@ -763,7 +763,7 @@
 .ck-send .ck-recip { margin-bottom: 14px; }
 .ck-send h1 { font-family: var(--font-display); font-size: 23px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 18px; line-height: 1.2; }
 .ck-recip { display: flex; align-items: center; gap: 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 15px; padding: 14px; box-shadow: var(--shadow); }
-.ck-ava { width: 46px; height: 46px; border-radius: 50%; background: var(--saffron-tint); color: var(--saffron); display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; font-size: 20px; flex: none; }
+.ck-ava { width: 46px; height: 46px; border-radius: 15px; background: #f7e3d7; color: var(--accent-ink); display: grid; place-items: center; font-family: var(--font-body); font-weight: 800; font-size: 20px; flex: none; }
 .ck-ri { flex: 1; min-width: 0; }
 .ck-ri .n { font-weight: 600; font-size: 16px; }
 .ck-ri .r { font-size: 12.5px; color: var(--muted); margin-top: 1px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
@@ -946,3 +946,14 @@
 .ck-clacc .addrow .cz-inp { flex: 1; font-size: 13px; padding: 9px 11px; }
 .ck-clacc .addrow .go { width: 36px; height: 36px; border-radius: 10px; border: none; background: var(--accent); color: #fff; font-size: 17px; cursor: pointer; flex: none; }
 .ck-clacc .addrow .go:disabled { opacity: 0.4; }
+
+/* ---- T1 avenant · carte Message fidèle maquette (bulle WhatsApp + portée discrète) ---- */
+.ck-scoperow { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; }
+.ck-scoperow::-webkit-scrollbar { display: none; }
+.ck-scoperow.days { margin-top: -4px; }
+.ck-scp { flex: none; background: #f2eee7; border: none; border-radius: 8px; padding: 6px 11px; font-family: var(--font-body); font-size: 11.5px; font-weight: 700; color: #a49c90; cursor: pointer; }
+.ck-scp.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+/* La bulle : le digest préretempli, éditable, habillé WhatsApp (queue incluse). */
+.ck-bubble { position: relative; background: #eef8e9; border: 1px solid #d9ecd2; border-radius: 15px; border-bottom-left-radius: 5px; padding: 4px 4px 4px 6px; }
+.ck-bubble::after { content: ''; position: absolute; left: -6px; bottom: 7px; width: 12px; height: 12px; background: #eef8e9; border-left: 1px solid #d9ecd2; border-bottom: 1px solid #d9ecd2; transform: rotate(45deg); border-bottom-left-radius: 3px; }
+.ck-bubble textarea { width: 100%; background: none; border: none; resize: none; font-family: var(--font-body); font-size: 13.5px; line-height: 1.55; color: #28331f; font-weight: 600; padding: 9px 10px; outline: none; }
