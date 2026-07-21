@@ -129,6 +129,96 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage — BOUT-EN-BOUT VALIDÉ device (page reçue déployée sur Pages) — 2026-07-21
+Retour device PO « rien à cocher » sur la page de la cuisinière → **diagnostic** : ce n'était pas un bug de code (tests + aperçu le prouvaient) mais de **déploiement**. La page reçue est servie par **GitHub Pages = branche par défaut**, qui n'avait pas le code checklist (`git grep` = 0 sur le défaut, 8 sur `lot-partage-v1`). L'APK publiait bien `cl:1`, mais l'ancienne web app l'ignorait → aucune case.
+- **GO PO** : `deploy.yml` repointé **temporairement** sur `lot-partage-v1` (comme `apk.yml`) → Pages redéployé (`build 56f9183`, `viewChecksToken`/`ck-check` vérifiés présents dans le bundle en ligne).
+- **VALIDÉ sur device** (PO) : après rechargement de la page reçue, **les cases s'affichent** (repas + tâches, tous les jours) **et la cuisinière coche** — la remontée est vive (0011 en prod). Le premier flux BIDIRECTIONNEL du produit fonctionne bout-en-bout.
+- **À la clôture** : merge `lot-partage-v1` → défaut (Pages redéploie proprement le défaut), **repointer `deploy.yml` ET `apk.yml` au défaut**, réécrire `ETAT.md`, tag. Read-back de clôture rédigé (`READBACK_PARTAGE.md`).
+
+
+### Lot partage — T3 correctif : les cases sur TOUS les jours (retour device PO) — 2026-07-21
+PO : « je ne vois pas de coche dans la page partagée ». **Vrai bug** trouvé : `EspaceCuisine` ne posait la case que si `d === today` (`cards()`), or l'app compose par DÉFAUT pour **demain** → « aujourd'hui » vide → **aucune case** alors que le menu de demain/la semaine est là. Ma restriction « aujourd'hui seulement » contredisait la décision PO ① (« le menu : Harira, Tajine… » = tout le menu). Corrigé : `withCheck = checklist && comp` (le jour ne conditionne plus) — la case vit sur **chaque repas composé, tous les jours** ; la clé porte déjà `d.k` (distincte par jour). Le « reste de la semaine » rendait déjà via le même `cards()`, donc les cases y apparaissent sans autre changement. Test neuf : menu 2 jours (Tajine lundi + Harira mardi) → **≥ 2 cases** (le composé de demain compte). 223 tests · build ✓ · 3 smokes ✓. **STOP — device : compose (même pour demain), active la checklist, envoie → la page doit montrer les cases sur les jours composés.**
+
+
+### Lot partage — T4 : l'état des coches côté employeur (aperçu) — 2026-07-21
+Placement (décidé, expliqué au PO) : dans l'**aperçu** (« ce que voit {nom} »), PAS une rangée de plus sur la feuille qu'on a épurée à la maquette — c'est littéralement « l'employeur voit l'état quand il consulte » (cadrage PO).
+- **`EspaceCuisine` mode VUE EMPLOYEUR** : nouveau prop `viewChecksToken` — quand présent (et `token` absent), lit l'état RÉEL via `readChecks` en **lecture seule** (pas de file, pas de flush ; cases inertes car aucun `onToggle`). La page reçue (avec `token`) reste interactive, inchangée.
+- **Résumé dans la barre d'aperçu** : « N coché(s) · vu HH:MM » quand la checklist est active — chargé **APRÈS l'ouverture, jamais bloquant** (le réseau ne retarde pas l'aperçu ; `readChecks` best-effort → null = ligne masquée, dégradation propre). `countDone` (helper pur, réduction LWW puis compte des `done`) testé.
+- **222 tests** (+1 countDone) · build ✓ · 3 smokes ✓ (un piège attrapé : `openPreview` attendait `readChecks` avant d'ouvrir l'overlay → réseau lent = aperçu jamais ouvert ; rendu non bloquant).
+- **Limite du capture offline** : le navigateur de smoke n'atteint pas la prod → `readChecks` null → résumé masqué et cases vides (comportement correct). Le **retour peuplé (coches vertes + « N coché »)** se vérifie **device contre prod** : la remontée T3 est vive depuis la fenêtre 0011. **STOP — device foyer neuf : publier → cocher sur la page reçue → rouvrir l'aperçu → voir l'état.** Après validation : clôture du lot.
+
+
+### Fenêtre 0011 — PROD appliqué, 5 preuves sur la vraie base, parité 0 · attend révocation token — 2026-07-21
+**GO PROD du PO** (relecture finale : jointure d'existence insert L49 + select L56, idempotence, journal strict). Appliqué en **prod (`pqeilsuqglmrvijndrwa`)** :
+- Idempotence prod : 0011 appliqué **2×** → 201 / 201.
+- **Les 5 preuves REJOUÉES sur la vraie base** : anon insert jeton vivant OK · select lit (n=1) · **insert jeton inconnu → violation RLS** · **preuve 4 bloquante : révoqué → anon select = 0** ; corollaire postgres n=1 (la policy cache, elle ne supprime pas).
+- **Prod propre** : sonde `__probe_0011__` nettoyée (n=0 résiduel) ; **invariant lecture publique `espaces` (anon) intact** (0011 n'ajoute qu'une table, ne touche pas `espaces`).
+- **`parity:check` de clôture = 0 écart** — staging == prod (38 colonnes, 24 policies, 8 RLS, 14 index, 10 fonctions, 2 triggers, 3 buckets, 5 edge alignés).
+- **CLÔTURE** : PO a révoqué → **mort vérifiée HTTP 401** (Management API) → token supprimé du scratchpad (absent repo/log). **Fenêtre 0011 CLOSE**, prod-read-only rétabli. La remontée des coches (T3) est désormais VIVE en prod. Suite : **T4** (lecture côté employeur).
+
+
+### Fenêtre 0011 — STAGING appliqué + 5 preuves ✅ · STOP avant PROD — 2026-07-21
+Migration `0011_espace_checks.sql` **APPROUVÉE PO** (relue ligne à ligne). Fenêtre ouverte (token jetable, Management API `/database/query`, canal de `parity:check`). **STAGING (`tryjcednzencepokodrs`) — PROD NON TOUCHÉE.**
+- **Idempotence (F-a)** : migration appliquée **deux fois** → HTTP 201 / 201 (rejouable, conforme).
+- **Preuve 1** — `set local role anon` + insert sur jeton VIVANT (`__probe_0011__` créé en postgres) → **accepté**.
+- **Preuve 3** — anon select sur jeton vivant → **n=1** (lit ses coches).
+- **Preuve 2** — anon insert sur jeton INCONNU → **violation RLS (refusé)** — l'insert borné aux jetons vivants tient.
+- **Preuve 4 (BLOQUANTE)** — révocation (delete de la ligne `espaces`) → anon select = **n=0** ; **corollaire** : postgres voit encore **n=1** → ce sont bien les POLICIES qui cachent, pas une suppression. **La révocation rend les coches illisibles PAR CONSTRUCTION** (exigence 🔴 prouvée en base).
+- **Parité (delta exact)** : staging en avance de `espace_checks` UNIQUEMENT — 5 colonnes (id/token/item/done/at), 2 policies (insert + select, **chacune `exists(select 1 from espaces e where e.token = espace_checks.token)`**), `rls=true`, 2 index (pkey, token_idx). Fonctions/triggers/buckets/edge **identiques**. Zéro dérive hors delta.
+- **STOP — GO PROD explicite du PO requis.** Après GO : appliquer 0011 en prod (fenêtre annoncée) → re-preuve 4 sur prod → **révocation du token** → mort vérifiée (401) → `parity:check` de clôture = 0 écart. Puis T4 (lecture des coches côté employeur — désormais sur une table qui existera en prod).
+
+
+### Lot partage — T1 avenant 3 : feuille = maquette stricte (retraits) + preuve URL — 2026-07-21
+Retours device PO :
+- **« Rappel d'envoi » et « Dernier accès » RETIRÉS** de la feuille — absents de la maquette (qui s'arrête à « Copier le lien »). Code mort nettoyé (RappelSheet/rappelLabel/lastEspaceOpen/formatWhen/IconEye + états). **L'état côté employeur (dernier accès + coches « fait à HH:MM ») reviendra en T4** (« retour employeur »), là où il a sa place. La feuille est désormais : personne → message → checklist → accès permanent, point.
+- **« pourquoi du localhost ? »** — FAUSSE ALERTE, prouvé : `platform.ts:14-19` renvoie `VITE_WEB_BASE_URL` (github.io) en natif, `window.location.origin` (localhost) seulement en web. Le bundle NATIF committé contient `diasporabookproject-cpu.github.io/Heath` et **zéro `localhost:4173`** (grep à l'appui). Le localhost n'apparaît que dans les captures de preview ; l'APK génère le vrai lien.
+- Portes : typecheck ✓ · 221/221 ✓ · build ✓ · 3 smokes ✓ · capture (feuille = maquette).
+
+
+### Lot partage — T1 avenant 2 : le message EST la maquette (mot court + toggle langue) — 2026-07-21
+PO : « pas exactement semblable ». Comparaison défaut↔défaut au pixel → la partie A n'était pas finie : la maquette n'est pas « le digest habillé », c'est **la « bulle de message préremplie »** du brief = un mot COURT et chaleureux + le lien (le détail vit sur la page, « il est ici 👇 »). Restructuration :
+- **Message** : `buildCuisineGreeting(prenom, link, lang)` — fr définitif (« Bonjour {nom} 👋 / Le menu est prêt, il est ici 👇 / {lien} »), **darija premier jet** (« سلام {nom} 👋 / المنيو ديالك واجد، شوفيه هنا 👇 » — brouillon à relire, cohérent avec le parking §7.4). Éditable. **Chips de portée RETIRÉES** (un bonjour ne dépend pas du jour ; la page publie toujours la semaine complète — donc aucune fonction utile perdue) → tout le câblage `scope`/`shareScope`/`shareScopeNow` mort supprimé de PartageSheet + CuisineView.
+- **Toggle Français|الدارجة** (maquette) : défaut = la LANGUE DE LECTURE de la personne (Fatima lit en darija → message darija) ; bascule libre.
+- **Icônes exactes maquette** : label Message = bulle, bouton = glyphe WhatsApp, Accès permanent = **mini-QR** (plus l'œil), « Copier le lien » avec icône. Texte « Générer un QR code à coller sur le frigo — il ne change jamais ».
+- **Changement de FOND signalé** : le message WhatsApp ne liste plus les plats (il ne fait que renvoyer à la page). `buildCuisineDigest` (détaillé) est CONSERVÉ et testé — un retour arrière = une ligne, si le PO veut le détail dans WhatsApp.
+- Portes : typecheck ✓ · **221/221** ✓ (+2 greeting) · build ✓ · 3 smokes ✓ · capture (feuille quasi identique maquette).
+
+
+### Lot partage — T1 avenant : fidélité maquette de la carte Message (retour device PO) — 2026-07-21
+PO : « visuellement on y est pas ». Comparaison au pixel (maquette rendue vs app, viewport identique) → 3 écarts réels de la feuille d'envoi, corrigés vers la maquette qui fait foi :
+- **Avatar** : rond saffron → **carré arrondi couleur tuile** (`#f7e3d7`, encre accent), comme la maquette.
+- **Message** : le `DigestBlock` générique (chips « tabs » + zone « Quoi envoyer / Son message ») → **vraie bulle WhatsApp** (fond vert clair, bordure, **queue** en bas-gauche) contenant le digest préretempli ÉDITABLE. Côté Cuisine on n'utilise plus `DigestBlock` (Nounou le garde intact) — rendu direct pour coller à la maquette.
+- **Portée** : conservée (fonction jour/semaine préservée) mais en **pilules discrètes** au-dessus de la bulle (register « aisance, pas contrôle ») au lieu d'onglets proéminents.
+- **Décisions prises sans re-arbitrer** (maquette = référence ; le PO a interrompu la question pour dire « continue ») : bulle = le digest habillé (on GARDE le détail des plats + lien, valeur du message WhatsApp) ; **toggle Français|الدارجة NON construit** (la maquette le note « brouillon » ; darija du message parquée §7.4 — la page reçue, elle, reste bilingue).
+- Portes : typecheck ✓ · 219/219 ✓ · build ✓ · 3 smokes ✓ · capture (feuille fidèle maquette).
+
+
+### Lot partage + suivi — T3 : la page reçue coche (payload + cases + offline + tâches) — 2026-07-21
+- **Payload (patron `gouter?`, lien perpétuel)** : `Espace.cl?: 1` + `Espace.tasks?: TaskItem[]` — champs **ABSENTS** (pas null) hors checklist active (`checklistFields`, testé : une page « avant » et une page « checklist off » sont identiques). `Destinataire.checklist?/tasks?` persistés IDB (champs optionnels — zéro migration).
+- **Feuille d'envoi** : carte « **Activer la checklist** » (switch) + accordéon — **menu du jour** en préview passif (jour de la portée, tag neutre « **à cocher** ») + **tâches libres** éditables (ajout Enter/＋, retrait ✕) ; réglages PAR PERSONNE, publiés au prochain envoi (page vivante, comme F5.5).
+- **Page reçue** : cases sur les repas d'**aujourd'hui** (décision ① par repas ; clé = `mealItemKey` sur le **nom FR** `n` — stable quelle que soit la langue lue) + section tâches. **Aperçu employeur (sans jeton) : cases visibles, INERTES.** Geste : optimiste à l'écran → `sendCheck` best-effort → `offline` = file locale (rejouée au retour du réseau et au chargement) ; `rejected` (lien coupé) = silencieux, la page basculera « retirée ». **Cache du journal** (`espace-checks-cache:`) : hors-ligne, la page montre le dernier état connu ⊕ gestes locaux.
+- **Tests bloquants (7 nouveaux — 219 au total)** : lien perpétuel (sans `cl` → AUCUNE case/section, à l'identique) · cases rendues avec `cl:1` · aperçu inerte · pas d'en-tête tâches orphelin · **non-traduction encodée** (tâche fr visible côté darija, libellé de section traduit — contrat espace-legere) · payload conditionnel (champs absents / `cl:1`+tasks filtrées).
+- **Porte smoke bout-en-bout** : registre neutre (« elle cochera » INTERDIT, grep) → toggle → tâche ajoutée → aperçu : cases + tâche **fr** visible côté darija ✅.
+- **Limite honnête (device, avant la fenêtre 0011)** : la vraie page affichera les cases et **cochera en LOCAL** (file persistante, l'état tient au reload) — la **remontée** vers l'employeur ne s'allumera qu'à l'application de `0011` (staging → preuves → GO → prod). C'est le comportement dégradé prévu (best-effort), pas un bug.
+- Portes : typecheck ✓ · **219/219** ✓ · build ✓ · 3 smokes ✓ · captures (feuille + page). **STOP — reste : fenêtre 0011, puis T4 (retour employeur).**
+
+
+### Lot partage + suivi — T2 : socle des coches (0011 + lib) — CODE-COMPLET, fenêtre EN ATTENTE — 2026-07-21
+- **`0011_espace_checks.sql`** (committée, appliquée NULLE PART — README migrations tient l'état) : journal **insert-only** `(id, token, item, done, at)` + index `(token, at)`. Policies **par jeton vivant** : insert `to anon, authenticated` **borné par jointure d'existence sur `espaces`** (plus strict qu'opens — on ne journalise pas dans le vide ; un flush sur lien révoqué est REFUSÉ) ; select **avec la même jointure — l'exigence 🔴 du read-back** (révocation ⇒ coches illisibles par construction, l'audit ④ ne se rouvre pas pour l'activité). Pas d'update/delete pour quiconque. **Résidu documenté dans le fichier** : énumérabilité des jetons vivants = même classe que `espaces read public using(true)` (0001b:42-44) — 0011 est PLUS restrictif que la table mère. **Protocole de répétition à blanc en fin de fichier** (5 preuves, dont le test bloquant n°4 « révoqué → select anon = 0 » et la rejouabilité F-a).
+- **`src/lib/espace-checks.ts`** : clés d'item (`d:<jour>:<moment>:<fnv6(nom)>` — la **rotation au changement de plat** est le comportement, décision PO ② ; `t:<id>` tâches), **réduction LWW pure**, fusion serveur⊕file (le geste local prime), **file offline injectable** (localStorage prod, fake en test), I/O best-effort avec **classification des issues** (`ok`/`rejected`=RLS/`offline`) — `rejected` **purge la file** (le lien est coupé, l'activité ne remonte plus, F1), `offline` conserve le reste DANS L'ORDRE.
+- **9 tests bloquants verts** (`espace-checks.test.ts`) : déterminisme + rotation des clés · LWW par item (décoche croisée) · pending-prime · file (ordre, arrêt réseau sans perte, purge sur RLS) · classification sendCheck.
+- **RIEN N'EST PARTI** : ni staging ni prod. La fenêtre (staging → preuves → GO PO → prod) se planifie avec le PO — T3 (page reçue) peut avancer d'abord si le PO préfère grouper les fenêtres.
+
+### Lot partage + suivi des tâches — T1 : feuille d'envoi v2 (labels, maquette) — 2026-07-21
+**Lot ouvert sur GO architecture PO** (read-back validé : journal insert-only `espace_checks`, LWW par item, patron `gouter?` pour le payload — **exigence 🔴 intégrée à la spec T2 : la policy select anon de 0011 porte la jointure d'existence sur `espaces`**, test bloquant n°4 « jeton révoqué → select anon = vide »). Branche `lot-partage-v1`, `apk.yml` repointée.
+**T1 livré (partie A — refonte visuelle sur fonctions existantes, maquette `partagelabels`)** :
+- Feuille d'envoi restructurée : titre **« Partager avec {nom} »**, destinataire + **« Reçoit en الدارجة/français »** (langpill), **carte Message héros** — portées existantes + digest habillé en **bulle WhatsApp** (DigestBlock intact, partagé Nounou — habillage CSS scopé) + **bouton vert** (« Envoyer sur WhatsApp » avec numéro · « Publier + copier le message » sans), **carte « Accès permanent »** (aperçu + **QR à coller sur le frigo — le lien ne change jamais**) + **« Copier le lien »** (nouveau geste trivial sur l'URL existante), rappel d'envoi et dernier accès conservés.
+- **QR côté Cuisine** : `qr.ts` déplacé `nounou/` → `lib/` (réutilisation propre), le QR du lien permanent s'affiche EN TÊTE de l'aperçu (porte smoke).
+- **Registre neutre** : `ROLES` dégenré (« Cuisine », « Ménage » — plus « Cuisinière »/« Femme de ménage »), défauts `blank()`/FTUE alignés ; les destinataires stockés gardent leur libellé (pas de migration d'un champ libre).
+- **Écart maquette assumé** : le toggle Français|الدارجة du MESSAGE n'est pas livré — le digest n'a pas de variante darija aujourd'hui (la maquette elle-même le marque « brouillon ») ; à trancher au bloc traduction, pas inventé ici.
+- Portes : typecheck ✓ · 203/203 ✓ · build ✓ · 3 smokes ✓ (ancres mises à jour : « Partager avec », « Accès permanent », + porte QR-dans-aperçu) · captures. **STOP — T2 (socle données 0011 + lib checks) au GO ; la fenêtre prod se planifie ensemble.**
+
+
 ### CLÔTURE — Lot UI DA v2 « cœur testable » — 2026-07-20
 **Mergé au défaut** (`770f945`, merge --no-ff de `lot-ui-v1`) après GO clôture PO (device validé sur build tamponné). Périmètre livré : T0 pack DA v2 → T1 B1 → T2 Cuisine socle → T3 les 4 moments (2 tests bloquants : lien perpétuel + sync ancien client) → T4 radial + recette légère (critère Q2 prouvé) → T5 Recettes vide/plein — **plus 3 vagues de retours device PO** (n°1 : emojis proto + Retirer équipe + FAB radial + sélecteur unifié · n°2 : Fluent **3D** + Supprimer recette + plat retirable + copier au choix · n°3 : vocabulaire bento + tampon de build + 3 fuites de caractères bruts). Portes re-vérifiées sur le mergé avant push (typecheck · 203 tests · build · 3 smokes). `apk.yml` **repointé au défaut** (règle : la branche de lot active, sinon le défaut). `ETAT.md` réécrit (un seul écrivain, au commit de clôture). Prod : push défaut → Pages (run vérifié, tampon de build visible en bas du hub = vérité de version en prod aussi).
 

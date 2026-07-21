@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCuisineDigest, buildNounouDigest } from './digest';
+import { buildCuisineDigest, buildCuisineGreeting, buildNounouDigest } from './digest';
 import type { NounouDoc, Recipe, WeekMenu } from '../types';
 
 const recipe = (id: string, nom: string): Recipe => ({
@@ -96,5 +96,20 @@ describe('buildNounouDigest', () => {
     const d = buildNounouDigest({ ...base, scope: 'aujourdhui' });
     expect(d).toContain('Rien de particulier');
     expect(d).toContain('manzil.ma/p/f');
+  });
+});
+
+describe('buildCuisineGreeting (T1 lot partage — message court maquette)', () => {
+  it('fr : bonjour + « il est ici » + lien, sans détail de plats', () => {
+    const g = buildCuisineGreeting({ prenom: 'Fatima', link: 'https://x/#e=tok', lang: 'fr' });
+    expect(g).toContain('Bonjour Fatima');
+    expect(g).toContain('il est ici');
+    expect(g).toContain('https://x/#e=tok');
+    expect(g).not.toMatch(/Petit-déj|Déjeuner|Dîner/); // le détail vit sur la page
+  });
+  it('dr : salutation darija + lien (premier jet, à relire)', () => {
+    const g = buildCuisineGreeting({ prenom: 'Fatima', link: 'L', lang: 'dr' });
+    expect(g).toContain('سلام Fatima');
+    expect(g).toContain('L');
   });
 });

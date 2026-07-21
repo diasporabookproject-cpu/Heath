@@ -29,6 +29,7 @@ NNNN_slug.sql
 | `0008` | AS-2 Fiche 2 | `membres.owner_notice` + `dispose_foyer_for_deletion` (transfert de propriété au plus ancien membre) |
 | `0009` | AS-2b | `ack_owner_notice` (le client acquitte le bandeau — `membres` n'a pas de policy update) |
 
+
 ## Comment on applique
 1. **Staging d'abord** (`tryjcednzencepokodrs`) : via l'**API Management** (`/database/query`,
    token `sbp_` jetable — protocole : annonce « je vais écrire », application, vérification

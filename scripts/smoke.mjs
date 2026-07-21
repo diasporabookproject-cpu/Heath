@@ -351,8 +351,28 @@ if (await shareSheet.locator('input').count()) {
   await shareSheet.getByText('Enregistrer', { exact: false }).first().click();
   await page.waitForTimeout(600);
 }
-await shareSheet.getByText('Aperçu · QR', { exact: false }).click();
+// T3 (lot partage) — SUIVI DES TÂCHES : registre neutre, toggle, tâche libre.
+{
+  const feuille = await shareSheet.innerText();
+  if (/elle cochera/i.test(feuille))
+    throw new Error('T3 : genre présumé (« elle cochera ») — le registre doit rester neutre');
+}
+await shareSheet.locator('.ck-sw').click(); // activer la checklist
+await shareSheet.locator('.ck-clacc').waitFor({ timeout: 5000 });
+await shareSheet.getByText('à cocher', { exact: false }).waitFor({ timeout: 3000 }); // tag neutre
+await shareSheet.getByText('Tâches en plus').waitFor({ timeout: 3000 });
+await shareSheet.getByPlaceholder('Ajouter une tâche…').fill('Arroser les plantes');
+await shareSheet.locator('.ck-clacc .addrow .go').click();
+await shareSheet.locator('.ck-clacc .crow', { hasText: 'Arroser les plantes' }).waitFor({ timeout: 3000 });
+console.log('T3 : checklist activée, tâche libre ajoutée (registre neutre) ✅');
+await shareSheet.getByText('Accès permanent', { exact: false }).click();
 await page.locator('.cz-preview-overlay').waitFor({ timeout: 8000 });
+await page.locator('.ck-qrblock svg').waitFor({ timeout: 5000 }); // T1 : QR permanent dans l'aperçu
+// T3 : la page (aperçu, darija d'abord) montre la TÂCHE EN FRANÇAIS (décision ③)
+await page.locator('.cz-preview-overlay').getByText('Arroser les plantes').waitFor({ timeout: 5000 });
+if (!(await page.locator('.cz-preview-overlay .ck-check').count()))
+  throw new Error('T3 : cases absentes de la page alors que la checklist est active');
+console.log('T3 : cases sur la page + tâche fr visible côté darija ✅');
 // La destinataire naît en darija → l'alerte s'affiche d'abord en ARABE (RTL),
 // puis on bascule FR : les DEUX registres du gate sont ainsi couverts.
 await page.locator('.ck-warn', { hasText: 'arachide' }).first().waitFor({ timeout: 5000 });
@@ -385,7 +405,7 @@ await page.getByText('Pour quel repas ?').waitFor({ timeout: 5000 });
 await page.getByText('Prochain repas', { exact: true }).waitFor({ timeout: 3000 }); // défaut marqué
 await page.locator('.cz-sheet.show', { hasText: 'Pour quel repas ?' }).locator('.cz-pick').first().click(); // UN tap
 await page.getByText('Ajoutée au repas — à toi d’envoyer').waitFor({ timeout: 5000 });
-await page.getByText('L’essentiel dans WhatsApp', { exact: false }).waitFor({ timeout: 5000 }); // partage ouvert
+await page.getByText('Accès permanent', { exact: false }).waitFor({ timeout: 5000 }); // feuille d'envoi ouverte (T1)
 await page.locator('.cz-overlay.show').first().click({ position: { x: 8, y: 8 } }).catch(() => {});
 await page.waitForTimeout(400);
 console.log('F6.1 (D1) : Partager = posée au prochain repas, puis feuille d’envoi ✅');

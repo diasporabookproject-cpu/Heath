@@ -6,7 +6,7 @@ import { buildEspaceMenu, usedRecipeIds, type SharedMenu } from './share';
 import { loadAudio, loadFoyerRegles, loadSecurite, recordPublished } from './db';
 import { cuisineSig } from '../maison/transmission';
 import { translateToDarija } from './ai';
-import { DEFAULT_SETTINGS, wireLangue, type AppConfig, type Destinataire, type Recipe, type SecuriteType, type WeekMenu } from '../types';
+import { DEFAULT_SETTINGS, wireLangue, type AppConfig, type Destinataire, type Recipe, type SecuriteType, type TaskItem, type WeekMenu } from '../types';
 
 // Espace permanent par destinataire (keystone F1, cœur).
 // Contenu stocké dans la table Supabase `espaces` (upsert en place, lecture
@@ -36,6 +36,17 @@ export interface Espace {
   persons?: number;
   menu: SharedMenu;
   securite?: SecuritePublic[];
+  /** T3 (lot partage) — OPTIONNELS À JAMAIS (patron `gouter?`, lien perpétuel) :
+   *  une page publiée avant le suivi n'a ni `cl` ni `tasks` → rendu identique. */
+  cl?: 1;
+  /** Tâches libres (fr seul — décision ③ ; la darija du contenu = parking §7.4). */
+  tasks?: TaskItem[];
+}
+
+/** Champs checklist du payload — présents SEULEMENT si la personne l'a activée. */
+function checklistFields(dest: Destinataire): { cl?: 1; tasks?: TaskItem[] } {
+  if (!dest.checklist) return {};
+  return { cl: 1, tasks: (dest.tasks ?? []).filter((t) => t.t.trim()) };
 }
 
 /** Jeton d'accès long et non devinable (capability). */
@@ -147,6 +158,7 @@ export async function publishEspace(
     persons,
     menu,
     securite,
+    ...checklistFields(dest),
   };
 
   // Tenancy (S6) : rattache l'espace au foyer → gestion/révocation côté auteur, et
@@ -194,6 +206,7 @@ export async function previewEspace(
     persons,
     menu,
     securite,
+    ...checklistFields(dest),
   };
 }
 

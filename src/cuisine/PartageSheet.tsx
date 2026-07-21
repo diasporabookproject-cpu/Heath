@@ -17,45 +17,34 @@ import {
   lastEspaceOpen,
   type Espace,
 } from '../lib/espace';
+import { readChecks, countDone } from '../lib/espace-checks';
 import { isNative, shareText } from '../lib/platform';
 import { getSupabase, supabaseEnabled } from '../lib/supabase';
 import SecuriserVolet from '../components/SecuriserVolet';
 import { todayKey } from './dates';
-import { buildCuisineDigest, type CuisineScope } from '../maison/digest';
-import { DigestBlock, type ScopeOption } from '../ui/DigestBlock';
-import { rappelLabel } from '../lib/rappel';
-import RappelSheet from './RappelSheet';
+import { buildCuisineGreeting } from '../maison/digest';
+import { qrSvg } from '../lib/qr';
 import type { Destinataire, SecuriteFiche } from '../types';
 import EspaceCuisine from './EspaceCuisine';
-import { IconSend, IconEye, IconLoader, IconCheck } from './icons';
+import { IconLoader, IconCheck, IconCopy } from './icons';
 
-const ROLES = ['Cuisinière', 'Femme de ménage', 'Nounou', 'Autre'];
+// Registre neutre (lot partage T1) : le métier, jamais le genre présumé.
+const ROLES = ['Cuisine', 'Ménage', 'Nounou', 'Autre'];
 const digits = (s?: string) => (s ?? '').replace(/\D/g, '');
-const CUISINE_SCOPES: ScopeOption[] = [
-  { key: 'semaine', label: 'La semaine' },
-  { key: 'aujourdhui', label: "Aujourd'hui" },
-  { key: 'demain', label: 'Demain' },
-  { key: 'jour', label: 'Un jour…' },
-];
 
 interface Props {
   onClose: () => void;
   toast: (m: string) => void;
   /** Destinataire à pré-sélectionner (ouverture ciblée depuis « Envoyer » de Maison). */
   initialToken?: string;
-  /** F6.2 : portée initiale du digest (suit la vue / le créneau F6.1). */
-  initialScope?: CuisineScope;
-  initialDayKey?: string;
 }
 
 /** FC9 — Envoyer le menu : un seul geste (espace mis à jour + rappel WhatsApp). */
-export default function PartageSheet({ onClose, toast, initialToken, initialScope, initialDayKey }: Props) {
+export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const persons = useStore((s) => s.settings.persons);
-  const rappel = useStore((s) => s.app.rappels?.cuisine);
   const byId = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
-  const [rappelOpen, setRappelOpen] = useState(false);
 
   const [shown, setShown] = useState(false);
   useSheetBack(onClose); // B3 : le retour Android ferme cette feuille en priorité
@@ -64,17 +53,21 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
   const [mode, setMode] = useState<'send' | 'list' | 'edit'>('send');
   const [editing, setEditing] = useState<Destinataire | null>(null);
   const [secFiches, setSecFiches] = useState<SecuriteFiche[]>([]);
-  const [lastOpen, setLastOpen] = useState<string | null>(null);
   const [preview, setPreview] = useState<Espace | null>(null);
+  // T3 : brouillon du champ « Ajouter une tâche » (validé → tasks du destinataire).
+  const [taskDraft, setTaskDraft] = useState('');
+  // T1 (lot partage) : le QR de l'accès permanent, rendu dans l'aperçu.
+  const [qr, setQr] = useState<string | null>(null);
+  // T4 : résumé de l'état côté employeur (coches faites + dernier accès), dans l'aperçu.
+  const [previewDone, setPreviewDone] = useState<number | null>(null);
+  const [previewOpen, setPreviewOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // F4-bis fiche B : volet « Sécuriser » inline (création de compte transparente).
   const [securiser, setSecuriser] = useState(false);
-  // F6.2 : la portée SUIT le contexte d'ouverture (créneau F6.1 aujourd'hui ;
-  // horizon T7 ensuite) — elle ne change que le MESSAGE, jamais la page.
-  const [scope, setScope] = useState<CuisineScope>(initialScope ?? 'semaine');
-  const [dayKey, setDayKey] = useState<string>(initialDayKey ?? todayKey());
+  // T1 (maquette) : le message est un mot court ; sa LANGUE se choisit (toggle),
+  // défaut = la langue de lecture de la personne. Le détail vit sur la page.
+  const [msgLang, setMsgLang] = useState<'fr' | 'dr'>('fr');
   const [digest, setDigest] = useState('');
-  const [confirmEmpty, setConfirmEmpty] = useState(false);
 
   const refresh = () =>
     loadDestinataires().then((list) => {
@@ -102,41 +95,28 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
 
   const selected = dests.find((d) => d.id === selId) ?? null;
 
-  useEffect(() => {
-    setLastOpen(null);
-    if (selected) void lastEspaceOpen(selected.token).then(setLastOpen);
-  }, [selId, selected?.token]);
-
-  // Digest recomposé à chaque changement de portée / jour / destinataire / menu.
+  // Message recomposé quand la personne ou la langue du message change.
   // (L'édition manuelle prime ensuite : elle écrit directement `digest`.)
   useEffect(() => {
-    setConfirmEmpty(false);
     if (!selected) return setDigest('');
-    setDigest(
-      buildCuisineDigest({
-        prenom: selected.nom,
-        scope,
-        dayKey,
-        link: buildEspaceUrl(selected.token),
-        week,
-        byId,
-      }),
-    );
-  }, [scope, dayKey, selected?.token, selected?.nom, week, byId]);
+    setMsgLang(selected.langue === 'dr' ? 'dr' : 'fr');
+  }, [selected?.token, selected?.langue]);
+  useEffect(() => {
+    if (!selected) return;
+    setDigest(buildCuisineGreeting({ prenom: selected.nom, link: buildEspaceUrl(selected.token), lang: msgLang }));
+  }, [selected?.token, selected?.nom, msgLang]);
 
   function blank(): Destinataire {
     return {
       id: crypto.randomUUID(),
       nom: '',
-      role: 'Cuisinière',
+      role: 'Cuisine',
       langue: 'dr',
       token: newToken(),
       createdAt: Date.now(),
     };
   }
 
-  // La portée ne change QUE le message ; l'envoi publie toujours la page complète.
-  const isEmptyDigest = /Rien de (prévu|composé)/.test(digest);
   const hasPhone = digits(selected?.tel).length > 0;
 
   const send = async () => {
@@ -150,7 +130,6 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
       const live = await getSupabase()?.auth.getSession();
       if (!live?.data.session) return setSecuriser(true);
     }
-    if (isEmptyDigest && !confirmEmpty) return setConfirmEmpty(true); // confirmation portée vide
     setBusy(true);
     try {
       await publishEspace(selected, SEED_CONFIG, week, byId, persons);
@@ -174,8 +153,6 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
         }
         toast('Publié ✓ — message copié (pas de numéro)');
       }
-      setConfirmEmpty(false);
-      void lastEspaceOpen(selected.token).then(setLastOpen);
     } catch (e) {
       toast((e as Error).message);
     } finally {
@@ -187,9 +164,52 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
     if (!selected) return;
     setBusy(true);
     try {
+      // Le QR encode le LIEN PERMANENT (le jeton) — il ne change jamais (F1).
+      setQr(await qrSvg(buildEspaceUrl(selected.token)).catch(() => null));
       setPreview(await previewEspace(selected, SEED_CONFIG, week, byId, persons));
+      // T4 : l'état RÉEL — chargé APRÈS l'ouverture, jamais bloquant (le réseau
+      // ne doit pas retarder l'aperçu ; le résumé se remplit quand il résout).
+      setPreviewDone(null);
+      setPreviewOpen(null);
+      if (selected.checklist) {
+        const tok = selected.token;
+        void readChecks(tok).then((evs) => setPreviewDone(evs ? countDone(evs) : null));
+        void lastEspaceOpen(tok).then(setPreviewOpen);
+      }
     } finally {
       setBusy(false);
+    }
+  };
+
+  // T3 — suivi des tâches : réglages PAR PERSONNE, persistés au destinataire
+  // (IDB) ; ils partent sur la page au prochain envoi (page vivante, comme F5.5).
+  const toggleChecklist = async () => {
+    if (!selected) return;
+    await saveDestinataire({ ...selected, checklist: !selected.checklist });
+    await refresh();
+  };
+
+  const addTask = async () => {
+    if (!selected || !taskDraft.trim()) return;
+    const tasks = [...(selected.tasks ?? []), { id: crypto.randomUUID().slice(0, 8), t: taskDraft.trim() }];
+    await saveDestinataire({ ...selected, tasks });
+    setTaskDraft('');
+    await refresh();
+  };
+
+  const removeTask = async (id: string) => {
+    if (!selected) return;
+    await saveDestinataire({ ...selected, tasks: (selected.tasks ?? []).filter((t) => t.id !== id) });
+    await refresh();
+  };
+
+  const copyLink = async () => {
+    if (!selected) return;
+    try {
+      await navigator.clipboard.writeText(buildEspaceUrl(selected.token));
+      toast('Lien copié ✓ — il ne change jamais');
+    } catch {
+      toast('Impossible de copier ici — passe par Envoyer');
     }
   };
 
@@ -232,7 +252,13 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
         <div className="cz-handle" />
         <div className="cz-sheethead">
           <div className="ttl">
-            {mode === 'edit' ? (editing && dests.some((d) => d.id === editing.id) ? 'Modifier la personne' : 'Nouvelle personne') : 'Partager le menu'}
+            {mode === 'edit'
+              ? editing && dests.some((d) => d.id === editing.id)
+                ? 'Modifier la personne'
+                : 'Nouvelle personne'
+              : mode === 'send' && selected
+                ? `Partager avec ${selected.nom}`
+                : 'Partager le menu'}
           </div>
           <button className="cz-x" onClick={onClose} aria-label="Fermer" disabled={busy}>
             ✕
@@ -279,80 +305,175 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
             />
           ) : selected ? (
             <div className="ck-send">
-              <h1 style={{ marginBottom: 2 }}>Envoyer à {selected.nom}</h1>
-              <div className="mz-sm" style={{ marginBottom: 10 }}>
-                L’essentiel dans WhatsApp — et toute sa page à jour, en un lien.
-              </div>
-
+              {/* T1 (lot partage, maquette) — relief et aisance, pas contrôle :
+                  la personne, puis LE MESSAGE en héros, puis l'accès permanent. */}
               <div className="ck-recip">
                 <div className="ck-ava">{selected.nom.charAt(0).toUpperCase() || '?'}</div>
                 <div className="ck-ri">
                   <div className="n">{selected.nom}</div>
-                  <div className="r">
-                    {selected.role} ·{' '}
-                    <span className="lang">{selected.langue === 'dr' ? 'الدارجة' : 'Français'}</span>
-                  </div>
+                  <span className="ck-langpill">
+                    Reçoit en{' '}
+                    {selected.langue === 'dr' ? <span className="ar">الدارجة</span> : 'français'}
+                  </span>
                 </div>
                 <button className="ck-ch" onClick={() => setMode('list')}>
                   Changer
                 </button>
               </div>
 
-              <DigestBlock
-                role="cuisine"
-                scopes={CUISINE_SCOPES}
-                active={scope}
-                onScope={(k) => setScope(k as CuisineScope)}
-                value={digest}
-                onChange={setDigest}
-              />
-              {scope === 'jour' && (
-                <div className="mz-digest grn">
-                  <div className="mz-scope" style={{ marginTop: 8 }}>
-                    {SEED_CONFIG.jours.map((j) => (
-                      <button
-                        key={j.key}
-                        className={'mz-sc' + (dayKey === j.key ? ' on' : '')}
-                        onClick={() => setDayKey(j.key)}
-                      >
-                        {j.nom.slice(0, 3)}
-                      </button>
-                    ))}
-                  </div>
+              {/* Maquette (partie A) : « Message » = un mot COURT préretempli, avec
+                  le toggle de langue ; le détail vit sur la page (« il est ici 👇 »). */}
+              <div className="ck-msgcard">
+                <div className="mtop">
+                  <span className="mlab">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    Message
+                  </span>
+                  <span className="ck-langtog">
+                    <button className={msgLang === 'fr' ? 'on' : ''} onClick={() => setMsgLang('fr')}>
+                      Français
+                    </button>
+                    <button className={'ar' + (msgLang === 'dr' ? ' on' : '')} onClick={() => setMsgLang('dr')}>
+                      الدارجة
+                    </button>
+                  </span>
                 </div>
-              )}
-
-              <button className="cz-cfgrow" onClick={() => setRappelOpen(true)}>
-                <span className="e">🔔</span>
-                <span className="st">
-                  <b>Rappel d’envoi</b>
-                  <i>{rappel ? rappelLabel(rappel) : 'Désactivé'}</i>
-                </span>
-                <span className="go">{rappel ? 'Modifier' : 'Activer'}</span>
-              </button>
-
-              <button className="ck-prev" onClick={openPreview} disabled={busy} style={{ marginTop: 12 }}>
-                <IconEye size={16} />
-                Aperçu · QR
-              </button>
-
-              <div className="ck-receipt">
-                <IconEye size={15} />
-                <span>
-                  <b>Dernier accès :</b> {lastOpen ? formatWhen(lastOpen) : '—'}
-                </span>
+                <div className={'ck-bubble' + (msgLang === 'dr' ? ' ar' : '')}>
+                  <textarea
+                    value={digest}
+                    onChange={(e) => setDigest(e.target.value)}
+                    rows={4}
+                    aria-label="Message à envoyer (modifiable)"
+                  />
+                </div>
+                <button className="ck-wabtn" onClick={send} disabled={busy}>
+                  {busy ? (
+                    <IconLoader size={18} className="cz-spin" />
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="19" height="19">
+                      <path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-2.8.8.8-2.7-.2-.3A8 8 0 0 1 12 4z" />
+                    </svg>
+                  )}
+                  {busy ? 'Envoi…' : hasPhone ? 'Envoyer sur WhatsApp' : 'Publier + copier le message'}
+                </button>
               </div>
 
-              <button className="cz-cta" onClick={send} disabled={busy}>
-                {busy ? <IconLoader size={18} className="cz-spin" /> : <IconSend size={18} />}
-                {busy
-                  ? 'Envoi…'
-                  : confirmEmpty
-                    ? 'Rien de prévu — envoyer quand même'
-                    : hasPhone
-                      ? `Envoyer à ${selected.nom}`
-                      : 'Publier + copier le message'}
-              </button>
+              <div className="ck-tierbreak" />
+
+              {/* T3 — suivi des tâches (maquette) : le toggle, puis l'accordéon
+                  quand c'est actif — menu du jour (préview passif, les vraies
+                  cases vivent sur SA page) + tâches libres éditables. */}
+              <div className="ck-optcard">
+                <div className="head">
+                  <span className="oi">
+                    <IconCheck size={17} />
+                  </span>
+                  <span className="ct">
+                    <b>Activer la checklist</b>
+                    <i>{selected.nom} pourra confirmer que les tâches sont accomplies.</i>
+                  </span>
+                  <button
+                    className={'ck-sw' + (selected.checklist ? ' on' : '')}
+                    role="switch"
+                    aria-checked={!!selected.checklist}
+                    aria-label="Activer la checklist"
+                    onClick={toggleChecklist}
+                  />
+                </div>
+                {selected.checklist && (
+                  <div className="ck-clacc">
+                    <div className="g">
+                      Le menu du jour <span className="au">à cocher</span>
+                    </div>
+                    {(() => {
+                      const jk = todayKey(); // le menu cochable = celui d'aujourd'hui
+                      const day = week.days[jk];
+                      const rows = (['petitdej', 'dej', 'gouter', 'diner'] as const)
+                        .map((k) => {
+                          const m = day?.[k];
+                          const id = m?.plat ?? ('entree' in (m ?? {}) ? (m as { entree?: string | null }).entree : null);
+                          const r = id ? byId.get(id) : undefined;
+                          return r ? { k, nom: r.nom } : null;
+                        })
+                        .filter((x): x is { k: 'petitdej' | 'dej' | 'gouter' | 'diner'; nom: string } => !!x);
+                      const TAG: Record<string, string> = { petitdej: 'P.déj', dej: 'Déj', gouter: 'Goût.', diner: 'Dîner' };
+                      return rows.length ? (
+                        rows.map((r) => (
+                          <div className="crow" key={r.k}>
+                            <span className="ckbx" />
+                            <span className={'ctag s-' + r.k}>{TAG[r.k]}</span>
+                            <span className="ct2">{r.nom}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="crow">
+                          <span className="ct2 mut">Rien au menu de ce jour pour l’instant.</span>
+                        </div>
+                      );
+                    })()}
+                    <div className="g">Tâches en plus</div>
+                    {(selected.tasks ?? []).map((task) => (
+                      <div className="crow" key={task.id}>
+                        <span className="ckbx" />
+                        <span className="ct2">{task.t}</span>
+                        <button className="cx" aria-label={`Retirer « ${task.t} »`} onClick={() => void removeTask(task.id)}>
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <div className="addrow">
+                      <input
+                        className="cz-inp"
+                        placeholder="Ajouter une tâche…"
+                        value={taskDraft}
+                        onChange={(e) => setTaskDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') void addTask();
+                        }}
+                      />
+                      <button className="go" onClick={() => void addTask()} disabled={!taskDraft.trim()}>
+                        ＋
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="ck-optcard">
+                <button className="head" onClick={openPreview} disabled={busy}>
+                  <span className="oi qr">
+                    <svg viewBox="0 0 100 100" width="40" height="40">
+                      <g fill="currentColor">
+                        <rect x="0" y="0" width="30" height="30" />
+                        <rect x="7" y="7" width="16" height="16" fill="#fff" />
+                        <rect x="12" y="12" width="6" height="6" />
+                        <rect x="70" y="0" width="30" height="30" />
+                        <rect x="77" y="7" width="16" height="16" fill="#fff" />
+                        <rect x="82" y="12" width="6" height="6" />
+                        <rect x="0" y="70" width="30" height="30" />
+                        <rect x="7" y="77" width="16" height="16" fill="#fff" />
+                        <rect x="12" y="82" width="6" height="6" />
+                        <rect x="44" y="8" width="7" height="7" />
+                        <rect x="58" y="44" width="7" height="7" />
+                        <rect x="44" y="58" width="7" height="7" />
+                        <rect x="72" y="72" width="7" height="7" />
+                      </g>
+                    </svg>
+                  </span>
+                  <span className="ct">
+                    <b>Accès permanent</b>
+                    <i>Générer un QR code à coller sur le frigo — il ne change jamais.</i>
+                  </span>
+                  <span className="chev">›</span>
+                </button>
+                <button className="qrcopy" onClick={copyLink}>
+                  <IconCopy size={14} />
+                  Copier le lien
+                </button>
+              </div>
+
             </div>
           ) : (
             <p className="cz-emptynote">Ajoute une personne pour partager le menu.</p>
@@ -360,18 +481,33 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
         </div>
       </div>
 
-      {rappelOpen && <RappelSheet kind="cuisine" onClose={() => setRappelOpen(false)} toast={toast} />}
-
       {preview && (
         <div className="cz-preview-overlay">
           <div className="cz-preview-bar">
-            <span>Aperçu — ce que voit {selected?.nom}</span>
+            <span>
+              Aperçu — ce que voit {selected?.nom}
+              {previewDone !== null && (
+                <small className="ck-vustate">
+                  {previewDone > 0 ? `${previewDone} coché${previewDone > 1 ? 's' : ''}` : 'Rien de coché encore'}
+                  {previewOpen ? ` · vu ${formatWhen(previewOpen)}` : ''}
+                </small>
+              )}
+            </span>
             <button className="cz-x" onClick={() => setPreview(null)} aria-label="Fermer l’aperçu">
               ✕
             </button>
           </div>
           <div className="cz-preview-body">
-            <EspaceCuisine espace={preview} />
+            {qr && (
+              <div className="ck-qrblock">
+                <div className="q" dangerouslySetInnerHTML={{ __html: qr }} />
+                <div className="t">
+                  <b>Accès permanent</b>
+                  À coller sur le frigo — le lien ne change jamais.
+                </div>
+              </div>
+            )}
+            <EspaceCuisine espace={preview} viewChecksToken={selected?.token} />
           </div>
         </div>
       )}

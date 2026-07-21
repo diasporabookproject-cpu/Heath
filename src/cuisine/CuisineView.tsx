@@ -19,7 +19,6 @@ import ReglagesSheet from './ReglagesSheet';
 import CopyWeekSheet from './CopyWeekSheet';
 import { slotForRole, type Creneau } from '../lib/creneaux';
 import type { Recipe } from '../types';
-import type { CuisineScope } from '../maison/digest';
 import { IconPlus, IconCheck } from './icons';
 import Em from '../ui/Em';
 import './cuisine.css';
@@ -78,7 +77,6 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const [sharing, setSharing] = useState(false);
   const [shareToken, setShareToken] = useState<string | undefined>(undefined);
   // F6.2 : portée initiale du partage (posée par le flux F6.1 ; horizon T7 ensuite).
-  const [shareScope, setShareScope] = useState<{ scope: CuisineScope; dayKey?: string } | null>(null);
   // F6.1 (D1) : fiche en cours de « Partager » → feuille « Pour quel repas ? ».
   const [shareFiche, setShareFiche] = useState<Recipe | null>(null);
 
@@ -132,16 +130,6 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
   const ruleParts = [regles.halal ? 'halal' : null, ...regles.nePasManger.map((x) => `sans ${x}`)].filter(Boolean);
   const ruleText = ruleParts.length ? ruleParts.join(' · ') : 'Aucune restriction';
 
-  // F6.2 — la portée du digest suit la vue (semaine / aujourd'hui / demain / jour).
-  const shareScopeNow = (): { scope: CuisineScope; dayKey?: string } => {
-    if (menuView === 'semaine') return { scope: 'semaine' };
-    const demainIdx = (todayIdx + 1) % 7;
-    if (weekOffset === 0 && selDay === todayIdx) return { scope: 'aujourdhui' };
-    const isDemain = todayIdx === 6 ? weekOffset === 1 && selDay === 0 : weekOffset === 0 && selDay === demainIdx;
-    if (isDemain) return { scope: 'demain' };
-    return { scope: 'jour', dayKey: SEED_CONFIG.jours[selDay].key };
-  };
-
   // F6.1 (D1) — Partager depuis la fiche : ajout au menu PUIS partage, jamais
   // un second canal. Moments sans créneau (Q2) : le geste explique, sans détour.
   const shareFromFiche = (r: Recipe) => {
@@ -158,9 +146,6 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
     setComponent(c.dayKey, c.mealKey, c.slot, value);
     setShareFiche(null);
     setOpenRecipeId(null);
-    // F6.2 : la portée du MESSAGE suit le créneau — la page reste complète.
-    const scope: CuisineScope = c.dOffset === 0 ? 'aujourdhui' : c.dOffset === 1 ? 'demain' : 'jour';
-    setShareScope({ scope, dayKey: c.dayKey });
     setShareToken(undefined);
     setSharing(true);
     toast('Ajoutée au repas — à toi d’envoyer');
@@ -212,7 +197,6 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             onToggleWeek={() => setMenuView((v) => (v === 'jour' ? 'semaine' : 'jour'))}
             onShare={() => {
               setShareToken(undefined);
-              setShareScope(shareScopeNow());
               setSharing(true);
             }}
             onOpenMeal={(dayKey, mealKey) => {
@@ -305,11 +289,8 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
       {sharing && (
         <PartageSheet
           initialToken={shareToken}
-          initialScope={shareScope?.scope}
-          initialDayKey={shareScope?.dayKey}
           onClose={() => {
             setSharing(false);
-            setShareScope(null);
           }}
           toast={toast}
         />
