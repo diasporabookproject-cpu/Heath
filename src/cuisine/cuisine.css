@@ -957,3 +957,16 @@
 .ck-bubble { position: relative; background: #eef8e9; border: 1px solid #d9ecd2; border-radius: 15px; border-bottom-left-radius: 5px; padding: 4px 4px 4px 6px; }
 .ck-bubble::after { content: ''; position: absolute; left: -6px; bottom: 7px; width: 12px; height: 12px; background: #eef8e9; border-left: 1px solid #d9ecd2; border-bottom: 1px solid #d9ecd2; transform: rotate(45deg); border-bottom-left-radius: 3px; }
 .ck-bubble textarea { width: 100%; background: none; border: none; resize: none; font-family: var(--font-body); font-size: 13.5px; line-height: 1.55; color: #28331f; font-weight: 600; padding: 9px 10px; outline: none; }
+
+/* ---- T1 avenant 2 · message = mot court + toggle langue (maquette exacte) ---- */
+.ck-msgcard .mtop { justify-content: space-between; }
+.ck-msgcard .mlab { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; }
+.ck-msgcard .mlab svg { color: var(--accent); }
+.ck-langtog { display: flex; background: #f2eee7; border-radius: 9px; padding: 2px; }
+.ck-langtog button { font-size: 10.5px; font-weight: 700; padding: 4px 9px; border-radius: 7px; color: #a49c90; border: none; background: none; cursor: pointer; font-family: var(--font-body); }
+.ck-langtog button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+.ck-langtog button.ar { font-family: 'Noto Naskh Arabic', serif; }
+.ck-bubble.ar textarea { direction: rtl; text-align: right; font-family: 'Noto Naskh Arabic', serif; }
+.ck-optcard .oi.qr { padding: 4px; color: var(--ink); }
+.ck-optcard .oi.qr svg { width: 100%; height: 100%; }
+.ck-optcard .qrcopy svg { flex: none; }

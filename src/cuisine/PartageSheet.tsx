@@ -21,37 +21,27 @@ import { isNative, shareText } from '../lib/platform';
 import { getSupabase, supabaseEnabled } from '../lib/supabase';
 import SecuriserVolet from '../components/SecuriserVolet';
 import { todayKey } from './dates';
-import { buildCuisineDigest, type CuisineScope } from '../maison/digest';
-import { type ScopeOption } from '../ui/DigestBlock';
+import { buildCuisineGreeting } from '../maison/digest';
 import { qrSvg } from '../lib/qr';
 import { rappelLabel } from '../lib/rappel';
 import RappelSheet from './RappelSheet';
 import type { Destinataire, SecuriteFiche } from '../types';
 import EspaceCuisine from './EspaceCuisine';
-import { IconSend, IconEye, IconLoader, IconCheck } from './icons';
+import { IconEye, IconLoader, IconCheck, IconCopy } from './icons';
 
 // Registre neutre (lot partage T1) : le métier, jamais le genre présumé.
 const ROLES = ['Cuisine', 'Ménage', 'Nounou', 'Autre'];
 const digits = (s?: string) => (s ?? '').replace(/\D/g, '');
-const CUISINE_SCOPES: ScopeOption[] = [
-  { key: 'semaine', label: 'La semaine' },
-  { key: 'aujourdhui', label: "Aujourd'hui" },
-  { key: 'demain', label: 'Demain' },
-  { key: 'jour', label: 'Un jour…' },
-];
 
 interface Props {
   onClose: () => void;
   toast: (m: string) => void;
   /** Destinataire à pré-sélectionner (ouverture ciblée depuis « Envoyer » de Maison). */
   initialToken?: string;
-  /** F6.2 : portée initiale du digest (suit la vue / le créneau F6.1). */
-  initialScope?: CuisineScope;
-  initialDayKey?: string;
 }
 
 /** FC9 — Envoyer le menu : un seul geste (espace mis à jour + rappel WhatsApp). */
-export default function PartageSheet({ onClose, toast, initialToken, initialScope, initialDayKey }: Props) {
+export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const persons = useStore((s) => s.settings.persons);
@@ -75,12 +65,10 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
   const [busy, setBusy] = useState(false);
   // F4-bis fiche B : volet « Sécuriser » inline (création de compte transparente).
   const [securiser, setSecuriser] = useState(false);
-  // F6.2 : la portée SUIT le contexte d'ouverture (créneau F6.1 aujourd'hui ;
-  // horizon T7 ensuite) — elle ne change que le MESSAGE, jamais la page.
-  const [scope, setScope] = useState<CuisineScope>(initialScope ?? 'semaine');
-  const [dayKey, setDayKey] = useState<string>(initialDayKey ?? todayKey());
+  // T1 (maquette) : le message est un mot court ; sa LANGUE se choisit (toggle),
+  // défaut = la langue de lecture de la personne. Le détail vit sur la page.
+  const [msgLang, setMsgLang] = useState<'fr' | 'dr'>('fr');
   const [digest, setDigest] = useState('');
-  const [confirmEmpty, setConfirmEmpty] = useState(false);
 
   const refresh = () =>
     loadDestinataires().then((list) => {
@@ -113,22 +101,16 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
     if (selected) void lastEspaceOpen(selected.token).then(setLastOpen);
   }, [selId, selected?.token]);
 
-  // Digest recomposé à chaque changement de portée / jour / destinataire / menu.
+  // Message recomposé quand la personne ou la langue du message change.
   // (L'édition manuelle prime ensuite : elle écrit directement `digest`.)
   useEffect(() => {
-    setConfirmEmpty(false);
     if (!selected) return setDigest('');
-    setDigest(
-      buildCuisineDigest({
-        prenom: selected.nom,
-        scope,
-        dayKey,
-        link: buildEspaceUrl(selected.token),
-        week,
-        byId,
-      }),
-    );
-  }, [scope, dayKey, selected?.token, selected?.nom, week, byId]);
+    setMsgLang(selected.langue === 'dr' ? 'dr' : 'fr');
+  }, [selected?.token, selected?.langue]);
+  useEffect(() => {
+    if (!selected) return;
+    setDigest(buildCuisineGreeting({ prenom: selected.nom, link: buildEspaceUrl(selected.token), lang: msgLang }));
+  }, [selected?.token, selected?.nom, msgLang]);
 
   function blank(): Destinataire {
     return {
@@ -141,8 +123,6 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
     };
   }
 
-  // La portée ne change QUE le message ; l'envoi publie toujours la page complète.
-  const isEmptyDigest = /Rien de (prévu|composé)/.test(digest);
   const hasPhone = digits(selected?.tel).length > 0;
 
   const send = async () => {
@@ -156,7 +136,6 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
       const live = await getSupabase()?.auth.getSession();
       if (!live?.data.session) return setSecuriser(true);
     }
-    if (isEmptyDigest && !confirmEmpty) return setConfirmEmpty(true); // confirmation portée vide
     setBusy(true);
     try {
       await publishEspace(selected, SEED_CONFIG, week, byId, persons);
@@ -180,7 +159,6 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
         }
         toast('Publié ✓ — message copié (pas de numéro)');
       }
-      setConfirmEmpty(false);
       void lastEspaceOpen(selected.token).then(setLastOpen);
     } catch (e) {
       toast((e as Error).message);
@@ -341,56 +319,42 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
                 </button>
               </div>
 
-              {/* Maquette : « Message » héros = bulle WhatsApp préremplie (le digest,
-                  éditable) + bouton vert. La portée reste (jour/semaine) mais
-                  DISCRÈTE au-dessus — le register est « aisance », pas « contrôle ». */}
+              {/* Maquette (partie A) : « Message » = un mot COURT préretempli, avec
+                  le toggle de langue ; le détail vit sur la page (« il est ici 👇 »). */}
               <div className="ck-msgcard">
                 <div className="mtop">
-                  <IconSend size={15} />
-                  Message
-                </div>
-                <div className="ck-scoperow">
-                  {CUISINE_SCOPES.map((sc) => (
-                    <button
-                      key={sc.key}
-                      className={'ck-scp' + (scope === sc.key ? ' on' : '')}
-                      aria-pressed={scope === sc.key}
-                      onClick={() => setScope(sc.key as CuisineScope)}
-                    >
-                      {sc.label}
+                  <span className="mlab">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    Message
+                  </span>
+                  <span className="ck-langtog">
+                    <button className={msgLang === 'fr' ? 'on' : ''} onClick={() => setMsgLang('fr')}>
+                      Français
                     </button>
-                  ))}
+                    <button className={'ar' + (msgLang === 'dr' ? ' on' : '')} onClick={() => setMsgLang('dr')}>
+                      الدارجة
+                    </button>
+                  </span>
                 </div>
-                {scope === 'jour' && (
-                  <div className="ck-scoperow days">
-                    {SEED_CONFIG.jours.map((j) => (
-                      <button
-                        key={j.key}
-                        className={'ck-scp' + (dayKey === j.key ? ' on' : '')}
-                        onClick={() => setDayKey(j.key)}
-                      >
-                        {j.nom.slice(0, 3)}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <div className="ck-bubble">
+                <div className={'ck-bubble' + (msgLang === 'dr' ? ' ar' : '')}>
                   <textarea
                     value={digest}
                     onChange={(e) => setDigest(e.target.value)}
-                    rows={5}
-                    aria-label="Message WhatsApp à envoyer (modifiable)"
+                    rows={4}
+                    aria-label="Message à envoyer (modifiable)"
                   />
                 </div>
                 <button className="ck-wabtn" onClick={send} disabled={busy}>
-                  {busy ? <IconLoader size={18} className="cz-spin" /> : <IconSend size={17} />}
-                  {busy
-                    ? 'Envoi…'
-                    : confirmEmpty
-                      ? 'Rien de prévu — envoyer quand même'
-                      : hasPhone
-                        ? 'Envoyer sur WhatsApp'
-                        : 'Publier + copier le message'}
+                  {busy ? (
+                    <IconLoader size={18} className="cz-spin" />
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="19" height="19">
+                      <path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-2.8.8.8-2.7-.2-.3A8 8 0 0 1 12 4z" />
+                    </svg>
+                  )}
+                  {busy ? 'Envoi…' : hasPhone ? 'Envoyer sur WhatsApp' : 'Publier + copier le message'}
                 </button>
               </div>
 
@@ -422,7 +386,7 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
                       Le menu du jour <span className="au">à cocher</span>
                     </div>
                     {(() => {
-                      const jk = scope === 'jour' ? dayKey : todayKey();
+                      const jk = todayKey(); // le menu cochable = celui d'aujourd'hui
                       const day = week.days[jk];
                       const rows = (['petitdej', 'dej', 'gouter', 'diner'] as const)
                         .map((k) => {
@@ -477,16 +441,33 @@ export default function PartageSheet({ onClose, toast, initialToken, initialScop
 
               <div className="ck-optcard">
                 <button className="head" onClick={openPreview} disabled={busy}>
-                  <span className="oi">
-                    <IconEye size={17} />
+                  <span className="oi qr">
+                    <svg viewBox="0 0 100 100" width="40" height="40">
+                      <g fill="currentColor">
+                        <rect x="0" y="0" width="30" height="30" />
+                        <rect x="7" y="7" width="16" height="16" fill="#fff" />
+                        <rect x="12" y="12" width="6" height="6" />
+                        <rect x="70" y="0" width="30" height="30" />
+                        <rect x="77" y="7" width="16" height="16" fill="#fff" />
+                        <rect x="82" y="12" width="6" height="6" />
+                        <rect x="0" y="70" width="30" height="30" />
+                        <rect x="7" y="77" width="16" height="16" fill="#fff" />
+                        <rect x="12" y="82" width="6" height="6" />
+                        <rect x="44" y="8" width="7" height="7" />
+                        <rect x="58" y="44" width="7" height="7" />
+                        <rect x="44" y="58" width="7" height="7" />
+                        <rect x="72" y="72" width="7" height="7" />
+                      </g>
+                    </svg>
                   </span>
                   <span className="ct">
                     <b>Accès permanent</b>
-                    <i>Sa page, avec un QR code à coller sur le frigo — le lien ne change jamais.</i>
+                    <i>Générer un QR code à coller sur le frigo — il ne change jamais.</i>
                   </span>
                   <span className="chev">›</span>
                 </button>
                 <button className="qrcopy" onClick={copyLink}>
+                  <IconCopy size={14} />
                   Copier le lien
                 </button>
               </div>

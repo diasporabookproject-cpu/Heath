@@ -129,6 +129,15 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage — T1 avenant 2 : le message EST la maquette (mot court + toggle langue) — 2026-07-21
+PO : « pas exactement semblable ». Comparaison défaut↔défaut au pixel → la partie A n'était pas finie : la maquette n'est pas « le digest habillé », c'est **la « bulle de message préremplie »** du brief = un mot COURT et chaleureux + le lien (le détail vit sur la page, « il est ici 👇 »). Restructuration :
+- **Message** : `buildCuisineGreeting(prenom, link, lang)` — fr définitif (« Bonjour {nom} 👋 / Le menu est prêt, il est ici 👇 / {lien} »), **darija premier jet** (« سلام {nom} 👋 / المنيو ديالك واجد، شوفيه هنا 👇 » — brouillon à relire, cohérent avec le parking §7.4). Éditable. **Chips de portée RETIRÉES** (un bonjour ne dépend pas du jour ; la page publie toujours la semaine complète — donc aucune fonction utile perdue) → tout le câblage `scope`/`shareScope`/`shareScopeNow` mort supprimé de PartageSheet + CuisineView.
+- **Toggle Français|الدارجة** (maquette) : défaut = la LANGUE DE LECTURE de la personne (Fatima lit en darija → message darija) ; bascule libre.
+- **Icônes exactes maquette** : label Message = bulle, bouton = glyphe WhatsApp, Accès permanent = **mini-QR** (plus l'œil), « Copier le lien » avec icône. Texte « Générer un QR code à coller sur le frigo — il ne change jamais ».
+- **Changement de FOND signalé** : le message WhatsApp ne liste plus les plats (il ne fait que renvoyer à la page). `buildCuisineDigest` (détaillé) est CONSERVÉ et testé — un retour arrière = une ligne, si le PO veut le détail dans WhatsApp.
+- Portes : typecheck ✓ · **221/221** ✓ (+2 greeting) · build ✓ · 3 smokes ✓ · capture (feuille quasi identique maquette).
+
+
 ### Lot partage — T1 avenant : fidélité maquette de la carte Message (retour device PO) — 2026-07-21
 PO : « visuellement on y est pas ». Comparaison au pixel (maquette rendue vs app, viewport identique) → 3 écarts réels de la feuille d'envoi, corrigés vers la maquette qui fait foi :
 - **Avatar** : rond saffron → **carré arrondi couleur tuile** (`#f7e3d7`, encre accent), comme la maquette.

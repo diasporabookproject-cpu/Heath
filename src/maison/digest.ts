@@ -54,6 +54,20 @@ function dayLabeledLines(day: WeekMenu['days'][string] | undefined, byId: Map<st
   return out;
 }
 
+/**
+ * T1 (lot partage) — le MESSAGE de la maquette : un mot COURT et chaleureux +
+ * le lien ; le détail vit sur la PAGE (« il est ici 👇 »). Bilingue : le fr est
+ * définitif ; la darija est un PREMIER JET (brouillon, cf. maquette + parking
+ * §7.4) — à faire relire. La portée disparaît : un bonjour ne dépend pas du jour.
+ */
+export function buildCuisineGreeting(opts: { prenom: string; link: string; lang: 'fr' | 'dr' }): string {
+  const { prenom, link, lang } = opts;
+  if (lang === 'dr') {
+    return `سلام ${prenom} 👋\nالمنيو ديالك واجد، شوفيه هنا 👇\n${link}`;
+  }
+  return `Bonjour ${prenom} 👋\nLe menu est prêt, il est ici 👇\n${link}`;
+}
+
 export function buildCuisineDigest(opts: {
   prenom: string;
   scope: CuisineScope;
