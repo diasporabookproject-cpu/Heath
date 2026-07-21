@@ -135,7 +135,7 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 - **Les 5 preuves REJOUÉES sur la vraie base** : anon insert jeton vivant OK · select lit (n=1) · **insert jeton inconnu → violation RLS** · **preuve 4 bloquante : révoqué → anon select = 0** ; corollaire postgres n=1 (la policy cache, elle ne supprime pas).
 - **Prod propre** : sonde `__probe_0011__` nettoyée (n=0 résiduel) ; **invariant lecture publique `espaces` (anon) intact** (0011 n'ajoute qu'une table, ne touche pas `espaces`).
 - **`parity:check` de clôture = 0 écart** — staging == prod (38 colonnes, 24 policies, 8 RLS, 14 index, 10 fonctions, 2 triggers, 3 buckets, 5 edge alignés).
-- **RESTE** : le PO révoque le token → je vérifie la mort (401 Management API) → je supprime le token du scratchpad. README migrations à passer « 0011 = STAGING+PROD, parité prouvée ». Puis **T4**.
+- **CLÔTURE** : PO a révoqué → **mort vérifiée HTTP 401** (Management API) → token supprimé du scratchpad (absent repo/log). **Fenêtre 0011 CLOSE**, prod-read-only rétabli. La remontée des coches (T3) est désormais VIVE en prod. Suite : **T4** (lecture côté employeur).
 
 
 ### Fenêtre 0011 — STAGING appliqué + 5 preuves ✅ · STOP avant PROD — 2026-07-21
