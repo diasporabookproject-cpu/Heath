@@ -535,16 +535,60 @@
 .cz .s-diner .mchip { background: #dfeeeb; }
 .cz .s-diner .mlabel, .cz-wln .wk.s-diner { color: #3f7d72; }
 
-/* Vue JOUR : une carte par moment. */
-.cz-meals { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 9px; }
-/* .cz-mrow.cz-mo : bat la base .cz-mrow définie plus bas (même leçon que .b1). */
-.cz-mrow.cz-mo { display: flex; align-items: center; gap: 11px; background: var(--surface); border: 1px solid var(--line); border-radius: 15px; padding: 11px 13px; }
-.cz-meals .cz-mrow + .cz-mrow { border-top: none; }
-.cz-mrow.cz-mo .mchip { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: none; }
-.cz-mrow.cz-mo .mchip .plus { color: var(--accent); font-size: 22px; line-height: 1; }
-.cz-mrow.cz-mo .mlabel { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
-.cz-mrow.cz-mo .mn { font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
-.cz-mrow.cz-mo .sub { font-size: 11.5px; }
+/* ---- Vue JOUR (refonte T1, maquette-cuisine-finetune.html) ---- */
+/* Carte-repas HÉROS (le prochain à servir) + « le reste de la journée » en tuiles ;
+   journée vide → invitation. Reproduction pixel de la maquette. */
+.cz-daybody { padding: 12px 16px 6px; }
+
+.cz-hero { display: block; width: 100%; padding: 0; text-align: left; background: var(--surface); border: none; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 22px rgba(30, 25, 20, 0.09); cursor: pointer; font-family: var(--font-body); color: var(--ink); }
+.cz-hero .ph { position: relative; height: 104px; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(120% 140% at 80% 15%, rgba(255, 255, 255, 0.35), transparent 55%), linear-gradient(150deg, #e7c9a0, #cf9f6e 55%, #a9784e); }
+.cz-hero .ph .cz-heroimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cz-hero .ph .emj { position: relative; display: flex; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.18)); }
+.cz-hero .ph .tg { position: absolute; top: 11px; left: 12px; z-index: 1; background: rgba(255, 255, 255, 0.92); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 10px; border-radius: 999px; }
+.cz-hero.s-petitdej .ph .tg { color: #b9781f; }
+.cz-hero.s-dej .ph .tg { color: #5f7a3f; }
+.cz-hero.s-gouter .ph .tg { color: #b56a63; }
+.cz-hero.s-diner .ph .tg { color: #3f7d72; }
+.cz-hero .bd { display: block; padding: 13px 15px 15px; }
+/* Serif EXPLICITE (jamais via --font-display = Jakarta dans .cz) — nom de plat. */
+.cz-hero .bd .nm { display: flex; align-items: center; gap: 6px; font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; font-size: 18px; font-weight: 500; color: var(--ink); line-height: 1.3; }
+.cz-hero .bd .nm .vio { color: var(--draft); display: inline-flex; }
+.cz-hero .bd .mt { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; }
+.cz-hero .bd .mt .ings { font-size: 11.5px; color: var(--muted); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cz-hero .bd .mt .see { flex: none; font-size: 12px; color: var(--accent-ink); font-weight: 700; }
+
+.cz-softlab { font-size: 10px; font-weight: 700; color: #b0a898; margin: 16px 2px 9px; }
+
+.cz-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.cz-stile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 74px; padding: 12px 6px 10px; text-align: center; border: none; border-radius: 13px; background: var(--surface-2); cursor: pointer; font-family: var(--font-body); }
+.cz-stile.s-petitdej { background: #fdf3e6; }
+.cz-stile.s-dej { background: #eef3e9; }
+.cz-stile.s-gouter { background: #fbeeed; }
+.cz-stile.s-diner { background: #e9f2ef; }
+.cz-stile .se { display: flex; opacity: 0.55; }
+.cz-stile.filled .se { opacity: 1; }
+.cz-stile .sn { margin-top: 5px; font-size: 10px; font-weight: 700; color: #a89e8f; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.cz-stile.filled .sn { color: var(--ink); }
+.cz-stile .sp { position: absolute; top: 6px; right: 7px; color: var(--accent); font-size: 13px; font-weight: 800; opacity: 0.7; line-height: 1; }
+.cz-stile .sp.vio { color: var(--draft); opacity: 1; }
+
+/* État vide = invitation (pas un formulaire). */
+.cz-invite { text-align: center; padding: 22px 18px 6px; }
+.cz-invite .disc { display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; margin: 0 auto 15px; border-radius: 50%; background: linear-gradient(160deg, #fbe9d2, #f7e2e0); }
+.cz-invite h3 { font-size: 17px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+.cz-invite p { margin: 6px 18px 0; font-size: 12px; color: var(--muted); font-weight: 500; line-height: 1.5; }
+.cz-copybtn { display: inline-flex; align-items: center; gap: 8px; margin: 16px auto 2px; padding: 11px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; font-size: 13.5px; font-weight: 800; color: var(--accent-ink); box-shadow: 0 4px 12px rgba(30, 25, 20, 0.06); cursor: pointer; font-family: var(--font-body); }
+.cz-invite .orr { margin: 15px 0 12px; font-size: 10.5px; color: #bcb4a6; font-weight: 700; }
+.cz-btiles { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding: 0 16px 12px; }
+.cz-btile { position: relative; display: flex; align-items: center; gap: 10px; padding: 15px 12px; text-align: left; border: none; border-radius: 14px; cursor: pointer; font-family: var(--font-body); }
+.cz-btile .be { display: flex; }
+.cz-btile .bn { font-size: 12.5px; font-weight: 800; }
+.cz-btile .bp { position: absolute; top: 9px; right: 11px; font-size: 14px; font-weight: 800; opacity: 0.55; line-height: 1; }
+.cz-btile.s-petitdej { background: #fbe9d2; color: #b9781f; }
+.cz-btile.s-dej { background: #e8efdf; color: #5f7a3f; }
+.cz-btile.s-gouter { background: #f7e2e0; color: #b56a63; }
+.cz-btile.s-diner { background: #dfeeeb; color: #3f7d72; }
 
 /* Vue SEMAINE (SPEC 4) : lignes compactes dans la carte du jour. */
 .cz-wdh { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px; }

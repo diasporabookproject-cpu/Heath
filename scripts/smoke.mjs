@@ -311,18 +311,28 @@ await page.waitForTimeout(400);
 await mardi.getByText('Œufs du picker').waitFor({ timeout: 5000 });
 console.log('Amendement ② (T4) : 3 voies dépliées en place, créée et posée ✅');
 
-// 3ter-bis) Retour device PO n°4 — « Copier UNE journée précédente » : la
-// source se CHOISIT. Vue jour → mercredi → copier depuis Mardi (le yaourt).
+// 3ter-bis) Retour device PO n°4 — « Copier UNE journée » : la source se CHOISIT.
+// + Refonte T1 : jour VIDE = INVITATION (pas un formulaire) ; jour PLEIN = carte
+// HÉROS (le prochain repas) + « le reste de la journée » en tuiles.
 await page.locator('.cz-weekbtn').click(); // semaine → jour
 await page.locator('.cz-day', { hasText: 'Mer' }).click();
-await page.getByText('Copier une journée précédente').click();
+// Mercredi est vide → l'invitation soignée, avec les 4 moments en tuiles.
+await page.locator('.cz-invite').waitFor({ timeout: 5000 });
+if ((await page.locator('.cz-btile').count()) !== 4)
+  throw new Error('Refonte T1 : l’état vide doit proposer les 4 moments en tuiles');
+await page.screenshot({ path: 'scripts/shot-jour-vide.png', fullPage: false });
+await page.locator('.cz-copybtn').click(); // « Copier une journée » (dans l’invitation)
 await page.getByText('Copier une journée', { exact: false }).first().waitFor({ timeout: 5000 });
 const candidats = await page.locator('.cz-copyday').count();
 if (candidats < 2) throw new Error(`PO n°4 : le choix doit lister les jours non vides (lu : ${candidats})`);
 await page.locator('.cz-copyday', { hasText: 'Mardi' }).click();
 await page.getByText('Journée copiée depuis Mardi').waitFor({ timeout: 5000 });
-await page.getByText('Yaourt').first().waitFor({ timeout: 5000 }); // le yaourt copié sur mercredi
-console.log('PO n°4 : copier UNE journée — source choisie (Mardi), contenu copié ✅');
+// Mercredi est maintenant plein → carte HÉROS portant le repas copié + le reste.
+await page.locator('.cz-hero', { hasText: 'Yaourt' }).waitFor({ timeout: 5000 });
+if (!(await page.getByText('Le reste de la journée').count()))
+  throw new Error('Refonte T1 : la vue jour pleine doit montrer « le reste de la journée »');
+await page.screenshot({ path: 'scripts/shot-jour-plein.png', fullPage: false });
+console.log('PO n°4 + refonte T1 : jour vide = invitation, copie (Mardi), jour plein = carte héros ✅');
 if (!(await page.locator('.cz-weekbtn.on').count())) await page.locator('.cz-weekbtn').click(); // retour semaine
 
 // 3quater) T5/F5.5 — alerte ALLERGÈNE bout-en-bout SANS backend : les règles du
