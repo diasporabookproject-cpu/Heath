@@ -129,6 +129,14 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### CLÔTURE — Lot Refonte de la mise en page Cuisine (Option B, DA v2) — 2026-07-25
+**Mergé au défaut** (merge --no-ff de `lot-cuisine-refonte-v1`) après GO clôture PO. La maquette `docs/maquettes/maquette-cuisine-finetune.html` est adoptée **en entier** : vue jour = carte-repas héros + tuiles + invitation ; vue semaine = cartes-jour ; pastille régime avec icône de réglages.
+- **`apk.yml` repointé au défaut** (`deploy.yml` n'avait pas bougé de ce lot — la page reçue n'était pas en jeu, contrairement au lot Partage où il avait fallu le dérouter pour tester sur Pages). Rappel de la leçon : **les DEUX workflows** se vérifient à la clôture, même quand un seul a bougé.
+- **Portes re-passées sur l'arbre MERGÉ** avant push (typecheck · 228 tests · build · 3 smokes), puis vérification de la prod servie par Pages.
+- **Ce que le lot NE change pas**, et c'est l'essentiel pour la suite : le **payload de la page reçue** (lien perpétuel intact — aucun lien déjà envoyé ne bouge), `prochain.ts` (accueil B1) et l'ensemble `MealKey`. La refonte est un changement de **rendu**, pas de modèle.
+- **Dette et écarts tracés** (ne pas les redécouvrir) : ① composer depuis la vue semaine demande **un tap de plus** (la carte mène à la journée) — conforme à la maquette, à rouvrir si l'usage coince ; ② « Partager » reste offert sur un **jour vide** (chemin d'accès/QR, le parcours compte-déconnecté en dépend) alors que la maquette l'omet ; ③ vocabulaire **« Menu de la semaine »** conservé contre le « Vue semaine » de la maquette (F1.3) ; ④ pastille régime laissée dans l'en-tête (la maquette la met sur la ligne de date, où elle disparaîtrait de la vue semaine).
+- Tag impossible (proxy) → sha de merge au DEVLOG, comme aux deux lots précédents.
+
 ### Lot Refonte Cuisine — T3 : pastille icône réglages + passe pixel + ETAT — 2026-07-25
 Dernière tranche du lot : la finition, sur les DEUX vues.
 - **Pastille régime = bouton lisible** : nouvelle icône `IconTune` (curseurs, reprise de la maquette) dans un disque blanc, pastille au pixel de `.diet` (teinte végétale #eef2e8, bord #d7e4cb, encre #5f7a3f, 10.5px/700). Elle continue de lire les **vraies `ReglesFoyer`** — **deux ancres de smoke ajoutées** : foyer neuf → « Aucune restriction », après pose → « halal · sans arachide ». Le régime n'est **jamais** en dur (le « halal · sans gluten » de la maquette est un EXEMPLE, protocole personnel purgé).

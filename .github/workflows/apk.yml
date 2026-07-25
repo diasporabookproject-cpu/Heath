@@ -7,7 +7,7 @@ name: APK Android (debug)
 on:
   workflow_dispatch:
   push:
-    branches: [lot-cuisine-refonte-v1]
+    branches: [claude/jolly-wozniak-s83str]
 
 jobs:
   apk:
