@@ -196,23 +196,8 @@
 .cz-vbanner .cz-vt { flex: 1; font-size: 13.5px; font-weight: 600; line-height: 1.3; }
 .cz-vbanner .cz-vt small { display: block; font-weight: 400; color: #8a7ba5; font-size: 12px; margin-top: 1px; }
 
-/* ---- Cartes-jour ---- */
-.cz-days { padding: 8px 16px 24px; display: flex; flex-direction: column; gap: 11px; }
-.cz-daycard { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 13px 15px; box-shadow: var(--shadow); }
-.cz-dayhead { display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px; }
-.cz-dayname { font-family: var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
-.cz-daydate { font-size: 12.5px; color: var(--muted); }
-.cz-dayedit {
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
+/* ---- Cartes-jour (liste de la vue semaine — cartes définies plus bas) ---- */
+.cz-days { padding: 10px 16px 8px; display: flex; flex-direction: column; gap: 9px; }
 .cz-slot { display: flex; align-items: center; gap: 11px; padding: 10px 2px; border-radius: 10px; cursor: pointer; width: 100%; background: none; border: none; text-align: left; font-family: var(--font-body); color: var(--ink); }
 .cz-slot + .cz-slot { border-top: 1px solid var(--line); }
 .cz-slot:hover { background: var(--surface-2); }
@@ -526,14 +511,11 @@
 
 /* ---- T3 · Les 4 moments (SPEC 3, proto) ---- */
 /* Teintes de moment — la couleur EST le code de lecture. */
+/* (Les tints portent le créneau SOURCE du radial — `.cz-srcrow s-{moment}`.) */
 .cz .s-petitdej .mchip { background: #fbe9d2; }
-.cz .s-petitdej .mlabel, .cz-wln .wk.s-petitdej { color: #b9781f; }
 .cz .s-dej .mchip { background: #e8efdf; }
-.cz .s-dej .mlabel, .cz-wln .wk.s-dej { color: #5f7a3f; }
 .cz .s-gouter .mchip { background: #fbe4e0; }
-.cz .s-gouter .mlabel, .cz-wln .wk.s-gouter { color: #b56a5a; }
 .cz .s-diner .mchip { background: #dfeeeb; }
-.cz .s-diner .mlabel, .cz-wln .wk.s-diner { color: #3f7d72; }
 
 /* ---- Vue JOUR (refonte T1, maquette-cuisine-finetune.html) ---- */
 /* Carte-repas HÉROS (le prochain à servir) + « le reste de la journée » en tuiles ;
@@ -590,15 +572,24 @@
 .cz-btile.s-gouter { background: #f7e2e0; color: #b56a63; }
 .cz-btile.s-diner { background: #dfeeeb; color: #3f7d72; }
 
-/* Vue SEMAINE (SPEC 4) : lignes compactes dans la carte du jour. */
-.cz-wdh { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px; }
-.cz-wdh .wtag { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--accent); }
-.cz-mrow.cz-wln { display: flex; align-items: center; gap: 8px; padding: 3px 0; border-radius: 6px; }
-.cz-daycard .cz-mrow + .cz-mrow { border-top: none; }
-.cz-mrow.cz-wln .wk { font-size: 7.5px; font-weight: 800; text-transform: uppercase; width: 34px; flex: none; }
-.cz-mrow.cz-wln .wv { font-size: 11.5px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 5px; min-width: 0; }
-.cz-mrow.cz-wln.empty .wv { color: var(--accent); font-weight: 700; }
-.cz-mrow.cz-wln .vio { color: var(--draft); display: inline-flex; }
+/* ---- Vue SEMAINE (refonte T2, maquette-cuisine-finetune.html) ---- */
+/* UNE carte par jour : repère de date · résumé des plats · compteur. La carte
+   entière mène à la journée (on y compose). Reproduction pixel de `.dcard`. */
+.cz-dcard { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 13px; background: var(--surface); border: none; border-radius: 14px; box-shadow: 0 3px 10px rgba(30, 25, 20, 0.05); cursor: pointer; font-family: var(--font-body); color: var(--ink); }
+.cz-dcard .dl { width: 42px; flex: none; text-align: center; }
+.cz-dcard .dl .dw2 { display: block; font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: #a89e8f; }
+.cz-dcard .dl .dn2 { display: block; margin-top: 1px; font-size: 19px; font-weight: 800; color: var(--ink); line-height: 1; }
+.cz-dcard .di { flex: 1; min-width: 0; }
+.cz-dcard .di .ds { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 13px; font-weight: 700; color: var(--ink); }
+.cz-dcard .di .ds .txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cz-dcard .di .ds .sep { color: #d8cdba; }
+.cz-dcard .di .ds .vio { flex: none; color: var(--draft); display: inline-flex; }
+.cz-dcard .di .dsub { display: block; margin-top: 2px; font-size: 11px; color: var(--muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cz-dcard .dc { flex: none; padding: 4px 8px; font-size: 10px; font-weight: 800; color: #b0a898; background: #f4f1ec; border-radius: 8px; }
+.cz-dcard.today { background: #fdf4ef; box-shadow: 0 5px 14px rgba(217, 98, 47, 0.12); outline: 1.5px solid #f2cdb6; }
+.cz-dcard.today .dl .dn2 { color: var(--accent-ink); }
+.cz-dcard.today .dc { background: #f7ddca; color: var(--accent-ink); }
+.cz-dcard.void .di .ds { color: #bcb4a6; font-weight: 600; font-style: italic; }
 
 /* ---- T4 · Le geste radial (SPEC 5, proto) ---- */
 .cz-radial { position: fixed; inset: 0; z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.18s; }
@@ -872,19 +863,10 @@
 .cz-wk small { display: block; font-family: var(--font-body); font-size: 11.5px; color: var(--muted); font-weight: 500; text-align: center; margin-top: 1px; }
 .cz-sempty { position: relative; z-index: 1; font-size: 13px; color: rgba(244, 241, 233, 0.7); margin-top: 6px; }
 
-/* meal rows (daycard) */
-.cz-mrow { display: flex; align-items: center; gap: 11px; padding: 10px 2px; border-radius: 10px; cursor: pointer; width: 100%; background: none; border: none; text-align: left; font-family: var(--font-body); color: var(--ink); }
-.cz-mrow + .cz-mrow { border-top: 1px solid var(--line); }
-.cz-mrow:hover { background: var(--surface-2); }
-.cz-mrow .ml { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); width: 64px; flex: none; }
-.cz-mrow .mid { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.cz-mrow .mn { font-size: 15px; font-weight: 500; line-height: 1.25; display: flex; align-items: center; gap: 6px; }
-.cz-mrow .mn .vio { color: var(--draft); display: inline-flex; }
-.cz-mrow .sub { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
-.cz-mrow.empty .mn { color: var(--accent); font-weight: 700; }
-.cz-mrow.empty .mn svg { color: var(--accent); }
-.cz-mrow .mk2 { font-family: var(--font-mono); font-size: 12px; color: var(--muted); flex: none; }
-.cz-mrow .chev { flex: none; color: #c7bdad; display: grid; place-items: center; }
+/* (`.cz-mrow` — les rangées par repas — est mort avec la refonte : T1 a retiré
+   les cartes de moment, T2 les lignes de la carte-jour. Bloc supprimé avec son
+   dernier consommateur. Le créneau source du radial garde ses propres règles,
+   `.cz-srcrow`.) */
 
 /* meal composer */
 .cz-complist { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 4px 14px; box-shadow: var(--shadow); }

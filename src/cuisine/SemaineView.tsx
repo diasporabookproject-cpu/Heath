@@ -13,8 +13,6 @@ import { pickHeroKey, nowHHMM } from './hero';
 // T3 (lot UI) : 4 moments, libellés alignés Menu ↔ page reçue (SPEC 3 —
 // les clés du modèle, du digest et de la projection ne bougent pas).
 const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit déjeuner', dej: 'Déjeuner', gouter: 'Goûter', diner: 'Dîner' };
-/** Libellés courts de la vue semaine (proto : P.déj / Déj / Goût / Dîner). */
-const MEAL_SHORT: Record<MealKey, string> = { petitdej: 'P.déj', dej: 'Déj', gouter: 'Goût', diner: 'Dîner' };
 /** Libellés de TUILE (refonte T1 : « Petit déj » court sur les vignettes/états vides). */
 const MEAL_TILE: Record<MealKey, string> = { petitdej: 'Petit déj', dej: 'Déjeuner', gouter: 'Goûter', diner: 'Dîner' };
 /** Emoji de MOMENT (décoration des tuiles + état vide, refonte T1). Distinct du
@@ -227,55 +225,89 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
     );
   };
 
-  // Vue SEMAINE (SPEC 4, proto) : carte compacte par jour, une ligne par moment.
+  // Contexte relatif d'un jour de la semaine AFFICHÉE (« aujourd'hui · », « demain · »).
+  const relFor = (i: number) =>
+    weekOffset === 0 && i === todayIdx
+      ? 'aujourd’hui · '
+      : (weekOffset === 0 && i === (todayIdx + 1) % 7 && todayIdx !== 6) ||
+          (weekOffset === 1 && todayIdx === 6 && i === 0)
+        ? 'demain · '
+        : '';
+
+  // Vue SEMAINE (refonte T2, maquette) : UNE carte par jour — repère de date,
+  // résumé des plats, compteur de repas ; jour vide = « à composer ». La semaine
+  // redevient une VUE D'ENSEMBLE : la carte MÈNE À LA JOURNÉE (`onSelectDay`),
+  // où l'on compose (héros/tuiles → `onOpenMeal` → radial/composeur). Le geste
+  // de composition n'est pas contourné — il vit dans la vue jour.
   const dayCard = (i: number) => {
     const jour = SEED_CONFIG.jours[i];
     const day = week.days[jour.key];
     const isToday = weekOffset === 0 && i === todayIdx;
+    const filledKeys = MEAL_KEYS.filter((k) => mealHasAny(day[k]));
+    const noms = filledKeys
+      .map((k) => {
+        const p = day[k]?.plat;
+        return p ? byId.get(p)?.nom : undefined;
+      })
+      .filter(Boolean) as string[];
+    const draft = filledKeys.some((k) => mealHasDraft(day[k], k, byId));
+    const rl = relFor(i);
+    // « Déjeuner, dîner » — le premier porte la majuscule (maquette).
+    const moments = filledKeys.map((k, n) => (n === 0 && !rl ? MEAL_LABEL[k] : MEAL_LABEL[k].toLowerCase())).join(', ');
+    // Un `aria-label` REMPLACE le nom calculé depuis le contenu : il doit donc
+    // porter TOUT ce que la carte dit (résumé, compteur, à valider), sinon la
+    // semaine devient muette pour les lecteurs d'écran — avant la refonte,
+    // chaque repas était un bouton nommé par son plat.
+    const aria = [
+      `${jour.nom} ${dayLabel(dates[i])}`,
+      isToday ? 'aujourd’hui' : '',
+      filledKeys.length === 0
+        ? 'rien de prévu, à composer'
+        : `${filledKeys.length} repas : ${noms.length ? noms.join(', ') : 'repas sans plat'}`,
+      draft ? 'une recette à valider' : '',
+    ]
+      .filter(Boolean)
+      .join(' — ');
     return (
-      <div className="cz-daycard" key={jour.key}>
-        <div className="cz-wdh">
-          <span className="cz-dayname">
-            {jour.nom}
-            {isToday && <span className="wtag"> · auj.</span>}
-          </span>
-          <span className="cz-daydate">{dayLabel(dates[i])}</span>
-        </div>
-
-        {MEAL_KEYS.map((k) => {
-          const meal = day[k];
-          const plat = meal?.plat ? byId.get(meal.plat) : undefined;
-          const filled = mealHasAny(meal);
-          return (
-            <button
-              key={k}
-              className={'cz-mrow cz-wln' + (filled ? '' : ' empty')}
-              onClick={() => onOpenMeal(jour.key, k)}
-            >
-              <span className={'wk s-' + k}>{MEAL_SHORT[k]}</span>
-              <span className="wv">
-                {plat ? plat.nom : filled ? 'Sans plat' : '＋ Ajouter'}
-                {plat && mealHasDraft(meal, k, byId) && (
-                  <span className="vio" title="à valider">
-                    <IconStar size={12} />
-                  </span>
-                )}
+      <button
+        key={jour.key}
+        className={'cz-dcard' + (isToday ? ' today' : '') + (filledKeys.length === 0 ? ' void' : '')}
+        onClick={() => onSelectDay(i)}
+        aria-label={aria}
+      >
+        <span className="dl">
+          <span className="dw2">{jour.nom.slice(0, 3)}</span>
+          <span className="dn2">{dates[i].getDate()}</span>
+        </span>
+        <span className="di">
+          <span className="ds">
+            <span className="txt">
+              {filledKeys.length === 0
+                ? 'Rien de prévu — à composer'
+                : noms.length === 0
+                  ? 'Repas sans plat'
+                  : noms.map((n, idx) => (
+                      <span key={idx}>
+                        {idx > 0 && <span className="sep"> · </span>}
+                        {n}
+                      </span>
+                    ))}
+            </span>
+            {draft && (
+              <span className="vio" title="à valider">
+                <IconStar size={12} />
               </span>
-            </button>
-          );
-        })}
-      </div>
+            )}
+          </span>
+          {filledKeys.length > 0 && <span className="dsub">{rl}{moments}</span>}
+        </span>
+        <span className="dc">{filledKeys.length}</span>
+      </button>
     );
   };
 
   // Datectx : contexte relatif + date pleine (proto : « **jeudi 16 juillet** »).
-  const rel =
-    weekOffset === 0 && dayIdx === todayIdx
-      ? 'aujourd’hui · '
-      : (weekOffset === 0 && dayIdx === (todayIdx + 1) % 7 && todayIdx !== 6) ||
-          (weekOffset === 1 && todayIdx === 6 && dayIdx === 0)
-        ? 'demain · '
-        : '';
+  const rel = relFor(dayIdx);
 
   // Refonte T1 : jour vide → l'invitation porte SON « Copier une journée » ; on
   // masque donc le « Copier … précédente » du bas (doublon). « Partager » reste,
