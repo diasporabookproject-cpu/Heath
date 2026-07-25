@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lot Identité & accès — écrans compilés</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --paper:#faf8f5; --card:#ffffff; --ink2:#1c1815; --ink:#2a2420; --muted:#9b948b; --line:#f0ebe3;
+    --accent:#d9622f; --accent-ink:#c25528; --tile:#f7e3d7;
+    --danger:#b4453a; --dangerbg:#fbeeec; --dangerline:#f2d9d5;
+    --ui:'Plus Jakarta Sans',system-ui,sans-serif;
+  }
+  body { font-family:var(--ui); background:#cfcabf; color:var(--ink); padding:34px 26px 60px; }
+  svg { display:block; }
+
+  .doc { max-width:1320px; margin:0 auto; }
+  .dochead { text-align:center; margin-bottom:30px; }
+  .dochead h1 { font-size:24px; font-weight:800; letter-spacing:-.03em; color:#241f1a; }
+  .dochead p { font-size:12.5px; color:#5c564d; font-weight:600; margin-top:5px; }
+
+  .grp { margin-bottom:38px; }
+  .gh { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .gh .num { width:26px; height:26px; border-radius:9px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:800; flex:none; }
+  .gh .gt { font-size:16px; font-weight:800; letter-spacing:-.02em; color:#241f1a; }
+  .gh .gs { font-size:11.5px; font-weight:600; color:#6b655c; }
+  .gh .rule { flex:1; height:1px; background:#b9b3a7; }
+  .rowp { display:flex; gap:18px; flex-wrap:wrap; }
+
+  .col { display:flex; flex-direction:column; align-items:center; }
+  .cap { font-size:11.5px; color:#332e28; text-align:center; margin-bottom:8px; font-weight:800; } .cap span{color:#7c756a;font-weight:600;display:block;font-size:9.5px;margin-top:1px}
+  .new { display:inline-block; background:var(--accent); color:#fff; font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding:2px 6px; border-radius:5px; margin-left:5px; vertical-align:1px; }
+
+  .phone { width:274px; height:588px; background:var(--paper); border:1px solid rgba(0,0,0,.1); border-radius:30px; overflow:hidden; box-shadow:0 14px 34px rgba(20,22,30,.16); display:flex; flex-direction:column; flex:none; position:relative; }
+  .scr { flex:1; padding:0 18px; display:flex; flex-direction:column; overflow:hidden; }
+  .grow { flex:1; min-height:8px; }
+
+  /* entrée */
+  .mark { width:46px; height:46px; border-radius:15px; background:var(--accent); display:flex; align-items:center; justify-content:center; color:#fff; margin-top:56px; }
+  h1.big { font-size:26px; font-weight:800; letter-spacing:-.035em; line-height:1.13; color:var(--ink2); margin-top:20px; }
+  .sub { font-size:12.5px; line-height:1.55; color:var(--muted); font-weight:500; margin-top:8px; }
+  .input { background:#fff; border:1px solid var(--line); border-radius:13px; padding:14px 15px; font-size:14px; font-weight:500; color:#c2b9aa; margin-top:24px; }
+  .cta { width:100%; background:var(--accent); color:#fff; border-radius:999px; padding:14px; font-size:14.5px; font-weight:800; margin-top:9px; box-shadow:0 7px 18px rgba(217,98,47,.24); text-align:center; }
+  .fine { font-size:9.5px; line-height:1.5; color:#c2b9aa; font-weight:500; padding-bottom:20px; }
+  .bkrow { padding-top:20px; } .bk { width:31px; height:31px; border-radius:10px; background:#f2eee7; display:flex; align-items:center; justify-content:center; color:#8a8175; font-size:16px; }
+  .ch { font-size:25px; font-weight:800; letter-spacing:-.035em; line-height:1.15; color:var(--ink2); margin-top:24px; }
+  .cs { font-size:12.5px; color:var(--muted); font-weight:500; margin-top:8px; } .cs b{color:var(--ink2);font-weight:700}
+  .boxes { display:flex; gap:7px; margin-top:22px; }
+  .box { flex:1; aspect-ratio:1/1.15; background:#fff; border:1px solid var(--line); border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:800; color:var(--ink2); }
+  .box.cur { border-color:var(--accent); box-shadow:0 0 0 3px rgba(217,98,47,.10); }
+  .box.err { border-color:#e6b6ae; background:#fdf7f6; color:var(--danger); }
+  .box .car { width:2px; height:19px; background:var(--accent); border-radius:1px; }
+  .resend { font-size:12px; color:var(--accent-ink); font-weight:700; margin-top:18px; }
+  .errline { display:flex; align-items:flex-start; gap:7px; margin-top:16px; }
+  .errline svg { color:var(--danger); flex:none; margin-top:1px; }
+  .errline p { font-size:11.5px; line-height:1.5; color:var(--danger); font-weight:600; }
+
+  .joinlink { text-align:center; font-size:12.5px; font-weight:700; color:var(--accent-ink); padding:16px 0 0; }
+  .joinlink span { color:var(--muted); font-weight:500; display:block; font-size:11px; margin-top:3px; }
+
+  .found { background:#fff; border-radius:16px; padding:16px; margin-top:22px; box-shadow:0 5px 16px rgba(30,25,20,.06); display:flex; align-items:center; gap:12px; }
+  .found .fa { width:44px; height:44px; border-radius:14px; background:var(--tile); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; flex:none; }
+  .found .ft b { font-size:15px; font-weight:800; color:var(--ink2); display:block; } .found .ft i { font-size:11.5px; font-style:normal; color:var(--muted); font-weight:600; }
+  .notthis { text-align:center; font-size:12px; font-weight:700; color:#a89e8f; padding:14px 0 0; }
+
+  /* compte */
+  .hd { display:flex; align-items:center; gap:10px; padding:19px 0 16px; }
+  .hd .ti { font-size:19px; font-weight:800; letter-spacing:-.025em; color:var(--ink2); }
+  .cardw { background:#fff; border-radius:15px; box-shadow:0 3px 11px rgba(30,25,20,.05); overflow:hidden; }
+  .idrow { display:flex; align-items:center; gap:11px; padding:14px; }
+  .idrow .av { width:41px; height:41px; border-radius:13px; background:var(--tile); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:800; flex:none; }
+  .idrow .it b { font-size:13px; font-weight:700; color:var(--ink2); display:block; } .idrow .it i { font-size:10.5px; font-style:normal; color:var(--muted); font-weight:600; }
+  .logout { display:flex; align-items:center; gap:8px; padding:12px 14px; border-top:1px solid var(--line); font-size:13px; font-weight:600; color:#6f6860; } .logout svg{width:15px;height:15px;color:#a89e8f}
+  .hint { font-size:10px; line-height:1.5; color:#b0a898; font-weight:500; padding:8px 4px 0; }
+  .seclabel { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:#b5ad9f; margin:19px 4px 8px; }
+  .mrow { display:flex; align-items:center; gap:10px; padding:11px 14px; border-top:1px solid var(--line); } .mrow:first-child{border-top:none}
+  .mrow .ma { width:32px; height:32px; border-radius:50%; background:#f2eee7; color:#a08b78; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex:none; }
+  .mrow .mn { flex:1; font-size:13px; font-weight:700; color:var(--ink2); } .mrow .mn span{font-weight:600;color:var(--muted);font-size:11px}
+  .coderow { display:flex; align-items:center; gap:10px; padding:12px 12px 12px 14px; border-top:1px solid var(--line); background:#fffdfb; }
+  .coderow .ct i { font-size:9.5px; font-style:normal; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#b5ad9f; display:block; }
+  .coderow .ct b { font-size:18px; font-weight:800; letter-spacing:.13em; color:var(--ink2); display:block; margin-top:2px; }
+  .coderow .ct { flex:1; }
+  .coderow .sh { display:flex; align-items:center; gap:5px; background:var(--accent); color:#fff; border-radius:999px; padding:8px 12px; font-size:12px; font-weight:800; flex:none; } .coderow .sh svg{width:12px;height:12px}
+  .footlinks { display:flex; flex-direction:column; align-items:center; gap:11px; padding:14px 0 22px; }
+  .footlinks .fl { font-size:11.5px; font-weight:700; color:#a89e8f; } .footlinks .fl.dgr { color:#bd8b84; }
+  .row { display:flex; align-items:center; gap:11px; padding:13px 14px; border-top:1px solid var(--line); } .row:first-child{border-top:none}
+  .row .ic { width:30px; height:30px; border-radius:10px; background:#f7f3ed; display:flex; align-items:center; justify-content:center; color:var(--accent); flex:none; }
+  .row .rt { flex:1; } .row .rt b { font-size:13px; font-weight:700; color:var(--ink2); display:block; } .row .rt i { font-size:10.5px; font-style:normal; color:var(--muted); font-weight:500; display:block; margin-top:2px; }
+  .row .cv { color:#cabfb0; font-size:16px; flex:none; }
+
+  /* suppression */
+  .ghostc { background:#fff; border-radius:14px; padding:12px; margin-bottom:8px; box-shadow:0 3px 10px rgba(30,25,20,.04); display:flex; gap:10px; align-items:center; }
+  .ghostc .sq { width:38px; height:38px; border-radius:11px; background:var(--tile); flex:none; }
+  .ghostc .l1 { height:8px; width:56%; background:#eee8df; border-radius:5px; } .ghostc .l2 { height:7px; width:33%; background:#f4efe7; border-radius:5px; margin-top:6px; }
+  .dim { position:absolute; inset:0; background:rgba(24,20,16,.36); z-index:1; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; background:var(--paper); border-radius:22px 22px 0 0; z-index:2; padding:20px 20px 22px; box-shadow:0 -8px 30px rgba(0,0,0,.16); }
+  .dic { width:42px; height:42px; border-radius:14px; background:var(--dangerbg); color:var(--danger); display:flex; align-items:center; justify-content:center; margin-bottom:13px; }
+  .sheet h2 { font-size:18.5px; font-weight:800; letter-spacing:-.03em; color:var(--ink2); line-height:1.2; }
+  .sheet p { font-size:12px; line-height:1.6; color:var(--muted); font-weight:500; margin-top:8px; } .sheet p b { color:var(--ink2); font-weight:700; }
+  .impact { background:var(--dangerbg); border:1px solid var(--dangerline); border-radius:13px; padding:11px 12px; margin-top:13px; }
+  .il { display:flex; align-items:center; gap:8px; padding:3px 0; font-size:11.5px; font-weight:600; color:#8d453c; } .il svg{color:var(--danger);flex:none}
+  .keep { background:#eef3ea; border:1px solid #d8e5cf; border-radius:13px; padding:11px 12px; margin-top:13px; }
+  .keep .kl { display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:600; color:#4c6b3c; } .keep .kl svg{color:#5f8a45;flex:none}
+  .dbtn { width:100%; background:var(--danger); color:#fff; border-radius:999px; padding:14px; font-size:14px; font-weight:800; text-align:center; margin-top:17px; }
+  .cbtn { width:100%; text-align:center; padding:12px; font-size:13.5px; font-weight:700; color:#6f6860; }
+
+  /* détail bouton compte */
+  .detail { background:#faf8f5; border-radius:16px; padding:16px 18px; box-shadow:0 6px 18px rgba(0,0,0,.07); max-width:420px; }
+  .detail .dt2 { font-size:13px; font-weight:800; color:var(--ink2); margin-bottom:10px; }
+  .barsim { display:flex; align-items:center; gap:10px; background:#fff; border-radius:13px; padding:12px 14px; box-shadow:0 2px 8px rgba(30,25,20,.05); }
+  .barsim .bt2 { flex:1; font-size:17px; font-weight:800; letter-spacing:-.02em; color:var(--ink2); }
+  .barsim .avb { width:30px; height:30px; border-radius:50%; background:var(--tile); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }
+  .detail p { font-size:11.5px; line-height:1.55; color:#4a443c; margin-top:10px; }
+  .detail p b { color:var(--ink2); }
+
+  .notes { background:#faf8f5; border-radius:16px; padding:18px 20px; box-shadow:0 8px 24px rgba(0,0,0,.08); max-width:620px; }
+  .notes h3 { font-size:14.5px; font-weight:800; margin-bottom:10px; }
+  .notes .d { margin-bottom:11px; } .notes .dt3 { font-size:12px; font-weight:800; color:var(--accent-ink); margin-bottom:2px; } .notes .dd { font-size:11.5px; line-height:1.5; color:#4a443c; }
+  .notes .q { background:#fdecdf; border:1px solid #f0c9ab; border-radius:11px; padding:11px 13px; font-size:11.5px; line-height:1.55; color:#7a4020; margin-top:12px; } .notes .q b{color:#5a2c10}
+  .flex { display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <div class="dochead">
+    <h1>Lot « Identité &amp; accès » — les écrans</h1>
+    <p>Phase 1 · compte requis dès le premier lancement · vouvoiement · DA v2</p>
+  </div>
+
+  <!-- ===== 1. ENTRER ===== -->
+  <div class="grp">
+    <div class="gh"><span class="num">1</span><span class="gt">Entrer</span><span class="gs">— le compte, avant tout</span><span class="rule"></span></div>
+    <div class="rowp">
+
+      <div class="col">
+        <div class="cap">E-mail<span>aucune échappatoire</span></div>
+        <div class="phone"><div class="scr">
+          <div class="mark"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V20h14V9.8"/><path d="M10 20v-5h4v5"/></svg></div>
+          <h1 class="big">Bienvenue<br>chez vous.</h1>
+          <div class="sub">Un e-mail, un code.<br>Pas de mot de passe à retenir.</div>
+          <div class="input">prenom@exemple.com</div>
+          <div class="cta">Continuer</div>
+          <div class="grow"></div>
+          <div class="fine">En continuant, vous acceptez nos conditions et notre politique de confidentialité.</div>
+        </div></div>
+      </div>
+
+      <div class="col">
+        <div class="cap">Le code<span>valide au 6ᵉ chiffre</span></div>
+        <div class="phone"><div class="scr">
+          <div class="bkrow"><span class="bk">‹</span></div>
+          <div class="ch">Votre code<br>est parti.</div>
+          <div class="cs">Envoyé à <b>amine@exemple.com</b></div>
+          <div class="boxes"><div class="box">4</div><div class="box">7</div><div class="box">2</div><div class="box cur"><span class="car"></span></div><div class="box"></div><div class="box"></div></div>
+          <div class="resend">Renvoyer le code</div>
+          <div class="grow"></div>
+        </div></div>
+      </div>
+
+      <div class="col">
+        <div class="cap">Erreur<span class="new">ajouté</span><span>un seul motif pour tous les cas</span></div>
+        <div class="phone"><div class="scr">
+          <div class="bkrow"><span class="bk">‹</span></div>
+          <div class="ch">Votre code<br>est parti.</div>
+          <div class="cs">Envoyé à <b>amine@exemple.com</b></div>
+          <div class="boxes"><div class="box err">4</div><div class="box err">7</div><div class="box err">2</div><div class="box err">9</div><div class="box err">1</div><div class="box err">5</div></div>
+          <div class="errline"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg><p>Ce code n'est pas valide.<br>Vérifiez-le ou demandez-en un nouveau.</p></div>
+          <div class="resend">Renvoyer le code</div>
+          <div class="grow"></div>
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== 2. LE FOYER ===== -->
+  <div class="grp">
+    <div class="gh"><span class="num">2</span><span class="gt">Le foyer</span><span class="gs">— fonder, ou rejoindre</span><span class="rule"></span></div>
+    <div class="rowp">
+
+      <div class="col">
+        <div class="cap">Le choix<span>la seule porte pour rejoindre</span></div>
+        <div class="phone"><div class="scr">
+          <div class="mark"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V20h14V9.8"/><path d="M10 20v-5h4v5"/></svg></div>
+          <h1 class="big">Créons<br>votre maison.</h1>
+          <div class="sub">Vos menus, vos consignes, votre équipe — au même endroit.</div>
+          <div class="cta" style="margin-top:26px">Commencer</div>
+          <div class="joinlink">J'ai un code d'invitation<span>Quelqu'un de la maison vous l'a envoyé</span></div>
+          <div class="grow"></div>
+        </div></div>
+      </div>
+
+      <div class="col">
+        <div class="cap">Saisir le code<span class="new">ajouté</span><span>l'écran qui manquait</span></div>
+        <div class="phone"><div class="scr">
+          <div class="bkrow"><span class="bk">‹</span></div>
+          <div class="ch">Votre code<br>d'invitation.</div>
+          <div class="cs">Demandez-le à la personne qui gère la maison.</div>
+          <div class="boxes"><div class="box">4</div><div class="box">K</div><div class="box">7</div><div class="box cur"><span class="car"></span></div><div class="box"></div><div class="box"></div></div>
+          <div class="grow"></div>
+        </div></div>
+      </div>
+
+      <div class="col">
+        <div class="cap">Foyer trouvé<span class="new">ajouté</span><span>on ne rejoint pas à l'aveugle</span></div>
+        <div class="phone"><div class="scr">
+          <div class="bkrow"><span class="bk">‹</span></div>
+          <div class="ch">C'est bien<br>cette maison ?</div>
+          <div class="found">
+            <span class="fa">A</span>
+            <span class="ft"><b>Maison d'Amine</b><i>2 personnes · créée en mai</i></span>
+          </div>
+          <div class="cta" style="margin-top:20px">Rejoindre cette maison</div>
+          <div class="notthis">Ce n'est pas ça</div>
+          <div class="grow"></div>
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== 3. LE COMPTE ===== -->
+  <div class="grp">
+    <div class="gh"><span class="num">3</span><span class="gt">Le compte</span><span class="gs">— une page, deux liens discrets</span><span class="rule"></span></div>
+    <div class="rowp">
+
+      <div class="col">
+        <div class="cap">Page de compte<span>identité + foyer</span></div>
+        <div class="phone"><div class="scr">
+          <div class="hd"><span class="bk">‹</span><span class="ti">Compte</span></div>
+          <div class="cardw">
+            <div class="idrow"><span class="av">A</span><span class="it"><b>amine@exemple.com</b><i>Votre foyer est sauvegardé</i></span></div>
+            <div class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg> Se déconnecter</div>
+          </div>
+          <div class="hint">Vous devrez vous reconnecter avec votre e-mail.</div>
+          <div class="seclabel">Votre foyer</div>
+          <div class="cardw">
+            <div class="mrow"><span class="ma">A</span><span class="mn">Amine <span>(vous)</span></span></div>
+            <div class="mrow"><span class="ma">S</span><span class="mn">Sofia</span></div>
+            <div class="coderow"><span class="ct"><i>Code d'invitation</i><b>4K7P2M</b></span><span class="sh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg> Partager</span></div>
+          </div>
+          <div class="grow"></div>
+          <div class="footlinks"><span class="fl">Avancé</span><span class="fl dgr">Supprimer mon compte</span></div>
+        </div></div>
+      </div>
+
+      <div class="col">
+        <div class="cap">Avancé<span>au bout d'un lien discret</span></div>
+        <div class="phone"><div class="scr">
+          <div class="hd"><span class="bk">‹</span><span class="ti">Avancé</span></div>
+          <div class="cardw">
+            <div class="row"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></span><span class="rt"><b>Exporter mes données</b><i>Un fichier à conserver</i></span><span class="cv">›</span></div>
+            <div class="row"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></span><span class="rt"><b>Revoir l'introduction</b></span><span class="cv">›</span></div>
+          </div>
+          <div class="grow"></div>
+        </div></div>
+      </div>
+
+      <div class="col">
+        <div class="cap">Supprimer — fondateur<span>tout est coupé</span></div>
+        <div class="phone">
+          <div class="scr"><div class="hd"><span class="ti">Compte</span></div><div class="ghostc"><span class="sq"></span><span><span class="l1" style="display:block"></span><span class="l2" style="display:block"></span></span></div></div>
+          <div class="dim"></div>
+          <div class="sheet">
+            <div class="dic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6"/></svg></div>
+            <h2>Supprimer votre compte ?</h2>
+            <p>Vous avez fondé ce foyer : en partant, <b>vous l'emportez avec vous</b>.</p>
+            <div class="impact">
+              <div class="il"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Sofia perd l'accès au foyer</div>
+              <div class="il"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/><line x1="2" y1="2" x2="22" y2="22"/></svg> 3 pages partagées cessent de fonctionner</div>
+            </div>
+            <div class="dbtn">Supprimer définitivement</div>
+            <div class="cbtn">Annuler</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="cap">Supprimer — membre<span>le foyer survit</span></div>
+        <div class="phone">
+          <div class="scr"><div class="hd"><span class="ti">Compte</span></div><div class="ghostc"><span class="sq"></span><span><span class="l1" style="display:block"></span><span class="l2" style="display:block"></span></span></div></div>
+          <div class="dim"></div>
+          <div class="sheet">
+            <div class="dic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6"/></svg></div>
+            <h2>Supprimer votre compte ?</h2>
+            <p>Votre compte et votre accès à la maison d'Amine seront supprimés définitivement.</p>
+            <div class="keep"><div class="kl"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V20h14V9.8"/></svg> Le foyer reste — rien n'y est effacé</div></div>
+            <div class="dbtn">Supprimer définitivement</div>
+            <div class="cbtn">Annuler</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- détails + notes -->
+  <div class="flex">
+    <div class="detail">
+      <div class="dt2">Le bouton compte — 4 emplacements <span class="new">ajouté</span></div>
+      <div class="barsim"><span class="bt2">Maison</span><span class="avb">A</span></div>
+      <p>L'état « déconnecté » n'existe plus : plus de « ☁︎ Connexion », plus de libellé variable. <b>Une pastille d'initiale</b>, toujours la même, sur Maison, Cuisine, Nounou et l'app. Elle ouvre la page de compte.</p>
+    </div>
+
+    <div class="notes">
+      <h3>Ce qui a été ajouté à la compilation</h3>
+      <div class="d"><div class="dt3">Saisir le code + foyer trouvé</div><div class="dd">Le trou le plus grave : sans eux, un code d'invitation ne peut être saisi nulle part. Et on ne rejoint pas une maison à l'aveugle — l'écran la nomme avant d'engager.</div></div>
+      <div class="d"><div class="dt3">Un seul motif d'erreur</div><div class="dd">Cases en rouge + une ligne. Le même motif sert au code invalide, au code expiré et à l'échec d'envoi — <b>trois textes, un dessin</b>. C'est ce qui remplace les écrans hors-ligne abandonnés.</div></div>
+      <div class="d"><div class="dt3">Le bouton compte</div><div class="dd">Unifié en pastille d'initiale sur ses quatre emplacements.</div></div>
+      <div class="q"><b>Restent ouverts, hors dessin :</b> ① le foyer doit mémoriser <b>qui l'a fondé</b> (sinon les deux confirmations de suppression sont impossibles à distinguer) · ② pas de transfert de propriété en Phase 1 — le fondateur ne peut pas partir sans tuer le foyer · ③ le gate reste sur le <b>drapeau local</b>, sinon l'app devient inutilisable sans réseau.</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

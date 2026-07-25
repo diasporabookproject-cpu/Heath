@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page morte + états de chargement</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --paper:#faf8f5; --card:#ffffff; --ink2:#1c1815; --ink:#2a2420; --muted:#9b948b; --line:#f0ebe3;
+    --accent:#d9622f; --accent-ink:#c25528; --tile:#f7e3d7; --danger:#b4453a;
+    --ui:'Plus Jakarta Sans',system-ui,sans-serif; --ar:'Noto Naskh Arabic',serif;
+  }
+  body { font-family:var(--ui); background:#cfcabf; color:var(--ink); padding:34px 24px; }
+  svg { display:block; }
+  .doc { max-width:1300px; margin:0 auto; }
+  .gh { display:flex; align-items:center; gap:12px; margin:0 0 16px; }
+  .gh .gt { font-size:16px; font-weight:800; letter-spacing:-.02em; color:#241f1a; }
+  .gh .gs { font-size:11.5px; font-weight:600; color:#6b655c; }
+  .gh .rule { flex:1; height:1px; background:#b9b3a7; }
+  .rowp { display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; margin-bottom:34px; }
+  .col { display:flex; flex-direction:column; align-items:center; }
+  .cap { font-size:11.5px; color:#332e28; text-align:center; margin-bottom:8px; font-weight:800; } .cap span{color:#7c756a;font-weight:600;display:block;font-size:9.5px;margin-top:1px}
+
+  .phone { width:280px; height:594px; background:var(--paper); border:1px solid rgba(0,0,0,.1); border-radius:30px; overflow:hidden; box-shadow:0 14px 34px rgba(20,22,30,.16); display:flex; flex-direction:column; flex:none; }
+  .scr { flex:1; padding:0 20px; display:flex; flex-direction:column; }
+  .grow { flex:1; }
+
+  /* page morte */
+  .dead { display:flex; flex-direction:column; align-items:center; text-align:center; padding-top:96px; }
+  .dmark { width:66px; height:66px; border-radius:50%; background:#f1ece4; display:flex; align-items:center; justify-content:center; color:#b3a898; margin-bottom:22px; }
+  .dl { padding:11px 0; width:100%; }
+  .dl + .dl { border-top:1px solid var(--line); }
+  .dl .m1 { font-size:14.5px; font-weight:700; color:var(--ink2); line-height:1.4; }
+  .dl .m2 { font-size:12px; font-weight:500; color:var(--muted); margin-top:3px; }
+  .dl.rtl { direction:rtl; } .dl.rtl .m1 { font-family:var(--ar); font-size:16px; } .dl.rtl .m2 { font-family:var(--ar); font-size:13px; }
+  .solo { padding-top:110px; }
+  .solo .s1 { font-family:var(--ar); direction:rtl; font-size:20px; font-weight:700; color:var(--ink2); line-height:1.5; }
+  .solo .s2 { font-family:var(--ar); direction:rtl; font-size:15px; font-weight:500; color:var(--muted); margin-top:10px; line-height:1.6; }
+  .brandfoot { text-align:center; font-size:10.5px; font-weight:700; color:#c6bcac; padding-bottom:26px; letter-spacing:.02em; }
+
+  /* chargement */
+  .mark { width:46px; height:46px; border-radius:15px; background:var(--accent); display:flex; align-items:center; justify-content:center; color:#fff; margin-top:56px; }
+  h1.big { font-size:26px; font-weight:800; letter-spacing:-.035em; line-height:1.13; color:var(--ink2); margin-top:20px; }
+  .sub { font-size:12.5px; line-height:1.55; color:var(--muted); font-weight:500; margin-top:8px; }
+  .input { background:#fff; border:1px solid var(--line); border-radius:13px; padding:14px 15px; font-size:14px; font-weight:500; color:#8f887e; margin-top:24px; }
+  .input.lock { background:#f6f2ec; color:#b0a898; }
+  .cta { display:flex; align-items:center; justify-content:center; gap:9px; width:100%; background:var(--accent); color:#fff; border-radius:999px; padding:14px; font-size:14.5px; font-weight:800; margin-top:9px; box-shadow:0 7px 18px rgba(217,98,47,.24); }
+  .cta.busy { background:#e8a683; box-shadow:none; }
+  .spin { width:16px; height:16px; border-radius:50%; border:2.2px solid rgba(255,255,255,.45); border-top-color:#fff; animation:sp .8s linear infinite; flex:none; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+  .bkrow { padding-top:20px; } .bk { width:31px; height:31px; border-radius:10px; background:#f2eee7; display:flex; align-items:center; justify-content:center; color:#8a8175; font-size:16px; }
+  .ch { font-size:25px; font-weight:800; letter-spacing:-.035em; line-height:1.15; color:var(--ink2); margin-top:24px; }
+  .cs { font-size:12.5px; color:var(--muted); font-weight:500; margin-top:8px; } .cs b{color:var(--ink2);font-weight:700}
+  .boxes { display:flex; gap:7px; margin-top:22px; }
+  .box { flex:1; aspect-ratio:1/1.15; background:#fff; border:1px solid var(--line); border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:800; color:var(--ink2); }
+  .box.lock { background:#f6f2ec; color:#b0a898; border-color:#eae3d9; }
+  .checking { display:flex; align-items:center; justify-content:center; gap:9px; margin-top:20px; font-size:12.5px; font-weight:700; color:var(--muted); }
+  .spin.dark { border:2.2px solid #e0d9cd; border-top-color:var(--accent); }
+
+  /* grammaire */
+  .panel { background:#faf8f5; border-radius:16px; padding:18px 20px; box-shadow:0 8px 24px rgba(0,0,0,.08); max-width:330px; }
+  .panel h3 { font-size:14px; font-weight:800; margin-bottom:12px; }
+  .btnrow { margin-bottom:11px; }
+  .btnrow .lbl { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#b5ad9f; margin-bottom:5px; }
+  .b { display:flex; align-items:center; justify-content:center; gap:8px; border-radius:999px; padding:12px; font-size:13.5px; font-weight:800; }
+  .b.n { background:var(--accent); color:#fff; }
+  .b.l { background:#e8a683; color:#fff; }
+  .b.d { background:#e5ded4; color:#a89e8f; }
+  .b.dg { background:var(--danger); color:#fff; }
+  .b.dgl { background:#d09a94; color:#fff; }
+  .panel p { font-size:11.5px; line-height:1.55; color:#4a443c; margin-top:10px; } .panel p b{color:var(--ink2)}
+
+  .notes { background:#faf8f5; border-radius:16px; padding:18px 20px; box-shadow:0 8px 24px rgba(0,0,0,.08); max-width:600px; }
+  .notes h3 { font-size:14.5px; font-weight:800; margin-bottom:10px; }
+  .notes .d { margin-bottom:11px; } .notes .dt3 { font-size:12px; font-weight:800; color:var(--accent-ink); margin-bottom:2px; } .notes .dd { font-size:11.5px; line-height:1.55; color:#4a443c; }
+  .notes .q { background:#fdecdf; border:1px solid #f0c9ab; border-radius:11px; padding:11px 13px; font-size:11.5px; line-height:1.55; color:#7a4020; margin-top:12px; } .notes .q b{color:#5a2c10}
+  .flex { display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <div class="gh"><span class="gt">La page morte</span><span class="gs">— ce que voit Fatima quand le lien ne vaut plus</span><span class="rule"></span></div>
+  <div class="rowp">
+
+    <div class="col">
+      <div class="cap">A · Sans mémoire<span>on ignore sa langue → les quatre</span></div>
+      <div class="phone"><div class="scr">
+        <div class="dead">
+          <div class="dmark"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v16"/><path d="M2 21h18"/><circle cx="13" cy="12" r="1"/></svg></div>
+          <div class="dl rtl"><div class="m1">هاد الصفحة ما بقاتش خدامة</div><div class="m2">طلبي لينك جديد من الدار</div></div>
+          <div class="dl rtl"><div class="m1">لم تعد هذه الصفحة متاحة</div><div class="m2">اطلبي رابطًا جديدًا</div></div>
+          <div class="dl"><div class="m1">Cette page n'est plus disponible</div><div class="m2">Demandez un nouveau lien</div></div>
+          <div class="dl"><div class="m1">This page is no longer available</div><div class="m2">Ask for a new link</div></div>
+        </div>
+        <div class="grow"></div>
+        <div class="brandfoot">Manzil</div>
+      </div></div>
+    </div>
+
+    <div class="col">
+      <div class="cap">B · Avec pierre tombale<span>on garde sa langue → une seule</span></div>
+      <div class="phone"><div class="scr">
+        <div class="dead solo">
+          <div class="dmark"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v16"/><path d="M2 21h18"/><circle cx="13" cy="12" r="1"/></svg></div>
+          <div class="s1">هاد الصفحة<br>ما بقاتش خدامة</div>
+          <div class="s2">طلبي لينك جديد<br>من الدار</div>
+        </div>
+        <div class="grow"></div>
+        <div class="brandfoot">Manzil</div>
+      </div></div>
+    </div>
+
+    <div class="panel">
+      <h3>La découverte</h3>
+      <p><b>Quand la page meurt, on ne sait plus qui la lit.</b> La langue de Fatima vivait dans la ligne <code>espaces</code> — supprimée avec le foyer, ou rendue invisible par la révocation, elle n'est plus lisible. On ne peut donc plus s'adresser à elle dans sa langue.</p>
+      <p><b>A</b> ne suppose rien : les quatre langues, courtes, empilées. Coût zéro côté code, mais un mur de texte pour quelqu'un qui n'en lit qu'une.</p>
+      <p><b>B</b> exige de garder une <b>pierre tombale</b> : une ligne résiduelle qui ne contient que la langue et l'état « révoqué ». Une phrase, dans sa langue. Plus digne, plus cher d'une ligne de SQL.</p>
+      <p style="color:#7a4020"><b>Mon avis : B.</b> Cette page est la dernière chose que le personnel voit de vous — et A est illisible pour la personne à qui elle s'adresse.</p>
+    </div>
+
+  </div>
+
+  <div class="gh"><span class="gt">Les états de chargement</span><span class="gs">— chaque bouton du lot appelle le réseau</span><span class="rule"></span></div>
+  <div class="rowp">
+
+    <div class="col">
+      <div class="cap">Envoi du code<span>champ verrouillé</span></div>
+      <div class="phone"><div class="scr">
+        <div class="mark"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V20h14V9.8"/><path d="M10 20v-5h4v5"/></svg></div>
+        <h1 class="big">Bienvenue<br>chez vous.</h1>
+        <div class="sub">Un e-mail, un code.<br>Pas de mot de passe à retenir.</div>
+        <div class="input lock">amine@exemple.com</div>
+        <div class="cta busy"><span class="spin"></span> Envoi du code…</div>
+        <div class="grow"></div>
+      </div></div>
+    </div>
+
+    <div class="col">
+      <div class="cap">Vérification<span>pas de bouton à presser</span></div>
+      <div class="phone"><div class="scr">
+        <div class="bkrow"><span class="bk">‹</span></div>
+        <div class="ch">Votre code<br>est parti.</div>
+        <div class="cs">Envoyé à <b>amine@exemple.com</b></div>
+        <div class="boxes"><div class="box lock">4</div><div class="box lock">7</div><div class="box lock">2</div><div class="box lock">9</div><div class="box lock">1</div><div class="box lock">5</div></div>
+        <div class="checking"><span class="spin dark"></span> Vérification…</div>
+        <div class="grow"></div>
+      </div></div>
+    </div>
+
+    <div class="panel">
+      <h3>La grammaire des états</h3>
+      <div class="btnrow"><div class="lbl">Au repos</div><div class="b n">Continuer</div></div>
+      <div class="btnrow"><div class="lbl">En cours</div><div class="b l"><span class="spin"></span> Envoi du code…</div></div>
+      <div class="btnrow"><div class="lbl">Impossible</div><div class="b d">Continuer</div></div>
+      <div class="btnrow"><div class="lbl">Destructif, en cours</div><div class="b dgl"><span class="spin"></span> Suppression…</div></div>
+      <p><b>Trois règles.</b> Le bouton garde <b>exactement sa taille</b> — le libellé change, rien ne saute. Le champ se verrouille pendant l'appel, jamais grisé au point d'être illisible. Et un état qui dure moins de 300 ms ne s'affiche pas : un clignotement fatigue plus qu'il ne rassure.</p>
+      <p>Concerne : envoyer le code · vérifier le code · rejoindre une maison · fonder le foyer · partager · supprimer le compte.</p>
+    </div>
+
+  </div>
+
+  <div class="notes">
+    <h3>Deux choses que le dessin révèle</h3>
+    <div class="d"><div class="dt3">La page morte survit dans le cache</div><div class="dd">La page de Fatima est <b>hors-ligne par conception</b> : son téléphone en garde une copie. Si rien n'est prévu, elle continuera d'afficher l'ancien menu après la suppression du compte — un contenu périmé qui a l'air vivant. Il faut que l'ouverture suivante <b>remplace le cache</b> par la page morte. C'est le point « purge du cache d'une page révoquée » de l'audit §7.8, et il devient concret ici.</div></div>
+    <div class="d"><div class="dt3">Une seule page morte pour deux causes</div><div class="dd">Compte supprimé ou lien révoqué : de son côté, c'est indistinguable — et tant mieux. <b>Un écran, deux causes.</b> On ne lui explique pas les affaires du foyer.</div></div>
+    <div class="q"><b>À trancher :</b> ① A ou B (la pierre tombale) · ② la page morte propose-t-elle quelque chose, ou reste-t-elle sans action ? Mon lean : <b>sans action</b> — elle ne peut rien faire depuis ce lien, et un bouton mort serait pire · ③ le darija est un brouillon, comme toujours.</div>
+  </div>
+
+</div>
+</body>
+</html>

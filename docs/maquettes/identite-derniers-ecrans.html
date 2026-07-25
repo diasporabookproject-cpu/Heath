@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Les derniers écrans</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --paper:#faf8f5; --card:#ffffff; --ink2:#1c1815; --ink:#2a2420; --muted:#9b948b; --line:#f0ebe3;
+    --accent:#d9622f; --accent-ink:#c25528; --tile:#f7e3d7; --danger:#b4453a; --dangerbg:#fbeeec;
+    --wabub:#eef8e9; --wabub-line:#d9ecd2;
+    --ui:'Plus Jakarta Sans',system-ui,sans-serif;
+  }
+  body { font-family:var(--ui); background:#cfcabf; color:var(--ink); padding:34px 24px; }
+  svg { display:block; }
+  .doc { max-width:1300px; margin:0 auto; }
+  .rowp { display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
+  .col { display:flex; flex-direction:column; align-items:center; }
+  .cap { font-size:11.5px; color:#332e28; text-align:center; margin-bottom:8px; font-weight:800; } .cap span{color:#7c756a;font-weight:600;display:block;font-size:9.5px;margin-top:1px}
+
+  .phone { width:280px; height:596px; background:var(--paper); border:1px solid rgba(0,0,0,.1); border-radius:30px; overflow:hidden; box-shadow:0 14px 34px rgba(20,22,30,.16); display:flex; flex-direction:column; flex:none; position:relative; }
+  .scr { flex:1; padding:0 20px; display:flex; flex-direction:column; }
+  .grow { flex:1; }
+
+  .mark { width:46px; height:46px; border-radius:15px; background:var(--accent); display:flex; align-items:center; justify-content:center; color:#fff; margin-top:70px; }
+  h1.big { font-size:26px; font-weight:800; letter-spacing:-.035em; line-height:1.13; color:var(--ink2); margin-top:22px; }
+  .sub { font-size:12.5px; line-height:1.6; color:var(--muted); font-weight:500; margin-top:10px; }
+  .cta { width:100%; background:var(--accent); color:#fff; border-radius:999px; padding:14px; font-size:14.5px; font-weight:800; margin-top:26px; box-shadow:0 7px 18px rgba(217,98,47,.24); text-align:center; }
+  .peek { display:flex; gap:8px; margin-top:26px; }
+  .pk { flex:1; background:#fff; border-radius:13px; padding:12px 8px; text-align:center; box-shadow:0 3px 10px rgba(30,25,20,.05); }
+  .pk .pe { font-size:20px; } .pk .pn { font-size:10px; font-weight:700; color:#8f887e; margin-top:5px; }
+
+  /* whatsapp */
+  .wahd { display:flex; align-items:center; gap:10px; padding:18px 0 14px; }
+  .wahd .wa { width:36px; height:36px; border-radius:50%; background:#e7ddd2; display:flex;align-items:center;justify-content:center;color:#a08b78;font-size:13px;font-weight:800; }
+  .wahd .wn { font-size:15px; font-weight:800; color:var(--ink2); } .wahd .ws { font-size:10.5px; color:var(--muted); font-weight:600; }
+  .bub { position:relative; background:var(--wabub); border:1px solid var(--wabub-line); border-radius:15px; border-bottom-left-radius:5px; padding:13px 14px; font-size:13.5px; line-height:1.6; color:#28331f; font-weight:600; }
+  .bub .cd { display:inline-block; background:#fff; border:1px solid var(--wabub-line); border-radius:8px; padding:4px 11px; font-size:16px; font-weight:800; letter-spacing:.12em; color:var(--ink2); margin:8px 0 6px; }
+  .bub .lk { color:#3f6b46; font-weight:700; text-decoration:underline; }
+  .bub .tm { text-align:right; font-size:9.5px; color:#8fa38c; font-weight:600; margin-top:6px; }
+
+  /* compte variante */
+  .hd { display:flex; align-items:center; gap:10px; padding:19px 0 16px; }
+  .hd .bk { width:31px; height:31px; border-radius:10px; background:#f2eee7; display:flex; align-items:center; justify-content:center; color:#8a8175; font-size:16px; }
+  .hd .ti { font-size:19px; font-weight:800; letter-spacing:-.025em; color:var(--ink2); }
+  .cardw { background:#fff; border-radius:15px; box-shadow:0 3px 11px rgba(30,25,20,.05); overflow:hidden; }
+  .idrow { display:flex; align-items:center; gap:11px; padding:14px; }
+  .idrow .av { width:41px; height:41px; border-radius:13px; background:var(--tile); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:800; flex:none; }
+  .idrow .it b { font-size:13px; font-weight:700; color:var(--ink2); display:block; } .idrow .it i { font-size:10.5px; font-style:normal; color:var(--muted); font-weight:600; }
+  .logout { display:flex; align-items:center; gap:8px; padding:12px 14px; border-top:1px solid var(--line); font-size:13px; font-weight:600; color:#6f6860; } .logout svg{width:15px;height:15px;color:#a89e8f}
+  .seclabel { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:#b5ad9f; margin:19px 4px 8px; }
+  .mrow { display:flex; align-items:center; gap:10px; padding:11px 14px; border-top:1px solid var(--line); } .mrow:first-child{border-top:none}
+  .mrow .ma { width:32px; height:32px; border-radius:50%; background:#f2eee7; color:#a08b78; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex:none; }
+  .mrow .mn { flex:1; font-size:13px; font-weight:700; color:var(--ink2); } .mrow .mn span{font-weight:600;color:var(--muted);font-size:11px}
+  .genrow { display:flex; align-items:center; gap:10px; padding:13px 14px; border-top:1px solid var(--line); }
+  .genrow .gi { width:30px; height:30px; border-radius:10px; background:#f7f3ed; display:flex; align-items:center; justify-content:center; color:var(--accent); flex:none; }
+  .genrow .gt2 { flex:1; } .genrow .gt2 b { font-size:13px; font-weight:700; color:var(--accent-ink); display:block; } .genrow .gt2 i { font-size:10.5px; font-style:normal; color:var(--muted); font-weight:500; display:block; margin-top:2px; }
+  .footlinks { display:flex; flex-direction:column; align-items:center; gap:11px; padding:14px 0 22px; }
+  .footlinks .fl { font-size:11.5px; font-weight:700; color:#a89e8f; } .footlinks .fl.dgr { color:#bd8b84; }
+
+  /* suppression seul */
+  .ghostc { background:#fff; border-radius:14px; padding:12px; margin-bottom:8px; box-shadow:0 3px 10px rgba(30,25,20,.04); display:flex; gap:10px; align-items:center; }
+  .ghostc .sq { width:38px; height:38px; border-radius:11px; background:var(--tile); flex:none; }
+  .ghostc .l1 { height:8px; width:56%; background:#eee8df; border-radius:5px; } .ghostc .l2 { height:7px; width:33%; background:#f4efe7; border-radius:5px; margin-top:6px; }
+  .dim { position:absolute; inset:0; background:rgba(24,20,16,.36); z-index:1; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; background:var(--paper); border-radius:22px 22px 0 0; z-index:2; padding:20px 20px 22px; box-shadow:0 -8px 30px rgba(0,0,0,.16); }
+  .dic { width:42px; height:42px; border-radius:14px; background:var(--dangerbg); color:var(--danger); display:flex; align-items:center; justify-content:center; margin-bottom:13px; }
+  .sheet h2 { font-size:18.5px; font-weight:800; letter-spacing:-.03em; color:var(--ink2); line-height:1.2; }
+  .sheet p { font-size:12px; line-height:1.6; color:var(--muted); font-weight:500; margin-top:9px; } .sheet p b { color:var(--ink2); font-weight:700; }
+  .dbtn { width:100%; background:var(--danger); color:#fff; border-radius:999px; padding:14px; font-size:14px; font-weight:800; text-align:center; margin-top:20px; }
+  .cbtn { width:100%; text-align:center; padding:12px; font-size:13.5px; font-weight:700; color:#6f6860; }
+
+  .notes { background:#faf8f5; border-radius:16px; padding:18px 20px; box-shadow:0 8px 24px rgba(0,0,0,.08); max-width:600px; margin-top:26px; }
+  .notes h3 { font-size:14.5px; font-weight:800; margin-bottom:10px; }
+  .notes .d { margin-bottom:11px; } .notes .dt3 { font-size:12px; font-weight:800; color:var(--accent-ink); margin-bottom:2px; } .notes .dd { font-size:11.5px; line-height:1.55; color:#4a443c; }
+  .notes .q { background:#fdecdf; border:1px solid #f0c9ab; border-radius:11px; padding:11px 13px; font-size:11.5px; line-height:1.55; color:#7a4020; margin-top:12px; } .notes .q b{color:#5a2c10}
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="rowp">
+
+    <!-- arrivée du membre -->
+    <div class="col">
+      <div class="cap">L'arrivée de Sofia<span>elle saute la FTUE</span></div>
+      <div class="phone"><div class="scr">
+        <div class="mark"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V20h14V9.8"/><path d="M10 20v-5h4v5"/></svg></div>
+        <h1 class="big">Vous voilà<br>chez Amine.</h1>
+        <div class="sub">La maison est déjà installée : ses menus, ses consignes et son équipe sont là.</div>
+        <div class="peek">
+          <div class="pk"><div class="pe">🍽️</div><div class="pn">Cuisine</div></div>
+          <div class="pk"><div class="pe">👶</div><div class="pn">Nounou</div></div>
+          <div class="pk"><div class="pe">🛡️</div><div class="pn">Sécurité</div></div>
+        </div>
+        <div class="cta">Entrer</div>
+        <div class="grow"></div>
+      </div></div>
+    </div>
+
+    <!-- message d'invitation -->
+    <div class="col">
+      <div class="cap">Ce que Sofia reçoit<span>le code seul ne suffit pas</span></div>
+      <div class="phone"><div class="scr">
+        <div class="wahd"><span class="wa">A</span><span><div class="wn">Amine</div><div class="ws">WhatsApp</div></span></div>
+        <div class="bub">
+          Je t'ajoute à la maison sur Manzil — tu pourras voir et modifier les menus, les consignes et l'équipe.
+          <span class="cd">4K7P2M</span>
+          Installe l'app, puis entre ce code quand il te le demande.<br>
+          <span class="lk">manzil.ma/app</span>
+          <div class="tm">22:47 ✓✓</div>
+        </div>
+        <div class="grow"></div>
+      </div></div>
+    </div>
+
+    <!-- aucun code actif -->
+    <div class="col">
+      <div class="cap">Aucun code actif<span>le code se génère</span></div>
+      <div class="phone"><div class="scr">
+        <div class="hd"><span class="bk">‹</span><span class="ti">Compte</span></div>
+        <div class="cardw">
+          <div class="idrow"><span class="av">A</span><span class="it"><b>amine@exemple.com</b><i>Votre foyer est sauvegardé</i></span></div>
+          <div class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg> Se déconnecter</div>
+        </div>
+        <div class="seclabel">Votre foyer</div>
+        <div class="cardw">
+          <div class="mrow"><span class="ma">A</span><span class="mn">Amine <span>(vous)</span></span></div>
+          <div class="genrow">
+            <span class="gi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+            <span class="gt2"><b>Inviter quelqu'un</b><i>Un code à partager, valable 24 h</i></span>
+          </div>
+        </div>
+        <div class="grow"></div>
+        <div class="footlinks"><span class="fl">Avancé</span><span class="fl dgr">Supprimer mon compte</span></div>
+      </div></div>
+    </div>
+
+    <!-- suppression, personne autour -->
+    <div class="col">
+      <div class="cap">Suppression — seul<span>rien à couper</span></div>
+      <div class="phone">
+        <div class="scr"><div class="hd"><span class="ti">Compte</span></div><div class="ghostc"><span class="sq"></span><span><span class="l1" style="display:block"></span><span class="l2" style="display:block"></span></span></div></div>
+        <div class="dim"></div>
+        <div class="sheet">
+          <div class="dic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6"/></svg></div>
+          <h2>Supprimer votre compte ?</h2>
+          <p>Vos menus, vos consignes et votre équipe seront <b>effacés définitivement</b>. Cette action ne peut pas être annulée.</p>
+          <div class="dbtn">Supprimer définitivement</div>
+          <div class="cbtn">Annuler</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="notes">
+    <h3>Ce que ces quatre écrans tranchent</h3>
+    <div class="d"><div class="dt3">Celui qui rejoint ne fait pas la FTUE</div><div class="dd">Le foyer existe : lui faire choisir des domaines et nommer une équipe n'aurait aucun sens — il écraserait le travail d'Amine. L'écran d'arrivée <b>remplace la FTUE</b> pour lui : il nomme la maison, montre ce qui l'attend, et entre. C'est une <b>bifurcation de parcours</b>, pas une décoration — à écrire dans les décisions.</div></div>
+    <div class="d"><div class="dt3">L'invitation dit quoi faire</div><div class="dd">Sofia n'a pas l'app. Le message porte donc trois choses : <b>ce que c'est</b>, <b>le code</b>, <b>où installer</b>. Sans le troisième, le code est mort-né.</div></div>
+    <div class="d"><div class="dt3">Le code n'existe pas d'avance</div><div class="dd">Par défaut : « Inviter quelqu'un ». Le code <b>naît du geste</b> et vit 24 h — plus sain qu'un code permanent qui traîne dans la page de compte.</div></div>
+    <div class="d"><div class="dt3">La suppression s'adapte</div><div class="dd">Seul, sans page partagée : pas de bloc rouge, pas de liste vide. On ne brandit pas des conséquences qui n'existent pas.</div></div>
+    <div class="q"><b>Deux réserves :</b> ① <b>manzil.ma n'est pas acheté</b> — le lien du message est un substitut, et le message est bloqué tant que le domaine (ou les liens de store) n'existent pas · ② l'écran d'arrivée est en DA v2 alors que la suite de la FTUE ne l'est pas encore : la couture se verra chez le fondateur, pas chez le membre.</div>
+  </div>
+
+</div>
+</body>
+</html>
