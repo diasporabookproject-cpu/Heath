@@ -94,23 +94,26 @@
 }
 /* Pastille « Règles alimentaires » (SPEC 2) — remplace l'engrenage, MONTRE les
    restrictions (invariant « un seul endroit ») ; Q7 : état neutre visible. */
+/* T3 (refonte) : au pixel de `.diet` — teinte végétale + ICÔNE DE RÉGLAGES,
+   la pastille se lit comme un bouton (« on peut gérer le régime en la touchant »). */
 .cz-rulepill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: #f1efe9;
-  border: 1px solid var(--line);
+  gap: 6px;
+  background: #eef2e8;
+  border: 1px solid #d7e4cb;
   border-radius: 999px;
-  padding: 4px 9px 4px 7px;
+  padding: 3px 5px 3px 10px;
   font-family: var(--font-body);
-  font-size: 9.5px;
-  color: #6b655c;
-  font-weight: 600;
+  font-size: 10.5px;
+  color: #5f7a3f;
+  font-weight: 700;
   flex: none;
   cursor: pointer;
   max-width: 46vw;
 }
 .cz-rulepill .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cz-rulepill .tune { display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #fff; color: #5f7a3f; flex: none; }
 .cz-segmented {
   display: flex;
   background: var(--surface-2);
@@ -138,7 +141,7 @@
 
 /* ---- Navigation de semaine ---- */
 .cz-weeknav { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px; }
-.cz-wk { font-family: var(--font-display); font-size: 17px; font-weight: 500; }
+.cz-wk { font-family: var(--font-display); font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
 .cz-navchev {
   width: 36px; height: 36px;
   border-radius: 10px;
@@ -196,23 +199,8 @@
 .cz-vbanner .cz-vt { flex: 1; font-size: 13.5px; font-weight: 600; line-height: 1.3; }
 .cz-vbanner .cz-vt small { display: block; font-weight: 400; color: #8a7ba5; font-size: 12px; margin-top: 1px; }
 
-/* ---- Cartes-jour ---- */
-.cz-days { padding: 8px 16px 24px; display: flex; flex-direction: column; gap: 11px; }
-.cz-daycard { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 13px 15px; box-shadow: var(--shadow); }
-.cz-dayhead { display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px; }
-.cz-dayname { font-family: var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
-.cz-daydate { font-size: 12.5px; color: var(--muted); }
-.cz-dayedit {
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
+/* ---- Cartes-jour (liste de la vue semaine — cartes définies plus bas) ---- */
+.cz-days { padding: 10px 16px 8px; display: flex; flex-direction: column; gap: 9px; }
 .cz-slot { display: flex; align-items: center; gap: 11px; padding: 10px 2px; border-radius: 10px; cursor: pointer; width: 100%; background: none; border: none; text-align: left; font-family: var(--font-body); color: var(--ink); }
 .cz-slot + .cz-slot { border-top: 1px solid var(--line); }
 .cz-slot:hover { background: var(--surface-2); }
@@ -472,34 +460,37 @@
 
 /* T7/F7.2 — horizon (dans le contenu) + footer une seule barre */
 /* ---- Sélecteur temporel (SPEC 2, proto) : bouton Semaine + bande de jours ---- */
-.cz-selector { display: flex; align-items: stretch; gap: 8px; padding: 9px 14px 4px; }
+/* T3 (refonte) : au pixel de `.days` / `.wchip` / `.dchip` — pastille semaine
+   en teinte terracotta claire (plus de tan), puces de jour blanches à bord fin. */
+.cz-selector { display: flex; align-items: stretch; gap: 7px; padding: 6px 16px 6px; }
 .cz-weekbtn {
-  flex: none; width: 60px; border-radius: 12px;
-  background: var(--tan); border: 1px solid var(--tan-line); color: var(--tan-ink);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; padding: 6px 3px; cursor: pointer; font-family: var(--font-body);
+  flex: none; border-radius: 12px;
+  background: #fdeee4; border: 1px solid #f4d4bf; color: var(--accent-ink);
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px; padding: 0 9px; cursor: pointer; font-family: var(--font-body);
 }
-.cz-weekbtn.on { background: var(--tan-ink); border-color: var(--tan-ink); color: #faf3e6; }
-.cz-weekbtn svg { width: 16px; height: 16px; fill: currentColor; }
+.cz-weekbtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cz-weekbtn svg { width: 13px; height: 13px; fill: currentColor; }
 .cz-weekbtn .wl { font-size: 9.5px; font-weight: 800; text-transform: uppercase; white-space: nowrap; line-height: 1.2; }
-.cz-sep { width: 1px; background: var(--line); margin: 3px 0; flex: none; }
 .cz-daystrip { display: flex; gap: 6px; overflow-x: auto; flex: 1; scrollbar-width: none; }
 .cz-daystrip::-webkit-scrollbar { display: none; }
 .cz-day {
-  flex: none; width: 43px; border-radius: 12px; border: 1px solid var(--line);
-  background: var(--surface); padding: 6px 0 5px; display: flex; flex-direction: column;
-  align-items: center; gap: 2px; cursor: pointer; font-family: var(--font-body); color: var(--ink);
+  flex: none; min-width: 46px; border-radius: 13px; border: 1px solid var(--line);
+  background: var(--surface); padding: 7px 12px; display: flex; flex-direction: column;
+  align-items: center; gap: 1px; cursor: pointer; font-family: var(--font-body); color: var(--ink);
 }
-.cz-day .dl { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--muted); line-height: 1.2; }
-.cz-day .dn { font-size: 14px; font-weight: 700; line-height: 1.2; }
+.cz-day .dl { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #a89e8f; letter-spacing: 0.03em; line-height: 1.2; }
+.cz-day .dn { font-size: 16px; font-weight: 800; line-height: 1.2; }
 .cz-day .tdot { height: 5px; display: flex; align-items: center; justify-content: center; }
-.cz-day .tdot i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: block; }
+.cz-day .tdot i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: block; margin-top: 1px; }
 .cz-day.on { background: var(--accent); border-color: var(--accent); }
-.cz-day.on .dl { color: #f6d9c9; }
-.cz-day.on .dn { color: #fff; }
+.cz-day.on .dl, .cz-day.on .dn { color: #fff; }
+.cz-day.on .tdot i { background: rgba(255, 255, 255, 0.8); }
 .cz-day.dim { opacity: 0.5; cursor: default; }
-.cz-datectx { padding: 6px 18px; font-size: 12.5px; color: var(--muted); font-weight: 600; line-height: 1.2; }
+/* Contexte de date (`.ctx .cl`) : la date PLEINE en encre, le repère relatif en sourdine. */
+.cz-datectx { padding: 8px 16px 2px; font-size: 13px; color: var(--ink); font-weight: 700; line-height: 1.25; }
 .cz-datectx b { color: var(--ink); font-weight: 700; }
+.cz-datectx i { font-style: normal; color: var(--muted); font-weight: 600; }
 
 /* ---- Dispositions bas (proto) : copier fantôme + partage principal ---- */
 .cz-ghost {
@@ -526,35 +517,85 @@
 
 /* ---- T3 · Les 4 moments (SPEC 3, proto) ---- */
 /* Teintes de moment — la couleur EST le code de lecture. */
+/* (Les tints portent le créneau SOURCE du radial — `.cz-srcrow s-{moment}`.) */
 .cz .s-petitdej .mchip { background: #fbe9d2; }
-.cz .s-petitdej .mlabel, .cz-wln .wk.s-petitdej { color: #b9781f; }
 .cz .s-dej .mchip { background: #e8efdf; }
-.cz .s-dej .mlabel, .cz-wln .wk.s-dej { color: #5f7a3f; }
 .cz .s-gouter .mchip { background: #fbe4e0; }
-.cz .s-gouter .mlabel, .cz-wln .wk.s-gouter { color: #b56a5a; }
 .cz .s-diner .mchip { background: #dfeeeb; }
-.cz .s-diner .mlabel, .cz-wln .wk.s-diner { color: #3f7d72; }
 
-/* Vue JOUR : une carte par moment. */
-.cz-meals { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 9px; }
-/* .cz-mrow.cz-mo : bat la base .cz-mrow définie plus bas (même leçon que .b1). */
-.cz-mrow.cz-mo { display: flex; align-items: center; gap: 11px; background: var(--surface); border: 1px solid var(--line); border-radius: 15px; padding: 11px 13px; }
-.cz-meals .cz-mrow + .cz-mrow { border-top: none; }
-.cz-mrow.cz-mo .mchip { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: none; }
-.cz-mrow.cz-mo .mchip .plus { color: var(--accent); font-size: 22px; line-height: 1; }
-.cz-mrow.cz-mo .mlabel { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
-.cz-mrow.cz-mo .mn { font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
-.cz-mrow.cz-mo .sub { font-size: 11.5px; }
+/* ---- Vue JOUR (refonte T1, maquette-cuisine-finetune.html) ---- */
+/* Carte-repas HÉROS (le prochain à servir) + « le reste de la journée » en tuiles ;
+   journée vide → invitation. Reproduction pixel de la maquette. */
+.cz-daybody { padding: 12px 16px 6px; }
 
-/* Vue SEMAINE (SPEC 4) : lignes compactes dans la carte du jour. */
-.cz-wdh { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px; }
-.cz-wdh .wtag { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--accent); }
-.cz-mrow.cz-wln { display: flex; align-items: center; gap: 8px; padding: 3px 0; border-radius: 6px; }
-.cz-daycard .cz-mrow + .cz-mrow { border-top: none; }
-.cz-mrow.cz-wln .wk { font-size: 7.5px; font-weight: 800; text-transform: uppercase; width: 34px; flex: none; }
-.cz-mrow.cz-wln .wv { font-size: 11.5px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 5px; min-width: 0; }
-.cz-mrow.cz-wln.empty .wv { color: var(--accent); font-weight: 700; }
-.cz-mrow.cz-wln .vio { color: var(--draft); display: inline-flex; }
+.cz-hero { display: block; width: 100%; padding: 0; text-align: left; background: var(--surface); border: none; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 22px rgba(30, 25, 20, 0.09); cursor: pointer; font-family: var(--font-body); color: var(--ink); }
+.cz-hero .ph { position: relative; height: 104px; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(120% 140% at 80% 15%, rgba(255, 255, 255, 0.35), transparent 55%), linear-gradient(150deg, #e7c9a0, #cf9f6e 55%, #a9784e); }
+.cz-hero .ph .cz-heroimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cz-hero .ph .emj { position: relative; display: flex; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.18)); }
+.cz-hero .ph .tg { position: absolute; top: 11px; left: 12px; z-index: 1; background: rgba(255, 255, 255, 0.92); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 10px; border-radius: 999px; }
+.cz-hero.s-petitdej .ph .tg { color: #b9781f; }
+.cz-hero.s-dej .ph .tg { color: #5f7a3f; }
+.cz-hero.s-gouter .ph .tg { color: #b56a63; }
+.cz-hero.s-diner .ph .tg { color: #3f7d72; }
+.cz-hero .bd { display: block; padding: 13px 15px 15px; }
+/* Serif EXPLICITE (jamais via --font-display = Jakarta dans .cz) — nom de plat. */
+.cz-hero .bd .nm { display: flex; align-items: center; gap: 6px; font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; font-size: 18px; font-weight: 500; color: var(--ink); line-height: 1.3; }
+.cz-hero .bd .nm .vio { color: var(--draft); display: inline-flex; }
+.cz-hero .bd .mt { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; }
+.cz-hero .bd .mt .ings { font-size: 11.5px; color: var(--muted); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cz-hero .bd .mt .see { flex: none; font-size: 12px; color: var(--accent-ink); font-weight: 700; }
+
+.cz-softlab { font-size: 10px; font-weight: 700; color: #b0a898; margin: 16px 2px 9px; }
+
+.cz-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.cz-stile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 74px; padding: 12px 6px 10px; text-align: center; border: none; border-radius: 13px; background: var(--surface-2); cursor: pointer; font-family: var(--font-body); }
+.cz-stile.s-petitdej { background: #fdf3e6; }
+.cz-stile.s-dej { background: #eef3e9; }
+.cz-stile.s-gouter { background: #fbeeed; }
+.cz-stile.s-diner { background: #e9f2ef; }
+.cz-stile .se { display: flex; opacity: 0.55; }
+.cz-stile.filled .se { opacity: 1; }
+.cz-stile .sn { margin-top: 5px; font-size: 10px; font-weight: 700; color: #a89e8f; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.cz-stile.filled .sn { color: var(--ink); }
+.cz-stile .sp { position: absolute; top: 6px; right: 7px; color: var(--accent); font-size: 13px; font-weight: 800; opacity: 0.7; line-height: 1; }
+.cz-stile .sp.vio { color: var(--draft); opacity: 1; }
+
+/* État vide = invitation (pas un formulaire). */
+.cz-invite { text-align: center; padding: 22px 18px 6px; }
+.cz-invite .disc { display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; margin: 0 auto 15px; border-radius: 50%; background: linear-gradient(160deg, #fbe9d2, #f7e2e0); }
+.cz-invite h3 { font-size: 17px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+.cz-invite p { margin: 6px 18px 0; font-size: 12px; color: var(--muted); font-weight: 500; line-height: 1.5; }
+.cz-copybtn { display: inline-flex; align-items: center; gap: 8px; margin: 16px auto 2px; padding: 11px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; font-size: 13.5px; font-weight: 800; color: var(--accent-ink); box-shadow: 0 4px 12px rgba(30, 25, 20, 0.06); cursor: pointer; font-family: var(--font-body); }
+.cz-invite .orr { margin: 15px 0 12px; font-size: 10.5px; color: #bcb4a6; font-weight: 700; }
+.cz-btiles { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding: 0 16px 12px; }
+.cz-btile { position: relative; display: flex; align-items: center; gap: 10px; padding: 15px 12px; text-align: left; border: none; border-radius: 14px; cursor: pointer; font-family: var(--font-body); }
+.cz-btile .be { display: flex; }
+.cz-btile .bn { font-size: 12.5px; font-weight: 800; }
+.cz-btile .bp { position: absolute; top: 9px; right: 11px; font-size: 14px; font-weight: 800; opacity: 0.55; line-height: 1; }
+.cz-btile.s-petitdej { background: #fbe9d2; color: #b9781f; }
+.cz-btile.s-dej { background: #e8efdf; color: #5f7a3f; }
+.cz-btile.s-gouter { background: #f7e2e0; color: #b56a63; }
+.cz-btile.s-diner { background: #dfeeeb; color: #3f7d72; }
+
+/* ---- Vue SEMAINE (refonte T2, maquette-cuisine-finetune.html) ---- */
+/* UNE carte par jour : repère de date · résumé des plats · compteur. La carte
+   entière mène à la journée (on y compose). Reproduction pixel de `.dcard`. */
+.cz-dcard { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 13px; background: var(--surface); border: none; border-radius: 14px; box-shadow: 0 3px 10px rgba(30, 25, 20, 0.05); cursor: pointer; font-family: var(--font-body); color: var(--ink); }
+.cz-dcard .dl { width: 42px; flex: none; text-align: center; }
+.cz-dcard .dl .dw2 { display: block; font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: #a89e8f; }
+.cz-dcard .dl .dn2 { display: block; margin-top: 1px; font-size: 19px; font-weight: 800; color: var(--ink); line-height: 1; }
+.cz-dcard .di { flex: 1; min-width: 0; }
+.cz-dcard .di .ds { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 13px; font-weight: 700; color: var(--ink); }
+.cz-dcard .di .ds .txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cz-dcard .di .ds .sep { color: #d8cdba; }
+.cz-dcard .di .ds .vio { flex: none; color: var(--draft); display: inline-flex; }
+.cz-dcard .di .dsub { display: block; margin-top: 2px; font-size: 11px; color: var(--muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cz-dcard .dc { flex: none; padding: 4px 8px; font-size: 10px; font-weight: 800; color: #b0a898; background: #f4f1ec; border-radius: 8px; }
+.cz-dcard.today { background: #fdf4ef; box-shadow: 0 5px 14px rgba(217, 98, 47, 0.12); outline: 1.5px solid #f2cdb6; }
+.cz-dcard.today .dl .dn2 { color: var(--accent-ink); }
+.cz-dcard.today .dc { background: #f7ddca; color: var(--accent-ink); }
+.cz-dcard.void .di .ds { color: #bcb4a6; font-weight: 600; font-style: italic; }
 
 /* ---- T4 · Le geste radial (SPEC 5, proto) ---- */
 .cz-radial { position: fixed; inset: 0; z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.18s; }
@@ -825,22 +866,13 @@
 .cz-starbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cz-subgen { margin: 14px 16px 0; width: calc(100% - 32px); border: none; cursor: pointer; background: transparent; color: var(--muted); font-family: var(--font-body); font-weight: 600; font-size: 14px; border-radius: 11px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .cz-subgen:hover { color: var(--accent-ink); }
-.cz-wk small { display: block; font-family: var(--font-body); font-size: 11.5px; color: var(--muted); font-weight: 500; text-align: center; margin-top: 1px; }
+.cz-wk small { display: block; font-family: var(--font-body); font-size: 11.5px; color: var(--muted); font-weight: 600; text-align: center; margin-top: 1px; }
 .cz-sempty { position: relative; z-index: 1; font-size: 13px; color: rgba(244, 241, 233, 0.7); margin-top: 6px; }
 
-/* meal rows (daycard) */
-.cz-mrow { display: flex; align-items: center; gap: 11px; padding: 10px 2px; border-radius: 10px; cursor: pointer; width: 100%; background: none; border: none; text-align: left; font-family: var(--font-body); color: var(--ink); }
-.cz-mrow + .cz-mrow { border-top: 1px solid var(--line); }
-.cz-mrow:hover { background: var(--surface-2); }
-.cz-mrow .ml { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); width: 64px; flex: none; }
-.cz-mrow .mid { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.cz-mrow .mn { font-size: 15px; font-weight: 500; line-height: 1.25; display: flex; align-items: center; gap: 6px; }
-.cz-mrow .mn .vio { color: var(--draft); display: inline-flex; }
-.cz-mrow .sub { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
-.cz-mrow.empty .mn { color: var(--accent); font-weight: 700; }
-.cz-mrow.empty .mn svg { color: var(--accent); }
-.cz-mrow .mk2 { font-family: var(--font-mono); font-size: 12px; color: var(--muted); flex: none; }
-.cz-mrow .chev { flex: none; color: #c7bdad; display: grid; place-items: center; }
+/* (`.cz-mrow` — les rangées par repas — est mort avec la refonte : T1 a retiré
+   les cartes de moment, T2 les lignes de la carte-jour. Bloc supprimé avec son
+   dernier consommateur. Le créneau source du radial garde ses propres règles,
+   `.cz-srcrow`.) */
 
 /* meal composer */
 .cz-complist { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 4px 14px; box-shadow: var(--shadow); }

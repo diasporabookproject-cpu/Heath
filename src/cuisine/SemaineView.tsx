@@ -2,17 +2,23 @@ import { useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { SEED_CONFIG } from '../data';
 import { dayHasAny, mealHasAny, mealHasDraft } from '../lib/menu';
-import type { MealKey } from '../types';
+import type { DayMenu, MealKey } from '../types';
 import { weekDatesOffset, weekSub, dayLabel } from './dates';
 import { IconChevL, IconChevR, IconStar, IconCopy, IconShareUp } from './icons';
 import { recipeEmoji } from '../lib/emoji';
 import Em from '../ui/Em';
+import PlatPhoto from './PlatPhoto';
+import { pickHeroKey, nowHHMM } from './hero';
 
 // T3 (lot UI) : 4 moments, libellés alignés Menu ↔ page reçue (SPEC 3 —
 // les clés du modèle, du digest et de la projection ne bougent pas).
 const MEAL_LABEL: Record<MealKey, string> = { petitdej: 'Petit déjeuner', dej: 'Déjeuner', gouter: 'Goûter', diner: 'Dîner' };
-/** Libellés courts de la vue semaine (proto : P.déj / Déj / Goût / Dîner). */
-const MEAL_SHORT: Record<MealKey, string> = { petitdej: 'P.déj', dej: 'Déj', gouter: 'Goût', diner: 'Dîner' };
+/** Libellés de TUILE (refonte T1 : « Petit déj » court sur les vignettes/états vides). */
+const MEAL_TILE: Record<MealKey, string> = { petitdej: 'Petit déj', dej: 'Déjeuner', gouter: 'Goûter', diner: 'Dîner' };
+/** Emoji de MOMENT (décoration des tuiles + état vide, refonte T1). Distinct du
+ *  dictionnaire déterministe des PLATS (`recipeEmoji`) : ici c'est le CRÉNEAU.
+ *  Aligné maquette (déj = 🍽️, goûter = 🍎). Tous embarqués dans le jeu Fluent. */
+const MOMENT_EMOJI: Record<MealKey, string> = { petitdej: '🥐', dej: '🍽️', gouter: '🍎', diner: '🌙' };
 const MEAL_KEYS: MealKey[] = ['petitdej', 'dej', 'gouter', 'diner'];
 
 // F1.2 (lot Cuisine, accord PO) : « Générer la semaine » est RETIRÉ — « proposer
@@ -71,6 +77,9 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
 
   // Le point « aujourd'hui » ne se montre que sur la semaine courante.
   const todayIdx = (new Date().getDay() + 6) % 7;
+  // Repère « maintenant » figé au rendu (choix du repas héros). Pas de timer : un
+  // passage d'heure pendant qu'on fixe l'écran sans rien toucher est un bord assumé.
+  const heroNow = nowHHMM();
 
   // F7.2 amendement ① → retour PO n°4 : la source se CHOISIT. Candidats =
   // les jours NON VIDES de la semaine affichée, sauf le jour cible ; cible non
@@ -105,99 +114,209 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
     return noms.length ? noms.join(' · ') : 'Repas sans plat';
   };
 
-  // Vue JOUR (proto) : une CARTE PAR MOMENT — chip tinté + label coloré +
-  // plat (emoji déterministe) ou « Ajouter un repas ». `day[k]` peut être
-  // absent (jour pré-T3) → traité comme vide.
-  const momentCards = (i: number) => {
-    const jour = SEED_CONFIG.jours[i];
-    const day = week.days[jour.key];
-    return MEAL_KEYS.map((k) => {
-      const meal = day[k];
-      const plat = meal?.plat ? byId.get(meal.plat) : undefined;
-      const filled = mealHasAny(meal);
-      const sub: string[] = [];
-      if (meal && (k === 'dej' || k === 'diner')) {
-        if (meal.entree) {
-          const e = byId.get(meal.entree);
-          if (e) sub.push('Entrée : ' + e.nom);
-        }
-        if (meal.acc) {
-          const a = byId.get(meal.acc.id);
-          if (a) sub.push(`${a.nom} ${meal.acc.g} g`);
-        }
-      }
-      return (
-        <button key={k} className={'cz-mrow cz-mo s-' + k + (filled ? '' : ' empty')} onClick={() => onOpenMeal(jour.key, k)}>
-          <span className="mchip">{plat ? <Em ch={recipeEmoji(plat)} size={28} /> : <span className="plus">＋</span>}</span>
-          <span className="mid">
-            <span className="mlabel">{MEAL_LABEL[k]}</span>
-            <span className="mn">
-              {plat ? plat.nom : filled ? 'Sans plat' : 'Ajouter un repas'}
-              {plat && mealHasDraft(meal, k, byId) && (
-                <span className="vio" title="à valider">
-                  <IconStar size={13} />
-                </span>
-              )}
-            </span>
-            {sub.length > 0 && <span className="sub">{sub.join(' · ')}</span>}
-          </span>
-          <span className="chev">
-            <IconChevR size={16} />
-          </span>
-        </button>
-      );
-    });
+  // Vue JOUR (refonte T1, maquette) : carte-repas HÉROS (le prochain à servir —
+  // dégradé + emoji Fluent par défaut, photo du plat si elle existe) + « le reste
+  // de la journée » en tuiles ; journée vide → invitation (pas un formulaire). Le
+  // geste de compo est INCHANGÉ : chaque zone reste `onOpenMeal` (vide → radial,
+  // plein → composeur, routés au-dessus par CuisineView). `day[k]` peut manquer
+  // (gouter d'un jour pré-T3) → `mealHasAny(undefined)` = vide.
+
+  /** Résumé d'ingrédients de la carte héros (entrée + accompagnement, si présents). */
+  const mealIngs = (meal: DayMenu[MealKey]): string => {
+    const parts: string[] = [];
+    if (meal?.entree) {
+      const e = byId.get(meal.entree);
+      if (e) parts.push(e.nom);
+    }
+    if (meal?.acc) {
+      const a = byId.get(meal.acc.id);
+      if (a) parts.push(a.nom);
+    }
+    return parts.join(' · ');
   };
 
-  // Vue SEMAINE (SPEC 4, proto) : carte compacte par jour, une ligne par moment.
-  const dayCard = (i: number) => {
+  const heroCard = (jourKey: string, day: DayMenu, k: MealKey) => {
+    const meal = day[k];
+    const plat = meal?.plat ? byId.get(meal.plat) : undefined;
+    const ings = mealIngs(meal);
+    return (
+      <button className={'cz-hero s-' + k} onClick={() => onOpenMeal(jourKey, k)}>
+        <span className="ph">
+          <span className="tg">{MEAL_LABEL[k]}</span>
+          {plat ? (
+            <PlatPhoto recipeId={plat.id} emoji={recipeEmoji(plat)} />
+          ) : (
+            <span className="emj"><Em ch={MOMENT_EMOJI[k]} size={44} /></span>
+          )}
+        </span>
+        <span className="bd">
+          <span className="nm">
+            {plat ? plat.nom : 'Sans plat'}
+            {plat && mealHasDraft(meal, k, byId) && (
+              <span className="vio" title="à valider"><IconStar size={14} /></span>
+            )}
+          </span>
+          <span className="mt">
+            <span className="ings">{ings}</span>
+            <span className="see">Voir →</span>
+          </span>
+        </span>
+      </button>
+    );
+  };
+
+  const restTiles = (jourKey: string, day: DayMenu, heroKey: MealKey) => (
+    <div className="cz-grid3">
+      {MEAL_KEYS.filter((k) => k !== heroKey).map((k) => {
+        const meal = day[k];
+        const plat = meal?.plat ? byId.get(meal.plat) : undefined;
+        const filled = mealHasAny(meal);
+        return (
+          <button key={k} className={'cz-stile s-' + k + (filled ? ' filled' : '')} onClick={() => onOpenMeal(jourKey, k)}>
+            {filled ? (
+              plat && mealHasDraft(meal, k, byId) && <span className="sp vio"><IconStar size={12} /></span>
+            ) : (
+              <span className="sp">＋</span>
+            )}
+            <span className="se"><Em ch={filled && plat ? recipeEmoji(plat) : MOMENT_EMOJI[k]} size={22} /></span>
+            <span className="sn">{filled ? (plat ? plat.nom : 'Sans plat') : MEAL_TILE[k]}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const inviteEmpty = (jourKey: string) => (
+    <>
+      <div className="cz-invite">
+        <span className="disc"><Em ch="🍽️" size={32} /></span>
+        <h3>Rien de prévu ce jour</h3>
+        <p>Composez le menu, ou repartez d’une journée déjà faite.</p>
+        <button className="cz-copybtn" onClick={openCopyPick}>
+          <IconCopy size={15} /> Copier une journée
+        </button>
+        <div className="orr">— ou commencer un moment —</div>
+      </div>
+      <div className="cz-btiles">
+        {MEAL_KEYS.map((k) => (
+          <button key={k} className={'cz-btile s-' + k} onClick={() => onOpenMeal(jourKey, k)}>
+            <span className="be"><Em ch={MOMENT_EMOJI[k]} size={22} /></span>
+            <span className="bn">{MEAL_TILE[k]}</span>
+            <span className="bp">＋</span>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+
+  /** Corps de la vue jour : héros + tuiles, ou invitation si la journée est vide. */
+  const dayBody = (i: number) => {
     const jour = SEED_CONFIG.jours[i];
     const day = week.days[jour.key];
     const isToday = weekOffset === 0 && i === todayIdx;
+    const heroKey = pickHeroKey(day, isToday, heroNow);
+    if (heroKey === null) return inviteEmpty(jour.key);
     return (
-      <div className="cz-daycard" key={jour.key}>
-        <div className="cz-wdh">
-          <span className="cz-dayname">
-            {jour.nom}
-            {isToday && <span className="wtag"> · auj.</span>}
-          </span>
-          <span className="cz-daydate">{dayLabel(dates[i])}</span>
-        </div>
-
-        {MEAL_KEYS.map((k) => {
-          const meal = day[k];
-          const plat = meal?.plat ? byId.get(meal.plat) : undefined;
-          const filled = mealHasAny(meal);
-          return (
-            <button
-              key={k}
-              className={'cz-mrow cz-wln' + (filled ? '' : ' empty')}
-              onClick={() => onOpenMeal(jour.key, k)}
-            >
-              <span className={'wk s-' + k}>{MEAL_SHORT[k]}</span>
-              <span className="wv">
-                {plat ? plat.nom : filled ? 'Sans plat' : '＋ Ajouter'}
-                {plat && mealHasDraft(meal, k, byId) && (
-                  <span className="vio" title="à valider">
-                    <IconStar size={12} />
-                  </span>
-                )}
-              </span>
-            </button>
-          );
-        })}
+      <div className="cz-daybody">
+        {heroCard(jour.key, day, heroKey)}
+        <div className="cz-softlab">Le reste de la journée</div>
+        {restTiles(jour.key, day, heroKey)}
       </div>
     );
   };
 
-  // Datectx : contexte relatif + date pleine (proto : « **jeudi 16 juillet** »).
-  const rel =
-    weekOffset === 0 && dayIdx === todayIdx
-      ? 'aujourd’hui · '
-      : (weekOffset === 0 && dayIdx === (todayIdx + 1) % 7 && todayIdx !== 6) ||
-          (weekOffset === 1 && todayIdx === 6 && dayIdx === 0)
-        ? 'demain · '
+  // Repère relatif d'un jour de la semaine AFFICHÉE : « aujourd'hui », « demain »
+  // ou rien. Le séparateur est posé par l'appelant (l'ordre diffère : la carte-jour
+  // le met devant les moments, le contexte de date le met derrière la date).
+  const relFor = (i: number) =>
+    weekOffset === 0 && i === todayIdx
+      ? 'aujourd’hui'
+      : (weekOffset === 0 && i === (todayIdx + 1) % 7 && todayIdx !== 6) ||
+          (weekOffset === 1 && todayIdx === 6 && i === 0)
+        ? 'demain'
         : '';
+
+  // Vue SEMAINE (refonte T2, maquette) : UNE carte par jour — repère de date,
+  // résumé des plats, compteur de repas ; jour vide = « à composer ». La semaine
+  // redevient une VUE D'ENSEMBLE : la carte MÈNE À LA JOURNÉE (`onSelectDay`),
+  // où l'on compose (héros/tuiles → `onOpenMeal` → radial/composeur). Le geste
+  // de composition n'est pas contourné — il vit dans la vue jour.
+  const dayCard = (i: number) => {
+    const jour = SEED_CONFIG.jours[i];
+    const day = week.days[jour.key];
+    const isToday = weekOffset === 0 && i === todayIdx;
+    const filledKeys = MEAL_KEYS.filter((k) => mealHasAny(day[k]));
+    const noms = filledKeys
+      .map((k) => {
+        const p = day[k]?.plat;
+        return p ? byId.get(p)?.nom : undefined;
+      })
+      .filter(Boolean) as string[];
+    const draft = filledKeys.some((k) => mealHasDraft(day[k], k, byId));
+    const rl = relFor(i);
+    // « Déjeuner, dîner » — le premier porte la majuscule ; précédé du repère
+    // relatif quand il y en a un : « demain · déjeuner » (maquette).
+    const momentList = filledKeys.map((k, n) => (n === 0 ? MEAL_LABEL[k] : MEAL_LABEL[k].toLowerCase())).join(', ');
+    const moments = rl ? `${rl} · ${momentList.toLowerCase()}` : momentList;
+    // Un `aria-label` REMPLACE le nom calculé depuis le contenu : il doit donc
+    // porter TOUT ce que la carte dit (résumé, compteur, à valider), sinon la
+    // semaine devient muette pour les lecteurs d'écran — avant la refonte,
+    // chaque repas était un bouton nommé par son plat.
+    const aria = [
+      `${jour.nom} ${dayLabel(dates[i])}`,
+      isToday ? 'aujourd’hui' : '',
+      filledKeys.length === 0
+        ? 'rien de prévu, à composer'
+        : `${filledKeys.length} repas : ${noms.length ? noms.join(', ') : 'repas sans plat'}`,
+      draft ? 'une recette à valider' : '',
+    ]
+      .filter(Boolean)
+      .join(' — ');
+    return (
+      <button
+        key={jour.key}
+        className={'cz-dcard' + (isToday ? ' today' : '') + (filledKeys.length === 0 ? ' void' : '')}
+        onClick={() => onSelectDay(i)}
+        aria-label={aria}
+      >
+        <span className="dl">
+          <span className="dw2">{jour.nom.slice(0, 3)}</span>
+          <span className="dn2">{dates[i].getDate()}</span>
+        </span>
+        <span className="di">
+          <span className="ds">
+            <span className="txt">
+              {filledKeys.length === 0
+                ? 'Rien de prévu — à composer'
+                : noms.length === 0
+                  ? 'Repas sans plat'
+                  : noms.map((n, idx) => (
+                      <span key={idx}>
+                        {idx > 0 && <span className="sep"> · </span>}
+                        {n}
+                      </span>
+                    ))}
+            </span>
+            {draft && (
+              <span className="vio" title="à valider">
+                <IconStar size={12} />
+              </span>
+            )}
+          </span>
+          {filledKeys.length > 0 && <span className="dsub">{moments}</span>}
+        </span>
+        <span className="dc">{filledKeys.length}</span>
+      </button>
+    );
+  };
+
+  // Datectx : contexte relatif + date pleine (proto : « **jeudi 16 juillet** »).
+  const rel = relFor(dayIdx);
+
+  // Refonte T1 : jour vide → l'invitation porte SON « Copier une journée » ; on
+  // masque donc le « Copier … précédente » du bas (doublon). « Partager » reste,
+  // lui (chemin d'accès). `dayFilled` = la journée AFFICHÉE a-t-elle un repas.
+  const dayFilled = dayHasAny(week.days[SEED_CONFIG.jours[dayIdx].key]);
 
   const selector = (
     <div className="cz-selector">
@@ -210,13 +329,17 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
         </svg>
         <span className="wl">{view === 'semaine' ? 'Semaine' : 'Semaine ›'}</span>
       </button>
-      <div className="cz-sep" />
+      {/* T3 : plus de séparateur — la maquette aligne la pastille et les puces
+          dans une seule bande (`.days`), séparées par le seul écart. */}
       <div className="cz-daystrip">
         {/* Proto : la bande commence À AUJOURD'HUI (on planifie vers l'avant) —
-            les jours passés de la semaine courante n'y figurent pas. */}
+            les jours passés de la semaine courante n'y figurent pas. T3 : SAUF
+            le jour affiché — depuis T2 on ouvre un jour PASSÉ par sa carte-jour
+            (la semaine liste les 7), et la bande restait alors sans repère. On
+            n'OFFRE toujours pas le passé, on montre juste où l'on est. */}
         {SEED_CONFIG.jours
           .map((j, i) => ({ j, i }))
-          .filter(({ i }) => weekOffset !== 0 || i >= todayIdx)
+          .filter(({ i }) => weekOffset !== 0 || i >= todayIdx || (view === 'jour' && i === dayIdx))
           .map(({ j, i }) => (
             <button
               key={j.key}
@@ -292,19 +415,24 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
         </>
       ) : (
         <>
-          {/* DA v2 (T2, proto) : contexte de date sous le sélecteur ; état vide =
-              composer (les rangées « Ajouter » de la carte) + Copier — sans « Générer ». */}
+          {/* DA v2 (refonte T1) : contexte de date sous le sélecteur, puis le corps
+              de journée = carte héros + tuiles (jour plein) ou invitation (jour
+              vide, qui porte son propre « Copier »). Sans « Générer ». */}
+          {/* T3, au pixel de `.ctx .cl` : la date PLEINE d'abord (en encre), le
+              repère relatif derrière, en sourdine — « Mercredi 22 juillet · demain ». */}
           <div className="cz-datectx">
-            {rel}
             <b>
-              {SEED_CONFIG.jours[dayIdx].nom.toLowerCase()} {dayLabel(dates[dayIdx])}
+              {SEED_CONFIG.jours[dayIdx].nom} {dayLabel(dates[dayIdx])}
             </b>
+            {rel && <i> · {rel}</i>}
           </div>
-          <div className="cz-meals">{momentCards(dayIdx)}</div>
-          <button className="cz-ghost" onClick={openCopyPick}>
-            <IconCopy size={15} />
-            Copier une journée précédente
-          </button>
+          {dayBody(dayIdx)}
+          {dayFilled && (
+            <button className="cz-ghost" onClick={openCopyPick}>
+              <IconCopy size={15} />
+              Copier une journée précédente
+            </button>
+          )}
           {copyPick && (
             <>
               <div className="cz-overlay show" onClick={() => setCopyPick(false)} />
@@ -332,6 +460,10 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
               </div>
             </>
           )}
+          {/* Partager RESTE visible même sur un jour vide : c'est le chemin d'ACCÈS
+              (Accès permanent / QR), utilisé avant même de composer — et le flux
+              partage déconnecté en dépend (smoke Comptes). La maquette l'omet sur
+              l'état vide (simplification de mock) → écart assumé, signalé au STOP. */}
           <button className="cz-shareprimary" onClick={onShare} aria-label="Partager le menu">
             <IconShareUp size={17} /> Partager la journée
           </button>

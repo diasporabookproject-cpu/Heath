@@ -19,7 +19,7 @@ import ReglagesSheet from './ReglagesSheet';
 import CopyWeekSheet from './CopyWeekSheet';
 import { slotForRole, type Creneau } from '../lib/creneaux';
 import type { Recipe } from '../types';
-import { IconPlus, IconCheck } from './icons';
+import { IconPlus, IconCheck, IconTune } from './icons';
 import Em from '../ui/Em';
 import './cuisine.css';
 
@@ -164,9 +164,16 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
             Cuisine
           </div>
           <div className="cz-headicons" style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+            {/* T3 (refonte) : la pastille MONTRE le régime réel (jamais de valeur
+                en dur — foyer neuf = « Aucune restriction ») et porte désormais
+                l'icône de réglages de la maquette : on comprend qu'on peut y
+                toucher pour gérer le régime du foyer. */}
             <button className="cz-rulepill" onClick={() => setReglagesOpen(true)} aria-label="Réglages Cuisine">
               <Em ch="🌿" size={12} />
               <span className="txt">{ruleText}</span>
+              <span className="tune" aria-hidden>
+                <IconTune size={11} />
+              </span>
             </button>
             {showAccount && (
               <button

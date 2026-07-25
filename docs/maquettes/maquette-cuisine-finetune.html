@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuisine P1 — jour + semaine</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --paper:#faf8f5; --card:#ffffff; --soft:#faf7f2; --ink:#2a2420; --ink2:#1c1815; --muted:#9b948b; --line:#f0ebe3; --accent:#d9622f; --accent-ink:#c25528;
+    --matin:#fbe9d2; --matin-ink:#b9781f; --midi:#e8efdf; --midi-ink:#5f7a3f; --gouter:#f7e2e0; --gouter-ink:#b56a63; --soir:#dfeeeb; --soir-ink:#3f7d72;
+    --ui:'Plus Jakarta Sans',system-ui,sans-serif; --serif:'Fraunces',Georgia,serif;
+  }
+  body { font-family:var(--ui); background:#cfcabf; color:var(--ink); padding:32px 26px; display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; justify-content:center; }
+  .col { display:flex; flex-direction:column; align-items:center; }
+  .cap { font-size:12.5px; color:#332e28; text-align:center; margin-bottom:9px; font-weight:800; } .cap b{color:var(--accent-ink)} .cap span{color:#7c756a;font-weight:600;display:block;font-size:10px;margin-top:2px}
+
+  .phone { width:304px; height:658px; background:var(--paper); border:1px solid rgba(0,0,0,.1); border-radius:32px; overflow:hidden; box-shadow:0 16px 40px rgba(20,22,30,.18); display:flex; flex-direction:column; flex:none; }
+  .scr { flex:1; overflow-y:auto; } .scr::-webkit-scrollbar{display:none}
+  svg { display:block; }
+
+  /* header : une seule flèche */
+  .hd { display:flex; align-items:center; gap:10px; padding:16px 16px 10px; }
+  .hd .bk { width:32px; height:32px; border-radius:10px; background:#f2eee7; display:flex; align-items:center; justify-content:center; color:#8a8175; font-size:16px; flex:none; }
+  .hd .ti { font-size:20px; font-weight:800; letter-spacing:-.02em; color:var(--ink2); flex:1; }
+  .av { width:32px; height:32px; border-radius:50%; background:#e7ddd2; flex:none; display:flex;align-items:center;justify-content:center;color:#a08b78;font-size:12px;font-weight:700; }
+
+  /* barre de jours : chips, pas de flèches */
+  .days { display:flex; gap:7px; overflow-x:auto; padding:6px 16px 6px; } .days::-webkit-scrollbar{display:none}
+  .wchip { flex:none; display:flex; align-items:center; gap:4px; background:#fdeee4; border:1px solid #f4d4bf; border-radius:12px; padding:0 9px; color:var(--accent-ink); }
+  .wchip .wi { font-size:13px; } .wchip .wt { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:0; }
+  .dchip { flex:none; display:flex; flex-direction:column; align-items:center; gap:1px; background:#fff; border:1px solid var(--line); border-radius:13px; padding:7px 12px; min-width:46px; }
+  .dchip .dw { font-size:9px; font-weight:800; text-transform:uppercase; color:#a89e8f; letter-spacing:.03em; } .dchip .dn { font-size:16px; font-weight:800; color:var(--ink2); }
+  .dchip.sel { background:var(--accent); border-color:var(--accent); } .dchip.sel .dw,.dchip.sel .dn{color:#fff}
+  .dchip .dot { width:4px; height:4px; border-radius:50%; background:var(--accent); margin-top:1px; } .dchip.sel .dot{background:rgba(255,255,255,.8)}
+
+  .ctx { display:flex; align-items:center; gap:8px; padding:8px 16px 2px; }
+  .ctx .cl { flex:1; font-size:13px; font-weight:700; color:var(--ink2); } .ctx .cl i{font-style:normal;color:var(--muted);font-weight:600}
+  .diet { display:inline-flex; align-items:center; gap:6px; background:#eef2e8; border:1px solid #d7e4cb; border-radius:999px; padding:3px 5px 3px 10px; font-size:10.5px; font-weight:700; color:#5f7a3f; flex:none; }
+  .diet .tune { display:flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; background:#fff; color:#5f7a3f; flex:none; } .diet .tune svg{width:11px;height:11px}
+
+  /* carte repas : photo + serif */
+  .p1 { padding:12px 16px 6px; }
+  .meal { background:#fff; border-radius:18px; overflow:hidden; box-shadow:0 8px 22px rgba(30,25,20,.09); }
+  .meal .ph { height:104px; background:
+      radial-gradient(120% 140% at 80% 15%, rgba(255,255,255,.35), transparent 55%),
+      linear-gradient(150deg,#e7c9a0,#cf9f6e 55%,#a9784e); display:flex; align-items:center; justify-content:center; position:relative; }
+  .meal .ph .emj { font-size:44px; filter:drop-shadow(0 3px 6px rgba(0,0,0,.18)); }
+  .meal .ph .tg { position:absolute; top:11px; left:12px; background:rgba(255,255,255,.92); color:var(--midi-ink); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:4px 10px; border-radius:999px; }
+  .meal .bd { padding:13px 15px 15px; }
+  .meal .bd .nm { font-family:var(--serif); font-size:18px; font-weight:500; color:var(--ink2); line-height:1.3; }
+  .meal .bd .mt { display:flex; align-items:center; justify-content:space-between; margin-top:9px; }
+  .meal .bd .mt .ings { font-size:11.5px; color:var(--muted); font-weight:600; } .meal .bd .mt .see { font-size:12px; color:var(--accent-ink); font-weight:700; }
+
+  .softlab { font-size:10px; font-weight:700; color:#b0a898; margin:16px 2px 9px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .stile { position:relative; background:var(--soft); border-radius:13px; padding:12px 6px 10px; text-align:center; }
+  .stile .se { font-size:20px; opacity:.55; } .stile .sn { font-size:10px; font-weight:700; color:#a89e8f; margin-top:5px; }
+  .stile .sp { position:absolute; top:6px; right:7px; color:var(--accent); font-size:13px; font-weight:800; opacity:.7; }
+  .stile.m { background:#fdf3e6; } .stile.g { background:#fbeeed; } .stile.s { background:#e9f2ef; }
+
+  .sharewrap { display:flex; justify-content:center; margin:16px 0 4px; }
+  .share { display:inline-flex; align-items:center; justify-content:center; gap:9px; background:var(--accent); color:#fff; border:none; border-radius:999px; padding:14px 30px; font-size:15px; font-weight:800; box-shadow:0 8px 20px rgba(217,98,47,.28); } .share svg{width:17px;height:17px}
+  .copyday { text-align:center; font-size:11.5px; color:var(--muted); font-weight:600; padding:7px; }
+
+  /* état vide : invitation */
+  .invite { text-align:center; padding:22px 18px 6px; }
+  .invite .disc { width:72px; height:72px; border-radius:50%; background:linear-gradient(160deg,#fbe9d2,#f7e2e0); display:flex; align-items:center; justify-content:center; font-size:32px; margin:0 auto 15px; }
+  .invite h3 { font-size:17px; font-weight:800; color:var(--ink2); letter-spacing:-.02em; }
+  .invite p { font-size:12px; color:var(--muted); font-weight:500; line-height:1.5; margin:6px 18px 0; }
+  .copybtn { display:inline-flex; align-items:center; gap:8px; margin:16px auto 2px; background:#fff; border:1px solid var(--line); border-radius:999px; padding:11px 20px; font-size:13.5px; font-weight:800; color:var(--accent-ink); box-shadow:0 4px 12px rgba(30,25,20,.06); }
+  .orr { font-size:10.5px; color:#bcb4a6; font-weight:700; margin:15px 0 12px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:9px; padding:0 16px; }
+  .btile { position:relative; border-radius:14px; padding:15px 12px; text-align:left; display:flex; align-items:center; gap:10px; }
+  .btile .be{font-size:22px} .btile .bn{font-size:12.5px;font-weight:800} .btile .bp{position:absolute;top:9px;right:11px;font-size:14px;font-weight:800;opacity:.55}
+  .btile.m{background:var(--matin);color:var(--matin-ink)} .btile.d{background:var(--midi);color:var(--midi-ink)} .btile.g{background:var(--gouter);color:var(--gouter-ink)} .btile.s{background:var(--soir);color:var(--soir-ink)}
+
+  /* vue semaine */
+  .wkhead { padding:6px 16px 4px; } .wkhead .wt2 { font-size:16px; font-weight:800; color:var(--ink2); letter-spacing:-.01em; } .wkhead .ws { font-size:11.5px; color:var(--muted); font-weight:600; margin-top:1px; }
+  .wkbody { padding:10px 16px 8px; }
+  .dcard { display:flex; gap:12px; align-items:center; background:#fff; border-radius:14px; padding:12px 13px; margin-bottom:9px; box-shadow:0 3px 10px rgba(30,25,20,.05); }
+  .dcard .dl { width:42px; text-align:center; flex:none; } .dcard .dl .dw2 { font-size:9.5px; font-weight:800; text-transform:uppercase; color:#a89e8f; } .dcard .dl .dn2 { font-size:19px; font-weight:800; color:var(--ink2); line-height:1; margin-top:1px; }
+  .dcard .di { flex:1; min-width:0; } .dcard .di .ds { font-size:13px; font-weight:700; color:var(--ink2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .dcard .di .dsub { font-size:11px; color:var(--muted); font-weight:600; margin-top:2px; }
+  .dcard .dc { flex:none; font-size:10px; font-weight:800; color:#b0a898; background:#f4f1ec; border-radius:8px; padding:4px 8px; }
+  .dcard.today { background:#fdf4ef; box-shadow:0 5px 14px rgba(217,98,47,.12); outline:1.5px solid #f2cdb6; }
+  .dcard.today .dl .dn2{color:var(--accent-ink)} .dcard.today .dc{background:#f7ddca;color:var(--accent-ink)}
+  .dcard.void .di .ds { color:#bcb4a6; font-weight:600; font-style:italic; }
+  .dcard .sep { color:#d8cdba; }
+
+  .nav { display:flex; border-top:1px solid var(--line); padding:7px 0 9px; background:var(--paper); flex:none; }
+  .nav div { flex:1; text-align:center; font-size:9.5px; font-weight:700; color:#b0a898; } .nav div.on{color:var(--accent-ink)} .nav .ic{font-size:16px;margin-bottom:2px}
+
+  .side { max-width:280px; background:#faf8f5; border-radius:16px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+  .side h2 { font-size:15px; font-weight:800; margin-bottom:10px; }
+  .side .d { margin-bottom:13px; } .side .dt { font-size:12.5px; font-weight:800; color:var(--accent-ink); margin-bottom:3px; } .side .dd2 { font-size:11.5px; line-height:1.5; color:#4a443c; }
+  .side .q { background:#fdecdf; border:1px solid #f0c9ab; border-radius:11px; padding:11px 13px; font-size:11.5px; line-height:1.5; color:#7a4020; margin-top:12px; } .side .q b{color:#5a2c10}
+</style>
+</head>
+<body>
+
+  <!-- JOUR -->
+  <div class="col">
+    <div class="cap"><b>Vue Jour</b><span>carte photo + serif · barre de jours</span></div>
+    <div class="phone">
+      <div class="scr">
+        <div class="hd"><span class="bk">‹</span><span class="ti">Cuisine</span><span class="av">A</span></div>
+        <div class="days">
+          <div class="wchip"><span class="wi">▦</span><span class="wt">Vue semaine</span></div>
+          <div class="dchip"><span class="dw">Mar</span><span class="dn">21</span></div>
+          <div class="dchip sel"><span class="dw">Mer</span><span class="dn">22</span><span class="dot"></span></div>
+          <div class="dchip"><span class="dw">Jeu</span><span class="dn">23</span></div>
+          <div class="dchip"><span class="dw">Ven</span><span class="dn">24</span></div>
+          <div class="dchip"><span class="dw">Sam</span><span class="dn">25</span></div>
+        </div>
+        <div class="ctx"><span class="cl">Mercredi 22 juillet <i>· demain</i></span><span class="diet">🌿 halal · sans gluten<span class="tune"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.4" fill="#fff"/><circle cx="15" cy="17" r="2.4" fill="#fff"/></svg></span></span></div>
+        <div class="p1">
+          <div class="meal">
+            <div class="ph"><span class="tg">Déjeuner</span><span class="emj">🥘</span></div>
+            <div class="bd">
+              <div class="nm">Assiette mezze, houmous maison, poulet chermoula</div>
+              <div class="mt"><span class="ings">Houmous · poulet · mezze</span><span class="see">Voir →</span></div>
+            </div>
+          </div>
+          <div class="softlab">Le reste de la journée</div>
+          <div class="grid3">
+            <div class="stile m"><span class="sp">＋</span><div class="se">🥐</div><div class="sn">Petit déj</div></div>
+            <div class="stile g"><span class="sp">＋</span><div class="se">🍎</div><div class="sn">Goûter</div></div>
+            <div class="stile s"><span class="sp">＋</span><div class="se">🌙</div><div class="sn">Dîner</div></div>
+          </div>
+        </div>
+        <div class="sharewrap"><button class="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg> Partager la journée</button></div>
+        <div class="copyday">⧉ Copier une journée précédente</div>
+      </div>
+      <div class="nav"><div class="on"><div class="ic">🍽️</div>Menu</div><div><div class="ic">📖</div>Recettes</div><div><div class="ic">🛒</div>Courses</div></div>
+    </div>
+  </div>
+
+  <!-- JOUR VIDE -->
+  <div class="col">
+    <div class="cap"><b>Vue Jour — vide</b><span>une invitation, pas un formulaire</span></div>
+    <div class="phone">
+      <div class="scr">
+        <div class="hd"><span class="bk">‹</span><span class="ti">Cuisine</span><span class="av">A</span></div>
+        <div class="days">
+          <div class="wchip"><span class="wi">▦</span><span class="wt">Vue semaine</span></div>
+          <div class="dchip"><span class="dw">Mar</span><span class="dn">21</span></div>
+          <div class="dchip"><span class="dw">Mer</span><span class="dn">22</span></div>
+          <div class="dchip sel"><span class="dw">Jeu</span><span class="dn">23</span><span class="dot"></span></div>
+          <div class="dchip"><span class="dw">Ven</span><span class="dn">24</span></div>
+          <div class="dchip"><span class="dw">Sam</span><span class="dn">25</span></div>
+        </div>
+        <div class="ctx"><span class="cl">Jeudi 23 juillet <i>· après-demain</i></span><span class="diet">🌿 halal · sans gluten<span class="tune"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.4" fill="#fff"/><circle cx="15" cy="17" r="2.4" fill="#fff"/></svg></span></span></div>
+        <div class="invite">
+          <div class="disc">🍽️</div>
+          <h3>Rien de prévu ce jour</h3>
+          <p>Composez le menu, ou repartez d'une journée déjà faite.</p>
+          <div class="copybtn">⧉ Copier une journée</div>
+          <div class="orr">— ou commencer un moment —</div>
+        </div>
+        <div class="grid2">
+          <div class="btile m"><span class="be">🥐</span><span class="bn">Petit déj</span><span class="bp">＋</span></div>
+          <div class="btile d"><span class="be">🍽️</span><span class="bn">Déjeuner</span><span class="bp">＋</span></div>
+          <div class="btile g"><span class="be">🍎</span><span class="bn">Goûter</span><span class="bp">＋</span></div>
+          <div class="btile s"><span class="be">🌙</span><span class="bn">Dîner</span><span class="bp">＋</span></div>
+        </div>
+      </div>
+      <div class="nav"><div class="on"><div class="ic">🍽️</div>Menu</div><div><div class="ic">📖</div>Recettes</div><div><div class="ic">🛒</div>Courses</div></div>
+    </div>
+  </div>
+
+  <!-- SEMAINE -->
+  <div class="col">
+    <div class="cap"><b>Vue Semaine</b><span>ouverte via la pastille ▦</span></div>
+    <div class="phone">
+      <div class="scr">
+        <div class="hd"><span class="bk">‹</span><span class="ti">Cuisine</span><span class="av">A</span></div>
+        <div class="wkhead"><div class="wt2">Vue semaine</div><div class="ws">21 – 27 juillet</div></div>
+        <div class="wkbody">
+          <div class="dcard"><div class="dl"><div class="dw2">Lun</div><div class="dn2">21</div></div><div class="di"><div class="ds">Pâtes bolognaise <span class="sep">·</span> Soupe</div><div class="dsub">Déjeuner, dîner</div></div><div class="dc">2</div></div>
+          <div class="dcard today"><div class="dl"><div class="dw2">Mar</div><div class="dn2">22</div></div><div class="di"><div class="ds">Assiette mezze, houmous…</div><div class="dsub">demain · déjeuner</div></div><div class="dc">1</div></div>
+          <div class="dcard void"><div class="dl"><div class="dw2">Mer</div><div class="dn2">23</div></div><div class="di"><div class="ds">Rien de prévu — à composer</div></div><div class="dc">0</div></div>
+          <div class="dcard"><div class="dl"><div class="dw2">Jeu</div><div class="dn2">24</div></div><div class="di"><div class="ds">Msemmen <span class="sep">·</span> Tajine <span class="sep">·</span> Harira</div><div class="dsub">Petit déj, déjeuner, dîner</div></div><div class="dc">3</div></div>
+          <div class="dcard void"><div class="dl"><div class="dw2">Ven</div><div class="dn2">25</div></div><div class="di"><div class="ds">Rien de prévu — à composer</div></div><div class="dc">0</div></div>
+          <div class="dcard"><div class="dl"><div class="dw2">Sam</div><div class="dn2">26</div></div><div class="di"><div class="ds">Couscous du vendredi</div><div class="dsub">Déjeuner</div></div><div class="dc">1</div></div>
+          <div class="dcard void"><div class="dl"><div class="dw2">Dim</div><div class="dn2">27</div></div><div class="di"><div class="ds">Rien de prévu — à composer</div></div><div class="dc">0</div></div>
+        </div>
+      </div>
+      <div class="nav"><div class="on"><div class="ic">🍽️</div>Menu</div><div><div class="ic">📖</div>Recettes</div><div><div class="ic">🛒</div>Courses</div></div>
+    </div>
+  </div>
+
+  <div class="side">
+    <h2>Finetune</h2>
+    <div class="d"><div class="dt">Direction conservée</div><div class="dd2">On garde tout ce qui marchait : la <b>carte photo + titre serif</b>, la <b>barre de jours</b> sans flèches, les <b>tuiles à icône</b> pour les moments vides.</div></div>
+    <div class="d"><div class="dt">« Vue semaine »</div><div class="dd2">Pastille (un peu <b>rétrécie</b>) et titre disent <b>« Vue semaine »</b> — on comprend qu'on bascule sur un niveau semaine où l'on édite chaque jour.</div></div>
+    <div class="d"><div class="dt">Préférences alimentaires</div><div class="dd2">La pastille <b>halal · sans gluten</b> gagne une <b>icône de réglages</b> : elle devient un bouton, on comprend qu'on peut gérer le régime du foyer en la touchant.</div></div>
+    <div class="d"><div class="dt">État vide préparé</div><div class="dd2">La journée sans repas n'est plus un formulaire vide : une <b>invitation chaleureuse</b> + le chemin rapide « Copier une journée », puis les <b>quatre moments à icône</b> comme points de départ. La vue semaine, elle, montre déjà les jours vides en « à composer ».</div></div>
+    <div class="q"><b>Ça tient ?</b> Si oui, l'écran Cuisine est complet (plein · vide · semaine). Sinon dis-moi le prochain réglage. Fond photo simulé ici.</div>
+  </div>
+
+</body>
+</html>

@@ -107,11 +107,20 @@ await page.getByRole('tab', { name: 'Menu' }).click();
 if (!(await page.locator('.cz-weekbtn.on').count())) await page.locator('.cz-weekbtn').click(); // toggle → idempotent
 await page.getByText('Copier une semaine précédente').waitFor({ timeout: 5000 });
 
+// Refonte T2 : la vue SEMAINE est une VUE D'ENSEMBLE (une carte par jour :
+// résumé + compteur) — on ouvre la journée pour composer. Repère fiable = la
+// pastille de jour (`.dw2` : Lun/Mar/…), jamais le texte du résumé.
+const dcard = (abbr) => page.locator('.cz-dcard').filter({ has: page.locator('.dw2', { hasText: abbr }) });
+
 // 1) T4 (SPEC 5) — créneau VIDE → RADIAL (3 pétales) → « Ma bibliothèque »
 // → sélecteur → pick. Puis créneau PLEIN → COMPOSEUR direct : le radial
 // précède le composeur, il ne le contourne pas (porte du read-back).
-const lundi = page.locator('.cz-daycard', { hasText: 'Lundi' });
-await lundi.locator('.cz-mrow.empty').first().click();
+// T2 : le chemin passe par la carte-jour → vue jour (héros/tuiles).
+if ((await dcard('Lun').locator('.dc').textContent()) !== '0')
+  throw new Error('T2 : le lundi doit démarrer vide (compteur 0)');
+await dcard('Lun').click(); // carte-jour → vue jour
+await page.locator('.cz-invite').waitFor({ timeout: 5000 }); // lundi vide → invitation
+await page.locator('.cz-btile', { hasText: 'Déjeuner' }).click(); // moment vide → radial
 await page.locator('.cz-radial.show').waitFor({ timeout: 5000 });
 if ((await page.locator('.cz-petal').count()) !== 3)
   throw new Error('SPEC 5 : le radial doit avoir TROIS pétales, jamais 4');
@@ -121,27 +130,34 @@ if (!/bibliothèque/i.test(firstPetal ?? '')) throw new Error(`Q5 : pétale gauc
 await page.locator('.cz-petal', { hasText: 'Ma bibliothèque' }).click();
 await page.locator('.cz-sheet.show .cz-pick').first().waitFor({ timeout: 5000 });
 await page.locator('.cz-sheet.show .cz-pick').first().click();
-await lundi.locator('.cz-mrow:not(.empty)').first().waitFor({ timeout: 5000 });
+await page.locator('.cz-hero').waitFor({ timeout: 5000 }); // créneau rempli → carte héros
 console.log('T4 : radial (3 pétales, biblio à gauche) → sélecteur → créneau rempli ✅');
 // Créneau PLEIN → le composeur s'ouvre directement (multi-composant intact).
-await lundi.locator('.cz-mrow:not(.empty)').first().click();
+await page.locator('.cz-hero').click();
 await page.locator('.cz-sheet.show .cz-comp').first().waitFor({ timeout: 5000 });
 console.log('T4 : créneau plein → composeur direct (le radial ne contourne pas) ✅');
 // Retour device PO n°3 : le PLAT se RETIRE depuis le composeur → créneau vide.
 await page.locator('.cz-sheet.show .cz-comp .rm').first().click();
 await page.locator('.cz-sheet.show .cz-x').first().click();
 await page.waitForTimeout(300);
-await lundi.locator('.cz-mrow.empty').first().waitFor({ timeout: 5000 });
+await page.locator('.cz-invite').waitFor({ timeout: 5000 }); // journée redevenue vide
 console.log('PO n°3 : plat retiré depuis le composeur — créneau redevenu vide ✅');
 // Re-remplir (le lundi sert à l'aperçu) : radial → biblio → pick.
-await lundi.locator('.cz-mrow.empty').first().click();
+await page.locator('.cz-btile', { hasText: 'Déjeuner' }).click();
 await page.locator('.cz-radial.show').waitFor({ timeout: 5000 });
 await page.locator('.cz-petal', { hasText: 'Ma bibliothèque' }).click();
 await page.locator('.cz-sheet.show .cz-pick').first().waitFor({ timeout: 5000 });
 await page.locator('.cz-sheet.show .cz-pick').first().click();
 await page.waitForTimeout(300);
-await lundi.locator('.cz-mrow:not(.empty)').first().waitFor({ timeout: 5000 });
+await page.locator('.cz-hero').waitFor({ timeout: 5000 });
 await assertNoKcal('vue Menu, repas composé');
+await page.screenshot({ path: 'scripts/shot-jour-hero.png', fullPage: false });
+// Retour SEMAINE : la carte-jour du lundi porte le repas (résumé + compteur 1).
+await page.locator('.cz-weekbtn').click();
+await dcard('Lun').locator('.dc').filter({ hasText: '1' }).waitFor({ timeout: 5000 });
+if (await dcard('Lun').locator('.ds').filter({ hasText: 'Rien de prévu' }).count())
+  throw new Error('T2 : la carte-jour remplie ne doit plus dire « Rien de prévu »');
+console.log('T2 : carte-jour = résumé + compteur, elle mène à la journée ✅');
 await page.screenshot({ path: 'scripts/shot-semaine.png', fullPage: false });
 
 // 2) Réglages ⚙ (lot simplification) : plus de « Suivi de l'équilibre » ni
@@ -149,6 +165,16 @@ await page.screenshot({ path: 'scripts/shot-semaine.png', fullPage: false });
 // SEUL champ (« Ce que le foyer ne mange pas »), plus de toggle Végétarien.
 if (await page.locator('.cz-pill').count())
   throw new Error('Nutrition SORTIE : la pastille Objectif ne doit plus exister');
+// Refonte T3 : la pastille régime porte l'ICÔNE DE RÉGLAGES (elle se lit comme
+// un bouton) et MONTRE le régime RÉEL — foyer neuf = « Aucune restriction »,
+// jamais une valeur en dur (le « halal · sans gluten » de la maquette est un
+// EXEMPLE ; les vraies règles sont posées en 2bis, vérifiées après).
+if (!(await page.locator('.cz-rulepill .tune').count()))
+  throw new Error('Refonte T3 : la pastille régime doit porter l’icône de réglages');
+const regleNeuf = (await page.locator('.cz-rulepill .txt').textContent())?.trim();
+if (regleNeuf !== 'Aucune restriction')
+  throw new Error(`Invariant régime : foyer neuf → « Aucune restriction » (lu : ${regleNeuf})`);
+console.log('T3 : pastille régime = icône réglages + régime réel (foyer neuf) ✅');
 await page.getByLabel('Réglages Cuisine').click();
 await page.getByText('Nombre de personnes', { exact: true }).waitFor({ timeout: 5000 });
 if (await page.getByText('Suivi de l’équilibre').count())
@@ -181,7 +207,11 @@ await page.getByText('Règles actives : halal · arachide').waitFor({ timeout: 5
 const halalOn = await page.getByRole('switch', { name: 'Halal' }).getAttribute('aria-checked');
 if (halalOn !== 'true') throw new Error('T3 : halal non persisté après reload');
 await page.locator('.cz-sheet.show .cz-cta').click(); // OK
-console.log('Restrictions du foyer : posées, affichées (G1), persistées au reload ✅');
+// La pastille suit les VRAIES règles (elle ne dit plus « Aucune restriction »).
+const reglePosee = (await page.locator('.cz-rulepill .txt').textContent())?.trim();
+if (reglePosee !== 'halal · sans arachide')
+  throw new Error(`Invariant régime : la pastille doit refléter les règles posées (lu : ${reglePosee})`);
+console.log('Restrictions du foyer : posées, affichées (G1), persistées au reload, pastille à jour ✅');
 
 // 3) FC5 (T5) — bibliothèque : SECTIONS PAR MOMENT (Q3 ordre des repas,
 // Q4 dépliées par défaut, repliables) + favoris opérants (étoile + toggle).
@@ -279,8 +309,9 @@ console.log('« L’écrire » : recette créée (Validé), dans la bibliothèqu
 // enregistrée comme vraie recette ET posée dans le créneau (geste fini).
 await page.getByRole('tab', { name: 'Menu' }).click();
 if (!(await page.locator('.cz-weekbtn.on').count())) await page.locator('.cz-weekbtn').click(); // toggle → idempotent
-const mardi = page.locator('.cz-daycard', { hasText: 'Mardi' });
-await mardi.locator('.cz-mrow.empty').first().click();
+await dcard('Mar').click(); // carte-jour → vue jour (mardi, vide)
+await page.locator('.cz-invite').waitFor({ timeout: 5000 });
+await page.locator('.cz-btile', { hasText: 'Petit déj' }).click();
 await page.locator('.cz-radial.show').waitFor({ timeout: 5000 });
 await page.locator('.cz-petal', { hasText: 'L’écrire' }).click();
 await page.getByText('Portions', { exact: true }).waitFor({ timeout: 5000 }); // formulaire direct
@@ -291,10 +322,10 @@ await page.locator('.cz-sheet.show').last().locator('.cz-inp').first().fill('Yao
 await page.locator('.cz-sheet.show').last().getByText('Enregistrer', { exact: true }).click();
 await page.getByText('Recette créée et ajoutée au repas').waitFor({ timeout: 5000 });
 await page.waitForTimeout(400);
-await mardi.getByText('Yaourt').waitFor({ timeout: 5000 });
+await page.locator('.cz-hero', { hasText: 'Yaourt' }).waitFor({ timeout: 5000 });
 console.log('T4/Q2 : recette LÉGÈRE (nom seul) créée via le radial, posée dans le créneau ✅');
 // Amendement ② toujours vivant DANS le sélecteur : dépli des 3 voies EN PLACE.
-await mardi.locator('.cz-mrow.empty').first().click(); // Déj de mardi (vide)
+await page.locator('.cz-stile', { hasText: 'Déjeuner' }).click(); // Déj de mardi (vide)
 await page.locator('.cz-radial.show').waitFor({ timeout: 5000 });
 await page.locator('.cz-petal', { hasText: 'Ma bibliothèque' }).click();
 await page.locator('.cz-sheet.show').last().getByText('Nouvelle recette').click();
@@ -308,28 +339,43 @@ await page.locator('.cz-sheet.show').last().locator('textarea').first().fill('œ
 await page.locator('.cz-sheet.show').last().getByText('Enregistrer', { exact: true }).click();
 await page.getByText('Recette créée et ajoutée au repas').waitFor({ timeout: 5000 });
 await page.waitForTimeout(400);
-await mardi.getByText('Œufs du picker').waitFor({ timeout: 5000 });
+await page.getByText('Œufs du picker').first().waitFor({ timeout: 5000 });
 console.log('Amendement ② (T4) : 3 voies dépliées en place, créée et posée ✅');
+// T2 : la carte-jour de mardi résume les DEUX repas (compteur 2).
+await page.locator('.cz-weekbtn').click(); // jour → semaine
+await dcard('Mar').locator('.dc').filter({ hasText: '2' }).waitFor({ timeout: 5000 });
+console.log('T2 : compteur de la carte-jour = nombre de repas posés ✅');
 
-// 3ter-bis) Retour device PO n°4 — « Copier UNE journée précédente » : la
-// source se CHOISIT. Vue jour → mercredi → copier depuis Mardi (le yaourt).
-await page.locator('.cz-weekbtn').click(); // semaine → jour
-await page.locator('.cz-day', { hasText: 'Mer' }).click();
-await page.getByText('Copier une journée précédente').click();
+// 3ter-bis) Retour device PO n°4 — « Copier UNE journée » : la source se CHOISIT.
+// + Refonte T1 : jour VIDE = INVITATION (pas un formulaire) ; jour PLEIN = carte
+// HÉROS (le prochain repas) + « le reste de la journée » en tuiles.
+// On passe par la CARTE-JOUR (vue semaine) et non par la bande de jours : la
+// bande démarre à aujourd'hui (on planifie vers l'avant), donc un jour passé n'y
+// figure pas — la vue semaine, elle, liste les 7 jours quel que soit le jour réel.
+await dcard('Mer').click();
+// Mercredi est vide → l'invitation soignée, avec les 4 moments en tuiles.
+await page.locator('.cz-invite').waitFor({ timeout: 5000 });
+if ((await page.locator('.cz-btile').count()) !== 4)
+  throw new Error('Refonte T1 : l’état vide doit proposer les 4 moments en tuiles');
+await page.screenshot({ path: 'scripts/shot-jour-vide.png', fullPage: false });
+await page.locator('.cz-copybtn').click(); // « Copier une journée » (dans l’invitation)
 await page.getByText('Copier une journée', { exact: false }).first().waitFor({ timeout: 5000 });
 const candidats = await page.locator('.cz-copyday').count();
 if (candidats < 2) throw new Error(`PO n°4 : le choix doit lister les jours non vides (lu : ${candidats})`);
 await page.locator('.cz-copyday', { hasText: 'Mardi' }).click();
 await page.getByText('Journée copiée depuis Mardi').waitFor({ timeout: 5000 });
-await page.getByText('Yaourt').first().waitFor({ timeout: 5000 }); // le yaourt copié sur mercredi
-console.log('PO n°4 : copier UNE journée — source choisie (Mardi), contenu copié ✅');
-if (!(await page.locator('.cz-weekbtn.on').count())) await page.locator('.cz-weekbtn').click(); // retour semaine
+// Mercredi est maintenant plein → carte HÉROS portant le repas copié + le reste.
+await page.locator('.cz-hero', { hasText: 'Yaourt' }).waitFor({ timeout: 5000 });
+if (!(await page.getByText('Le reste de la journée').count()))
+  throw new Error('Refonte T1 : la vue jour pleine doit montrer « le reste de la journée »');
+await page.screenshot({ path: 'scripts/shot-jour-plein.png', fullPage: false });
+console.log('PO n°4 + refonte T1 : jour vide = invitation, copie (Mardi), jour plein = carte héros ✅');
 
 // 3quater) T5/F5.5 — alerte ALLERGÈNE bout-en-bout SANS backend : les règles du
 // foyer (« arachide », posées en 2bis) doivent ressortir sur la page cuisinière
 // via « Voir l'aperçu » (previewEspace = même buildEspaceMenu que la publication).
-const merc = page.locator('.cz-daycard', { hasText: 'Mercredi' });
-await merc.locator('.cz-mrow.empty').nth(1).click(); // Déjeuner (plat)
+// On reste sur la vue jour de mercredi : le dîner est encore vide (tuile).
+await page.locator('.cz-stile', { hasText: 'Dîner' }).click();
 await page.locator('.cz-radial.show').waitFor({ timeout: 5000 });
 await page.locator('.cz-petal', { hasText: 'L’écrire' }).click();
 await page.getByText('Portions', { exact: true }).waitFor({ timeout: 5000 });
