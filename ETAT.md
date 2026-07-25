@@ -1,5 +1,5 @@
 # ÉTAT — Manzil
-**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 21 juillet 2026 (clôture lot Partage + suivi des tâches, merge `lot-partage-v1` → défaut)**
+**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 25 juillet 2026 (STOP T3, lot Refonte mise en page Cuisine — en vol, attend le device)**
 
 > **Rôle.** *Où on en est* (rapide). Le *quoi* (lent) = `PROJET_MAISON_OS.md` (côté PO). Le *journal* (append-only, détaillé) = `DEVLOG.md`.
 > **Rituel d'ouverture de thread : « Contexte = `PROJET_MAISON_OS.md` + `ETAT.md` ».**
@@ -9,7 +9,14 @@
 
 ## 🔵 En vol
 
-**Rien en vol.** Prochain : au choix du PO — revue éditoriale du Fonds de départ (file n°1) · lot A7 (file n°2).
+**Lot Refonte de la mise en page Cuisine (Option B, DA v2)** — branche `lot-cuisine-refonte-v1`, `apk.yml` pointe dessus. **T1+T2+T3 codés, portes vertes, poussés — attend le DEVICE groupé (foyer neuf)**, puis clôture (merge, repointage des DEUX workflows au défaut, ETAT réécrit). Maquette de référence committée : `docs/maquettes/maquette-cuisine-finetune.html`.
+- **T1 vue jour** — les 4 cartes de moment égales → **carte-repas HÉROS** (le **prochain repas à servir**, `hero.ts`/`pickHeroKey` testé ; dégradé + emoji Fluent par défaut, **vraie photo du plat si elle existe** via `PlatPhoto`, miroir exact de `FichePhoto`) + « le reste de la journée » en tuiles ; jour vide → **invitation** (disque, « Copier une journée », 4 moments tuilés). Nom de plat en **serif `'Fraunces'` EXPLICITE**.
+- **T2 vue semaine** — cartes-jour `.cz-dcard` (date · résumé des plats · compteur ; `.void` « à composer » ; `.today`). **La semaine devient une vue d'ensemble : la carte mène à la journée**, où l'on compose (le geste `onOpenMeal` → radial/composeur est intact, un cran plus loin).
+- **T3 finitions** — pastille régime = **icône de réglages** (lit les **vraies `ReglesFoyer`** : foyer neuf = « Aucune restriction », jamais de valeur en dur) ; passe pixel des deux vues (puces de jour, pastille semaine, contexte de date, en-tête semaine) ; la bande de jours **ancre le jour affiché** même passé (conséquence de T2).
+- **Non touchés** (invariants tenus) : payload de la page reçue (**lien perpétuel**), `prochain.ts` (accueil B1), `MealKey`. **228 tests · 3 smokes** (Cuisine re-routé par la vue jour, robuste à la date ; 2 ancres régime).
+- **Écarts à la maquette, assumés et signalés au PO** : « Partager » reste sur un jour vide (chemin d'accès/QR, un parcours réel en dépend) · titre « **Menu de la semaine** » et chevrons de navigation conservés (F1.3, vocabulaire verrouillé) · pastille régime laissée dans l'en-tête (atteignable depuis les deux vues).
+
+**Ensuite** : au choix du PO — revue éditoriale du Fonds de départ (file n°1) · lot A7 (file n°2).
 
 **Lot Partage + suivi des tâches : CLOS le 21/07** — mergé au défaut (`lot-partage-v1`, merge --no-ff). **Premier flux BIDIRECTIONNEL** du produit. A : feuille d'envoi refondue (maquette — « Partager avec {nom} », message court + toggle Français|الدارجة, bulle WhatsApp, Accès permanent QR frigo + copier le lien, registre neutre). B : suivi des tâches — journal insert-only **`espace_checks` en prod** (migration 0011, policies **par jeton vivant** = jointure d'existence sur `espaces` → révocation rend les coches illisibles, prouvé staging+prod, parité 0), offline-first (file + cache, LWW par item), page reçue (cases sur **tout le menu** + tâches, tâches fr seul §7.4), retour employeur dans l'**aperçu** (lecture seule + « N coché · vu HH:MM »). **Bout-en-bout validé device.** `cl?`/`tasks?` optionnels à jamais (lien perpétuel prouvé). **223 tests · 3 smokes**. Réf : `READBACK_PARTAGE.md` · récit : `DEVLOG.md`.
 

@@ -94,23 +94,26 @@
 }
 /* Pastille « Règles alimentaires » (SPEC 2) — remplace l'engrenage, MONTRE les
    restrictions (invariant « un seul endroit ») ; Q7 : état neutre visible. */
+/* T3 (refonte) : au pixel de `.diet` — teinte végétale + ICÔNE DE RÉGLAGES,
+   la pastille se lit comme un bouton (« on peut gérer le régime en la touchant »). */
 .cz-rulepill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: #f1efe9;
-  border: 1px solid var(--line);
+  gap: 6px;
+  background: #eef2e8;
+  border: 1px solid #d7e4cb;
   border-radius: 999px;
-  padding: 4px 9px 4px 7px;
+  padding: 3px 5px 3px 10px;
   font-family: var(--font-body);
-  font-size: 9.5px;
-  color: #6b655c;
-  font-weight: 600;
+  font-size: 10.5px;
+  color: #5f7a3f;
+  font-weight: 700;
   flex: none;
   cursor: pointer;
   max-width: 46vw;
 }
 .cz-rulepill .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cz-rulepill .tune { display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #fff; color: #5f7a3f; flex: none; }
 .cz-segmented {
   display: flex;
   background: var(--surface-2);
@@ -138,7 +141,7 @@
 
 /* ---- Navigation de semaine ---- */
 .cz-weeknav { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px; }
-.cz-wk { font-family: var(--font-display); font-size: 17px; font-weight: 500; }
+.cz-wk { font-family: var(--font-display); font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
 .cz-navchev {
   width: 36px; height: 36px;
   border-radius: 10px;
@@ -457,34 +460,37 @@
 
 /* T7/F7.2 — horizon (dans le contenu) + footer une seule barre */
 /* ---- Sélecteur temporel (SPEC 2, proto) : bouton Semaine + bande de jours ---- */
-.cz-selector { display: flex; align-items: stretch; gap: 8px; padding: 9px 14px 4px; }
+/* T3 (refonte) : au pixel de `.days` / `.wchip` / `.dchip` — pastille semaine
+   en teinte terracotta claire (plus de tan), puces de jour blanches à bord fin. */
+.cz-selector { display: flex; align-items: stretch; gap: 7px; padding: 6px 16px 6px; }
 .cz-weekbtn {
-  flex: none; width: 60px; border-radius: 12px;
-  background: var(--tan); border: 1px solid var(--tan-line); color: var(--tan-ink);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; padding: 6px 3px; cursor: pointer; font-family: var(--font-body);
+  flex: none; border-radius: 12px;
+  background: #fdeee4; border: 1px solid #f4d4bf; color: var(--accent-ink);
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px; padding: 0 9px; cursor: pointer; font-family: var(--font-body);
 }
-.cz-weekbtn.on { background: var(--tan-ink); border-color: var(--tan-ink); color: #faf3e6; }
-.cz-weekbtn svg { width: 16px; height: 16px; fill: currentColor; }
+.cz-weekbtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cz-weekbtn svg { width: 13px; height: 13px; fill: currentColor; }
 .cz-weekbtn .wl { font-size: 9.5px; font-weight: 800; text-transform: uppercase; white-space: nowrap; line-height: 1.2; }
-.cz-sep { width: 1px; background: var(--line); margin: 3px 0; flex: none; }
 .cz-daystrip { display: flex; gap: 6px; overflow-x: auto; flex: 1; scrollbar-width: none; }
 .cz-daystrip::-webkit-scrollbar { display: none; }
 .cz-day {
-  flex: none; width: 43px; border-radius: 12px; border: 1px solid var(--line);
-  background: var(--surface); padding: 6px 0 5px; display: flex; flex-direction: column;
-  align-items: center; gap: 2px; cursor: pointer; font-family: var(--font-body); color: var(--ink);
+  flex: none; min-width: 46px; border-radius: 13px; border: 1px solid var(--line);
+  background: var(--surface); padding: 7px 12px; display: flex; flex-direction: column;
+  align-items: center; gap: 1px; cursor: pointer; font-family: var(--font-body); color: var(--ink);
 }
-.cz-day .dl { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--muted); line-height: 1.2; }
-.cz-day .dn { font-size: 14px; font-weight: 700; line-height: 1.2; }
+.cz-day .dl { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #a89e8f; letter-spacing: 0.03em; line-height: 1.2; }
+.cz-day .dn { font-size: 16px; font-weight: 800; line-height: 1.2; }
 .cz-day .tdot { height: 5px; display: flex; align-items: center; justify-content: center; }
-.cz-day .tdot i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: block; }
+.cz-day .tdot i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); display: block; margin-top: 1px; }
 .cz-day.on { background: var(--accent); border-color: var(--accent); }
-.cz-day.on .dl { color: #f6d9c9; }
-.cz-day.on .dn { color: #fff; }
+.cz-day.on .dl, .cz-day.on .dn { color: #fff; }
+.cz-day.on .tdot i { background: rgba(255, 255, 255, 0.8); }
 .cz-day.dim { opacity: 0.5; cursor: default; }
-.cz-datectx { padding: 6px 18px; font-size: 12.5px; color: var(--muted); font-weight: 600; line-height: 1.2; }
+/* Contexte de date (`.ctx .cl`) : la date PLEINE en encre, le repère relatif en sourdine. */
+.cz-datectx { padding: 8px 16px 2px; font-size: 13px; color: var(--ink); font-weight: 700; line-height: 1.25; }
 .cz-datectx b { color: var(--ink); font-weight: 700; }
+.cz-datectx i { font-style: normal; color: var(--muted); font-weight: 600; }
 
 /* ---- Dispositions bas (proto) : copier fantôme + partage principal ---- */
 .cz-ghost {
@@ -860,7 +866,7 @@
 .cz-starbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cz-subgen { margin: 14px 16px 0; width: calc(100% - 32px); border: none; cursor: pointer; background: transparent; color: var(--muted); font-family: var(--font-body); font-weight: 600; font-size: 14px; border-radius: 11px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .cz-subgen:hover { color: var(--accent-ink); }
-.cz-wk small { display: block; font-family: var(--font-body); font-size: 11.5px; color: var(--muted); font-weight: 500; text-align: center; margin-top: 1px; }
+.cz-wk small { display: block; font-family: var(--font-body); font-size: 11.5px; color: var(--muted); font-weight: 600; text-align: center; margin-top: 1px; }
 .cz-sempty { position: relative; z-index: 1; font-size: 13px; color: rgba(244, 241, 233, 0.7); margin-top: 6px; }
 
 /* (`.cz-mrow` — les rangées par repas — est mort avec la refonte : T1 a retiré

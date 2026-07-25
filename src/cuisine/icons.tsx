@@ -28,6 +28,18 @@ export const IconGear = (p: P) => (
   </Svg>
 );
 
+/** Réglages (curseurs) — icône de la pastille régime, reprise de la maquette
+ *  DA v2 : deux glissières, la pastille dit « on peut y toucher ». Les pastilles
+ *  des curseurs sont pleines (fond blanc du disque) pour se détacher du trait. */
+export const IconTune = (p: P) => (
+  <Svg strokeWidth={2.2} {...p}>
+    <line x1="4" y1="7" x2="20" y2="7" />
+    <line x1="4" y1="17" x2="20" y2="17" />
+    <circle cx="9" cy="7" r="2.4" fill="#fff" />
+    <circle cx="15" cy="17" r="2.4" fill="#fff" />
+  </Svg>
+);
+
 export const IconChevL = (p: P) => (
   <Svg strokeWidth={2.2} {...p}>
     <polyline points="15 18 9 12 15 6" />

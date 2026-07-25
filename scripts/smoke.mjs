@@ -165,6 +165,16 @@ await page.screenshot({ path: 'scripts/shot-semaine.png', fullPage: false });
 // SEUL champ (« Ce que le foyer ne mange pas »), plus de toggle Végétarien.
 if (await page.locator('.cz-pill').count())
   throw new Error('Nutrition SORTIE : la pastille Objectif ne doit plus exister');
+// Refonte T3 : la pastille régime porte l'ICÔNE DE RÉGLAGES (elle se lit comme
+// un bouton) et MONTRE le régime RÉEL — foyer neuf = « Aucune restriction »,
+// jamais une valeur en dur (le « halal · sans gluten » de la maquette est un
+// EXEMPLE ; les vraies règles sont posées en 2bis, vérifiées après).
+if (!(await page.locator('.cz-rulepill .tune').count()))
+  throw new Error('Refonte T3 : la pastille régime doit porter l’icône de réglages');
+const regleNeuf = (await page.locator('.cz-rulepill .txt').textContent())?.trim();
+if (regleNeuf !== 'Aucune restriction')
+  throw new Error(`Invariant régime : foyer neuf → « Aucune restriction » (lu : ${regleNeuf})`);
+console.log('T3 : pastille régime = icône réglages + régime réel (foyer neuf) ✅');
 await page.getByLabel('Réglages Cuisine').click();
 await page.getByText('Nombre de personnes', { exact: true }).waitFor({ timeout: 5000 });
 if (await page.getByText('Suivi de l’équilibre').count())
@@ -197,7 +207,11 @@ await page.getByText('Règles actives : halal · arachide').waitFor({ timeout: 5
 const halalOn = await page.getByRole('switch', { name: 'Halal' }).getAttribute('aria-checked');
 if (halalOn !== 'true') throw new Error('T3 : halal non persisté après reload');
 await page.locator('.cz-sheet.show .cz-cta').click(); // OK
-console.log('Restrictions du foyer : posées, affichées (G1), persistées au reload ✅');
+// La pastille suit les VRAIES règles (elle ne dit plus « Aucune restriction »).
+const reglePosee = (await page.locator('.cz-rulepill .txt').textContent())?.trim();
+if (reglePosee !== 'halal · sans arachide')
+  throw new Error(`Invariant régime : la pastille doit refléter les règles posées (lu : ${reglePosee})`);
+console.log('Restrictions du foyer : posées, affichées (G1), persistées au reload, pastille à jour ✅');
 
 // 3) FC5 (T5) — bibliothèque : SECTIONS PAR MOMENT (Q3 ordre des repas,
 // Q4 dépliées par défaut, repliables) + favoris opérants (étoile + toggle).

@@ -225,13 +225,15 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
     );
   };
 
-  // Contexte relatif d'un jour de la semaine AFFICHÉE (« aujourd'hui · », « demain · »).
+  // Repère relatif d'un jour de la semaine AFFICHÉE : « aujourd'hui », « demain »
+  // ou rien. Le séparateur est posé par l'appelant (l'ordre diffère : la carte-jour
+  // le met devant les moments, le contexte de date le met derrière la date).
   const relFor = (i: number) =>
     weekOffset === 0 && i === todayIdx
-      ? 'aujourd’hui · '
+      ? 'aujourd’hui'
       : (weekOffset === 0 && i === (todayIdx + 1) % 7 && todayIdx !== 6) ||
           (weekOffset === 1 && todayIdx === 6 && i === 0)
-        ? 'demain · '
+        ? 'demain'
         : '';
 
   // Vue SEMAINE (refonte T2, maquette) : UNE carte par jour — repère de date,
@@ -252,8 +254,10 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
       .filter(Boolean) as string[];
     const draft = filledKeys.some((k) => mealHasDraft(day[k], k, byId));
     const rl = relFor(i);
-    // « Déjeuner, dîner » — le premier porte la majuscule (maquette).
-    const moments = filledKeys.map((k, n) => (n === 0 && !rl ? MEAL_LABEL[k] : MEAL_LABEL[k].toLowerCase())).join(', ');
+    // « Déjeuner, dîner » — le premier porte la majuscule ; précédé du repère
+    // relatif quand il y en a un : « demain · déjeuner » (maquette).
+    const momentList = filledKeys.map((k, n) => (n === 0 ? MEAL_LABEL[k] : MEAL_LABEL[k].toLowerCase())).join(', ');
+    const moments = rl ? `${rl} · ${momentList.toLowerCase()}` : momentList;
     // Un `aria-label` REMPLACE le nom calculé depuis le contenu : il doit donc
     // porter TOUT ce que la carte dit (résumé, compteur, à valider), sinon la
     // semaine devient muette pour les lecteurs d'écran — avant la refonte,
@@ -299,7 +303,7 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
               </span>
             )}
           </span>
-          {filledKeys.length > 0 && <span className="dsub">{rl}{moments}</span>}
+          {filledKeys.length > 0 && <span className="dsub">{moments}</span>}
         </span>
         <span className="dc">{filledKeys.length}</span>
       </button>
@@ -325,13 +329,17 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
         </svg>
         <span className="wl">{view === 'semaine' ? 'Semaine' : 'Semaine ›'}</span>
       </button>
-      <div className="cz-sep" />
+      {/* T3 : plus de séparateur — la maquette aligne la pastille et les puces
+          dans une seule bande (`.days`), séparées par le seul écart. */}
       <div className="cz-daystrip">
         {/* Proto : la bande commence À AUJOURD'HUI (on planifie vers l'avant) —
-            les jours passés de la semaine courante n'y figurent pas. */}
+            les jours passés de la semaine courante n'y figurent pas. T3 : SAUF
+            le jour affiché — depuis T2 on ouvre un jour PASSÉ par sa carte-jour
+            (la semaine liste les 7), et la bande restait alors sans repère. On
+            n'OFFRE toujours pas le passé, on montre juste où l'on est. */}
         {SEED_CONFIG.jours
           .map((j, i) => ({ j, i }))
-          .filter(({ i }) => weekOffset !== 0 || i >= todayIdx)
+          .filter(({ i }) => weekOffset !== 0 || i >= todayIdx || (view === 'jour' && i === dayIdx))
           .map(({ j, i }) => (
             <button
               key={j.key}
@@ -410,11 +418,13 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
           {/* DA v2 (refonte T1) : contexte de date sous le sélecteur, puis le corps
               de journée = carte héros + tuiles (jour plein) ou invitation (jour
               vide, qui porte son propre « Copier »). Sans « Générer ». */}
+          {/* T3, au pixel de `.ctx .cl` : la date PLEINE d'abord (en encre), le
+              repère relatif derrière, en sourdine — « Mercredi 22 juillet · demain ». */}
           <div className="cz-datectx">
-            {rel}
             <b>
-              {SEED_CONFIG.jours[dayIdx].nom.toLowerCase()} {dayLabel(dates[dayIdx])}
+              {SEED_CONFIG.jours[dayIdx].nom} {dayLabel(dates[dayIdx])}
             </b>
+            {rel && <i> · {rel}</i>}
           </div>
           {dayBody(dayIdx)}
           {dayFilled && (
