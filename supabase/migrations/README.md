@@ -31,7 +31,7 @@ NNNN_slug.sql
 | `0010` | Cuisine T5/F5.3 | bucket privé `foyer-images` + RLS storage (photo du plat, miroir de 0003) |
 | `0011` | Partage + suivi | `espace_checks` — journal insert-only des coches, policies **par jeton VIVANT** (jointure d'existence sur `espaces` : un jeton révoqué rend ses coches illisibles) |
 
-## État — appliquées STAGING SEULEMENT (prod en attente du GO explicite du PO)
+## État — appliquées STAGING + PROD (fenêtre du 26/07/2026, parité de clôture 0 écart)
 | Fichier | Lot | Contenu |
 |---|---|---|
 | `0012` | Identité & accès P1 | **renverse `0008`** (ADR 33) : `dispose_foyer_for_deletion` en cascade — le foyer est adossé à un TITULAIRE et ne lui survit pas ; retire `owner_notice` + `ack_owner_notice` |
