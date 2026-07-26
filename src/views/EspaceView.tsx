@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { readEspace, decideEspaceState, logEspaceOpen, type Espace } from '../lib/espace';
+import PageMorte from './PageMorte';
 import EspaceCuisine from '../cuisine/EspaceCuisine';
 import NounouEspaceView from '../nounou/NounouEspaceView';
 import type { NounouEspace } from '../nounou/partage';
@@ -84,25 +85,11 @@ export default function EspaceView({ token }: { token: string }) {
     );
   }
 
+  // T5 : la page morte a son propre écran (option A) — et « hors-ligne » y reste
+  // DISTINCT du « mort » : dans un cas il n'y a plus rien à attendre, dans l'autre
+  // le lien est vivant et revenir avec du réseau suffit.
   if (state === 'revoked' || state === 'offline' || !espace) {
-    return (
-      <div className="app">
-        <header className="topbar">Mon espace</header>
-        <main className="app__main">
-          <p className="empty-note">
-            {state === 'offline' ? (
-              'Hors-ligne et aucune version enregistrée. Réessaie avec du réseau.'
-            ) : (
-              <>
-                Ce lien a été retiré.
-                <br />
-                <span dir="rtl">هاد اللينك تسدّ.</span>
-              </>
-            )}
-          </p>
-        </main>
-      </div>
-    );
+    return <PageMorte cause={state === 'offline' ? 'horsligne' : 'morte'} />;
   }
 
   return isNounou(espace) ? <NounouEspaceView espace={espace} /> : <EspaceCuisine espace={espace} token={token} />;

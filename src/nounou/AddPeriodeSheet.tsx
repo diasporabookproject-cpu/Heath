@@ -25,8 +25,8 @@ export default function AddPeriodeSheet({
 
   const save = () => {
     const n = nom.trim();
-    if (!n) return toast('Donne un nom à la période');
-    if (!debut || !fin) return toast('Choisis les dates');
+    if (!n) return toast('Donnez un nom à la période');
+    if (!debut || !fin) return toast('Choisissez les dates');
     if (fin < debut) return toast('La fin doit être après le début');
     const clash = periodes.find((p) => periodesOverlap({ debut, fin }, p));
     if (clash) return toast(`Chevauche « ${clash.nom} »`);
@@ -68,7 +68,7 @@ export default function AddPeriodeSheet({
       </div>
       <div className="nz-info" style={{ marginTop: 14 }}>
         <span>
-          On part d’une copie du rythme habituel, que tu ajustes ensuite (retirer l’école, décaler le
+          On part d’une copie du rythme habituel, que vous ajustez ensuite (retirer l’école, décaler le
           réveil…). Pendant ces dates, c’est ce rythme qui s’affiche.
         </span>
       </div>

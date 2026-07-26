@@ -48,7 +48,7 @@ export default function CollectionsSheet({ initialPackId, onClose, toast }: Prop
   const install = () => {
     if (!sel) return;
     toAdd.forEach(upsertRecipe);
-    toast(toAdd.length ? `${toAdd.length} recette(s) ajoutée(s) — à toi ✓` : 'Déjà dans ta bibliothèque');
+    toast(toAdd.length ? `${toAdd.length} recette(s) ajoutée(s) — à vous ✓` : 'Déjà dans votre bibliothèque');
     onClose();
   };
 
@@ -69,7 +69,7 @@ export default function CollectionsSheet({ initialPackId, onClose, toast }: Prop
             ) : (
               <>
                 Collections
-                <small>Copie, adapte, c’est à toi — sans rien retaper</small>
+                <small>Copiez, adaptez, c’est à vous — sans rien retaper</small>
               </>
             )}
           </div>
@@ -118,14 +118,14 @@ export default function CollectionsSheet({ initialPackId, onClose, toast }: Prop
                     </div>
                     {already && (
                       <div className="cz-cardmeta" style={{ marginTop: 4 }}>
-                        <span>Déjà dans ta bibliothèque</span>
+                        <span>Déjà dans votre bibliothèque</span>
                       </div>
                     )}
                   </button>
                 );
               })}
               <div className="cz-estnote" style={{ margin: '6px 0 10px' }}>
-                Installées = à toi : modifiables, supprimables.
+                Installées = à vous : modifiables, supprimables.
               </div>
               <button className="cz-cta" onClick={install} disabled={toAdd.length === 0}>
                 {toAdd.length > 0 ? `Ajouter les ${toAdd.length} recette${toAdd.length > 1 ? 's' : ''}` : 'Tout est déjà là ✓'}

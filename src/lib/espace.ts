@@ -220,14 +220,43 @@ export async function previewEspace(
  */
 export type EspaceRead = { status: 'found'; espace: Espace } | { status: 'revoked' } | { status: 'unreachable' };
 
+/**
+ * 🔴 Délai au-delà duquel on cesse d'attendre le serveur (T5). Découvert en posant
+ * la page morte : une requête peut ne JAMAIS répondre — ni succès, ni erreur — quand
+ * le réseau tombe pendant l'appel (observé avec le service worker en jeu). La page du
+ * personnel restait alors sur « Chargement… » indéfiniment, or c'est exactement la
+ * situation que l'écran hors-ligne doit couvrir. Sans réponse, on tranche : injoignable.
+ */
+const READ_TIMEOUT_MS = 8000;
+
+/** Résout `p`, ou `fallback` si elle n'a rien répondu au bout de `ms`. */
+export function withTimeout<T>(p: PromiseLike<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    const t = setTimeout(() => resolve(fallback), ms);
+    void p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      () => { clearTimeout(t); resolve(fallback); },
+    );
+  });
+}
+
 /** Lit l'espace d'un jeton (côté destinataire, lecture publique anonyme). */
 export async function readEspace(token: string): Promise<EspaceRead> {
   const supa = getSupabase();
   if (!supa) return { status: 'unreachable' };
-  const { data, error } = await supa.from('espaces').select('payload').eq('token', token).maybeSingle();
-  if (error) return { status: 'unreachable' }; // réseau/erreur → le cache reste légitime
-  if (!data) return { status: 'revoked' }; // requête OK, 0 ligne → révoqué
-  return { status: 'found', espace: data.payload as Espace };
+  const query = supa
+    .from('espaces')
+    .select('payload')
+    .eq('token', token)
+    .maybeSingle()
+    .then(({ data, error }): EspaceRead => {
+      if (error) return { status: 'unreachable' }; // réseau/erreur → le cache reste légitime
+      if (!data) return { status: 'revoked' }; // requête OK, 0 ligne → révoqué
+      return { status: 'found', espace: data.payload as Espace };
+    });
+  // Silence du serveur = injoignable (jamais « révoqué » : on ne coupe pas un lien
+  // vivant sur un doute réseau — ce serait purger le cache de la personne pour rien).
+  return withTimeout<EspaceRead>(query, READ_TIMEOUT_MS, { status: 'unreachable' });
 }
 
 /**

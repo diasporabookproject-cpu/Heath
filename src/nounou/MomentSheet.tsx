@@ -98,8 +98,8 @@ export default function MomentSheet({ periodeId, periodeNom, edit, onClose, toas
 
   const save = () => {
     const l = label.trim();
-    if (!l) return toast('Donne un intitulé');
-    if (jours.size === 0) return toast('Choisis au moins un jour');
+    if (!l) return toast('Donnez un intitulé');
+    if (jours.size === 0) return toast('Choisissez au moins un jour');
     const payload = {
       label: l,
       heure: time || '12:00',

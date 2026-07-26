@@ -83,7 +83,7 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOp
       // choose (hors-ligne / quota) — repli honnête vers les 3 voies.
       if (initialStep === 'instructions' && !ok) {
         setStep('choose');
-        toast('Connecte-toi (☁︎) et sois en ligne pour importer des instructions');
+        toast('Connectez-vous et soyez en ligne pour importer des instructions');
       }
     });
     return () => cancelAnimationFrame(t);
@@ -91,8 +91,8 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOp
   }, []);
 
   const openInstructions = () => {
-    if (!canAi) return toast('Connecte-toi (☁︎) et sois en ligne pour importer des instructions');
-    if (rem <= 0) return toast('Plus de mises en forme ce mois — écris-la, c’est illimité');
+    if (!canAi) return toast('Connectez-vous et soyez en ligne pour importer des instructions');
+    if (rem <= 0) return toast('Plus de mises en forme ce mois — écrivez-la, c’est illimité');
     setStep('instructions');
   };
 
@@ -100,7 +100,7 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOp
     step === 'choose'
       ? 'Nouvelle recette'
       : step === 'ecrire'
-        ? 'Écris ta recette'
+        ? 'Écrivez votre recette'
         : step === 'instructions'
           ? 'À partir d’instructions'
           : 'Importer (JSON)';
@@ -126,7 +126,7 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOp
                 <span className="ic pen">✍️</span>
                 <span className="ot">
                   <span className="h">L’écrire</span>
-                  <span className="d">Tes mots suffisent — « une bonne pincée » compris.</span>
+                  <span className="d">Vos mots suffisent — « une bonne pincée » compris.</span>
                 </span>
               </button>
               <button className="cz-opt2" onClick={openInstructions} style={{ opacity: canAi && rem > 0 ? 1 : 0.6 }}>
@@ -135,10 +135,10 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOp
                   <span className="h">À partir d’instructions</span>
                   <span className="d">
                     {!canAi
-                      ? 'En ligne uniquement — connecte-toi (☁︎) d’abord.'
+                      ? 'En ligne uniquement — connectez-vous d’abord.'
                       : rem > 0
-                        ? 'Un lien, un texte collé, une description — mise au format pour toi.'
-                        : 'Plus de mises en forme ce mois — écris-la, c’est illimité.'}
+                        ? 'Un lien, un texte collé, une description — mise au format pour vous.'
+                        : 'Plus de mises en forme ce mois — écrivez-la, c’est illimité.'}
                   </span>
                 </span>
                 {canAi && <span className="cz-quotab">{rem} / {AI_MONTHLY_LIMIT} ce mois</span>}
@@ -147,7 +147,7 @@ export default function AddRecipeSheet({ onClose, onCreated, onCollections, onOp
                 <span className="ic imp">📚</span>
                 <span className="ot">
                   <span className="h">Depuis une collection</span>
-                  <span className="d">Des recettes prêtes, à copier chez toi.</span>
+                  <span className="d">Des recettes prêtes, à copier chez vous.</span>
                 </span>
               </button>
             </div>
@@ -212,7 +212,7 @@ function EcrireForm({
       ingredients: ingredients.trim(),
       etapes: etapes.trim() || undefined,
     });
-    toast('Enregistrée ✓ — c’est la tienne');
+    toast('Enregistrée ✓ — elle est à vous');
     onCreated(id);
   };
 
@@ -337,8 +337,8 @@ function InstructionsForm({
 
   const create = async () => {
     const v = text.trim();
-    if (!v && !photo) return toast('Colle une recette, décris-la — ou prends-la en photo');
-    if (rem <= 0) return toast('Plus de mises en forme ce mois — écris-la, c’est illimité');
+    if (!v && !photo) return toast('Collez une recette, décrivez-la — ou prenez-la en photo');
+    if (rem <= 0) return toast('Plus de mises en forme ce mois — écrivez-la, c’est illimité');
     setBusy(true);
     setFailNote('');
     try {
@@ -383,7 +383,7 @@ function InstructionsForm({
   return (
     <div>
       <div className="cz-block" style={{ marginTop: 2 }}>
-        <div className="cz-blab">Un lien, un texte collé, ou décris ce que tu veux</div>
+        <div className="cz-blab">Un lien, un texte collé, ou décrivez ce que vous voulez</div>
         <textarea
           className="cz-ta"
           rows={5}
@@ -436,7 +436,7 @@ function InstructionsForm({
         )}
       </div>
       <div className="cz-block">
-        <div className="cz-blab">Adapte-la, si tu veux</div>
+        <div className="cz-blab">Adaptez-la, si vous voulez</div>
         <input
           className="cz-inp"
           value={adaptation}
@@ -449,7 +449,7 @@ function InstructionsForm({
         <span>
           {liste.length ? (
             <>
-              J’adapte selon les règles de ton foyer : <b>{liste.join(' · ')}</b>{' '}
+              J’adapte selon les règles de votre foyer : <b>{liste.join(' · ')}</b>{' '}
               <i className="cz-averifier">à vérifier</i>
             </>
           ) : (

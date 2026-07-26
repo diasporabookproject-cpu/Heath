@@ -30,7 +30,7 @@ export default function EnfantSheet({
 
   const save = () => {
     const p = prenom.trim();
-    if (!p) return toast('Donne un prénom');
+    if (!p) return toast('Donnez un prénom');
     const fiche = { allergies, traitement, medecin, groupe, habitudes };
     const clean = Object.fromEntries(Object.entries(fiche).filter(([, v]) => v.trim()));
     upsertEnfant({

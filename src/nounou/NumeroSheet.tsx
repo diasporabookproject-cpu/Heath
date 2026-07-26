@@ -24,8 +24,8 @@ export default function NumeroSheet({
   const [aVerifier, setAVerifier] = useState(existing?.aVerifier ?? true);
 
   const save = () => {
-    if (!label.trim()) return toast('Donne un libellé');
-    if (!numero.trim()) return toast('Donne un numéro');
+    if (!label.trim()) return toast('Donnez un libellé');
+    if (!numero.trim()) return toast('Donnez un numéro');
     const item = { label: label.trim(), numero: numero.trim(), aVerifier };
     const next = [...numeros];
     if (index != null) next[index] = item;

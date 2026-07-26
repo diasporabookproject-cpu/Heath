@@ -30,7 +30,7 @@ export default function ProtocoleFormSheet({
 
   const save = () => {
     const t = titre.trim();
-    if (!t) return toast('Donne un titre');
+    if (!t) return toast('Donnez un titre');
     const id = upsertConduite({
       id: edit?.id,
       titre: t,
@@ -48,7 +48,7 @@ export default function ProtocoleFormSheet({
   return (
     <Sheet
       title={edit ? 'Modifier le protocole' : 'Nouveau protocole'}
-      sub="Ta consigne, écrite une fois"
+      sub="Votre consigne, écrite une fois"
       onClose={onClose}
     >
       <div className="cz-blab" style={{ marginTop: 2 }}>

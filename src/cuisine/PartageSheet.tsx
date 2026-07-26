@@ -229,7 +229,7 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
     try {
       const { error } = await revokeEspace(d.token);
       if (error === 'session') {
-        toast(`Connecte-toi pour retirer ${d.nom} — son lien doit être coupé côté serveur.`);
+        toast(`Connectez-vous pour retirer ${d.nom} — son lien doit être coupé côté serveur.`);
         return;
       }
       if (error) {
@@ -476,7 +476,7 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
 
             </div>
           ) : (
-            <p className="cz-emptynote">Ajoute une personne pour partager le menu.</p>
+            <p className="cz-emptynote">Ajoutez une personne pour partager le menu.</p>
           )}
         </div>
       </div>

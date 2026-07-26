@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { decideEspaceState, readEspace } from './espace';
+import { decideEspaceState, readEspace, withTimeout, type EspaceRead } from './espace';
 import { getSupabase } from './supabase';
 
 // ④ (audit §7.8) — une page RÉVOQUÉE ne doit plus être servie depuis le cache.
@@ -56,5 +56,29 @@ describe('readEspace — distingue révoqué (0 ligne) de injoignable (erreur)',
     const r = await readEspace('t');
     expect(r.status).toBe('found');
     expect(r.status === 'found' && r.espace).toEqual({ v: 1 });
+  });
+});
+
+describe('withTimeout — le silence du serveur ne bloque pas la page (T5)', () => {
+  it('rend le fallback quand la requête ne répond JAMAIS', async () => {
+    vi.useFakeTimers();
+    const jamais = new Promise<EspaceRead>(() => {});
+    const p = withTimeout<EspaceRead>(jamais, 8000, { status: 'unreachable' });
+    await vi.advanceTimersByTimeAsync(8000);
+    expect(await p).toEqual({ status: 'unreachable' });
+    vi.useRealTimers();
+  });
+
+  it('rend le fallback si la requête ÉCHOUE (jamais une exception qui remonte)', async () => {
+    await expect(withTimeout(Promise.reject(new Error('réseau')), 50, 'repli')).resolves.toBe('repli');
+  });
+
+  it('rend la vraie réponse quand elle arrive à temps — et n’attend pas le délai', async () => {
+    await expect(withTimeout(Promise.resolve('vrai'), 8000, 'repli')).resolves.toBe('vrai');
+  });
+
+  it('le silence ne vaut PAS « révoqué » : on ne purge pas le cache sur un doute réseau', async () => {
+    const r = await withTimeout<EspaceRead>(new Promise(() => {}), 1, { status: 'unreachable' });
+    expect(decideEspaceState(r.status, true)).toBe('page-cache');
   });
 });

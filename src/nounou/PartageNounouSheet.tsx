@@ -31,13 +31,11 @@ function timeAgo(iso: string): string {
 }
 
 export default function PartageNounouSheet({
-  connected,
   onClose,
   onTraduire,
   toast,
   initialToken,
 }: {
-  connected: boolean;
   onClose: () => void;
   onTraduire: (langue: NounouLangue) => void;
   toast: (m: string) => void;
@@ -108,7 +106,7 @@ export default function PartageNounouSheet({
 
   const createDest = () => {
     const n = newName.trim();
-    if (!n) return toast('Donne un prénom');
+    if (!n) return toast('Donnez un prénom');
     const id = upsertDest({ prenom: n, role: 'Nounou', langue: 'fr', enfants: [] });
     setSelId(id);
     setNewName('');
@@ -200,7 +198,7 @@ export default function PartageNounouSheet({
     try {
       const { error } = await revokeEspace(dest.token);
       if (error === 'session') {
-        toast(`Connecte-toi pour retirer ${dest.prenom} — son lien doit être coupé côté serveur.`);
+        toast(`Connectez-vous pour retirer ${dest.prenom} — son lien doit être coupé côté serveur.`);
         return;
       }
       if (error) {
@@ -221,7 +219,7 @@ export default function PartageNounouSheet({
     if (qr) return setQr(null);
     if (!dest) return;
     // Publier d'abord pour que le QR pointe vers un lien actif.
-    if (supabaseEnabled && connected) {
+    if (supabaseEnabled) {
       try {
         await publishNounouEspace(doc, dest);
         void lastEspaceOpen(dest.token).then(setLastOpen);
@@ -342,8 +340,8 @@ export default function PartageNounouSheet({
             <>
               <div className="nz-info draft" style={{ marginTop: 10 }}>
                 <span>
-                  Tu écris en français ; la traduction part avec le lien. Pense à <b>relire le
-                  sensible</b> (santé, urgences, conduites, allergies) quand tu peux.
+                  Vous écrivez en français ; la traduction part avec le lien. Pensez à <b>relire le
+                  sensible</b> (santé, urgences, conduites, allergies) quand vous pouvez.
                 </span>
               </div>
               <button className="cz-cta ghost" onClick={() => onTraduire(dest.langue)}>

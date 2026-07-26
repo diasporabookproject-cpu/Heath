@@ -42,10 +42,10 @@ export default function SecuriserVolet({ onDone, onCancel }: { onDone: () => voi
 
   return (
     <div style={{ paddingTop: 4 }}>
-      <div className="cz-blab" style={{ marginTop: 2 }}>Sécurise ta page pour créer son lien</div>
+      <div className="cz-blab" style={{ marginTop: 2 }}>Sécurisez votre page pour créer son lien</div>
       <div className="cz-review" style={{ margin: '6px 0 12px' }}>
         {step === 'email'
-          ? 'Ton lien doit vivre quelque part de sûr. Ton e-mail, un code à 6 chiffres — c’est tout.'
+          ? 'Votre lien doit vivre quelque part de sûr. Votre e-mail, un code à 6 chiffres — c’est tout.'
           : `On a envoyé un code à 6 chiffres à ${email}.`}
       </div>
       {step === 'email' ? (
@@ -57,7 +57,7 @@ export default function SecuriserVolet({ onDone, onCancel }: { onDone: () => voi
           autoFocus
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="toi@exemple.com"
+          placeholder="prenom@exemple.com"
         />
       ) : (
         <input

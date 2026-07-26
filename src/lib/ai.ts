@@ -33,7 +33,7 @@ export async function generateRecipeDraft(intention: string, opts: AdaptOpts = {
   if (!supa) throw new Error('Synchro non configurée.');
   const { data: sess } = await supa.auth.getSession();
   // ③ (GO T4) : messages VISIBLES sans « IA/génération » — on nomme le geste.
-  if (!sess.session) throw new Error('Connecte-toi (☁︎) pour mettre en forme une recette.');
+  if (!sess.session) throw new Error('Connectez-vous pour mettre en forme une recette.');
 
   const { data, error } = await supa.functions.invoke('generate-recipe', {
     body: { intention, regles: opts.regles, adaptation: opts.adaptation },
@@ -118,7 +118,7 @@ async function importCall(body: Record<string, unknown>): Promise<RecipeDraft> {
   const supa = getSupabase();
   if (!supa) throw new Error('Synchro non configurée.');
   const { data: sess } = await supa.auth.getSession();
-  if (!sess.session) throw new Error('Connecte-toi (☁︎) pour importer une recette.');
+  if (!sess.session) throw new Error('Connectez-vous pour importer une recette.');
 
   const { data, error } = await supa.functions.invoke('generate-recipe', { body });
   if (error) {

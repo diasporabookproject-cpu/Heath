@@ -23,8 +23,8 @@ export default function ContactSheet({
   const [role, setRole] = useState(edit?.role ?? '');
 
   const save = () => {
-    if (!nom.trim()) return toast('Donne un nom');
-    if (!tel.trim()) return toast('Donne un numéro');
+    if (!nom.trim()) return toast('Donnez un nom');
+    if (!tel.trim()) return toast('Donnez un numéro');
     upsertContact({ id: edit?.id, nom: nom.trim(), tel: tel.trim(), role: role.trim() || undefined });
     toast(edit ? 'Contact enregistré' : 'Contact ajouté');
     onClose();

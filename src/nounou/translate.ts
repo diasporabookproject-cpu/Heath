@@ -24,7 +24,7 @@ export async function translateTexts(
   const supa = getSupabase();
   if (!supa) return null;
   const { data: sess } = await supa.auth.getSession();
-  if (!sess.session) throw new Error('Connecte-toi (☁︎) pour générer les traductions.');
+  if (!sess.session) throw new Error('Connectez-vous pour générer les traductions.');
 
   const out: string[] = [];
   const BATCH = 40; // limite la taille d'un appel (latence/tokens)

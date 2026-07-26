@@ -1,5 +1,5 @@
 # ÉTAT — Manzil
-**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 25 juillet 2026 (clôture lot Refonte mise en page Cuisine, merge `lot-cuisine-refonte-v1` → défaut)**
+**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 26 juillet 2026 (lot Identité & accès Phase 1 — T1→T6 livrés, `lot-identite-v1`, attend le device test avant merge)**
 
 > **Rôle.** *Où on en est* (rapide). Le *quoi* (lent) = `PROJET_MAISON_OS.md` (côté PO). Le *journal* (append-only, détaillé) = `DEVLOG.md`.
 > **Rituel d'ouverture de thread : « Contexte = `PROJET_MAISON_OS.md` + `ETAT.md` ».**
@@ -9,7 +9,21 @@
 
 ## 🔵 En vol
 
-**Rien en vol.** Prochain : au choix du PO — revue éditoriale du Fonds de départ (file n°1) · lot A7 (file n°2).
+**Lot Identité & accès — Phase 1 « le compte requis » : CODE COMPLET (T1→T6), branche `lot-identite-v1`.**
+Il ne reste QUE le **device test du PO** puis le merge. Les deux workflows (Pages + APK) pointent sur la branche du lot.
+**L'invariant « compte différé, jamais imposé » est mort** : l'app demande le compte au premier lancement (Écran 1), le foyer vient ensuite (Écran 2). Réf : `READBACK_IDENTITE_ACCES.md` · `PASSATION_UI_IDENTITE_ACCES.md` · maquettes `docs/maquettes/identite-*.html` · ADR 33.
+- **T1 le mur** — Écran 1 (`ftue/Entrer.tsx`), aucune échappatoire. Le gate (`ftue/gate.ts`, pur, testé) porte le **drapeau LOCAL `compteLie`**, jamais la session vivante : hors-ligne, `getSession()` est nulle dès le jeton expiré — s'y fier enfermerait l'utilisateur dehors avec ses données sur son téléphone. Rattrapage du drapeau depuis une session existante (appareils déjà connectés).
+- **T2 la mort de la fusion** — `adopt()`, `planAdopt`, `dropLocal`, la dédup de packs, la feuille « Fusionner nos maisons » et `sendMagicLink` : **supprimés**. Règle qui remplace : `foyerTransition` — `first-attach`/`same` → cycle normal · **`switch` → purge LOCALE + pull seul**. Purge prouvée **strictement locale** (`foyer-switch.test.ts` : `['select:docs']` et rien d'autre ; test mutation-testé).
+- **T3 fonder ou rejoindre** — Écran 2 (`ftue/Foyer.tsx`). **Celui qui rejoint SAUTE la FTUE** (bifurcation de parcours). `#join` retiré de la FTUE. **Avenant PO « le code d'abord »** : l'invité entre par son code (10 signes, 2×5), l'e-mail vient après, justifié ; forme validée en local, code mis de côté (`codeInvitationEnAttente`) et rejoué par l'écran 2 — **aucune fenêtre serveur rouverte**.
+- **T4 la page de compte** — `compte/ComptePage.tsx` remplace `AccountSheet` (supprimée). Identité · déconnexion · membres du foyer · **code d'invitation né du geste (24 h)** · **Avancé** (export enterré · revoir l'introduction · quitter ce foyer, membre seulement) · **3 variantes de suppression + une 4ᵉ que la maquette n'avait pas** (`inconnu` : foyer illisible ⇒ on n'invente aucune conséquence). **Pastille d'initiale ×4** (`ui/Pastille.tsx`) : plus aucun état de connexion dans les en-têtes. Machinerie d'héritage (`checkOwnerNotice`/bandeau) **supprimée** — ADR 33 tenue.
+- **T5 la page morte** — `views/PageMorte.tsx`, **option A** (B rendrait un lien révoqué relisible : les policies de `0011` joignent `espaces`). **Deux langues** (fr + darija = ce que le produit publie), **sans action**, « hors-ligne » **distinct** du « mort ». **Défaut réel corrigé au passage** : la page du personnel pouvait rester sur « Chargement… » indéfiniment → délai de 8 s dans `readEspace`, le silence vaut *injoignable* (jamais *révoqué*).
+- **T6 vouvoiement** — 73 remplacements, 31 fichiers, chaînes exactes. **Restent au tutoiement, volontairement** : les messages ENVOYÉS (voix de l'employeur vers son personnel / son co-parent) · les pages REÇUES · les commentaires.
+- **Serveur** : `0012` (renversement de `0008`, ADR 33) · `0013` (`preview_invite`) · `0014` (`membres.prenom`) · edge `invite` TTL 24 h — **en prod**, parité de clôture 0 écart, jeton révoqué. Re-vérifié le 26/07 à la clé publique seule (fonction présente, `owner_notice` absente, `prenom` présente).
+- **Portes** : typecheck · **259 tests** · build web+natif · **3 smokes** · captures.
+- **⚠️ Reste bloqué** : le **message d'invitation** attend `manzil.ma` — le lien envoyé est l'URL web réelle de l'app en attendant (un seul endroit : `messageInvitation`).
+- **Hors périmètre Phase 1** : Google/Apple (Phase 2) · l'invitation par lien profond.
+
+**Prochain après le merge** : au choix du PO — revue éditoriale du Fonds de départ (file n°1) · lot A7 (file n°2).
 
 **Lot Refonte de la mise en page Cuisine (Option B, DA v2) : CLOS le 25/07** — mergé au défaut (`lot-cuisine-refonte-v1`, merge --no-ff), **les deux workflows repointés au défaut**. La maquette est adoptée **en entier** ; référence versionnée : `docs/maquettes/maquette-cuisine-finetune.html`.
 - **T1 vue jour** — les 4 cartes de moment égales → **carte-repas HÉROS** (le **prochain repas à servir**, `hero.ts`/`pickHeroKey` testé ; dégradé + emoji Fluent par défaut, **vraie photo du plat si elle existe** via `PlatPhoto`, miroir exact de `FichePhoto`) + « le reste de la journée » en tuiles ; jour vide → **invitation** (disque, « Copier une journée », 4 moments tuilés). Nom de plat en **serif `'Fraunces'` EXPLICITE**.
@@ -32,12 +46,14 @@
 ## 🟡 Chantier UX — passe 1 (simplicité & fluidité)
 
 **Traités :** A3+A4 (composer/grain) · A6 (bibliothèque) · volet C partiel → **lot Cuisine** · **A7** (design clos).
-**Restants :** **A1** parcours roi · **A2** les envois · **A5** Nounou page blanche · **B1** accueil *(piste radiale)* · **B2** Sécurité legacy · **B3** compte & accès.
+**Restants :** **A1** parcours roi · **A2** les envois · **A5** Nounou page blanche · **B1** accueil *(piste radiale)* · **B2** Sécurité legacy.
+*(**B3 compte & accès** est soldé par le lot Identité & accès Phase 1 — page de compte, pastille unique, suppression à 4 variantes, page morte.)*
 
 ## 🔴 Bloquants avant mise en ligne
 
 - **A7-C2** — le token survit au renommage (faille **symétrique** Cuisine + Nounou) → durcissement des liens, parking « avant lancement public »
 - **Naming** — deadline dure = 1ᵉʳ upload store · **domaine `manzil.ma`** (bloque landing + branding des liens)
+- **Couture visuelle FTUE** — les écrans 1 et 2 sont en DA v2, la suite de la FTUE (domaines, gabarits, personnes) ne l'est pas. La rupture se voit **chez le fondateur**, pas chez le membre. Signalé au read-back UI, à traiter en lot UI.
 - **RGPD** — registre des traitements : **ligne « allergies → relais IA » RÉDIGÉE** (DEVLOG, clôture C1) — à porter au registre (PO)
 
 ## 📦 Parking — assumé, avec son signal de réouverture

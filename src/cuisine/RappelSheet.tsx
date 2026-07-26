@@ -28,7 +28,7 @@ export default function RappelSheet({ kind, onClose, toast }: Props) {
 
   const save = () => {
     setRappel(kind, { day, time });
-    toast(`Noté — on te le rappelle chaque ${DAY_LABELS[day]} à ${time}, à l’ouverture de l’app`);
+    toast(`Noté — on vous le rappelle chaque ${DAY_LABELS[day]} à ${time}, à l’ouverture de l’app`);
     onClose();
   };
   const off = () => {
@@ -45,7 +45,7 @@ export default function RappelSheet({ kind, onClose, toast }: Props) {
         <div className="cz-sheethead">
           <div className="ttl">
             Rappel d’envoi
-            <small>On te le rappelle à l’ouverture de l’app — pas de notification.</small>
+            <small>On vous le rappelle à l’ouverture de l’app — pas de notification.</small>
           </div>
           <button className="cz-x" onClick={onClose} aria-label="Fermer">✕</button>
         </div>

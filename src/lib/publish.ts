@@ -26,7 +26,7 @@ export async function getAccessToken(): Promise<string> {
   if (!supa) throw new Error('Synchro non configurée.');
   const { data } = await supa.auth.getSession();
   const token = data.session?.access_token;
-  if (!token) throw new Error('Connecte-toi (☁︎ en haut) pour partager avec les notes vocales.');
+  if (!token) throw new Error('Connectez-vous pour partager avec les notes vocales.');
   return token;
 }
 

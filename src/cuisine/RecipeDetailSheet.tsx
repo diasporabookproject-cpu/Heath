@@ -54,7 +54,7 @@ export default function RecipeDetailSheet({ recipeId, voiceIds, onClose, onVoice
   const duplicate = () => {
     const id = nextRecipeId(recipes, recipe.role);
     upsertRecipe({ ...recipe, id, nom: `${recipe.nom} (copie)`, fav: false, packId: undefined });
-    toast('Copie créée — à toi de l’adapter');
+    toast('Copie créée — à vous de l’adapter');
     onOpenRecipe?.(id);
   };
 
@@ -214,7 +214,7 @@ function DetailBody({
           <div className="cz-aibanner">
             <IconStar size={17} />
             <span>
-              Recette <b>à valider</b>. Ajuste-la, puis valide pour l’ajouter à ta bibliothèque.
+              Recette <b>à valider</b>. Ajustez-la, puis validez pour l’ajouter à votre bibliothèque.
             </span>
           </div>
         )}
@@ -344,7 +344,7 @@ function EditBody({
       <div className="cz-sheethead">
         <div className="ttl">
           Modifier la recette
-          <small>Ajuste et enregistre</small>
+          <small>Ajustez et enregistrez</small>
         </div>
         <button className="cz-x" onClick={onCancel} aria-label="Annuler">
           ✕

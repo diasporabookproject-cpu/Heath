@@ -22,7 +22,7 @@ export default function RegleSheet({
   const [permis, setPermis] = useState(edit?.permis ?? true);
 
   const save = () => {
-    if (!texte.trim()) return toast('Écris la règle');
+    if (!texte.trim()) return toast('Écrivez la règle');
     upsertRegle({ id: edit?.id, texte: texte.trim(), permis });
     toast(edit ? 'Règle enregistrée' : 'Règle ajoutée');
     onClose();

@@ -237,3 +237,23 @@
 .mz-audio-track { flex: 1; height: 6px; border-radius: 6px; background: #eae8df; position: relative; cursor: pointer; }
 .mz-audio-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: linear-gradient(90deg, var(--mz-grn1), var(--mz-grn2)); }
 .mz-audio-time { font-size: 10.5px; color: var(--mz-mut); flex: none; font-weight: 500; }
+
+/* — La pastille d'initiale : l'unique accès au compte (T4, identité & accès).
+     La classe de l'hôte donne taille et position ; celle-ci donne l'apparence,
+     identique aux quatre emplacements (Maison · Cuisine · Nounou · Sécurité). — */
+.mz-past {
+  border: none;
+  /* !important : les classes hôtes (`.b1 .b1-acc`, `.cz-headicon`, `.account-btn`)
+     sont plus spécifiques — or c'est ICI que vit l'apparence commune aux 4 emplacements. */
+  border-radius: 50% !important;
+  background: #f7e3d7 !important;
+  color: #c25528 !important;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

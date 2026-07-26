@@ -7,14 +7,14 @@ import NounouView from './nounou/NounouView';
 import SecuriteView from './views/SecuriteView';
 import EspaceView from './views/EspaceView';
 import MzDemo from './ui/MzDemo';
-import AccountSheet from './components/AccountSheet';
+import ComptePage from './compte/ComptePage';
+import Pastille, { initialeDe } from './ui/Pastille';
 import { Sheet } from './ui/primitives';
 import { readEspaceToken } from './lib/espace';
 import { supabaseEnabled } from './lib/supabase';
-import { checkOwnerNotice, ackOwnerNotice } from './lib/auth';
 import { isNative, onBackButton, minimizeApp } from './lib/platform';
 import { closeTopSheet } from './ui/primitives';
-import { loadCompteLie, loadRolesActifs, saveRolesActifs, type RoleActif } from './lib/db';
+import { loadCompteLie, loadMonPrenom, loadRolesActifs, saveRolesActifs, type RoleActif } from './lib/db';
 import { useSession } from './lib/useSession';
 import { useSync } from './lib/sync/useSync';
 import { useNounou } from './nounou/useNounou';
@@ -37,15 +37,17 @@ export default function App() {
   // (personne = contexte) : la page ouvre sa feuille d'envoi pré-sélectionnée.
   const [shareFor, setShareFor] = useState<string | null>(null);
   const { session } = useSession();
-  // T1 (Identité & accès) : « hors-ligne » n'est PAS « déconnecté ». La session
-  // vivante est nulle hors-ligne dès que le jeton d'accès a expiré ; l'affordance
-  // compte doit suivre le COMPTE LIÉ (drapeau local), sinon l'en-tête proposerait
-  // de « se connecter » à quelqu'un qui l'est déjà et n'a qu'un problème de réseau.
-  const [compteLie, setCompteLie] = useState(false);
+  // T4 : l'accès au compte est une PASTILLE D'INITIALE, la même partout. Elle ne
+  // porte plus d'état de connexion — derrière le mur (T1) il y a toujours un compte
+  // lié, et « hors-ligne » n'est pas « déconnecté » : la session vivante est nulle
+  // hors-ligne dès que le jeton d'accès a expiré. L'initiale se lit donc en LOCAL
+  // (prénom, sinon e-mail du compte lié), jamais dans la session.
+  const [initiale, setInitiale] = useState('?');
   useEffect(() => {
-    void loadCompteLie().then((c) => setCompteLie(!!c));
-  }, [session]);
-  const connected = !!session || compteLie;
+    void Promise.all([loadCompteLie(), loadMonPrenom()]).then(([c, p]) =>
+      setInitiale(initialeDe(p, c?.email)),
+    );
+  }, [session, accountOpen]);
   // F4 (Flow FTUE) : rôles ACTIVÉS (cartes posées sur le hub) — méta locale, posée
   // par la FTUE, la migration one-shot (appareils existants) ou le « ＋ » ci-dessous.
   const [rolesActifs, setRolesActifs] = useState<RoleActif[]>([]);
@@ -57,13 +59,9 @@ export default function App() {
     setRolesActifs(next);
     void saveRolesActifs(next);
   };
-  // AS-2b : bandeau « tu as hérité du foyer » (l'ancien owner a supprimé son compte,
-  // la propriété a été transférée à cet utilisateur). Affiché une fois, puis acquitté.
-  const [ownerNotice, setOwnerNotice] = useState(false);
-  useEffect(() => {
-    if (!session) return;
-    void checkOwnerNotice().then(setOwnerNotice);
-  }, [session]);
+  // (Le bandeau d'héritage de foyer est MORT avec ADR 33 : la propriété ne se
+  // transfère plus, le foyer ne survit pas à son titulaire — 0012 a retiré
+  // `owner_notice` et `ack_owner_notice` de la base.)
   // Sync cloud (S3) : non bloquante ; après un pull qui change le local, recharge
   // le store Cuisine ET le doc Nounou (sinon la vue Nounou garderait un doc
   // périmé en mémoire et le ré-écraserait au prochain save — FIX revue Q n°6).
@@ -129,6 +127,7 @@ export default function App() {
           onNewPage={() => setNewPageOpen(true)}
           onOpenAccount={() => setAccountOpen(true)}
           showAccount={supabaseEnabled}
+          initiale={initiale}
           rolesActifs={rolesActifs}
         />
       ) : screen === 'cuisine' ? (
@@ -137,7 +136,7 @@ export default function App() {
         ) : (
           <CuisineView
             showAccount={supabaseEnabled}
-            connected={connected}
+            initiale={initiale}
             onOpenAccount={() => setAccountOpen(true)}
             onBack={back}
             initialShareToken={shareFor ?? undefined}
@@ -147,7 +146,7 @@ export default function App() {
       ) : screen === 'nounou' ? (
         <NounouView
           showAccount={supabaseEnabled}
-          connected={connected}
+          initiale={initiale}
           onOpenAccount={() => setAccountOpen(true)}
           onBack={back}
           initialShareToken={shareFor ?? undefined}
@@ -161,14 +160,7 @@ export default function App() {
             </button>
             <span>Sécurité du foyer</span>
             {supabaseEnabled ? (
-              <button
-                className="account-btn"
-                onClick={() => setAccountOpen(true)}
-                aria-label="Compte et synchro"
-                title={connected ? 'Compte et synchro' : 'Se connecter'}
-              >
-                {connected ? '☁︎' : '☁︎ Connexion'}
-              </button>
+              <Pastille initiale={initiale} onClick={() => setAccountOpen(true)} hostClass="account-btn" />
             ) : (
               <span style={{ width: 64 }} />
             )}
@@ -182,7 +174,7 @@ export default function App() {
       {newPageOpen && (
         <Sheet
           title="Une page pour…"
-          sub="Chaque page arrive déjà remplie — tu ajustes, tu n’écris pas tout."
+          sub="Chaque page arrive déjà remplie — vous ajustez, vous n’écrivez pas tout."
           onClose={() => setNewPageOpen(false)}
         >
           {/* F4 : le « ＋ » est LE chemin d'activation post-FTUE — sans lui, « rien
@@ -219,7 +211,7 @@ export default function App() {
             <span className="mz-tav" style={{ background: '#F1EFE8', fontSize: 20 }}>🧺</span>
             <span>
               <h4>Entretien</h4>
-              <div className="st">Ménage, linge, les standards de ta maison</div>
+              <div className="st">Ménage, linge, les standards de votre maison</div>
             </span>
             <span className="mz-soon">Bientôt</span>
           </div>
@@ -244,36 +236,7 @@ export default function App() {
           </div>
         </Sheet>
       )}
-      {accountOpen && <AccountSheet session={session} onClose={() => setAccountOpen(false)} />}
-
-      {ownerNotice && (
-        <Sheet
-          title="Ce foyer est désormais le tien"
-          onClose={() => {
-            void ackOwnerNotice();
-            setOwnerNotice(false);
-          }}
-        >
-          <div className="mz-sm" style={{ marginBottom: 14 }}>
-            Tu es désormais responsable de ce foyer. La personne qui le gérait a supprimé son
-            compte ; rien n’est perdu — tes menus, tes pages et tes réglages sont intacts et
-            continuent normalement. C’est simplement toi qui veilles dessus à présent, et toi
-            seul·e peux désormais le supprimer.
-          </div>
-          <div className="mz-btnrow">
-            <button
-              className="mz-btn primary"
-              onClick={() => {
-                void ackOwnerNotice();
-                setOwnerNotice(false);
-              }}
-            >
-              J’ai compris
-            </button>
-          </div>
-        </Sheet>
-      )}
-
+      {accountOpen && <ComptePage session={session} onClose={() => setAccountOpen(false)} />}
     </div>
   );
 }

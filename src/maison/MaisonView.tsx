@@ -15,6 +15,7 @@ import Em from '../ui/Em';
 import { dayTitleISO, todayISO } from '../nounou/dates';
 import type { DayMenu, Destinataire, SecuriteFiche } from '../types';
 import './b1.css';
+import Pastille from '../ui/Pastille';
 
 /** Date ISO (YYYY-MM-DD) décalée de `n` jours, en heure locale (sûr aux passages de mois). */
 function isoPlusDays(iso: string, n: number): string {
@@ -40,6 +41,8 @@ interface Props {
   onNewPage: () => void;
   onOpenAccount: () => void;
   showAccount: boolean;
+  /** T4 : initiale de la pastille de compte (la même aux 4 emplacements). */
+  initiale: string;
   /** F4 (Flow FTUE) : rôles dont la carte est posée sur le hub (les PERSONNES réelles
    * s'affichent toujours ; seuls les accès de rôle SANS destinataire sont filtrés). */
   rolesActifs: PersonneKind[];
@@ -54,7 +57,7 @@ function timeAgo(iso: string | null): string {
   return d === 1 ? 'lu hier' : `lu il y a ${d} j`;
 }
 
-export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOpenAccount, showAccount, rolesActifs }: Props) {
+export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOpenAccount, showAccount, initiale, rolesActifs }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const persons = useStore((s) => s.settings.persons);
@@ -78,7 +81,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
     try {
       const { error } = await revokeEspace(p.token);
       if (error === 'session') {
-        toast(`Connecte-toi pour retirer ${p.prenom} — son lien doit être coupé côté serveur.`);
+        toast(`Connectez-vous pour retirer ${p.prenom} — son lien doit être coupé côté serveur.`);
         return;
       }
       if (error) {
@@ -295,9 +298,7 @@ export default function MaisonView({ onOpenPage, onOpenSecurite, onNewPage, onOp
             <div className="b1-big">{titleDate}</div>
           </div>
           {showAccount && (
-            <button className="b1-acc" onClick={onOpenAccount} aria-label="Compte et réglages">
-              <Em ch="👤" size={20} />
-            </button>
+            <Pastille initiale={initiale} onClick={onOpenAccount} hostClass="b1-acc" />
           )}
         </div>
 

@@ -1,0 +1,184 @@
+/* Page de compte — lot Identité & accès T4.
+   Repris au pixel de docs/maquettes/identite-ecrans-compiles.html (§3 Le compte),
+   docs/maquettes/identite-derniers-ecrans.html (aucun code actif · suppression seul)
+   et de la grammaire des états (identite-page-morte-chargements.html).
+   Registre : VOUVOIEMENT. */
+
+.cp {
+  --paper: #faf8f5;
+  --ink2: #1c1815;
+  --muted: #9b948b;
+  --line: #f0ebe3;
+  --accent: #d9622f;
+  --accent-ink: #c25528;
+  --tile: #f7e3d7;
+  --danger: #b4453a;
+  --dangerbg: #fbeeec;
+  --dangerline: #f2d9d5;
+
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  padding: 0 18px;
+  background: var(--paper);
+  color: #2a2420;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  overflow-y: auto;
+}
+.cp * { box-sizing: border-box; }
+.cp .grow { flex: 1; min-height: 8px; }
+
+/* En-tête : chevron de retour + titre */
+.cp .hd { display: flex; align-items: center; gap: 10px; padding: 19px 0 16px; }
+.cp .hd .bk {
+  width: 31px; height: 31px; flex: none; border: none; border-radius: 10px; background: #f2eee7;
+  color: #8a8175; font-size: 16px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.cp .hd .ti { font-size: 19px; font-weight: 800; letter-spacing: -0.025em; color: var(--ink2); }
+
+.cp .cardw { background: #fff; border-radius: 15px; box-shadow: 0 3px 11px rgba(30, 25, 20, 0.05); overflow: hidden; }
+
+/* Identité */
+.cp .idrow { display: flex; align-items: center; gap: 11px; padding: 14px; }
+.cp .idrow .av {
+  width: 41px; height: 41px; flex: none; border-radius: 13px; background: var(--tile); color: var(--accent-ink);
+  display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 800;
+}
+.cp .idrow .it { min-width: 0; }
+.cp .idrow .it b {
+  display: block; font-size: 13px; font-weight: 700; color: var(--ink2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cp .idrow .it i { font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--muted); }
+
+.cp .logout {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 14px;
+  border: none; border-top: 1px solid var(--line); background: none;
+  font-family: inherit; font-size: 13px; font-weight: 600; color: #6f6860; cursor: pointer; text-align: left;
+}
+.cp .logout svg { width: 15px; height: 15px; flex: none; color: #a89e8f; }
+.cp .hint { margin: 0; padding: 8px 4px 0; font-size: 10px; font-weight: 500; line-height: 1.5; color: #b0a898; }
+.cp .seclabel {
+  margin: 19px 4px 8px; font-size: 10px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.07em; color: #b5ad9f;
+}
+
+/* Membres du foyer */
+.cp .mrow { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-top: 1px solid var(--line); }
+.cp .mrow:first-child { border-top: none; }
+.cp .mrow .ma {
+  width: 32px; height: 32px; flex: none; border-radius: 50%; background: #f2eee7; color: #a08b78;
+  display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;
+}
+.cp .mrow .mn { flex: 1; font-size: 13px; font-weight: 700; color: var(--ink2); }
+.cp .mrow .mn span { font-size: 11px; font-weight: 600; color: var(--muted); }
+
+/* Le code d'invitation NAÎT DU GESTE : par défaut, une invitation à en créer un. */
+.cp .genrow {
+  display: flex; align-items: center; gap: 11px; width: 100%; padding: 13px 14px;
+  border: none; border-top: 1px solid var(--line); background: none; font-family: inherit;
+  cursor: pointer; text-align: left;
+}
+.cp .genrow .gi {
+  width: 30px; height: 30px; flex: none; border-radius: 10px; background: #f7f3ed; color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+}
+.cp .genrow .gt2 { flex: 1; }
+.cp .genrow .gt2 b { display: block; font-size: 13px; font-weight: 700; color: var(--ink2); }
+.cp .genrow .gt2 i { display: block; margin-top: 2px; font-style: normal; font-size: 10.5px; font-weight: 500; color: var(--muted); }
+.cp .genrow:disabled { cursor: default; }
+.cp .genrow:disabled .gt2 b { color: #a89e8f; }
+
+.cp .coderow {
+  display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 14px;
+  border-top: 1px solid var(--line); background: #fffdfb;
+}
+.cp .coderow .ct { flex: 1; min-width: 0; }
+.cp .coderow .ct i {
+  display: block; font-style: normal; font-size: 9.5px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.06em; color: #b5ad9f;
+}
+.cp .coderow .ct b { display: block; margin-top: 2px; font-size: 18px; font-weight: 800; letter-spacing: 0.13em; color: var(--ink2); }
+.cp .coderow .sh {
+  display: flex; align-items: center; gap: 5px; flex: none; padding: 8px 12px;
+  border: none; border-radius: 999px; background: var(--accent); color: #fff;
+  font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer;
+}
+.cp .coderow .sh svg { width: 12px; height: 12px; }
+
+/* Deux liens discrets, au pied de la page */
+.cp .footlinks { display: flex; flex-direction: column; align-items: center; gap: 11px; padding: 14px 0 22px; }
+.cp .footlinks .fl {
+  padding: 0; border: none; background: none; font-family: inherit;
+  font-size: 11.5px; font-weight: 700; color: #a89e8f; cursor: pointer;
+}
+.cp .footlinks .fl.dgr { color: #bd8b84; }
+
+/* Avancé */
+.cp .row {
+  display: flex; align-items: center; gap: 11px; width: 100%; padding: 13px 14px;
+  border: none; border-top: 1px solid var(--line); background: none;
+  font-family: inherit; cursor: pointer; text-align: left;
+}
+.cp .row:first-child { border-top: none; }
+.cp .row .ic {
+  width: 30px; height: 30px; flex: none; border-radius: 10px; background: #f7f3ed; color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+}
+.cp .row .rt { flex: 1; }
+.cp .row .rt b { display: block; font-size: 13px; font-weight: 700; color: var(--ink2); }
+.cp .row .rt i { display: block; margin-top: 2px; font-style: normal; font-size: 10.5px; font-weight: 500; color: var(--muted); }
+.cp .row .cv { flex: none; font-size: 16px; color: #cabfb0; }
+
+/* Une ligne d'erreur, jamais le message brut du serveur */
+.cp .errline { display: flex; align-items: flex-start; gap: 7px; margin-top: 12px; }
+.cp .errline svg { flex: none; margin-top: 1px; color: var(--danger); }
+.cp .errline p { font-size: 11.5px; font-weight: 600; line-height: 1.5; color: var(--danger); }
+
+/* Feuille de confirmation. Noms PRÉFIXÉS : `.sheet` et `.dim` existent déjà
+   globalement (`styles.css` — animation `slideUp` + `display:flex`), et leurs
+   propriétés non redéclarées ici fuyaient dans la feuille. */
+.cp .cpdim { position: fixed; inset: 0; z-index: 1; background: rgba(24, 20, 16, 0.36); border: none; }
+.cp .cpsheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; padding: 20px 20px 22px;
+  background: var(--paper); border-radius: 22px 22px 0 0; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.16);
+}
+.cp .dic {
+  width: 42px; height: 42px; margin-bottom: 13px; border-radius: 14px;
+  background: var(--dangerbg); color: var(--danger);
+  display: flex; align-items: center; justify-content: center;
+}
+.cp .cpsheet h2 { font-size: 18.5px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; color: var(--ink2); }
+.cp .cpsheet p { margin-top: 9px; font-size: 12px; font-weight: 500; line-height: 1.6; color: var(--muted); }
+.cp .cpsheet p b { color: var(--ink2); font-weight: 700; }
+.cp .impact { margin-top: 13px; padding: 11px 12px; background: var(--dangerbg); border: 1px solid var(--dangerline); border-radius: 13px; }
+.cp .il { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 11.5px; font-weight: 600; color: #8d453c; }
+.cp .il svg { flex: none; color: var(--danger); }
+.cp .keep { margin-top: 13px; padding: 11px 12px; background: #eef3ea; border: 1px solid #d8e5cf; border-radius: 13px; }
+.cp .keep .kl { display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 600; color: #4c6b3c; }
+.cp .keep .kl svg { flex: none; color: #5f8a45; }
+
+/* Le bouton garde EXACTEMENT sa taille — seul le libellé change. */
+.cp .dbtn {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; margin-top: 17px; padding: 14px;
+  border: none; border-radius: 999px; background: var(--danger); color: #fff;
+  font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+}
+.cp .dbtn.busy { background: #d09a94; cursor: default; }
+.cp .cbtn {
+  width: 100%; padding: 12px; border: none; background: none; font-family: inherit;
+  font-size: 13.5px; font-weight: 700; color: #6f6860; cursor: pointer;
+}
+
+.cp .spin {
+  width: 16px; height: 16px; flex: none; border-radius: 50%;
+  border: 2.2px solid rgba(255, 255, 255, 0.45); border-top-color: #fff;
+  animation: cp-sp 0.8s linear infinite;
+}
+.cp .spin.dark { border: 2.2px solid #e0d9cd; border-top-color: var(--accent); }
+@keyframes cp-sp { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .cp .spin { animation-duration: 2.4s; } }

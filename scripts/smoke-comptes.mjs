@@ -62,23 +62,49 @@ console.log('Hub Maison (compte lié, session absente) ✅');
 
 // 2) Navigation vers une page de rôle (Cuisine) — le contenu est accessible hors-ligne.
 await page.locator('.b1-cuihero').click();
-const accBtn = page.getByLabel('Compte et synchro').first();
+const accBtn = page.getByLabel('Compte').first();
 await accBtn.waitFor({ timeout: 10000 });
 console.log('Page Cuisine ouverte, accès compte présent ✅');
 
-// 3) La feuille Compte s'ouvre sur l'étape e-mail (aucune session vivante) — mais
-//    T1 : l'échappatoire « je continue sans compte » N'EXISTE PLUS.
-//    (La refonte de cette feuille en page de compte propre est la tranche T4.)
+// 3) T4 : la PAGE de compte s'ouvre — SANS session vivante. Elle doit nommer
+//    l'occupant depuis l'appareil (`compteLie`), offrir la sortie, et ne jamais
+//    proposer d'« étape e-mail » : derrière le mur (T1) il n'y a plus d'état
+//    « déconnecté » à porter, seulement « compte lié, réseau absent ».
 await accBtn.click();
-await page.getByText("Mets ta maison à l'abri").waitFor({ timeout: 5000 });
+await page.locator('.cp .idrow .it b', { hasText: 'smoke@exemple.com' }).waitFor({ timeout: 5000 });
+await page.locator('.cp .logout').waitFor({ timeout: 3000 });
 if (await page.getByText('sans compte', { exact: false }).count())
   throw new Error('T1 : l’échappatoire « je continue sans compte » doit avoir disparu');
-console.log('Feuille Compte : plus aucune échappatoire « sans compte » ✅');
+// Le foyer est illisible hors-ligne → l'invitation est proposée MAIS inerte, et le
+// dit (« Disponible dès le retour du réseau ») plutôt que d'échouer en silence.
+if (!(await page.locator('.cp .genrow:disabled').count()))
+  throw new Error('T4 : « Inviter quelqu’un » doit être inerte sans session');
+// La pastille porte l'initiale de l'e-mail du compte lié (pas d'état de connexion).
+if ((await page.locator('.cp .idrow .av').innerText()) !== 'S')
+  throw new Error('T4 : la pastille d’identité doit porter l’initiale du compte');
+await page.screenshot({ path: 'scripts/shot-compte-page.png' });
+console.log('T4 : page de compte hors-ligne — occupant nommé, sortie offerte, invitation inerte ✅');
 
-// 4) Fermeture propre → retour à l'app utilisable. La feuille se ferme par son
-//    voile (primitives.tsx:198 : clic SUR l'overlay, hors du panneau).
-await page.locator('.mz-ovl.on').click({ position: { x: 6, y: 6 } });
-await page.getByLabel('Compte et synchro').first().waitFor({ timeout: 5000 });
+// 3bis) T4 : « Avancé » porte l'export ENTERRÉ et le replay de l'introduction.
+await page.locator('.cp .footlinks .fl', { hasText: 'Avancé' }).click();
+await page.getByText('Exporter mes données').waitFor({ timeout: 3000 });
+await page.getByText('Revoir l’introduction').waitFor({ timeout: 3000 });
+await page.screenshot({ path: 'scripts/shot-compte-avance.png' });
+await page.locator('.cp .hd .bk').click();
+console.log('T4 : Avancé — export enterré + revoir l’introduction ✅');
+
+// 3ter) T4 : la suppression NE BRANDIT PAS de conséquences qu'elle ne connaît pas.
+//        Foyer illisible (hors-ligne) → variante « inconnu » : aucun bloc rouge.
+await page.locator('.cp .footlinks .fl.dgr').click();
+await page.getByText('Supprimer votre compte ?').waitFor({ timeout: 3000 });
+if (await page.locator('.cp .impact').count())
+  throw new Error('T4 : aucune conséquence ne doit être affirmée quand le foyer est illisible');
+await page.locator('.cp .cbtn').click();
+console.log('T4 : suppression — aucune conséquence inventée hors-ligne ✅');
+
+// 4) Fermeture propre → retour à l'app utilisable (la page a son chevron de retour).
+await page.locator('.cp .hd .bk').click();
+await page.getByLabel('Compte').first().waitFor({ timeout: 5000 });
 console.log('Retour à l’app ✅');
 
 // 5) PORTE F1 (mini-lot destinataires) — le revoke HONNÊTE, déconnecté :
@@ -92,7 +118,7 @@ await page.getByRole('button', { name: 'Enregistrer' }).click();
 await page.getByText('Partager avec Testouya').waitFor({ timeout: 5000 }); // titre feuille v2 (T1 lot partage)
 await page.getByRole('button', { name: 'Changer' }).click();
 await page.getByRole('button', { name: 'Révoquer' }).click();
-await page.getByText('Connecte-toi pour retirer Testouya', { exact: false }).waitFor({ timeout: 5000 });
+await page.getByText('Connectez-vous pour retirer Testouya', { exact: false }).waitFor({ timeout: 5000 });
 if (await page.getByText('ne donne plus rien', { exact: false }).count()) {
   throw new Error('PORTE F1 : le toast de succès est apparu sans session (faux succès)');
 }

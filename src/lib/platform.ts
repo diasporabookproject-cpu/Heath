@@ -32,7 +32,7 @@ export async function saveAndShareFile(filename: string, content: string): Promi
     directory: Directory.Cache,
     encoding: Encoding.UTF8,
   });
-  await Share.share({ title: filename, url: res.uri, dialogTitle: 'Enregistrer ta sauvegarde' });
+  await Share.share({ title: filename, url: res.uri, dialogTitle: 'Enregistrer votre sauvegarde' });
 }
 
 /** B3 : branche le bouton retour Android (natif seulement). Renvoie le désabonnement.

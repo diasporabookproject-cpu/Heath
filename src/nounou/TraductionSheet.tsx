@@ -59,11 +59,11 @@ export default function TraductionSheet({
   };
 
   return (
-    <Sheet title={`Traduction · ${info.nom}`} sub="Tu écris en français ; ceci est dérivé" onClose={onClose}>
+    <Sheet title={`Traduction · ${info.nom}`} sub="Vous écrivez en français ; ceci est dérivé" onClose={onClose}>
       <div className="nz-info draft" style={{ marginTop: 2 }}>
         <span>
           Tout est traduit et envoyé. Le <b>sensible</b> (santé, urgences, conduites, allergies) est
-          marqué <b>« à relire »</b> — vérifie-le quand tu peux : valider, éditer, ou rejeter.
+          marqué <b>« à relire »</b> — vérifiez-le quand vous pouvez : valider, éditer, ou rejeter.
         </span>
       </div>
 

@@ -20,8 +20,8 @@ export default function ConsigneVocale({
   recipeId,
   onChange,
   title = 'Consigne vocale pour la cuisinière',
-  subtitle = 'Ta voix, dans sa langue',
-  idleHint = 'Ta voix sera partagée avec la cuisinière dans le brief',
+  subtitle = 'Votre voix, dans sa langue',
+  idleHint = 'Votre voix sera partagée avec la cuisinière dans le brief',
 }: {
   recipeId: string;
   onChange?: (has: boolean) => void;

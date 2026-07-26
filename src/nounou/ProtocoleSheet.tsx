@@ -30,7 +30,7 @@ export default function ProtocoleSheet({
         <>
           <div className="nz-info draft" style={{ marginTop: 2 }}>
             <span>
-              Modèle à compléter. Ajoute les étapes, qui appeler, et enregistre ta consigne vocale —
+              Modèle à compléter. Ajoutez les étapes, qui appeler, et enregistrez votre consigne vocale —
               il sera alors prêt à partager.
             </span>
           </div>
@@ -82,14 +82,14 @@ export default function ProtocoleSheet({
             recipeId={conduite.id}
             onChange={(has) => onVoiceChange(conduite.id, has)}
             title="Consigne vocale"
-            subtitle="Ta voix, diffusée telle quelle"
-            idleHint="Ta voix sera partagée avec le personnel — jamais synthétisée"
+            subtitle="Votre voix, diffusée telle quelle"
+            idleHint="Votre voix sera partagée avec le personnel — jamais synthétisée"
           />
 
           <div className="nz-info draft" style={{ marginTop: 14 }}>
             <span>
-              <IconShareUp size={12} /> Déjà transmis — ta consigne, ta voix. La version en darija
-              est relue par toi avant l’envoi.
+              <IconShareUp size={12} /> Déjà transmis — votre consigne, votre voix. La version en darija
+              est relue par vous avant l’envoi.
             </span>
           </div>
 

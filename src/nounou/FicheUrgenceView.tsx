@@ -50,7 +50,7 @@ export default function FicheUrgenceView({ toast }: { toast: (m: string) => void
         )}
       </div>
       <div className="nz-emptyline">
-        Numéros pré-remplis pour le Maroc — <b>à vérifier</b>. Ajoute aussi ta clinique habituelle.
+        Numéros pré-remplis pour le Maroc — <b>à vérifier</b>. Ajoutez aussi votre clinique habituelle.
       </div>
 
       {/* Contacts */}
@@ -62,7 +62,7 @@ export default function FicheUrgenceView({ toast }: { toast: (m: string) => void
       </div>
       <div className="nz-cardflush">
         {u.contacts.length === 0 ? (
-          <div className="nz-emptyline">Ajoute Maman, Papa, le pédiatre, une voisine de confiance…</div>
+          <div className="nz-emptyline">Ajoutez Maman, Papa, le pédiatre, une voisine de confiance…</div>
         ) : (
           u.contacts.map((c) => (
             <div key={c.id} className="nz-brick">
@@ -114,7 +114,7 @@ export default function FicheUrgenceView({ toast }: { toast: (m: string) => void
       </div>
       <div className="nz-cardflush">
         {doc.enfants.length === 0 ? (
-          <div className="nz-emptyline">Ajoute un enfant pour renseigner sa fiche.</div>
+          <div className="nz-emptyline">Ajoutez un enfant pour renseigner sa fiche.</div>
         ) : (
           doc.enfants.map((e) => (
             <div key={e.id} className="nz-brick">

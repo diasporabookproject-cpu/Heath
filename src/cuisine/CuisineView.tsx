@@ -22,6 +22,7 @@ import type { Recipe } from '../types';
 import { IconPlus, IconCheck, IconTune } from './icons';
 import Em from '../ui/Em';
 import './cuisine.css';
+import Pastille from '../ui/Pastille';
 
 type Segment = 'semaine' | 'recettes' | 'courses';
 type Composer = { dayKey: string; mealKey: MealKey } | null;
@@ -35,7 +36,8 @@ const dayNom = (key: string) => SEED_CONFIG.jours.find((j) => j.key === key)?.no
 
 interface Props {
   showAccount: boolean;
-  connected: boolean;
+  /** T4 : initiale de la pastille de compte (la même aux 4 emplacements). */
+  initiale: string;
   onOpenAccount: () => void;
   onBack?: () => void;
   /** Jeton d'un destinataire à cibler à l'ouverture (depuis « Envoyer » de Maison). */
@@ -46,7 +48,7 @@ interface Props {
 /** Rôle du composant principal d'un créneau (petit-déj/goûter = plat seul). */
 const soloRole = (k: MealKey): RecipeRole => (k === 'petitdej' ? 'petitdej' : k === 'gouter' ? 'gouter' : 'plat');
 
-export default function CuisineView({ showAccount, connected, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
+export default function CuisineView({ showAccount, initiale, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
   const recipes = useStore((s) => s.recipes);
   const week = useStore((s) => s.week);
   const setComponent = useStore((s) => s.setComponent);
@@ -148,7 +150,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
     setOpenRecipeId(null);
     setShareToken(undefined);
     setSharing(true);
-    toast('Ajoutée au repas — à toi d’envoyer');
+    toast('Ajoutée au repas — à vous d’envoyer');
   };
 
   return (
@@ -176,14 +178,7 @@ export default function CuisineView({ showAccount, connected, onOpenAccount, onB
               </span>
             </button>
             {showAccount && (
-              <button
-                className="cz-headicon"
-                onClick={onOpenAccount}
-                aria-label="Compte et synchro"
-                title={connected ? 'Connecté' : 'Se connecter'}
-              >
-                <Em ch="👤" size={18} />
-              </button>
+              <Pastille initiale={initiale} onClick={onOpenAccount} hostClass="cz-headicon" />
             )}
           </div>
         </div>

@@ -470,7 +470,7 @@ await page.locator('.cz-sharebtn').click();
 await page.getByText('Pour quel repas ?').waitFor({ timeout: 5000 });
 await page.getByText('Prochain repas', { exact: true }).waitFor({ timeout: 3000 }); // défaut marqué
 await page.locator('.cz-sheet.show', { hasText: 'Pour quel repas ?' }).locator('.cz-pick').first().click(); // UN tap
-await page.getByText('Ajoutée au repas — à toi d’envoyer').waitFor({ timeout: 5000 });
+await page.getByText('Ajoutée au repas — à vous d’envoyer').waitFor({ timeout: 5000 });
 await page.getByText('Accès permanent', { exact: false }).waitFor({ timeout: 5000 }); // feuille d'envoi ouverte (T1)
 await page.locator('.cz-overlay.show').first().click({ position: { x: 8, y: 8 } }).catch(() => {});
 await page.waitForTimeout(400);
@@ -507,10 +507,35 @@ await page.getByText('Fatima', { exact: false }).first().waitFor({ timeout: 5000
 await page.locator('.b1-more').first().click();
 await page.getByText('Son lien ne donnera plus rien', { exact: false }).waitFor({ timeout: 3000 });
 await page.locator('.b1-revoke .yes').click();
-await page.getByText('Connecte-toi pour retirer', { exact: false }).waitFor({ timeout: 5000 });
+await page.getByText('Connectez-vous pour retirer', { exact: false }).waitFor({ timeout: 5000 });
 if (!(await page.getByText('Fatima', { exact: false }).count()))
   throw new Error('Revoke B1 : hors session, la personne doit être CONSERVÉE');
 console.log('B1 : Retirer depuis Mon équipe — refus honnête hors session, personne conservée ✅');
+
+// 7) T5 (Identité & accès) — LA PAGE MORTE. On la joue HORS-LIGNE, volontairement :
+// c'est le seul chemin DÉTERMINISTE (la variante « révoquée » demande un serveur qui
+// répond « 0 ligne », que le bac à sable ne garantit pas — son texte est épinglé par
+// `src/views/pagemorte.test.tsx`). Le SW sert la coquille, le premier appel réseau
+// échoue tout de suite, et l'écran doit être celui du personnel : deux langues,
+// aucune action. « Hors-ligne » y reste DISTINCT du « mort » (décision PO).
+await ctx.setOffline(true);
+await page.goto(BASE + '#e=jeton-qui-nexiste-pas', { waitUntil: 'domcontentloaded' });
+// Le gate ne se décide qu'au BOOT : changer le hash sur un document déjà chargé ne
+// le rejoue pas (`Boot` a déjà tranché). On recharge donc pour de vrai — c'est aussi
+// ce que fait la personne qui ouvre son lien.
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.locator('.pm .dead').waitFor({ timeout: 20000 });
+if ((await page.locator('.pm .dl').count()) !== 2)
+  throw new Error('T5 : deux langues exactement (fr + darija) — celles que le produit publie');
+const morteFr = await page.locator('.pm .dl:not(.rtl) .m1').innerText();
+if (morteFr !== 'Pas de connexion')
+  throw new Error(`T5 : hors-ligne doit rester distinct du mort (lu : ${morteFr})`);
+if (await page.locator('.pm button, .pm a').count())
+  throw new Error('T5 : la page morte est SANS action (un bouton mort serait pire)');
+await page.locator('.pm .brandfoot').waitFor({ timeout: 3000 });
+await page.screenshot({ path: 'scripts/shot-page-morte.png' });
+await ctx.setOffline(false);
+console.log('T5 : page morte — deux langues, sans action, signée Manzil ✅');
 
 console.log(errors.length ? 'ERREURS:\n' + errors.join('\n') : 'Aucune erreur console/page ✅');
 await browser.close();

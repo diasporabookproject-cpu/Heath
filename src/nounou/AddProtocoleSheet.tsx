@@ -43,7 +43,7 @@ export default function AddProtocoleSheet({
             </span>
             <span className="ot">
               <span className="h">Rédiger</span>
-              <span className="d">Titre, étapes, qui appeler, et ta consigne vocale.</span>
+              <span className="d">Titre, étapes, qui appeler, et votre consigne vocale.</span>
             </span>
           </button>
           <button className="cz-opt2" onClick={() => setPickModel(true)}>

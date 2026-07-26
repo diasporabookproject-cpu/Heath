@@ -88,7 +88,7 @@ export default function ReglagesSheet({ onClose }: { onClose: () => void }) {
             Restrictions du foyer
           </div>
           <p className="cz-sethint" style={{ margin: '0 2px 10px' }}>
-            Ce que ta maison ne mange pas — posé une fois, pour tout le monde. Les prochaines
+            Ce que votre maison ne mange pas — posé une fois, pour tout le monde. Les prochaines
             recettes importées s’y adapteront, et rien ne s’appliquera sans te l’afficher.
           </p>
           <div className="cz-setrow">

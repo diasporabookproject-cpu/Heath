@@ -152,6 +152,7 @@ const ROLES_ACTIFS_KEY = 'rolesActifs';
 const COMPTE_LIE_KEY = 'compteLie';
 const DERNIER_COMPTE_KEY = 'dernierCompte';
 const CODE_ATTENTE_KEY = 'codeInvitationEnAttente';
+const MON_PRENOM_KEY = 'monPrenom';
 
 /** Identité liée à CET appareil (lot Identité & accès, T1). */
 export interface CompteLie {
@@ -240,6 +241,23 @@ export async function clearCodeEnAttente(): Promise<void> {
 }
 
 /**
+ * SON prénom, en copie locale (T4). Le prénom vit côté serveur (`membres.prenom`,
+ * 0014) — mais la page de compte et la pastille d'initiale doivent s'afficher
+ * hors-ligne, où `membres` est illisible. On garde donc une copie de CE qu'on a
+ * soi-même saisi ; les prénoms des AUTRES membres ne sont jamais mis en cache
+ * (ils appartiennent au foyer, pas à cet appareil).
+ */
+export async function loadMonPrenom(): Promise<string | null> {
+  const db = await getDB();
+  return ((await db.get('meta', MON_PRENOM_KEY)) as string | undefined) ?? null;
+}
+
+export async function saveMonPrenom(prenom: string): Promise<void> {
+  const db = await getDB();
+  await db.put('meta', prenom.trim(), MON_PRENOM_KEY);
+}
+
+/**
  * PURGE STRICTEMENT LOCALE des documents synchronisables (lot Identité & accès, T2).
  * Appelée au CHANGEMENT DE FOYER : cet appareil quitte le foyer X pour Y, donc la
  * copie locale de X s'en va et Y sera re-tiré du serveur (le foyer d'arrivée fait foi).
@@ -248,7 +266,9 @@ export async function clearCodeEnAttente(): Promise<void> {
  * serveur** et se re-tirent si l'appareil y revient : c'est un cache local qu'on vide,
  * jamais une suppression. (Exigence PO — prouvé par `foyer-switch.test.ts`.)
  *
- * Ne touche pas : `meta` (compteLie/ftueDone/rôles), `audio`/`images` (binaires
+ * Ne touche pas : `meta` (compteLie/ftueDone/rôles) — SAUF `monPrenom`, qui est
+ * l'identité de l'occupant précédent et n'a rien à faire sous un autre compte (sinon
+ * la pastille d'initiale afficherait la sienne, T4) ; `audio`/`images` (binaires
  * orphelins tolérés, jamais lus sans leur recette), `published` (trace d'envoi locale),
  * ni `app` — qui porte `aiQuota`, miroir d'une vérité SERVEUR, et dont le jumeau du
  * foyer d'arrivée écrase la partie réglages au pull qui suit.
@@ -262,6 +282,7 @@ export async function purgeLocalDocs(): Promise<void> {
     db.clear('securite'),
     db.clear('nounou'),
     db.clear('foyer'),
+    db.delete('meta', MON_PRENOM_KEY),
   ]);
   notifyDataChanged();
 }

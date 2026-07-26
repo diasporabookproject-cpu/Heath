@@ -114,6 +114,9 @@ button {
   font-size: 13px;
   font-weight: 700;
 }
+/* T4 : la pastille d'initiale est un DISQUE — le padding de l'ancien bouton
+   « ☁︎ Connexion » en aurait fait une ellipse. */
+.account-btn.mz-past { width: 30px; height: 30px; padding: 0; flex: none; }
 
 /* ----- Cartes ----- */
 .card {

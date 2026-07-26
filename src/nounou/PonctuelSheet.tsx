@@ -33,7 +33,7 @@ export default function PonctuelSheet({
 
   const save = () => {
     const l = label.trim();
-    if (!l) return toast('Donne un intitulé');
+    if (!l) return toast('Donnez un intitulé');
     addPonctuel({
       date,
       label: l,

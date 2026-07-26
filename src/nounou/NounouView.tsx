@@ -9,6 +9,7 @@ import type { NounouLangue } from '../types';
 import { IconShareUp, IconCheck } from '../cuisine/icons';
 import '../cuisine/cuisine.css';
 import './nounou.css';
+import Pastille from '../ui/Pastille';
 
 type Segment = 'journee' | 'conduites' | 'urgence';
 const SEG_LABEL: Record<Segment, string> = {
@@ -19,7 +20,8 @@ const SEG_LABEL: Record<Segment, string> = {
 
 interface Props {
   showAccount: boolean;
-  connected: boolean;
+  /** T4 : initiale de la pastille de compte (la même aux 4 emplacements). */
+  initiale: string;
   onOpenAccount: () => void;
   onBack?: () => void;
   /** Jeton d'un destinataire à cibler à l'ouverture (depuis « Envoyer » de Maison). */
@@ -27,7 +29,7 @@ interface Props {
   onConsumeShare?: () => void;
 }
 
-export default function NounouView({ showAccount, connected, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
+export default function NounouView({ showAccount, initiale, onOpenAccount, onBack, initialShareToken, onConsumeShare }: Props) {
   const ready = useNounou((s) => s.ready);
   const init = useNounou((s) => s.init);
 
@@ -84,14 +86,7 @@ export default function NounouView({ showAccount, connected, onOpenAccount, onBa
               <IconShareUp size={18} />
             </button>
             {showAccount && (
-              <button
-                className="cz-headicon"
-                onClick={onOpenAccount}
-                aria-label="Compte et synchro"
-                title={connected ? 'Connecté' : 'Se connecter'}
-              >
-                ☁︎
-              </button>
+              <Pastille initiale={initiale} onClick={onOpenAccount} hostClass="cz-headicon" />
             )}
           </div>
         </div>
@@ -125,7 +120,6 @@ export default function NounouView({ showAccount, connected, onOpenAccount, onBa
 
       {sharing && (
         <PartageNounouSheet
-          connected={connected}
           initialToken={shareToken}
           onClose={() => setSharing(false)}
           onTraduire={(l) => {

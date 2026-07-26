@@ -40,7 +40,7 @@ export default function ConduitesView({ toast }: { toast: (m: string) => void })
     <>
       <div className="nz-info" style={{ margin: '14px 16px 0' }}>
         <span>
-          Tes consignes, écrites une fois et partagées. Les modèles violets sont <b>à compléter</b>.
+          Vos consignes, écrites une fois et partagées. Les modèles violets sont <b>à compléter</b>.
         </span>
       </div>
 
@@ -70,7 +70,7 @@ export default function ConduitesView({ toast }: { toast: (m: string) => void })
                   style={{ marginTop: 10 }}
                   onClick={() => {
                     const n = installModeles();
-                    toast(n ? `${n} gabarit(s) « à compléter » ajoutés — à toi de les remplir` : 'Gabarits déjà présents.');
+                    toast(n ? `${n} gabarit(s) « à compléter » ajoutés — à vous de les remplir` : 'Gabarits déjà présents.');
                   }}
                 >
                   ✦ Importer les gabarits (Fièvre, Étouffement…)

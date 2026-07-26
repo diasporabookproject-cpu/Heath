@@ -1,10 +1,13 @@
 import { getSupabase } from './supabase';
-import { clearCompteLie, clearSyncState } from './db';
+import { clearCompteLie, clearSyncState, saveMonPrenom } from './db';
 import { webBaseUrl } from './platform';
 
 // Auth OTP par e-mail (code 6 chiffres) + foyer paresseux + suppression de compte.
-// L'auth n'est JAMAIS bloquante : l'app marche sans compte ; se connecter active
-// la sauvegarde/synchro et l'IA. Identité = compte Manzil (jamais un ID de store).
+// Lot Identité & accès (T1) : le compte est REQUIS — le mur précède l'app. Ce qui a
+// changé est QUAND on le demande, pas comment ; la méthode OTP est intacte. La SESSION
+// vivante, elle, ne conditionne que les opérations réseau (sync, publication, IA),
+// toutes best-effort : hors-ligne l'app reste entière (drapeau local `compteLie`).
+// Identité = compte Manzil (jamais un ID de store).
 
 /** Envoie un code de connexion à l'e-mail (crée l'utilisateur si besoin). */
 export async function sendOtp(email: string): Promise<{ error?: string }> {
@@ -112,7 +115,7 @@ export async function leaveFoyer(): Promise<{ error?: string }> {
       .select('user_id', { count: 'exact', head: true })
       .eq('foyer_id', m.foyer_id);
     if ((count ?? 1) > 1) {
-      return { error: 'Ton foyer a d’autres membres — retire-les d’abord (ou supprime le foyer).' };
+      return { error: 'Votre foyer a d’autres membres — retirez-les d’abord (ou supprimez le foyer).' };
     }
     const { error } = await supa.from('foyers').delete().eq('id', m.foyer_id);
     if (error) return { error: error.message };
@@ -146,8 +149,11 @@ export async function previewInvite(code: string): Promise<{
 
 /** Enregistre SON prénom dans le foyer (0014 : policy self + grant colonne).
  * Best-effort : un échec réseau ne doit pas bloquer l'entrée dans l'app — le
- * prénom se re-posera au prochain passage (il n'y a rien d'irréversible ici). */
+ * prénom se re-posera au prochain passage (il n'y a rien d'irréversible ici).
+ * Écrit AUSSI la copie locale (T4) : la page de compte et la pastille d'initiale
+ * doivent nommer l'occupant hors-ligne, où `membres` est illisible. */
 export async function savePrenom(prenom: string): Promise<{ error?: string }> {
+  await saveMonPrenom(prenom); // local d'abord : indépendant du réseau
   const supa = getSupabase();
   if (!supa) return { error: 'Connexion indisponible.' };
   const { data: u } = await supa.auth.getUser();
@@ -200,29 +206,65 @@ export async function acceptInvite(code: string): Promise<{ foyerId?: string; er
   return { foyerId: data.foyer_id as string };
 }
 
-/** AS-2b : `true` si l'utilisateur connecté vient d'hériter d'un foyer (transfert de
- * propriété suite à la suppression du compte de l'ancien owner — drapeau `owner_notice`
- * posé par `dispose_foyer_for_deletion`). Lu via la policy select de `membres`. */
-export async function checkOwnerNotice(): Promise<boolean> {
-  const supa = getSupabase();
-  if (!supa) return false;
-  const { data: u } = await supa.auth.getUser();
-  if (!u.user) return false;
-  const { data, error } = await supa
-    .from('membres')
-    .select('owner_notice')
-    .eq('user_id', u.user.id)
-    .limit(1);
-  if (error) return false;
-  return data?.[0]?.owner_notice === true;
+/**
+ * Ce que la page de compte (T4) doit savoir du foyer, en UNE lecture.
+ * `membres_select` (0001:135) l'autorise entre co-membres ; `espaces` se compte par
+ * `foyer_id` (0002). Hors-ligne, tout échoue proprement → `null`, et la page se
+ * rabat sur ce que l'appareil sait de lui-même (`compteLie` + `monPrenom`).
+ */
+export interface FoyerInfo {
+  foyerId: string;
+  /** L'utilisateur est-il le TITULAIRE du foyer (ADR 33 : il ne lui survit pas) ? */
+  jeSuisFondateur: boolean;
+  /** Prénom du titulaire (null s'il ne l'a pas donné) — nomme la maison d'un membre. */
+  prenomFondateur: string | null;
+  /** Tous les membres, moi inclus, dans l'ordre d'arrivée. */
+  membres: { userId: string; prenom: string | null; moi: boolean }[];
+  /** Pages partagées vivantes du foyer — ce que la suppression couperait. */
+  nbEspaces: number;
 }
 
-/** AS-2b : efface le drapeau `owner_notice` une fois le bandeau vu. Passe par un RPC
- * (`membres` n'a pas de policy update → le client ne peut pas le remettre à false lui-même). */
-export async function ackOwnerNotice(): Promise<void> {
+export async function loadFoyerInfo(): Promise<FoyerInfo | null> {
   const supa = getSupabase();
-  if (!supa) return;
-  await supa.rpc('ack_owner_notice');
+  if (!supa) return null;
+  const { data: u } = await supa.auth.getUser();
+  const uid = u.user?.id;
+  if (!uid) return null;
+  const { data: moi, error: moiErr } = await supa
+    .from('membres')
+    .select('foyer_id')
+    .eq('user_id', uid)
+    .limit(1);
+  if (moiErr) return null;
+  const foyerId = moi?.[0]?.foyer_id as string | undefined;
+  if (!foyerId) return null;
+
+  const { data: rows, error: rowsErr } = await supa
+    .from('membres')
+    .select('user_id, role, prenom, created_at')
+    .eq('foyer_id', foyerId)
+    .order('created_at', { ascending: true });
+  if (rowsErr) return null;
+  const membres = (rows ?? []).map((r) => ({
+    userId: r.user_id as string,
+    prenom: (r.prenom as string | null) ?? null,
+    moi: r.user_id === uid,
+  }));
+  const fondateur = (rows ?? []).find((r) => r.role === 'owner');
+
+  // Les pages partagées : un échec ici ne doit pas priver la page de tout le reste.
+  const { count } = await supa
+    .from('espaces')
+    .select('token', { count: 'exact', head: true })
+    .eq('foyer_id', foyerId);
+
+  return {
+    foyerId,
+    jeSuisFondateur: fondateur?.user_id === uid,
+    prenomFondateur: (fondateur?.prenom as string | null) ?? null,
+    membres,
+    nbEspaces: count ?? 0,
+  };
 }
 
 /**

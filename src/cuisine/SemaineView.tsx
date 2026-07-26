@@ -90,7 +90,7 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
 
   const openCopyPick = () => {
     if (copyCandidates.length === 0) {
-      toast('Rien à copier pour l’instant — compose ton premier repas');
+      toast('Rien à copier pour l’instant — composez votre premier repas');
       return;
     }
     setCopyPick(true);
@@ -384,7 +384,7 @@ export default function SemaineView({ view, dayIdx, onSelectDay, onToggleWeek, o
             <div className="cz-pad">
               <div className="cz-summary">
                 <div className="cz-slab">Cette semaine</div>
-                <div className="cz-sempty">Semaine vide — compose tes repas ou copie une semaine.</div>
+                <div className="cz-sempty">Semaine vide — composez vos repas ou copiez une semaine.</div>
               </div>
             </div>
           )}

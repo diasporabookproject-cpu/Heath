@@ -133,11 +133,11 @@ export default function MzDemo() {
             <span className="e" style={{ background: 'var(--mz-vioT)' }}>✦</span>
             <span>
               <b>Coup de main IA</b>
-              <i>On structure pour toi</i>
+              <i>On structure pour vous</i>
             </span>
             <span className="quota">4 / 5</span>
           </button>
-          <div className="mz-note">Chaque page arrive déjà remplie — tu ajustes, tu n'écris pas tout.</div>
+          <div className="mz-note">Chaque page arrive déjà remplie — vous ajustez, vous n'écrivez pas tout.</div>
           <div className="mz-btnrow">
             <button className="mz-btn" onClick={() => setSheet(false)}>Annuler</button>
             <button className="mz-btn primary" onClick={() => { setSheet(false); toast('Validé ✓'); }}>
