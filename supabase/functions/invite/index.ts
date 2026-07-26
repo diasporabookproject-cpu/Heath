@@ -13,7 +13,8 @@ const CORS = {
 const json = (b: unknown, s: number) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...CORS, 'content-type': 'application/json' } });
 
-const INVITE_TTL_HOURS = 72; // A3 : un code circule sur WhatsApp → fenêtre courte (single-use en plus)
+const INVITE_TTL_HOURS = 24; // Lot Identité & accès : le code naît du geste et vit 24 h
+// (décision UI — plus sain qu'un code permanent qui traîne ; single-use en plus).
 
 /** Code lisible (sans caractères ambigus) de 10 signes.
  * AS-2 Fiche 4 : rejection sampling — on rejette les octets >= 248 (le plus grand

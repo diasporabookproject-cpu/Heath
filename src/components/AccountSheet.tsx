@@ -198,7 +198,7 @@ export default function AccountSheet({
           <div className="mz-acc-ok">
             Code d’invitation : <b style={{ letterSpacing: '0.12em' }}>{inviteCode}</b>
             <br />
-            Partage-le avec l’autre parent — valable 72 h.
+            Partage-le avec l’autre parent — valable 24 h.
           </div>
         ) : (
           <button className="mz-btn" onClick={doInvite} disabled={busy}>

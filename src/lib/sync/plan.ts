@@ -1,6 +1,6 @@
 // Cœur PUR du moteur de sync (aucun IO, entièrement testable). Porte les décisions
 // à risque : dirty par hash de contenu, LWW, tombstones, garde anti-écrasement (G2),
-// fusion d'adoption (Q1). L'IO (Supabase + IndexedDB) est dans engine.ts.
+// transition de foyer (T2). L'IO (Supabase + IndexedDB) est dans engine.ts.
 
 export type SyncStore =
   | 'recipes'
@@ -12,8 +12,8 @@ export type SyncStore =
   | 'settings'
   // Lot Cuisine T3 (Q1 acceptée) : règles du foyer — document unique 'regles',
   // façon nounou. Monte sur la table `docs` existante (store = texte libre,
-  // RLS docs_rw) : AUCUNE migration SQL. L'adoption (planAdopt) le transporte
-  // comme tout store — prouvé par tests dédiés (exigence PO du GO).
+  // RLS docs_rw) : AUCUNE migration SQL. Le couple push/pull le transporte comme
+  // tout store — prouvé par tests dédiés (exigence PO du GO, portée en T2).
   | 'foyer';
 
 /** Référence d'un document synchronisable. */

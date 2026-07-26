@@ -512,9 +512,10 @@ export async function saveApp(state: AppState): Promise<void> {
 }
 
 /**
- * Dernier foyer synchronisé sur cet appareil (FIX revue Q n°5). Remplace le flag
- * `adopted:<foyer>` collant : un foyer ≠ lastFoyer ⇒ contexte neuf ⇒ ré-adoption
- * (avec purge de la méta) au lieu d'un pull filtré par le curseur d'un autre foyer.
+ * Dernier foyer synchronisé sur cet appareil (FIX revue Q n°5). Entrée de
+ * `foyerTransition` (T2) : `null` ⇒ premier rattachement (cycle normal, le push
+ * téléverse le local) · différent ⇒ CHANGEMENT de foyer (purge locale + pull seul,
+ * le foyer d'arrivée fait foi) · égal ⇒ cycle normal.
  */
 export async function loadLastFoyer(): Promise<string | null> {
   const db = await getDB();
@@ -528,7 +529,7 @@ export async function saveLastFoyer(foyerId: string): Promise<void> {
 
 /**
  * Purge l'état de sync local (méta doc, curseurs, lastFoyer, anciens flags).
- * Utilisée au changement de foyer (ré-adoption propre) et à la suppression de
+ * Utilisée au changement de foyer (purge + pull) et à la suppression de
  * compte (FIX revue Q n°10 : pas d'état de sync fantôme après suppression).
  */
 export async function clearSyncState(): Promise<void> {
@@ -536,7 +537,7 @@ export async function clearSyncState(): Promise<void> {
   await db.clear('syncmeta');
   const keys = (await db.getAllKeys('meta')) as string[];
   for (const k of keys) {
-    if (k === 'lastFoyer' || k === SYNC_CURSOR_KEY || k.startsWith('syncCursor:') || k.startsWith('adopted:')) {
+    if (k === 'lastFoyer' || k === SYNC_CURSOR_KEY || k.startsWith('syncCursor:') || k.startsWith('adopted:') /* legacy : drapeau d'adoption d'anciens appareils */) {
       await db.delete('meta', k);
     }
   }

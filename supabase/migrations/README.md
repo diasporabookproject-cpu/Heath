@@ -28,6 +28,15 @@ NNNN_slug.sql
 | `0007` | AS-2 Fiche 1 | RPC `accept_invite` transactionnel (anti-TOCTOU, **retourne un statut jsonb** — ne lève pas, sinon le rollback effacerait le compteur de rate-limit) |
 | `0008` | AS-2 Fiche 2 | `membres.owner_notice` + `dispose_foyer_for_deletion` (transfert de propriété au plus ancien membre) |
 | `0009` | AS-2b | `ack_owner_notice` (le client acquitte le bandeau — `membres` n'a pas de policy update) |
+| `0010` | Cuisine T5/F5.3 | bucket privé `foyer-images` + RLS storage (photo du plat, miroir de 0003) |
+| `0011` | Partage + suivi | `espace_checks` — journal insert-only des coches, policies **par jeton VIVANT** (jointure d'existence sur `espaces` : un jeton révoqué rend ses coches illisibles) |
+
+## État — appliquées STAGING SEULEMENT (prod en attente du GO explicite du PO)
+| Fichier | Lot | Contenu |
+|---|---|---|
+| `0012` | Identité & accès P1 | **renverse `0008`** (ADR 33) : `dispose_foyer_for_deletion` en cascade — le foyer est adossé à un TITULAIRE et ne lui survit pas ; retire `owner_notice` + `ack_owner_notice` |
+| `0013` | Identité & accès P1 | `preview_invite(code)` — lire une maison AVANT de la rejoindre (lecture seule, ne joint jamais, `{ok:false}` nu si code mort) |
+| `0014` | Identité & accès P1 | `membres.prenom` + policy `membres_update_self` **et grant restreint à la seule colonne `prenom`** (sans quoi un membre se promouvrait `owner`) |
 
 
 ## Comment on applique

@@ -191,8 +191,10 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
   };
 
   // #join : rejoint un foyer réel via les briques EXISTANTES (OTP → RPC accept_invite).
-  // Succès → ftueDone + RELOAD : au reboot, useSync fait l'adoption/pull standard
-  // (fenêtre d'adoption = push interdit — F5a-①). Aucun peuplement local.
+  // Succès → ftueDone + RELOAD : au reboot, `useSync` voit un CHANGEMENT DE FOYER
+  // (`foyerTransition` → `switch`) et fait purge LOCALE + pull seul — le foyer
+  // rejoint fait foi. Aucun peuplement local, aucune fusion (l'adoption est morte,
+  // lot Identité & accès T2).
   const joinSubmitCode = () => {
     if (!joinCode.trim()) return;
     setErr('');
@@ -222,7 +224,7 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
       return setErr(error);
     }
     await saveFtueDone();
-    window.location.reload(); // le contenu vient du foyer rejoint (adoption au boot)
+    window.location.reload(); // le contenu vient du foyer rejoint (purge + pull au boot)
   };
 
   return (
