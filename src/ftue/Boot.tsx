@@ -4,7 +4,8 @@ import Ftue from './Ftue';
 import Entrer from './Entrer';
 import Foyer from './Foyer';
 import { readEspaceToken } from '../lib/espace';
-import { hasBootedBefore, loadCompteLie, loadFtueDone, saveFtueDone, saveRolesActifs } from '../lib/db';
+import { hasBootedBefore, loadCompteLie, loadFtueDone, saveCompteLie, saveFtueDone, saveRolesActifs } from '../lib/db';
+import { getSupabase } from '../lib/supabase';
 import { gateMode } from './gate';
 
 // GATE PRÉ-BOOT (F4, clé de voûte du lot FTUE — cf. READBACK_FLOW_FTUE) : le gate
@@ -39,11 +40,26 @@ export default function Boot() {
   useEffect(() => {
     if (mode !== 'checking') return;
     void (async () => {
+      // MIGRATION T1 (appareils déjà connectés) : `compteLie` est un drapeau NEUF —
+      // un appareil qui avait déjà une session Supabase ne l'a pas, et se
+      // retrouverait devant le mur alors qu'il A un compte. Une session vivante
+      // PROUVE le compte : on rattrape le drapeau au lieu de faire re-saisir un
+      // code. Ne fragilise pas le mur (même preuve d'identité qu'un `verifyOtp`)
+      // et ne touche pas à l'invariant offline : hors-ligne, `getSession()` rend
+      // `null` → on retombe simplement sur l'Écran 1, comme un appareil neuf.
+      let compteLie = !!(await loadCompteLie());
+      if (!compteLie) {
+        const u = (await getSupabase()?.auth.getSession())?.data.session?.user;
+        if (u) {
+          await saveCompteLie(u.id, u.email ?? '');
+          compteLie = true;
+        }
+      }
       // L'ordre vit dans `gate.ts` (pur, testé) ; ici, seules les lectures.
       const decision = gateMode({
         espaceToken: !!readEspaceToken(),
         demo: window.location.hash === '#mz-demo',
-        compteLie: !!(await loadCompteLie()),
+        compteLie,
         ftueDone: await loadFtueDone(),
         bootedBefore: await hasBootedBefore(),
       });
