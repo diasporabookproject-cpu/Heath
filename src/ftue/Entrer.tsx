@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import './entrer.css';
 import { sendOtp, verifyOtp } from '../lib/auth';
 import { getSupabase } from '../lib/supabase';
-import { isValidEmail, isValidOtp, normalizeOtp, isValidInviteCode, normalizeInviteCode } from '../lib/otp';
-import { loadDernierCompte, purgeLocalDocs, saveCompteLie, saveDernierCompte, clearSyncState } from '../lib/db';
+import { isValidEmail, isValidOtp, normalizeOtp, isValidInviteCode, normalizeInviteCode, INVITE_CODE_LEN } from '../lib/otp';
+import { loadDernierCompte, purgeLocalDocs, saveCodeEnAttente, saveCompteLie, saveDernierCompte, clearSyncState } from '../lib/db';
 import { doitPurgerPourNouveauCompte } from './compte';
 
 /**
@@ -40,7 +40,10 @@ const IconAlerte = () => (
 );
 
 export default function Entrer({ onDone }: { onDone: () => void }) {
-  const [step, setStep] = useState<'email' | 'code'>('email');
+  // Décision PO : LE CODE D'ABORD pour l'invité. `invit` est le premier écran
+  // quand on arrive avec un code en main ; l'e-mail vient ensuite, justifié.
+  const [step, setStep] = useState<'email' | 'code' | 'invit'>('email');
+  const [invitCode, setInvitCode] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [err, setErr] = useState('');
@@ -65,11 +68,14 @@ export default function Entrer({ onDone }: { onDone: () => void }) {
   const send = async () => {
     if (busy) return;
     if (!isValidEmail(email)) {
-      // 🔴 Retour device ② : l'invité reçoit un CODE et le colle ici — le premier
-      // écran demande un e-mail sans dire que le code vient après. On reconnaît le
-      // code au lieu de répondre « adresse invalide », qui ne l'aide en rien.
-      if (isValidInviteCode(normalizeInviteCode(email))) {
-        return setErr('On dirait un code d’invitation. Entrez d’abord votre e-mail : le code vous sera demandé juste après.');
+      // Retour device ② : si un CODE est collé ici, on ne renvoie pas « adresse
+      // invalide » — on l'emmène sur le bon écran, avec son code déjà saisi.
+      const colle = normalizeInviteCode(email);
+      if (isValidInviteCode(colle)) {
+        setInvitCode(colle);
+        setEmail('');
+        setErr('');
+        return setStep('invit');
       }
       return setErr('Cette adresse ne semble pas valide.');
     }
@@ -125,8 +131,14 @@ export default function Entrer({ onDone }: { onDone: () => void }) {
     return (
       <div className="en">
         <span className="mark"><IconMaison /></span>
-        <h1>Bienvenue<br />chez vous.</h1>
-        <div className="sub">Un e-mail, un code.<br />Pas de mot de passe à retenir.</div>
+        <h1>{invitCode ? (<>Presque<br />chez vous.</>) : (<>Bienvenue<br />chez vous.</>)}</h1>
+        <div className="sub">
+          {invitCode ? (
+            <>Votre code est noté. Votre e-mail sert à revenir,<br />même depuis un autre téléphone.</>
+          ) : (
+            <>Un e-mail, un code.<br />Pas de mot de passe à retenir.</>
+          )}
+        </div>
         <input
           className="inp"
           type="email"
@@ -150,13 +162,72 @@ export default function Entrer({ onDone }: { onDone: () => void }) {
         <button className={'cta' + (showBusy ? ' busy' : '')} onClick={() => void send()} disabled={busy || !email.trim()}>
           {showBusy ? (<><span className="spin" />Envoi du code…</>) : 'Continuer'}
         </button>
+        {!invitCode && (
+          <button className="joinlink" onClick={() => { setErr(''); setStep('invit'); }}>
+            J’ai un code d’invitation
+            <span>Quelqu’un de la maison vous l’a envoyé</span>
+          </button>
+        )}
         <div className="grow" />
         <div className="fine">En continuant, vous acceptez nos conditions et notre politique de confidentialité.</div>
       </div>
     );
   }
 
-  // ── Étape code ────────────────────────────────────────────────────────────
+  // ── Étape CODE D'INVITATION (l'invité arrive par là — décision PO) ─────────
+  // On ne vérifie que la FORME : `preview_invite` est réservé à `authenticated`
+  // (0013), donc la maison ne peut être nommée qu'après la session. Le code est
+  // mis de côté (méta, survit au rechargement) et rejoué par l'écran 2.
+  if (step === 'invit') {
+    const chars = invitCode.split('');
+    const complet = isValidInviteCode(invitCode);
+    return (
+      <div className="en">
+        <div className="bkrow">
+          <button className="bk" aria-label="Revenir" onClick={() => { setErr(''); setInvitCode(''); setStep('email'); }}>‹</button>
+        </div>
+        <h2>Votre code<br />d’invitation.</h2>
+        <div className="cs">Celui qu’on vous a envoyé — 10 signes.</div>
+        <div className="codewrap">
+          {[0, 5].map((offset) => (
+            <div className="boxes" key={offset} style={offset ? { marginTop: 7 } : undefined}>
+              {Array.from({ length: 5 }, (_, i) => {
+                const idx = offset + i;
+                return (
+                  <div key={idx} className={'box' + (err ? ' err' : idx === chars.length ? ' cur' : '')}>
+                    {chars[idx] ?? ''}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+          <input
+            className="codeinput"
+            type="text"
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            autoFocus
+            maxLength={INVITE_CODE_LEN}
+            value={invitCode}
+            onChange={(e) => { setInvitCode(normalizeInviteCode(e.target.value)); if (err) setErr(''); }}
+            aria-label="Code d’invitation à 10 signes"
+          />
+        </div>
+        {err && <div className="errline" role="alert"><IconAlerte /><p>{err}</p></div>}
+        <button
+          className="cta"
+          disabled={!complet}
+          onClick={() => { void saveCodeEnAttente(invitCode).then(() => setStep('email')); }}
+        >
+          Continuer
+        </button>
+        <div className="grow" />
+      </div>
+    );
+  }
+
+  // ── Étape code OTP ────────────────────────────────────────────────────────
   const chars = code.split('');
   return (
     <div className="en">

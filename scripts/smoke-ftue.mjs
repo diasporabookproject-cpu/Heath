@@ -54,6 +54,25 @@ if (await page.getByText('sans compte', { exact: false }).count())
   throw new Error('T1 : aucune échappatoire « sans compte » ne doit subsister');
 await page.screenshot({ path: 'scripts/shot-entrer-email.png' });
 console.log('T1 : le mur — compte demandé avant la FTUE, aucune échappatoire ✅');
+
+// T3 avenant (décision PO « le code d'abord ») : l'invité entre par SON CODE.
+// ① le lien existe dès l'Écran 1 et mène aux 10 cases (2 rangées de 5).
+await page.getByText('J’ai un code d’invitation', { exact: false }).click();
+await page.getByText('Votre code', { exact: false }).waitFor({ timeout: 5000 });
+if ((await page.locator('.en .box').count()) !== 10)
+  throw new Error(`Avenant T3 : le code d’invitation fait 10 signes (lu : ${await page.locator('.en .box').count()} cases)`);
+if (!(await page.locator('.en .cta:disabled').count()))
+  throw new Error('Avenant T3 : « Continuer » doit rester inerte tant que le code est incomplet');
+await page.screenshot({ path: 'scripts/shot-invit-code.png' });
+// ② un code COLLÉ dans le champ e-mail emmène ici, code déjà saisi (retour device ②).
+await page.locator('.en .bk').click();
+await page.locator('.en .inp').fill('DEP79V2XZF');
+await page.locator('.en .cta').click();
+await page.getByText('Votre code', { exact: false }).waitFor({ timeout: 5000 });
+const saisi = (await page.locator('.en .box').allTextContents()).join('');
+if (saisi !== 'DEP79V2XZF') throw new Error(`Avenant T3 : le code collé doit être repris (lu : ${saisi})`);
+console.log('T3 avenant : le code d’abord — 10 cases, et un code collé dans l’e-mail y mène ✅');
+await page.locator('.en .bk').click(); // retour e-mail pour la suite du smoke
 await lierCompte();
 await page.reload({ waitUntil: 'networkidle' });
 

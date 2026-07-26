@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import './entrer.css';
 import { acceptInvite, previewInvite, savePrenom } from '../lib/auth';
 import { isValidInviteCode, normalizeInviteCode, INVITE_CODE_LEN } from '../lib/otp';
-import { saveFtueDone, saveRolesActifs } from '../lib/db';
+import { clearCodeEnAttente, loadCodeEnAttente, saveFtueDone, saveRolesActifs } from '../lib/db';
 
 /**
  * ÉCRAN 2 — « Le foyer » (lot Identité & accès, T3).
@@ -47,7 +47,9 @@ interface Maison {
 }
 
 export default function Foyer({ onFonder, onRejoint }: { onFonder: () => void; onRejoint: () => void }) {
-  const [step, setStep] = useState<'choix' | 'code' | 'trouve' | 'arrivee'>('choix');
+  // `attente` = on rejoue un code saisi AVANT l'authentification (parcours invité
+  // inversé) : l'écran ne propose alors pas « fonder », il nomme la maison.
+  const [step, setStep] = useState<'attente' | 'choix' | 'code' | 'trouve' | 'arrivee'>('attente');
   const [prenom, setPrenom] = useState('');
   const [code, setCode] = useState('');
   const [maison, setMaison] = useState<Maison | null>(null);
@@ -60,6 +62,29 @@ export default function Foyer({ onFonder, onRejoint }: { onFonder: () => void; o
   const startBusy = () => { setBusy(true); timer.current = setTimeout(() => setShowBusy(true), BUSY_DELAY_MS); };
   const endBusy = () => { if (timer.current) clearTimeout(timer.current); timer.current = null; setBusy(false); setShowBusy(false); };
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  // Au montage : un code saisi avant la session ? On le vérifie MAINTENANT (la
+  // session existe, `preview_invite` est appelable) et on nomme la maison. Sinon,
+  // parcours normal : le choix (fonder / rejoindre).
+  useEffect(() => {
+    void (async () => {
+      const enAttente = await loadCodeEnAttente();
+      if (!enAttente) return setStep('choix');
+      setCode(enAttente);
+      const r = await previewInvite(enAttente);
+      if (!r.ok) {
+        // Code mort (expiré, déjà utilisé, faux) : on ne le garde pas et on le dit
+        // sur l'écran du choix — la personne peut redemander un code ou fonder.
+        await clearCodeEnAttente();
+        setErr(r.error ? 'La vérification n’a pas abouti. Vérifiez votre connexion, puis réessayez.'
+                       : 'Ce code n’est plus valide. Demandez-en un nouveau, ou créez votre maison.');
+        return setStep('choix');
+      }
+      setMaison({ prenomFondateur: r.prenomFondateur ?? null, nbMembres: r.nbMembres ?? 1, createdAt: r.createdAt });
+      setStep('trouve');
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Fonder : on pose le prénom, la FTUE prend la suite ────────────────────
   const fonder = async () => {
@@ -93,6 +118,7 @@ export default function Foyer({ onFonder, onRejoint }: { onFonder: () => void; o
     const { error } = await acceptInvite(code);
     endBusy();
     if (error) return setErr(error);
+    await clearCodeEnAttente(); // consommé : il ne doit plus être rejoué
     setPrenom('');
     setStep('arrivee');
   };
@@ -113,6 +139,9 @@ export default function Foyer({ onFonder, onRejoint }: { onFonder: () => void; o
 
   const nomMaison = maison?.prenomFondateur ? `Maison de ${maison.prenomFondateur}` : 'Cette maison';
   const initiale = (maison?.prenomFondateur ?? '?').slice(0, 1).toUpperCase();
+
+  // Vérification du code en attente : ~une requête. Rien à l'écran (pas de flash).
+  if (step === 'attente') return <div className="en" />;
 
   // ── ② Le choix ────────────────────────────────────────────────────────────
   if (step === 'choix') {
@@ -138,6 +167,7 @@ export default function Foyer({ onFonder, onRejoint }: { onFonder: () => void; o
         <button className={'cta' + (showBusy ? ' busy' : '')} onClick={() => void fonder()} disabled={busy || !prenom.trim()}>
           {showBusy ? (<><span className="spin" />Un instant…</>) : 'Commencer'}
         </button>
+        {err && <div className="errline" role="alert"><IconAlerte /><p>{err}</p></div>}
         <button className="joinlink" onClick={() => { setErr(''); setCode(''); setStep('code'); setTimeout(() => codeRef.current?.focus(), 50); }}>
           J’ai un code d’invitation
           <span>Quelqu’un de la maison vous l’a envoyé</span>

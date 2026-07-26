@@ -151,6 +151,7 @@ const FTUE_DONE_KEY = 'ftueDone';
 const ROLES_ACTIFS_KEY = 'rolesActifs';
 const COMPTE_LIE_KEY = 'compteLie';
 const DERNIER_COMPTE_KEY = 'dernierCompte';
+const CODE_ATTENTE_KEY = 'codeInvitationEnAttente';
 
 /** Identité liée à CET appareil (lot Identité & accès, T1). */
 export interface CompteLie {
@@ -207,6 +208,35 @@ export async function loadDernierCompte(): Promise<string | null> {
 export async function saveDernierCompte(userId: string): Promise<void> {
   const db = await getDB();
   await db.put('meta', userId, DERNIER_COMPTE_KEY);
+}
+
+/**
+ * Code d'invitation SAISI AVANT l'authentification (parcours invité inversé —
+ * décision PO : « le code d'abord »). L'invité a un code en main, pas un compte :
+ * il le donne d'entrée, on le met de côté, et on le rejoue dès qu'il a une session.
+ *
+ * Pourquoi le garder ici plutôt qu'en mémoire : le parcours traverse un
+ * changement d'écran ET une session Supabase qui s'ouvre (`Boot` réévalue le gate),
+ * un rechargement au milieu ne doit pas perdre le code. Effacé dès qu'il est
+ * consommé — ou dès qu'il s'avère mort.
+ *
+ * ⚠️ Il n'est PAS vérifié à la saisie : `preview_invite` est `grant to
+ * authenticated` (0013), donc la vérification serveur ne peut arriver qu'APRÈS
+ * la session. On contrôle sa FORME localement, la maison est nommée juste après.
+ */
+export async function loadCodeEnAttente(): Promise<string | null> {
+  const db = await getDB();
+  return ((await db.get('meta', CODE_ATTENTE_KEY)) as string | undefined) ?? null;
+}
+
+export async function saveCodeEnAttente(code: string): Promise<void> {
+  const db = await getDB();
+  await db.put('meta', code, CODE_ATTENTE_KEY);
+}
+
+export async function clearCodeEnAttente(): Promise<void> {
+  const db = await getDB();
+  await db.delete('meta', CODE_ATTENTE_KEY);
 }
 
 /**
