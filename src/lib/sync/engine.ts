@@ -2,7 +2,6 @@ import { getSupabase } from '../supabase';
 import {
   planPush,
   planPull,
-  planAdopt,
   nextCursor,
   docKey,
   hashPayload,
@@ -17,9 +16,11 @@ import {
   delSyncMeta,
   loadSyncCursor,
   saveSyncCursor,
+  clearSyncState,
+  purgeLocalDocs,
 } from '../db';
 
-// Moteur de sync (IO). Orchestration push/pull/adoption au-dessus du cœur pur
+// Moteur de sync (IO). Orchestration push/pull au-dessus du cœur pur
 // (plan.ts) et du mapping (map.ts). LWW porté par `updated_at` SERVEUR ; jamais
 // bloquant (best-effort, l'app marche hors-ligne). Écritures BATCHÉES (une
 // requête pour N docs — FIX revue Q, efficacité) ; curseur PAR FOYER (FIX n°5) ;
@@ -127,54 +128,23 @@ export async function pull(foyerId: string): Promise<{ applied: number; changed:
   return { applied: plan.applies.length + plan.deletes.length, changed };
 }
 
-/** Le foyer a-t-il déjà des documents dans le cloud ? (null si indéterminable). */
-export async function remoteHasDocs(foyerId: string): Promise<boolean | null> {
-  const supa = getSupabase();
-  if (!supa) return null;
-  const { count, error } = await supa
-    .from('docs')
-    .select('doc_id', { count: 'exact', head: true })
-    .eq('foyer_id', foyerId)
-    .is('deleted_at', null);
-  if (error) return null;
-  return (count ?? 0) > 0;
-}
-
 /**
- * Adoption (Q1) : UNION local↔cloud. Adopte le cloud vivant en local, téléverse
- * le local-seul (batché). Sur collision, le cloud gagne (filet = export S2).
+ * CHANGEMENT DE FOYER (lot Identité & accès, T2 — remplace l'adoption).
+ * Cet appareil quitte un foyer pour un autre : le foyer d'ARRIVÉE fait foi.
+ *   ① purge de l'état de sync (méta + curseurs) ② **purge LOCALE des documents**
+ *   ③ `pull` seul — jamais de `push`.
+ *
+ * 🔴 EXIGENCE PO : la purge est **strictement locale**. Rien n'est supprimé côté
+ * serveur : les données du foyer quitté l'attendent s'il y revient. La seule
+ * requête émise ici est le SELECT du `pull` — prouvé par `foyer-switch.test.ts`
+ * (« aucune écriture serveur pendant le changement de foyer »).
  */
-export async function adopt(foyerId: string): Promise<{ changed: boolean; error?: string }> {
-  const supa = getSupabase();
-  if (!supa) return { changed: false, error: 'hors-ligne' };
-  const [local, remoteRes] = await Promise.all([
-    collectLocalDocs(),
-    supa.from('docs').select('store,doc_id,payload,updated_at,deleted_at').eq('foyer_id', foyerId),
-  ]);
-  if (remoteRes.error) return { changed: false, error: remoteRes.error.message };
-  const remote = (remoteRes.data as DocRow[]).map(toRemote);
-  const plan = planAdopt(local, remote);
-
-  // F5a-② (option b) : le contenu de PACK local en doublon de nom avec le foyer
-  // n'est ni téléversé ni gardé — supprimé ici, puis REMPLACÉ par le jumeau du
-  // foyer (ré-écrit juste en dessous par adoptRemote, sous le docId du foyer).
-  for (const ref of plan.dropLocal) await applyDelete(ref.store, ref.docId);
-
-  for (const r of plan.adoptRemote) {
-    await applyRemote(r.store, r.docId, r.payload);
-    await putSyncMeta(docKey(r), { syncedHash: hashPayload(r.payload), syncedAt: r.updatedAt });
-  }
-  const up = await upsertDocs(
-    foyerId,
-    plan.upload.map((d) => ({ store: d.store, docId: d.docId, payload: d.payload, deletedAt: null })),
-  );
-  if (up.error) return { changed: plan.adoptRemote.length > 0, error: up.error };
-  for (const d of plan.upload) {
-    const at = up.stamps![docKey(d)];
-    if (at) await putSyncMeta(docKey(d), { syncedHash: hashPayload(d.payload), syncedAt: at });
-  }
-  await saveSyncCursor(foyerId, nextCursor(remote, [], EPOCH));
-  return { changed: plan.adoptRemote.length > 0 };
+export async function switchFoyer(foyerId: string): Promise<{ changed: boolean; error?: string }> {
+  await clearSyncState();
+  await purgeLocalDocs();
+  const r = await pull(foyerId);
+  if (r.error) return { changed: true, error: r.error }; // le local a changé (purgé) même si le pull rate
+  return { changed: true };
 }
 
 /** Cycle complet : push puis pull. Renvoie si le local a changé (→ rafraîchir l'UI). */

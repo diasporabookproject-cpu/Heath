@@ -6,7 +6,7 @@ import {
   isDirty,
   planPush,
   planPull,
-  planAdopt,
+  foyerTransition,
   nextCursor,
   type MetaIndex,
   type LocalDoc,
@@ -141,126 +141,57 @@ describe('sync/plan — nextCursor (le curseur ne dépasse jamais un doc sauté 
   });
 });
 
-describe('sync/plan — planAdopt (union, cloud gagne sur collision)', () => {
-  it('upload le local-seul, adopte le remote vivant, cloud gagne en collision', () => {
-    const local: LocalDoc[] = [
-      { store: 'recipes', docId: 'onlyLocal', payload: { v: 1 } },
-      { store: 'recipes', docId: 'both', payload: { v: 'local' } },
-    ];
-    const remote: RemoteDoc[] = [
-      { store: 'recipes', docId: 'both', payload: { v: 'cloud' }, updatedAt: '2026-01-01T00:00:00Z', deletedAt: null },
-      { store: 'recipes', docId: 'onlyRemote', payload: { v: 2 }, updatedAt: '2026-01-01T00:00:00Z', deletedAt: null },
-      { store: 'recipes', docId: 'deadRemote', payload: null, updatedAt: '2026-01-01T00:00:00Z', deletedAt: '2026-01-01T00:00:00Z' },
-    ];
-    const plan = planAdopt(local, remote);
-    expect(plan.upload.map((d) => d.docId)).toEqual(['onlyLocal']); // 'both' NON uploadé (cloud gagne)
-    expect(plan.adoptRemote.map((r) => r.docId)).toEqual(['both', 'onlyRemote']); // tombstone ignoré
-    expect(plan.dropLocal).toEqual([]); // pas de contenu de pack en jeu ici
+describe('sync/plan — foyerTransition (l’adoption est morte)', () => {
+  it('jamais synchronisé → first-attach : cycle NORMAL, le push téléverse le local', () => {
+    // Option A du read-back : les données déjà sur l'appareil rejoignent le foyer
+    // qu'on vient de fonder. Aucune purge — les perdre serait la vraie régression.
+    expect(foyerTransition(null, 'F1')).toBe('first-attach');
+  });
+
+  it('même foyer → same', () => {
+    expect(foyerTransition('F1', 'F1')).toBe('same');
+  });
+
+  it('AUTRE foyer → switch : le foyer d’arrivée fait foi', () => {
+    expect(foyerTransition('F1', 'F2')).toBe('switch');
+  });
+
+  it('« rejoindre ne fusionne plus rien » : un switch n’est jamais un first-attach', () => {
+    // C'est la garde contre le défaut que la simple suppression d'`adopt` créait :
+    // méta vidée → tous les docs locaux « dirty » → push → le contenu de l'ancien
+    // foyer se déverse dans le nouveau. `switch` interdit le push.
+    for (const [last, next] of [['F1', 'F2'], ['F2', 'F1'], ['A', 'B']] as const) {
+      expect(foyerTransition(last, next)).not.toBe('first-attach');
+      expect(foyerTransition(last, next)).toBe('switch');
+    }
   });
 });
 
-// ── F5a-② (Flow FTUE, option b) : la fusion ne déverse PAS le contenu de pack ──
-describe('sync/plan — planAdopt : dédup du contenu de pack (F5a-②)', () => {
-  const at = '2026-01-01T00:00:00Z';
-  const remoteRec = (docId: string, nom: string, deleted = false): RemoteDoc => ({
-    store: 'recipes',
-    docId,
-    payload: { nom },
-    updatedAt: at,
-    deletedAt: deleted ? at : null,
-  });
-
-  it('recette de PACK dont le nom vit déjà dans le foyer → dropLocal, PAS upload', () => {
-    const local: LocalDoc[] = [
-      { store: 'recipes', docId: 'l1', payload: { nom: 'Tajine poulet', packId: 'fonds-de-depart' } },
-    ];
-    const remote = [remoteRec('r1', 'tajine POULET')]; // même nom, casse différente
-    const plan = planAdopt(local, remote);
-    expect(plan.upload).toEqual([]);
-    expect(plan.dropLocal).toEqual([{ store: 'recipes', docId: 'l1' }]);
-    expect(plan.adoptRemote.map((r) => r.docId)).toEqual(['r1']); // le jumeau du foyer remplace
-  });
-
-  it('« on garde TES choses » : recette FAITE MAIN (sans packId) → uploadée même à nom égal', () => {
-    const local: LocalDoc[] = [
-      { store: 'recipes', docId: 'l1', payload: { nom: 'Tajine poulet' } }, // pas de packId
-    ];
-    const plan = planAdopt(local, [remoteRec('r1', 'Tajine poulet')]);
-    expect(plan.upload.map((d) => d.docId)).toEqual(['l1']); // fusion Q1 inchangée pour le personnel
-    expect(plan.dropLocal).toEqual([]);
-  });
-
-  it('recette de pack ABSENTE du foyer → uploadée (le foyer la gagne, zéro doublon)', () => {
-    const local: LocalDoc[] = [
-      { store: 'recipes', docId: 'l1', payload: { nom: 'Harira', packId: 'fonds-de-depart' } },
-    ];
-    const plan = planAdopt(local, [remoteRec('r1', 'Tajine poulet')]);
-    expect(plan.upload.map((d) => d.docId)).toEqual(['l1']);
-    expect(plan.dropLocal).toEqual([]);
-  });
-
-  it('un tombstone distant ne compte PAS comme « nom présent » ; autres stores intouchés', () => {
-    const local: LocalDoc[] = [
-      { store: 'recipes', docId: 'l1', payload: { nom: 'Harira', packId: 'p' } },
-      { store: 'securite', docId: 's1', payload: { titre: 'Fièvre', packId: 'p', nom: 'Fièvre' } },
-    ];
-    const plan = planAdopt(local, [remoteRec('r1', 'Harira', true)]); // supprimée côté foyer
-    expect(plan.upload.map((d) => d.docId)).toEqual(['l1', 's1']); // les deux partent
-    expect(plan.dropLocal).toEqual([]);
-  });
-});
-
-// ── T3 (lot Cuisine, Q1) : règles du foyer = store 'foyer' sur la table `docs` ──
-// Exigence PO du GO : PROUVER que l'adoption transporte les restrictions —
-// pendant de l'anti-fuite F5a du lot FTUE, côté « ce qui DOIT voyager ».
-describe('sync/plan — planAdopt & pull : règles du foyer (store générique, T3)', () => {
+// ── Ce qui DOIT voyager : les règles du foyer (exigence PO du GO, lot Cuisine T3).
+// La preuve portait sur `planAdopt` ; l'adoption morte, elle est PORTÉE sur le
+// couple push/pull, qui est désormais le seul chemin des données.
+describe('sync/plan — les règles du foyer voyagent (push/pull, store générique)', () => {
   const at = '2026-01-01T00:00:00Z';
   const REGLES = { halal: true, nePasManger: ['arachide'] };
-  const remoteRegles: RemoteDoc = {
-    store: 'foyer',
-    docId: 'regles',
-    payload: REGLES,
-    updatedAt: at,
-    deletedAt: null,
-  };
+  const remoteRegles: RemoteDoc = { store: 'foyer', docId: 'regles', payload: REGLES, updatedAt: at, deletedAt: null };
 
-  it('foyer rejoint : les restrictions du foyer sont ADOPTÉES en local', () => {
-    // Appareil vierge (aucune règle locale) qui rejoint un foyer réglé.
-    const plan = planAdopt([], [remoteRegles]);
-    expect(plan.adoptRemote).toEqual([remoteRegles]); // → saveFoyerRegles à l'application
-    expect(plan.upload).toEqual([]);
-    expect(plan.dropLocal).toEqual([]);
-  });
-
-  it('appareil déjà réglé qui FONDE le foyer : ses règles sont téléversées', () => {
+  it('appareil qui FONDE le foyer : ses règles partent au push', () => {
     const local: LocalDoc[] = [{ store: 'foyer', docId: 'regles', payload: REGLES }];
-    const plan = planAdopt(local, []);
-    expect(plan.upload).toEqual(local);
-    expect(plan.dropLocal).toEqual([]);
+    expect(planPush(local, {}).upserts).toEqual(local);
   });
 
-  it('collision (les deux ont des règles) : celles du FOYER rejoint font foi (cloud gagne)', () => {
-    const local: LocalDoc[] = [
-      { store: 'foyer', docId: 'regles', payload: { halal: false, nePasManger: ['végétarien'] } },
-    ];
-    const plan = planAdopt(local, [remoteRegles]);
-    expect(plan.upload).toEqual([]); // les règles locales ne partent pas
-    expect(plan.adoptRemote).toEqual([remoteRegles]); // celles du foyer les remplacent
-    expect(plan.dropLocal).toEqual([]);
+  it('foyer REJOINT : les règles du foyer sont adoptées en local au pull', () => {
+    // Après un `switch`, le local est purgé et la méta vidée : le pull applique tout.
+    const plan = planPull([remoteRegles], {}, {});
+    expect(plan.applies).toEqual([remoteRegles]); // → saveFoyerRegles à l'application
+    expect(plan.skipped).toEqual([]);
   });
 
-  it('la dédup de pack (F5a-②) ne touche JAMAIS le store foyer (garde store === recipes)', () => {
-    // Un doc foyer qui ressemble à une recette de pack (nom + packId) ne doit
-    // pas être avalé par isPackDupe : la garde porte sur le STORE, pas la forme.
-    const local: LocalDoc[] = [
-      { store: 'foyer', docId: 'regles', payload: { nom: 'Tajine poulet', packId: 'fonds-de-depart' } },
-    ];
-    const remote: RemoteDoc[] = [
-      { store: 'recipes', docId: 'r1', payload: { nom: 'Tajine poulet' }, updatedAt: at, deletedAt: null },
-    ];
-    const plan = planAdopt(local, remote);
-    expect(plan.upload.map((d) => d.store)).toEqual(['foyer']);
-    expect(plan.dropLocal).toEqual([]);
+  it('collision : les règles du FOYER font foi quand le local est propre', () => {
+    const synced: LocalDoc = { store: 'foyer', docId: 'regles', payload: REGLES };
+    const remoteNewer: RemoteDoc = { ...remoteRegles, payload: { halal: false, nePasManger: [] }, updatedAt: '2026-01-02T00:00:00Z' };
+    const plan = planPull([remoteNewer], { [docKey(synced)]: synced }, meta(synced));
+    expect(plan.applies).toEqual([remoteNewer]);
   });
 
   it('pull : une édition locale des règles non poussée n’est JAMAIS écrasée (garde G2)', () => {

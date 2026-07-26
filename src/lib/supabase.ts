@@ -1,5 +1,4 @@
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
-import { webBaseUrl } from './platform';
 
 // Configuration via variables d'environnement (injectées au build).
 // L'app reste 100 % fonctionnelle en local si Supabase n'est pas configuré.
@@ -25,15 +24,6 @@ export function getSupabase(): SupabaseClient | null {
     });
   }
   return client;
-}
-
-/** Envoie un lien magique de connexion à l'adresse e-mail. */
-export async function sendMagicLink(email: string): Promise<{ error?: string }> {
-  const supa = getSupabase();
-  if (!supa) return { error: 'Supabase non configuré.' };
-  const emailRedirectTo = webBaseUrl(); // URL web publique (base path + natif, cf. platform.ts)
-  const { error } = await supa.auth.signInWithOtp({ email, options: { emailRedirectTo } });
-  return error ? { error: error.message } : {};
 }
 
 export async function signOut(): Promise<void> {

@@ -188,6 +188,33 @@ export async function clearCompteLie(): Promise<void> {
   await db.delete('meta', COMPTE_LIE_KEY);
 }
 
+/**
+ * PURGE STRICTEMENT LOCALE des documents synchronisables (lot Identité & accès, T2).
+ * Appelée au CHANGEMENT DE FOYER : cet appareil quitte le foyer X pour Y, donc la
+ * copie locale de X s'en va et Y sera re-tiré du serveur (le foyer d'arrivée fait foi).
+ *
+ * 🔴 Cette fonction ne parle QU'À IndexedDB. Les données de X **survivent côté
+ * serveur** et se re-tirent si l'appareil y revient : c'est un cache local qu'on vide,
+ * jamais une suppression. (Exigence PO — prouvé par `foyer-switch.test.ts`.)
+ *
+ * Ne touche pas : `meta` (compteLie/ftueDone/rôles), `audio`/`images` (binaires
+ * orphelins tolérés, jamais lus sans leur recette), `published` (trace d'envoi locale),
+ * ni `app` — qui porte `aiQuota`, miroir d'une vérité SERVEUR, et dont le jumeau du
+ * foyer d'arrivée écrase la partie réglages au pull qui suit.
+ */
+export async function purgeLocalDocs(): Promise<void> {
+  const db = await getDB();
+  await Promise.all([
+    db.clear('recipes'),
+    db.clear('weeks'),
+    db.clear('destinataires'),
+    db.clear('securite'),
+    db.clear('nounou'),
+    db.clear('foyer'),
+  ]);
+  notifyDataChanged();
+}
+
 /** Rôles dont la carte est posée sur le hub (activés via FTUE ou « ＋ Une page pour… »). */
 export type RoleActif = 'cuisine' | 'nounou';
 

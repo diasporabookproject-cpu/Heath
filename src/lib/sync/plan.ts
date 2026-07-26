@@ -165,51 +165,33 @@ export function nextCursor(remote: RemoteDoc[], skipped: RemoteDoc[], cursor: st
     .reduce((mx, r) => (r.updatedAt > mx ? r.updatedAt : mx), cursor);
 }
 
-// ── ADOPTION (Q1) ────────────────────────────────────────────────────────────
-export interface AdoptPlan {
-  upload: LocalDoc[]; // docs présents seulement en local → téléversés
-  adoptRemote: RemoteDoc[]; // docs distants vivants → écrits en local (collision incluse)
-  /** F5a-② (option b) : contenu de PACK local dont le nom vit déjà dans le foyer
-   * rejoint → ni téléversé, ni gardé — SUPPRIMÉ localement (le jumeau du foyer,
-   * présent dans `adoptRemote`, le remplace et fait foi). */
-  dropLocal: DocRef[];
-}
+// ── CONTEXTE DE FOYER (lot Identité & accès, T2) ─────────────────────────────
+// L'ADOPTION EST MORTE. Elle n'existait que pour rattraper des données créées SANS
+// compte (union local↔cloud, dédup de packs, consentement de fusion). Le compte
+// étant requis, les données naissent rattachées : il n'y a plus rien à fusionner.
+// Reste UNE décision, pure et testée — que faire quand on découvre le foyer du compte.
 
-const normNom = (v: unknown): string | null =>
-  typeof v === 'string' && v.trim() ? v.trim().toLowerCase() : null;
+export type FoyerTransition = 'first-attach' | 'switch' | 'same';
 
 /**
- * Fusion à la 1ʳᵉ connexion : UNION par (store, docId).
- * - local seul → upload.
- * - remote seul → adopte en local.
- * - collision → LWW ; sans horloge locale fiable, le CLOUD gagne (foyer déjà
- *   établi par un autre appareil). Filet : l'export JSON préalable (S2). Documenté.
- *   Les tombstones distants sont ignorés à l'adoption.
+ * - `same` — même foyer qu'au dernier cycle : rien de spécial (push + pull).
  *
- * F5a-② (Flow FTUE, option b — décision PO) : la fusion garde TES choses (recettes
- * créées à la main), pas le bruit INSTALLABLE en double — une recette locale de pack
- * (`packId` posé) dont le NOM (insensible à la casse) existe déjà dans le foyer
- * rejoint n'est PAS téléversée ; sa copie locale est remplacée par celle du foyer.
- * Sans ce filtre, un appareil peuplé par la FTUE déverserait la collection-témoin
- * dans le foyer rejoint (docIds différents → « local seul » → upload → doublons par nom).
+ * - `first-attach` — cet appareil n'a JAMAIS synchronisé (`last === null`). Ses
+ *   données locales rejoignent le foyer qu'il vient de fonder : cycle NORMAL, et
+ *   c'est le `push` qui les téléverse. Zéro ligne dédiée, zéro perte (option A du
+ *   read-back : « les données locales existantes se rattachent au premier compte »).
+ *
+ * - `switch` — cet appareil était dans un AUTRE foyer (on a rejoint, ou changé de
+ *   compte). Le foyer d'ARRIVÉE fait foi : **purge locale puis `pull` seul, jamais
+ *   de `push`**. Sans cette règle, la méta vidée rendrait tous les docs locaux
+ *   « dirty » et le contenu de l'ancien foyer se déverserait silencieusement dans
+ *   le nouveau — le défaut que la simple suppression de l'adoption aurait créé
+ *   (et qui frappait aussi « déconnexion → autre compte »).
+ *
+ * ⚠️ La purge est STRICTEMENT LOCALE (`purgeLocalDocs`, IndexedDB seul) : les
+ * données du foyer quitté survivent côté serveur et se re-tirent si l'on y revient.
  */
-export function planAdopt(local: LocalDoc[], remote: RemoteDoc[]): AdoptPlan {
-  const remoteKeys = new Set(remote.map(docKey));
-  const remoteNoms = new Set(
-    remote
-      .filter((r) => r.store === 'recipes' && !r.deletedAt)
-      .map((r) => normNom((r.payload as { nom?: unknown } | null)?.nom))
-      .filter((n): n is string => n !== null),
-  );
-  const isPackDupe = (d: LocalDoc): boolean => {
-    if (d.store !== 'recipes') return false;
-    const p = d.payload as { packId?: unknown; nom?: unknown } | null;
-    const nom = normNom(p?.nom);
-    return !!p?.packId && nom !== null && remoteNoms.has(nom);
-  };
-  const localOnly = local.filter((d) => !remoteKeys.has(docKey(d)));
-  const upload = localOnly.filter((d) => !isPackDupe(d));
-  const dropLocal = localOnly.filter(isPackDupe).map(({ store, docId }) => ({ store, docId }));
-  const adoptRemote = remote.filter((r) => !r.deletedAt);
-  return { upload, adoptRemote, dropLocal };
+export function foyerTransition(last: string | null, foyerId: string): FoyerTransition {
+  if (!last) return 'first-attach';
+  return last === foyerId ? 'same' : 'switch';
 }

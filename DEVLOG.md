@@ -131,6 +131,16 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot Identité & accès — T2 : LA MORT DE LA FUSION + règle de changement de foyer — 2026-07-26
+La demande centrale du lot. **L'adoption est supprimée, pas simplifiée.**
+- **Supprimé** : `adopt()` et `remoteHasDocs()` (`engine.ts`), `planAdopt`/`AdoptPlan`/`dropLocal`/la dédup de packs (`plan.ts`), l'orchestration d'adoption de `useSync` (fenêtre « push interdit », consentement, `AdoptRequest`), la feuille **« Fusionner nos maisons »** (`App.tsx`), et **`sendMagicLink`** (code mort — le chemin lien-magique est abandonné).
+- **🔴 La régression que la suppression seule aurait créée, évitée** : méta vidée → tous les docs locaux « dirty » → `push` → **le contenu de l'ancien foyer se déverse dans le foyer rejoint**, silencieusement. La règle qui la ferme : **`foyerTransition(last, foyerId)`** (pur, testé) — `same` et **`first-attach` → cycle normal** (le push téléverse le local : c'est l'option A, un appareil qui FONDE son foyer ne perd rien) · **`switch` → purge locale + `pull` seul, jamais de push** (le foyer d'arrivée fait foi). La distinction `first-attach`/`switch` est **le cœur de la tranche** : purger à tout changement aurait détruit les données du premier rattachement.
+- **🔴 PREUVE EXIGÉE PAR LE PO — la purge est STRICTEMENT locale** : `foyer-switch.test.ts` enregistre toutes les opérations envoyées au client Supabase pendant un changement de foyer et exige **`['select:docs']` et rien d'autre** — ni `delete`, ni `upsert`, ni `rpc`. Les données du foyer quitté **survivent en ligne** et se re-tirent si l'appareil y revient. **Test vérifié par mutation** : en injectant un `delete` serveur dans `switchFoyer`, le test échoue (`expected ['delete:docs'] to deeply equal []`) — il n'est pas vacant. Un 3ᵉ cas garde le cycle normal de toute purge.
+- **Les 4 preuves « les règles du foyer voyagent »** (exigence PO du GO Cuisine T3) ne sont pas supprimées : **portées sur push/pull**, qui est désormais le seul chemin des données. 9 tests `planAdopt` retirés, 9 ajoutés (transition + règles), 3 pour la purge → **239 tests**.
+- **Copies corrigées, qui mentaient désormais** : « tes recettes locales le rejoignent à la synchro » (il n'y a plus de fusion), les deux confirmations Rejoindre/Quitter disent maintenant que **l'appareil sera remplacé/vidé** et que les données restent en ligne côté foyer.
+- **Corrections A/B/C portées** dans `DECISION_IDENTITE_ACCES.md` (encadrés dans le texte) et le document **versé dans `DECISIONS_STORE_V1.md`**.
+- Portes : typecheck · **239 tests** · build · **3 smokes** · captures. **STOP T2 — prochaine étape : la fenêtre serveur (0012 · 0013 · 0014 · edge TTL), qui attend le GO explicite du PO.**
+
 ### Lot Identité & accès — T1 : LE MUR (compte requis) + preuve hors-ligne — 2026-07-26
 Première tranche codée du lot : **le compte est requis dès le premier lancement**. L'invariant « l'auth n'est JAMAIS bloquante » (`auth.ts:6-7`) est mort. Maquettes de référence committées à l'étape 0 (`docs/maquettes/identite-*.html`).
 - **Le drapeau `compteLie`** (`db.ts`, méta locale à côté de `ftueDone`) : posé au premier `verifyOtp` réussi, effacé à la déconnexion et à la suppression de compte. **C'est LUI qui ouvre l'app** — jamais la session vivante.

@@ -138,3 +138,168 @@ cuisinière. La fiche enfant Nounou ne bouge pas ; AUCUNE passerelle construite 
 canal de transmission : défaut = prochain repas à venir COMPATIBLE avec le moment (jamais un plat
 au Matin), créneau occupé annoncé avant le tap. Un brouillon ne se partage pas (le bouton n'existe
 pas — cohérence topologique avec la relecture obligatoire) : on valide d'abord.
+
+---
+
+# DÉCISION — Identité & accès (v2)
+**Instruction Q&A · 25 juillet 2026 · versée dans `DECISIONS_STORE_V1.md` le 26/07/2026**
+
+> **Trois corrections A/B/C** ont été portées dans le texte ci-dessous après vérification du code
+> (read-back `READBACK_IDENTITE_ACCES.md` §7, acceptées par le PO). Elles sont signalées en encadré.
+
+> **Objet.** Le PO constate que la gestion de compte est « très compliquée » : la FTUE guide vers du
+> personnel avant tout, rejoindre un foyer force une fusion, le système de codes est lourd. Décision
+> demandée : **un système de compte classique, familier, prévisible ; pas de mécanique de fusion.**
+> **Périmètre de ce document : l'AUTHENTIFICATION et le moment du compte.** L'onboarding (le parcours
+> de premier lancement, rejoindre un foyer) est traité à part, à la demande du PO.
+
+---
+
+## 1. Ce que le code montre aujourd'hui
+
+`auth.ts` mélange **trois responsabilités distinctes** — les séparer est la clé de la décision :
+
+| Couche | Contenu | Taille |
+|---|---|---|
+| **Identité** (prouver qui tu es) | `sendOtp` · `verifyOtp` | **2 fonctions** |
+| **Foyer** (à quel espace tu appartiens) | `ensureFoyer` · `currentFoyerId` · `leaveFoyer` · `createInvite` · `acceptInvite` · transfert de propriété · `deleteAccount` | 7 fonctions |
+| **Ce que la session débloque** | sauvegarde/synchro cloud + IA (quota serveur) | — |
+
+**Conséquence structurelle majeure : changer la MÉTHODE d'authentification ne touche que 2 fonctions et
+3 surfaces UI** (`Ftue.tsx`, `AccountSheet.tsx`, `SecuriserVolet.tsx`). Le foyer, les invitations, la sync,
+le local-first, les RLS : **rien ne bouge**. Le changement est chirurgical, pas structurel.
+
+> **CORRECTION A (read-back, vérifiée sur le code).** Cette phrase vaut pour changer la *méthode*.
+> La Phase 1 ne change pas la méthode, elle change **le MOMENT** — et le moment est un **gate** :
+> il touche tout ce qui suppose qu'on peut entrer sans compte. L'inventaire en recense **10 surfaces**,
+> dont 7 hors des trois nommées (`Boot.tsx`, l'Écran 1 à créer, la feuille de fusion `App.tsx`,
+> les deux feuilles de partage, les 4 boutons compte, `EspaceView.tsx` en non-régression).
+> Détail : `READBACK_IDENTITE_ACCES.md` §6.
+
+**L'invariant en tête du fichier :** *« L'auth n'est JAMAIS bloquante : l'app marche sans compte. »*
+C'est **cet invariant-là** que la décision remet en cause — pas la méthode d'auth.
+
+**Diagnostic de la douleur — la vraie cause n'est pas la méthode.** Toute la machinerie que le PO veut
+supprimer (`adopt()`, `planAdopt`, la dédup de packs, la fusion à l'adoption) **n'existe que pour rattraper
+des données créées sans compte**. Si le compte est requis dès le départ, les données naissent rattachées :
+il n'y a plus rien à fusionner. La machinerie ne se simplifie pas — **elle disparaît**.
+
+---
+
+## 2. Benchmark — ce que font les autres (juillet 2026)
+
+### 2.1 🔴 Contrainte dure : la règle Apple 4.8
+
+Si l'app propose une connexion tierce (Google), Apple exige **une option équivalente** offrant les trois
+garanties : (a) collecte limitée au nom et à l'e-mail, (b) **possibilité de garder son e-mail privé vis-à-vis
+de toutes les parties**, (c) pas de collecte publicitaire sans consentement. *Sign in with Apple* les
+satisfait par construction.
+
+**Point critique pour nous :** l'e-mail + code **ne satisfait probablement PAS le critère (b)** — il exige
+de donner son e-mail réel à Manzil, là où Apple fournit un relais anonyme. **Donc : ajouter Google implique
+d'ajouter Sign in with Apple sur iOS.** Deux intégrations, pas une.
+
+**Inversement :** une app qui utilise **exclusivement son propre système** (e-mail + code, ou e-mail + mot
+de passe) **n'est pas concernée** par 4.8. C'est le chemin sans contrainte Apple.
+
+### 2.2 Passkeys : mainstream, mais pas pour nous maintenant
+
+Les données 2026 : ~90 % de notoriété consommateur, 75 % des gens ont activé au moins un passkey,
+~5 milliards actifs, ~48 % du top 100 des sites supportés, et un taux de succès de connexion nettement
+supérieur aux mots de passe. **C'est la direction du secteur.**
+**Mais** : la récupération reste le point faible (perte de tous les appareils → repli e-mail obligatoire),
+et le compte Manzil n'a pas d'enjeu de valeur (pas d'argent, pas de données financières). **Coût de
+complexité disproportionné pour le gain. À revisiter plus tard, pas dans cette décision.**
+
+### 2.3 Apps de foyer / espace partagé : le lien, jamais le code
+
+Le motif dominant chez les organiseurs familiaux est **l'invitation par lien** (« rejoindre une famille
+directement via un lien d'invitation »). Un comparatif d'apps de calendrier familial pose même le critère
+comme discriminant : *les membres non-techniques (grands-parents, baby-sitters) doivent pouvoir rejoindre
+par un lien ou un QR code, pas par un assistant de configuration.*
+
+**Cette phrase valide deux choses d'un coup :** la thèse Manzil (le personnel reçoit une page par lien, sans
+app) **et** la correction à faire côté membres (invitation par lien, pas par code à recopier).
+
+### 2.4 Faisabilité dans le stack (Supabase + Capacitor)
+
+Supabase Auth supporte Google et Apple nativement (web + Android + iOS). Le chemin recommandé en Capacitor
+est un **plugin de connexion sociale native** : l'app obtient un jeton d'identité du fournisseur, puis appelle
+`signInWithIdToken()`. **Ce chemin évite les pièges de la redirection** (perte du vérificateur PKCE,
+deep-link non déclenché, boucles de connexion) qui sont abondamment documentés sur le flux par redirection.
+
+> ⚠️ **Signal à vérifier, hors périmètre mais important :** plusieurs sources de 2026 évoquent un
+> désengagement d'Ionic vis-à-vis de Capacitor, avec des plugins tiers (Capgo) qui prennent le relais.
+> Le socle natif du produit en dépend — **à instruire séparément**, ce n'est pas une conclusion de ce document.
+
+---
+
+## 3. La décision de fond : le compte devient requis
+
+**Ce qui meurt :** l'invariant « compte différé, jamais imposé » · l'adoption/fusion (`adopt`, `planAdopt`,
+dédup de packs) · le « clean slate + peuplement consenti » dans sa forme actuelle.
+
+**Ce qui reste INTACT — et c'est l'essentiel :** le **local-first** (IndexedDB, hors-ligne) · la **sync**
+(elle perd sa **réconciliation d'orphelins** ; `push` ET `pull` restent, et gagnent une règle de
+changement de foyer — *correction C : « un seul sens » était trompeur, la sync reste bidirectionnelle*) · les **RLS** · le **foyer**
+· le **partage** et les **pages reçues** (le personnel n'a toujours pas de compte — invariant intact).
+
+**Ce qui change de forme :** la FTUE. Écran 1 = se connecter / créer un compte. Écran 2 = ton foyer.
+
+**Bénéfice collatéral immédiat :** le test sur compte neuf devient trivial (déconnexion → autre compte),
+là où il faut aujourd'hui effacer les données de l'app.
+
+**Le coût assumé :** on perd l'essai sans inscription — le principal point d'abandon des apps grand public.
+**Atténuation propre au produit :** la valeur de Manzil exige de partager, et partager exigeait déjà un
+compte. La fenêtre d'usage sans compte durait en réalité quelques minutes. **On payait une machinerie
+entière pour cinq minutes de confort.**
+
+---
+
+## 4. Recommandation — en deux phases, et l'ordre compte
+
+### Phase 1 — Le compte requis, avec l'e-mail + code EXISTANT
+**Aucune nouvelle intégration d'auth.** On ne touche pas à la méthode : `sendOtp`/`verifyOtp` marchent, et
+le PO confirme recevoir un code à 6 chiffres. On change **quand** le compte est demandé (au premier
+lancement) et on **supprime la machinerie de fusion**. Livre : la mort d'`adopt()`, la page de compte propre,
+le test sur compte neuf trivial. **Zéro contrainte Apple 4.8** (système propre exclusivement).
+
+### Phase 2 — Google + Apple, avant le lancement store
+Le tap unique. **Google implique Apple** (§2.1) — donc deux intégrations, plugin natif, empreintes SHA côté
+Android, setup Apple. L'e-mail + code **reste** en secours (web, et qui ne veut pas lier un compte).
+
+**Pourquoi cet ordre.** Phase 1 délivre **tout le gain structurel** (machinerie morte, page propre, tests
+faciles) **sans aucun coût d'intégration**. Phase 2 délivre le **confort** (un tap au lieu de six chiffres),
+avec un vrai coût natif. Les séparer permet de livrer le structurel tout de suite et de traiter le natif
+comme une tranche à part — au lieu de bloquer le premier sur le second.
+
+**Nuance honnête :** une fois le compte requis, le mur d'entrée devient obligatoire — donc la friction du
+« taper six chiffres » pèse **plus** qu'avant. Si le test par des amis est proche, **Phase 2 doit le précéder**.
+
+### Écarté
+
+| Option | Raison |
+|---|---|
+| **E-mail + mot de passe** | Apporte un flux « mot de passe oublié », un support récurrent et un stockage sensible — pour zéro gain sur les deux autres. Le mot de passe résout un problème qu'on n'a pas. |
+| **Passkeys** | Direction du secteur, mais récupération complexe pour un compte sans enjeu de valeur. À revisiter. |
+
+---
+
+## 5. Ce que ce document ne tranche pas (renvoyé au lot onboarding)
+
+- **Rejoindre un foyer : lien plutôt que code** — le benchmark le valide fortement (§2.3), mais c'est de
+  l'onboarding, pas de l'auth.
+- **Séparer « créer un foyer » de « rejoindre »** — le vrai défaut de parcours identifié par le PO.
+- ~~**Le skip FTUE** (il existe, `Ftue.tsx:527`, mais on ne le voit pas).~~
+  > **CORRECTION B — il n'existe pas.** Vérifié exhaustivement : `Ftue.tsx:527` est
+  > « Plus tard — poser la page sans nom », qui saute le **nommage d'une personne**, pas la FTUE.
+  > Les trois autres `.skip` du fichier sont des retours arrière dans `#join` (`:282`, `:308`, `:333`).
+  > Le seul chemin de la FTUE réelle vers l'app est `finish()` (`:545`). **Aucun skip de FTUE
+  > n'existe** — s'il en faut un, c'est une fonctionnalité à écrire, pas à révéler.
+- **L'export JSON** : à **enterrer, pas supprimer** — c'est la portabilité des données (enjeu RGPD). Sa
+  place est un « avancé », pas la page de compte.
+
+---
+
+*Fin de l'instruction. Décision de fond recommandée : compte requis (Phase 1 immédiate, sans nouvelle
+intégration), OAuth Google/Apple en Phase 2 avant tout test externe.*

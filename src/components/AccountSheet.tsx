@@ -222,15 +222,16 @@ export default function AccountSheet({
               </button>
             </div>
             <div className="mz-sm" style={{ marginTop: 6 }}>
-              Rejoindre un foyer remplace le tien ; tes recettes locales le rejoignent à la synchro.
+              Rejoindre un foyer remplace le tien : cet appareil affichera le contenu du
+              foyer rejoint. Tes données actuelles restent en ligne dans ton foyer.
             </div>
           </>
         ) : (
           <div style={{ marginTop: 10 }}>
             <div className="mz-note">
-              Ton foyer actuel et sa <b>sauvegarde en ligne seront supprimés</b>. Tes données sur
-              cet appareil rejoindront le foyer partagé. Une copie de tes données va être
-              téléchargée avant, par sécurité.
+              Ton foyer actuel et sa <b>sauvegarde en ligne seront supprimés</b>. Sur cet
+              appareil, <b>le contenu du foyer rejoint remplacera le tien</b> — il n'y a plus
+              de fusion. Une copie de tes données va être téléchargée avant, par sécurité.
             </div>
             <div className="mz-btnrow">
               <button className="mz-btn" onClick={() => setConfirmJoin(false)} disabled={busy}>
@@ -249,10 +250,10 @@ export default function AccountSheet({
         ) : (
           <div style={{ marginTop: 10 }}>
             <div className="mz-note">
-              Tu quittes ce foyer et repars sur une maison neuve. Tes données locales restent sur
-              cet appareil et rejoindront ton nouveau foyer à la synchro. <b>Si tu es le
-              propriétaire de ce foyer, sa sauvegarde en ligne est aussi supprimée.</b> Une copie de
-              tes données va être téléchargée avant, par sécurité.
+              Tu quittes ce foyer et repars sur une maison neuve. <b>Cet appareil sera vidé de
+              son contenu</b> (il suit le nouveau foyer, vide). <b>Si tu es le propriétaire de ce
+              foyer, sa sauvegarde en ligne est aussi supprimée.</b> Une copie de tes données va
+              être téléchargée avant, par sécurité.
             </div>
             <div className="mz-btnrow">
               <button className="mz-btn" onClick={() => setConfirmLeave(false)} disabled={busy}>

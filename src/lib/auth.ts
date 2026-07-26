@@ -148,7 +148,10 @@ export async function createInvite(email?: string): Promise<{ code?: string; exp
   return { code: data?.code, expiresAt: data?.expires_at };
 }
 
-/** Rejoint un foyer via un code d'invitation (quitte le foyer actuel ; données locales fusionnées au sync).
+/** Rejoint un foyer via un code d'invitation (quitte le foyer actuel).
+ * T2 (Identité & accès) : il n'y a PLUS de fusion. Le foyer d'arrivée fait foi —
+ * au cycle suivant, `useSync` voit un changement de foyer et fait purge LOCALE +
+ * pull seul. Les données du foyer quitté restent en ligne (rien n'est supprimé).
  * AS-2b : appelle le RPC transactionnel `accept_invite` DIRECTEMENT (remplace l'edge
  * `accept-invite`). Le RPC RETOURNE un statut jsonb {ok, foyer_id, error} — il NE LÈVE
  * PAS sur les erreurs métier (sinon le rollback effacerait le compteur de rate-limit),
@@ -159,8 +162,8 @@ export async function acceptInvite(code: string): Promise<{ foyerId?: string; er
   const { data, error } = await supa.rpc('accept_invite', { p_code: code });
   if (error) return { error: error.message };            // erreur transport / permission
   if (!data?.ok) return { error: data?.error ?? 'Code invalide.' };  // erreur métier (statut)
-  // Nouveau contexte de foyer : purge l'état de sync local (méta/curseurs) pour
-  // que le rechargement passe par une adoption propre (rituel Q1).
+  // Nouveau contexte de foyer : purge l'état de sync local (méta/curseurs) ; le
+  // cycle suivant détectera le changement et re-tirera le foyer rejoint.
   invalidateFoyerCache();
   await clearSyncState();
   return { foyerId: data.foyer_id as string };

@@ -16,8 +16,7 @@ import { isNative, onBackButton, minimizeApp } from './lib/platform';
 import { closeTopSheet } from './ui/primitives';
 import { loadCompteLie, loadRolesActifs, saveRolesActifs, type RoleActif } from './lib/db';
 import { useSession } from './lib/useSession';
-import { useSync, type AdoptRequest } from './lib/sync/useSync';
-import { downloadExport } from './lib/exportData';
+import { useSync } from './lib/sync/useSync';
 import { useNounou } from './nounou/useNounou';
 import type { Personne } from './maison/personnes';
 
@@ -47,9 +46,6 @@ export default function App() {
     void loadCompteLie().then((c) => setCompteLie(!!c));
   }, [session]);
   const connected = !!session || compteLie;
-  // Rituel d'adoption (Q1) : quand le foyer rejoint a déjà du contenu cloud, la
-  // fusion exige un consentement explicite (jamais silencieuse) + export préalable.
-  const [adoptReq, setAdoptReq] = useState<AdoptRequest | null>(null);
   // F4 (Flow FTUE) : rôles ACTIVÉS (cartes posées sur le hub) — méta locale, posée
   // par la FTUE, la migration one-shot (appareils existants) ou le « ＋ » ci-dessous.
   const [rolesActifs, setRolesActifs] = useState<RoleActif[]>([]);
@@ -75,7 +71,7 @@ export default function App() {
     void refresh();
     void useNounou.getState().init();
   };
-  useSync(session, onSynced, setAdoptReq);
+  useSync(session, onSynced);
 
   // Espace permanent d'un destinataire (#e=) : lecture seule, sans données locales.
   const espaceToken = readEspaceToken();
@@ -278,32 +274,6 @@ export default function App() {
         </Sheet>
       )}
 
-      {adoptReq && (
-        <Sheet
-          title="Rejoindre ce foyer ?"
-          sub="Ce foyer a déjà du contenu dans le cloud. Ta maison sur cet appareil va le rejoindre : on garde tout, et en cas de doublon c’est la version du foyer qui gagne."
-          onClose={() => setAdoptReq(null)}
-        >
-          <div className="mz-sm" style={{ marginBottom: 12 }}>
-            Par précaution, une sauvegarde de tes données locales est téléchargée avant la fusion.
-          </div>
-          <div className="mz-btnrow">
-            <button className="mz-btn" onClick={() => setAdoptReq(null)}>
-              Plus tard
-            </button>
-            <button
-              className="mz-btn primary"
-              onClick={() => {
-                void downloadExport(); // filet Q1 : export AVANT toute première fusion
-                adoptReq.proceed();
-                setAdoptReq(null);
-              }}
-            >
-              Fusionner nos maisons
-            </button>
-          </div>
-        </Sheet>
-      )}
     </div>
   );
 }
