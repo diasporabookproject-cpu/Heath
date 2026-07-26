@@ -125,6 +125,37 @@ export async function leaveFoyer(): Promise<{ error?: string }> {
   return {};
 }
 
+/** Aperçu d'une invitation AVANT de la rejoindre (RPC `preview_invite`, 0013).
+ * Lecture seule : ne consomme rien, ne joint rien. Un code mort renvoie `ok:false`
+ * NU (pas d'oracle) — l'écran dira simplement que le code n'est pas valide. */
+export async function previewInvite(code: string): Promise<{
+  ok: boolean; prenomFondateur?: string | null; nbMembres?: number; createdAt?: string; error?: string;
+}> {
+  const supa = getSupabase();
+  if (!supa) return { ok: false, error: 'Connexion indisponible.' };
+  const { data, error } = await supa.rpc('preview_invite', { p_code: code });
+  if (error) return { ok: false, error: error.message };
+  if (!data?.ok) return { ok: false };
+  return {
+    ok: true,
+    prenomFondateur: (data.prenom_fondateur as string | null) ?? null,
+    nbMembres: data.nb_membres as number,
+    createdAt: data.created_at as string,
+  };
+}
+
+/** Enregistre SON prénom dans le foyer (0014 : policy self + grant colonne).
+ * Best-effort : un échec réseau ne doit pas bloquer l'entrée dans l'app — le
+ * prénom se re-posera au prochain passage (il n'y a rien d'irréversible ici). */
+export async function savePrenom(prenom: string): Promise<{ error?: string }> {
+  const supa = getSupabase();
+  if (!supa) return { error: 'Connexion indisponible.' };
+  const { data: u } = await supa.auth.getUser();
+  if (!u.user) return { error: 'Non connecté.' };
+  const { error } = await supa.from('membres').update({ prenom: prenom.trim() }).eq('user_id', u.user.id);
+  return error ? { error: error.message } : {};
+}
+
 /** Extrait le message d'erreur renvoyé par une edge function (sinon message générique). */
 async function fnError(error: unknown): Promise<string> {
   const ctx = (error as { context?: Response })?.context;

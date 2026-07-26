@@ -45,7 +45,7 @@ await page.evaluate(
         const db = req.result;
         const tx = db.transaction('meta', 'readwrite');
         tx.objectStore('meta').put({ userId: 'smoke', email: 'smoke@exemple.com', at: Date.now() }, 'compteLie');
-        tx.objectStore('meta').put(true, 'ftueDone');
+        tx.objectStore('meta').put(true, 'ftueDone'); // T3 : ftueDone saute AUSSI l'écran 2 (le foyer)
         tx.objectStore('meta').put(['cuisine', 'nounou'], 'rolesActifs');
         tx.oncomplete = () => { db.close(); resolve(); };
         tx.onerror = () => reject(tx.error);

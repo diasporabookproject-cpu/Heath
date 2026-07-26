@@ -15,3 +15,25 @@ export function isValidEmail(email: string): boolean {
   const e = email.trim();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 }
+
+// ── Code d'invitation (lot Identité & accès, T3) ─────────────────────────────
+// ⚠️ 10 SIGNES, pas 6. L'alphabet exclut les caractères ambigus (ni I, L, O, 0, 1) —
+// il doit rester le MÊME que celui du générateur serveur (`functions/invite`), et la
+// LONGUEUR ne doit pas bouger : la décision PO d'accepter `preview_invite` sans
+// rate-limit repose explicitement sur « 10 signes × 31 ≈ 2⁴⁹ ».
+export const INVITE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+export const INVITE_CODE_LEN = 10;
+
+/** Majuscules, alphabet strict, longueur bornée (colle/saisie tolérantes). */
+export function normalizeInviteCode(raw: string): string {
+  return raw
+    .toUpperCase()
+    .split('')
+    .filter((c) => INVITE_ALPHABET.includes(c))
+    .join('')
+    .slice(0, INVITE_CODE_LEN);
+}
+
+export function isValidInviteCode(code: string): boolean {
+  return code.length === INVITE_CODE_LEN && [...code].every((c) => INVITE_ALPHABET.includes(c));
+}

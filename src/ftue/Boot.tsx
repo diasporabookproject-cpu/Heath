@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import App from '../App';
 import Ftue from './Ftue';
 import Entrer from './Entrer';
+import Foyer from './Foyer';
 import { readEspaceToken } from '../lib/espace';
 import { hasBootedBefore, loadCompteLie, loadFtueDone, saveFtueDone, saveRolesActifs } from '../lib/db';
 import { gateMode } from './gate';
@@ -18,7 +19,8 @@ import { gateMode } from './gate';
 //   ③ `ftueDone` présent → App ;
 //   ④ appareil déjà booté (méta `seedVersion`/`seeded`, lues AVANT que le boot courant
 //      ne les tamponne) → MIGRATION ONE-SHOT (ftueDone + rôles rétroactifs) → App ;
-//   ⑤ sinon → FTUE (le foyer).
+//   ⑤ sinon → ÉCRAN 2 « le foyer » : fonder (→ FTUE) ou rejoindre (→ app, la FTUE
+//      est SAUTÉE : le foyer existe, la jouer écraserait le travail du fondateur).
 //
 // 🔴 ② teste le DRAPEAU LOCAL `compteLie`, jamais la session vivante : hors-ligne,
 // `getSession()` rend `null` dès que le jeton d'accès a expiré, et se reconnecter
@@ -27,7 +29,7 @@ import { gateMode } from './gate';
 // conditionne que les opérations réseau, déjà toutes best-effort. (Preuve : test
 // `boot-gate.test.ts` + smoke Cuisine, rechargement hors-ligne.)
 
-type Mode = 'checking' | 'entrer' | 'ftue' | 'app';
+type Mode = 'checking' | 'entrer' | 'foyer' | 'ftue' | 'app';
 
 export default function Boot() {
   const [mode, setMode] = useState<Mode>(() =>
@@ -59,6 +61,7 @@ export default function Boot() {
   if (mode === 'checking') return null; // lecture méta ~ms : pas de flash
   // Compte lié → on re-évalue la suite du gate (FTUE ou App) sans recharger la page.
   if (mode === 'entrer') return <Entrer onDone={() => setMode('checking')} />;
+  if (mode === 'foyer') return <Foyer onFonder={() => setMode('ftue')} onRejoint={() => setMode('app')} />;
   if (mode === 'ftue') return <Ftue onDone={() => setMode('app')} />;
   return <App />;
 }

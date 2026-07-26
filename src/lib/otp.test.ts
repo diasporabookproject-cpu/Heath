@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeOtp, isValidOtp, isValidEmail } from './otp';
+import { normalizeOtp, isValidOtp, isValidEmail, normalizeInviteCode, isValidInviteCode } from './otp';
 
 describe('otp', () => {
   it('normalizeOtp ne garde que les chiffres, max 6', () => {
@@ -22,5 +22,19 @@ describe('otp', () => {
     expect(isValidEmail('pas-un-email')).toBe(false);
     expect(isValidEmail('a@b')).toBe(false);
     expect(isValidEmail('')).toBe(false);
+  });
+});
+
+describe('code d’invitation — 10 signes, alphabet sans ambiguïté', () => {
+  it('normalise : majuscules, rejette les caractères ambigus, borne à 10', () => {
+    expect(normalizeInviteCode('4k7p2m-abc')).toBe('4K7P2MABC');   // tiret retiré
+    expect(normalizeInviteCode('io01')).toBe('');                   // I, O, 0, 1 exclus
+    expect(normalizeInviteCode('ABCDEFGHJKMNPQ')).toHaveLength(10); // borné
+  });
+
+  it('valide seulement un code COMPLET de 10 signes', () => {
+    expect(isValidInviteCode('ABCDEFGHJK')).toBe(true);
+    expect(isValidInviteCode('ABCDEF')).toBe(false);  // 6 = le code de la maquette, pas le vrai
+    expect(isValidInviteCode('ABCDEFGHI0')).toBe(false); // I et 0 hors alphabet
   });
 });

@@ -25,8 +25,10 @@ describe('gate — le compte est requis', () => {
     expect(gateMode({ ...base, compteLie: true, ftueDone: true })).toBe('app');
   });
 
-  it('compte lié, FTUE à faire → la FTUE (le foyer vient APRÈS le compte)', () => {
-    expect(gateMode({ ...base, compteLie: true })).toBe('ftue');
+  it('compte lié, foyer à établir → l’écran FOYER (fonder ou rejoindre), pas la FTUE', () => {
+    // T3 : la FTUE n'est plus atteinte par le gate — l'écran 2 la déclenche pour
+    // celui qui FONDE seulement. Celui qui rejoint la saute (bifurcation).
+    expect(gateMode({ ...base, compteLie: true })).toBe('foyer');
   });
 
   it('compte lié, appareil pré-FTUE → migration one-shot, jamais la FTUE', () => {

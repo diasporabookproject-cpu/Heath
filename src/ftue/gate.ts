@@ -14,7 +14,7 @@ export interface GateInput {
   bootedBefore: boolean;
 }
 
-export type GateMode = 'app' | 'entrer' | 'ftue' | 'migrer';
+export type GateMode = 'app' | 'entrer' | 'foyer' | 'migrer';
 
 /**
  * L'ordre du gate. Deux invariants s'y lisent :
@@ -34,5 +34,8 @@ export function gateMode(i: GateInput): GateMode {
   if (!i.compteLie) return 'entrer';
   if (i.ftueDone) return 'app';
   if (i.bootedBefore) return 'migrer';
-  return 'ftue';
+  // ③ Le compte est là, le foyer non : l'écran 2 (fonder ou rejoindre). C'est LUI
+  //    qui appelle la FTUE — et seulement pour celui qui FONDE : celui qui rejoint
+  //    la saute (le foyer existe déjà, la lui faire jouer écraserait son contenu).
+  return 'foyer';
 }

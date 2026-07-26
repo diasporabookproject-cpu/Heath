@@ -131,6 +131,15 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot Identité & accès — T3 : fonder ou rejoindre (écran 2 + bifurcation) — 2026-07-26
+Le compte est posé (T1), la fusion est morte (T2) : reste **le foyer**. Écran 2 livré, sur les briques serveur de la fenêtre.
+- **Écran 2 `Foyer.tsx`** — 4 états : *le choix* (« Créons votre maison ») · *saisir le code* · *« C'est bien cette maison ? »* (via `preview_invite`) · *l'arrivée du membre* (« Vous voilà chez Amine »). Même grammaire que l'Écran 1 (motif d'erreur unique, bouton à taille constante, rien sous 300 ms).
+- **🔴 BIFURCATION DE PARCOURS** (décision UI a) : **celui qui rejoint SAUTE la FTUE**. Le gate ne mène plus à la FTUE mais à l'écran 2, qui la déclenche **pour le fondateur seulement** ; le membre reçoit `ftueDone` + les deux rôles et entre directement — la maison est déjà installée, la lui faire rejouer écraserait le travail du fondateur. `gateMode` renvoie désormais `foyer` (test mis à jour).
+- **`#join` retiré de la FTUE** (écrans, états, 3 handlers, le bouton « Rejoindre un foyer existant ») : son OTP faisait double emploi avec l'Écran 1. Le smoke FTUE **garde la porte** (le bouton ne doit plus exister).
+- **🔴 LA MAQUETTE MONTRE 6 CASES, LE VRAI CODE EN FAIT 10.** `functions/invite` génère 10 signes sur un alphabet de 31 sans caractères ambigus (ni I, L, O, 0, 1) ; `4K7P2M` était un mock. **La longueur ne pouvait pas bouger** : la décision d'accepter `preview_invite` sans rate-limit repose explicitement sur « 10 × 31 ≈ 2⁴⁹ ». Rendu en **deux rangées de 5** — la grammaire des cases est préservée, la sécurité aussi. `normalizeInviteCode`/`isValidInviteCode` testés (l'alphabet client est aligné sur celui du serveur).
+- **Le prénom, ajout imposé par la décision ①** : la maquette ne porte aucun champ prénom, mais sans lui « Maison d'Amine », « Sofia » et « Sofia perd l'accès » ne sont pas calculables. Demandé au fondateur (écran du choix) et au membre (écran d'arrivée), écrit via `savePrenom` (0014). **Best-effort** : un échec réseau ne bloque pas l'entrée.
+- Portes : typecheck · **241 tests** (+2 code d'invitation) · build · **3 smokes** (nouvelle porte T3 dans le smoke FTUE) · captures. **STOP T3.**
+
 ### FENÊTRE — 0012 · 0013 · 0014 + edge TTL : APPLIQUÉS EN PROD, parité de clôture 0 écart — 2026-07-26
 Fenêtre d'écriture prod du lot Identité & accès, protocole AS-2 complet, **rien sans le GO explicite du PO**.
 - **Contenu** : `0012_foyer_titulaire` (**renverse `0008`** — ADR 33 : cascade au départ du titulaire, `owner_notice` + `ack_owner_notice` retirés) · `0013_preview_invite` (nommer la maison avant de la rejoindre) · `0014_membres_prenom` (colonne + policy self + **grant restreint à la colonne**) · **edge `invite` TTL 72 h → 24 h**.

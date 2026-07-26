@@ -106,3 +106,35 @@
   display: flex; align-items: center; justify-content: center; gap: 9px;
   margin-top: 20px; font-size: 12.5px; font-weight: 700; color: var(--muted);
 }
+
+/* ── Écran 2 « Le foyer » (T3) — au pixel de identite-ecrans-compiles.html §2 ── */
+.en .joinlink {
+  width: 100%; padding: 16px 0 0; background: none; border: none; cursor: pointer;
+  font-family: inherit; text-align: center; font-size: 12.5px; font-weight: 700; color: var(--accent-ink);
+}
+.en .joinlink span { display: block; margin-top: 3px; font-size: 11px; font-weight: 500; color: var(--muted); }
+
+.en .found {
+  display: flex; align-items: center; gap: 12px; margin-top: 22px; padding: 16px;
+  background: #fff; border-radius: 16px; box-shadow: 0 5px 16px rgba(30, 25, 20, 0.06);
+}
+.en .found .fa {
+  width: 44px; height: 44px; flex: none; border-radius: 14px; background: #f7e3d7; color: var(--accent-ink);
+  display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;
+}
+.en .found .ft b { display: block; font-size: 15px; font-weight: 800; color: var(--ink2); }
+.en .found .ft i { font-style: normal; font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.en .cta + .notthis { margin-top: 0; }
+.en .notthis {
+  width: 100%; padding: 14px 0 0; background: none; border: none; cursor: pointer;
+  font-family: inherit; text-align: center; font-size: 12px; font-weight: 700; color: #a89e8f;
+}
+
+/* L'arrivée du membre : un aperçu de ce qui l'attend (il saute la FTUE). */
+.en .peek { display: flex; gap: 8px; margin-top: 26px; }
+.en .peek .pk {
+  flex: 1; padding: 12px 8px; text-align: center; background: #fff; border-radius: 13px;
+  box-shadow: 0 3px 10px rgba(30, 25, 20, 0.05);
+}
+.en .peek .pe { font-size: 20px; line-height: 1.2; }
+.en .peek .pn { margin-top: 5px; font-size: 10px; font-weight: 700; color: #8f887e; }

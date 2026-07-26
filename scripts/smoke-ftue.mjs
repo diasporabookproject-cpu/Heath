@@ -57,10 +57,21 @@ console.log('T1 : le mur — compte demandé avant la FTUE, aucune échappatoire
 await lierCompte();
 await page.reload({ waitUntil: 'networkidle' });
 
-// 1) #entry — le gate montre la FTUE une fois le compte lié (pas le hub).
+// 0bis) T3 — ÉCRAN 2 « le foyer » : le compte lié mène au CHOIX, pas à la FTUE.
+//       « Rejoindre » a quitté la FTUE : c'est ici, et seul celui qui FONDE la joue.
+await page.getByText('Créons', { exact: false }).waitFor({ timeout: 10000 });
+await page.getByText('J’ai un code d’invitation', { exact: false }).waitFor({ timeout: 3000 });
+if (await page.getByRole('button', { name: 'Rejoindre un foyer existant' }).count())
+  throw new Error('T3 : « Rejoindre un foyer existant » ne doit plus vivre dans la FTUE');
+await page.screenshot({ path: 'scripts/shot-foyer-choix.png' });
+// Le prénom est requis pour fonder (décision ① : sans lui, pas de « Maison de … »).
+await page.locator('.en .inp').fill('Amine');
+await page.locator('.en .cta').click();
+console.log('T3 : écran 2 — fonder avec un prénom, « rejoindre » sorti de la FTUE ✅');
+
+// 1) #entry — celui qui FONDE joue bien la FTUE.
 await page.getByText('Manzil vous aide', { exact: false }).waitFor({ timeout: 10000 });
-await page.getByRole('button', { name: 'Rejoindre un foyer existant' }).waitFor({ timeout: 3000 });
-console.log('FTUE #entry (gate pré-boot actif) ✅');
+console.log('FTUE #entry (le fondateur la joue) ✅');
 await page.screenshot({ path: 'scripts/shot-ftue-entry.png' });
 await page.getByRole('button', { name: 'Entrer', exact: true }).click();
 

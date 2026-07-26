@@ -6,8 +6,6 @@ import { importSecuriteSeed } from '../lib/securiteSeed';
 import { loadNounou, saveNounou, loadRecipes, saveRecipe, saveDestinataire, saveFtueDone, saveRolesActifs, type RoleActif } from '../lib/db';
 import { mergeNounouDoc, missingConduiteModeles, newToken, uid } from '../nounou/defaults';
 import { normalizeDestLangue, type NounouLangue } from '../types';
-import { sendOtp, verifyOtp, acceptInvite } from '../lib/auth';
-import { isValidEmail, isValidOtp, normalizeOtp } from '../lib/otp';
 import { isNative, onBackButton, minimizeApp } from '../lib/platform';
 
 // FTUE v4 (F4, Flow FTUE) — les 7 écrans de docs/maquettes/ftue-v4.html.
@@ -17,7 +15,7 @@ import { isNative, onBackButton, minimizeApp } from '../lib/platform';
 // gate `Boot` AVANT App : aucun store n'est initialisé tant qu'elle est active.
 // DÉMO (`demo`) : strictement visuel — aucun install/import, #join masqué.
 
-type Screen = 'entry' | 'join' | 'domain' | 'memory' | 'people' | 'send' | 'welcome';
+type Screen = 'entry' | 'domain' | 'memory' | 'people' | 'send' | 'welcome';
 type Domain = 'cuisine' | 'enfants' | 'securite';
 
 const ORDER: Screen[] = ['entry', 'domain', 'memory', 'people', 'send', 'welcome'];
@@ -117,12 +115,9 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
   const [busy, setBusy] = useState(false);
   const [soonMsg, setSoonMsg] = useState<string | null>(null);
 
-  // #join (réel seulement) : code → e-mail → code 6 chiffres → accept_invite.
-  const [joinCode, setJoinCode] = useState('');
-  const [joinStep, setJoinStep] = useState<'code' | 'email' | 'otp'>('code');
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [err, setErr] = useState('');
+  // T3 (Identité & accès) : le parcours « rejoindre » a QUITTÉ la FTUE — il vit
+  // sur l'écran 2 (`Foyer.tsx`), après le compte. Son OTP faisait double emploi
+  // avec l'Écran 1, et celui qui rejoint ne joue plus la FTUE du tout.
 
   const toastSoon = (m: string) => {
     setSoonMsg(m);
@@ -131,7 +126,6 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
 
   const back = () => {
     if (nameSheet) return setNameSheet(null); // la feuille d'abord (retour Android compris)
-    if (screen === 'join') return setScreen('entry');
     const i = ORDER.indexOf(screen);
     if (i > 0) return setScreen(ORDER[i - 1]);
     // #entry : en démo on ferme ; en natif on minimise (jamais de kill en plein parcours).
@@ -190,43 +184,6 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
     }
   };
 
-  // #join : rejoint un foyer réel via les briques EXISTANTES (OTP → RPC accept_invite).
-  // Succès → ftueDone + RELOAD : au reboot, `useSync` voit un CHANGEMENT DE FOYER
-  // (`foyerTransition` → `switch`) et fait purge LOCALE + pull seul — le foyer
-  // rejoint fait foi. Aucun peuplement local, aucune fusion (l'adoption est morte,
-  // lot Identité & accès T2).
-  const joinSubmitCode = () => {
-    if (!joinCode.trim()) return;
-    setErr('');
-    setJoinStep('email');
-  };
-  const joinSendOtp = async () => {
-    if (!isValidEmail(email)) return setErr('E-mail invalide.');
-    setBusy(true);
-    setErr('');
-    const { error } = await sendOtp(email);
-    setBusy(false);
-    if (error) return setErr(error);
-    setJoinStep('otp');
-  };
-  const joinVerify = async () => {
-    if (!isValidOtp(otp)) return setErr('Entre le code à 6 chiffres reçu par e-mail.');
-    setBusy(true);
-    setErr('');
-    const v = await verifyOtp(email, otp);
-    if (v.error) {
-      setBusy(false);
-      return setErr('Code incorrect ou expiré.');
-    }
-    const { error } = await acceptInvite(joinCode.trim());
-    if (error) {
-      setBusy(false);
-      return setErr(error);
-    }
-    await saveFtueDone();
-    window.location.reload(); // le contenu vient du foyer rejoint (purge + pull au boot)
-  };
-
   return (
     <div className="ftue">
       {screen === 'entry' && (
@@ -244,100 +201,11 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
             <button className="btn" onClick={() => setScreen('domain')}>
               Entrer
             </button>
-            {!demo && (
-              <button className="btn line" style={{ marginTop: 10 }} onClick={() => setScreen('join')}>
-                Rejoindre un foyer existant
-              </button>
-            )}
             {/* Liens inertes tant que les URL n'existent pas (signalé au read-back). */}
             <p className="fineprint">
               En continuant, vous acceptez les conditions d’utilisation et la politique de confidentialité.
             </p>
           </div>
-        </section>
-      )}
-
-      {screen === 'join' && (
-        <section className="ftue-screen">
-          <span className="eyebrow">Rejoindre</span>
-          {joinStep === 'code' && (
-            <>
-              <h1 style={{ marginTop: 14 }}>
-                Entrez le code
-                <br />
-                du foyer.
-              </h1>
-              <p className="sub">Demandez-le à la personne qui gère déjà le foyer.</p>
-              <input
-                className="tf"
-                type="text"
-                autoCapitalize="characters"
-                placeholder="Ex. RIAD4821XZ"
-                value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              />
-              {err && <p className="errnote">{err}</p>}
-              <div className="foot">
-                <button className="btn olive" onClick={joinSubmitCode} disabled={busy || !joinCode.trim()}>
-                  Rejoindre le foyer
-                </button>
-                <button className="skip" onClick={() => setScreen('entry')}>
-                  Retour
-                </button>
-              </div>
-            </>
-          )}
-          {joinStep === 'email' && (
-            <>
-              <h1 style={{ marginTop: 14 }}>Votre e-mail.</h1>
-              <p className="sub">
-                Pour vous reconnaître dans le foyer. On vous envoie un code à 6 chiffres — pas de mot de passe.
-              </p>
-              <input
-                className="tf"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder="vous@exemple.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              {err && <p className="errnote">{err}</p>}
-              <div className="foot">
-                <button className="btn olive" onClick={() => void joinSendOtp()} disabled={busy || !email.trim()}>
-                  {busy ? 'Envoi…' : 'Recevoir mon code'}
-                </button>
-                <button className="skip" onClick={() => setJoinStep('code')}>
-                  Retour
-                </button>
-              </div>
-            </>
-          )}
-          {joinStep === 'otp' && (
-            <>
-              <h1 style={{ marginTop: 14 }}>Le code reçu.</h1>
-              <p className="sub">On a envoyé un code à 6 chiffres à {email}.</p>
-              <input
-                className="tf"
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                placeholder="000000"
-                value={otp}
-                onChange={(e) => setOtp(normalizeOtp(e.target.value))}
-              />
-              {err && <p className="errnote">{err}</p>}
-              <div className="foot">
-                <button className="btn olive" onClick={() => void joinVerify()} disabled={busy || !isValidOtp(otp)}>
-                  {busy ? 'Vérification…' : 'Rejoindre le foyer'}
-                </button>
-                <button className="skip" onClick={() => setJoinStep('email')}>
-                  Changer d’e-mail
-                </button>
-              </div>
-            </>
-          )}
         </section>
       )}
 
