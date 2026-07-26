@@ -21,6 +21,9 @@
   z-index: 60;
   display: flex;
   flex-direction: column;
+  /* 🔴 Retour device : sans les zones sûres, la barre d'état recouvrait le chevron
+     de retour et la barre de navigation Android mangeait « Supprimer mon compte ».
+     Un plein écran natif DOIT les porter (même patron que `.ftue`, `.cz-*`). */
   padding: 0 18px;
   background: var(--paper);
   color: #2a2420;
@@ -31,7 +34,7 @@
 .cp .grow { flex: 1; min-height: 8px; }
 
 /* En-tête : chevron de retour + titre */
-.cp .hd { display: flex; align-items: center; gap: 10px; padding: 19px 0 16px; }
+.cp .hd { display: flex; align-items: center; gap: 10px; padding: calc(19px + env(safe-area-inset-top, 0px)) 0 16px; }
 .cp .hd .bk {
   width: 31px; height: 31px; flex: none; border: none; border-radius: 10px; background: #f2eee7;
   color: #8a8175; font-size: 16px; line-height: 1; cursor: pointer;
@@ -73,8 +76,31 @@
   width: 32px; height: 32px; flex: none; border-radius: 50%; background: #f2eee7; color: #a08b78;
   display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;
 }
-.cp .mrow .mn { flex: 1; font-size: 13px; font-weight: 700; color: var(--ink2); }
+.cp .mrow .mn { flex: 1; font-size: 13px; font-weight: 700; color: var(--ink2); text-align: left; }
 .cp .mrow .mn span { font-size: 11px; font-weight: 600; color: var(--muted); }
+/* Sa PROPRE ligne se modifie (retour device : sans elle, un appareil déjà installé
+   restait « Sans prénom » à jamais). Prénom absent = une invitation, pas un défaut. */
+.cp .mrow.me { width: 100%; border-left: none; border-right: none; background: none; font-family: inherit; cursor: pointer; }
+.cp .mrow.me .mn em { font-style: normal; font-weight: 700; color: var(--accent-ink); }
+.cp .mrow.me .cv { flex: none; font-size: 16px; color: #cabfb0; }
+
+/* Saisie du prénom, dans la feuille */
+.cp .pinp {
+  width: 100%; margin-top: 16px; padding: 13px 14px;
+  background: #fff; border: 1px solid var(--line); border-radius: 13px;
+  font-family: inherit; font-size: 15px; font-weight: 600; color: var(--ink2);
+}
+.cp .pinp::placeholder { color: #c2b9aa; font-weight: 500; }
+.cp .pinp:focus { outline: none; border-color: #e3c3ae; box-shadow: 0 0 0 3px rgba(217, 98, 47, 0.08); }
+.cp .pinp:disabled { background: #f6f2ec; color: #b0a898; -webkit-text-fill-color: #b0a898; opacity: 1; }
+.cp .pbtn {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; margin-top: 12px; padding: 14px;
+  border: none; border-radius: 999px; background: var(--accent); color: #fff;
+  font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+}
+.cp .pbtn.busy { background: #e8a683; cursor: default; }
+.cp .pbtn:disabled:not(.busy) { background: #e5ded4; color: #a89e8f; cursor: default; }
 
 /* Le code d'invitation NAÎT DU GESTE : par défaut, une invitation à en créer un. */
 .cp .genrow {
@@ -110,7 +136,7 @@
 .cp .coderow .sh svg { width: 12px; height: 12px; }
 
 /* Deux liens discrets, au pied de la page */
-.cp .footlinks { display: flex; flex-direction: column; align-items: center; gap: 11px; padding: 14px 0 22px; }
+.cp .footlinks { display: flex; flex-direction: column; align-items: center; gap: 11px; padding: 14px 0 calc(22px + env(safe-area-inset-bottom, 0px)); }
 .cp .footlinks .fl {
   padding: 0; border: none; background: none; font-family: inherit;
   font-size: 11.5px; font-weight: 700; color: #a89e8f; cursor: pointer;
@@ -143,7 +169,8 @@
    propriétés non redéclarées ici fuyaient dans la feuille. */
 .cp .cpdim { position: fixed; inset: 0; z-index: 1; background: rgba(24, 20, 16, 0.36); border: none; }
 .cp .cpsheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; padding: 20px 20px 22px;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 2;
+  padding: 20px 20px calc(22px + env(safe-area-inset-bottom, 0px));
   background: var(--paper); border-radius: 22px 22px 0 0; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.16);
 }
 .cp .dic {

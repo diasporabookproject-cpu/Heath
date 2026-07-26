@@ -91,9 +91,18 @@ export default function App() {
   // ③ déjà sur Maison → MINIMISER (jamais de kill : l'app reste chaude).
   const screenRef = useRef(screen);
   screenRef.current = screen;
+  // 🔴 Retour device : la page de compte (T4) n'est PAS une `Sheet` de la pile —
+  // le bouton retour Android la sautait donc, revenait à Maison, et la page restait
+  // posée par-dessus. Elle passe en priorité ①, avant la pile des feuilles.
+  const accountRef = useRef(accountOpen);
+  accountRef.current = accountOpen;
   useEffect(() => {
     if (!isNative) return;
     return onBackButton(() => {
+      if (accountRef.current) {
+        setAccountOpen(false);
+        return;
+      }
       if (closeTopSheet()) return;
       if (screenRef.current !== 'maison') {
         setScreen('maison');

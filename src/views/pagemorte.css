@@ -20,7 +20,7 @@
 .pm * { box-sizing: border-box; }
 .pm .grow { flex: 1; min-height: 8px; }
 
-.pm .dead { display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 96px; }
+.pm .dead { display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: calc(96px + env(safe-area-inset-top, 0px)); }
 .pm .dmark {
   width: 66px; height: 66px; margin-bottom: 22px; flex: none; border-radius: 50%;
   background: #f1ece4; color: #b3a898;
@@ -34,6 +34,6 @@
 .pm .dl.rtl .m2 { font-family: 'Noto Naskh Arabic', serif; font-size: 13px; }
 
 .pm .brandfoot {
-  padding-bottom: 26px; text-align: center;
+  padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px)); text-align: center;
   font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; color: #c6bcac;
 }

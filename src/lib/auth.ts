@@ -9,10 +9,18 @@ import { webBaseUrl } from './platform';
 // toutes best-effort : hors-ligne l'app reste entière (drapeau local `compteLie`).
 // Identité = compte Manzil (jamais un ID de store).
 
+/**
+ * Pourquoi l'envoi a échoué. Sans cette distinction, un **plafond de débit** (le cas
+ * de loin le plus fréquent : deux demandes rapprochées, ou le même e-mail réutilisé)
+ * s'affichait comme « vérifiez votre connexion » — un conseil faux, qui envoie
+ * chercher le problème là où il n'est pas. Retour device : « pas de code reçu ».
+ */
+export type OtpFailure = 'debit' | 'reseau';
+
 /** Envoie un code de connexion à l'e-mail (crée l'utilisateur si besoin). */
-export async function sendOtp(email: string): Promise<{ error?: string }> {
+export async function sendOtp(email: string): Promise<{ error?: string; cause?: OtpFailure }> {
   const supa = getSupabase();
-  if (!supa) return { error: 'Connexion indisponible.' };
+  if (!supa) return { error: 'Connexion indisponible.', cause: 'reseau' };
   const { error } = await supa.auth.signInWithOtp({
     email: email.trim(),
     // Redirige le lien magique vers l'app (utile tant que l'e-mail n'a pas de code
@@ -25,7 +33,16 @@ export async function sendOtp(email: string): Promise<{ error?: string }> {
       emailRedirectTo: webBaseUrl(),
     },
   });
-  return error ? { error: error.message } : {};
+  if (!error) return {};
+  return { error: error.message, cause: causeOtp(error) };
+}
+
+/** Lit la cause d'un échec d'envoi d'OTP. Supabase répond `429` sur le plafond de
+ * débit, et son message le dit en clair (« you can only request this after N
+ * seconds », « email rate limit exceeded ») — on ne devine pas, on reconnaît. */
+export function causeOtp(error: { status?: number; message?: string }): OtpFailure {
+  if (error.status === 429) return 'debit';
+  return /rate limit|only request this after|too many/i.test(error.message ?? '') ? 'debit' : 'reseau';
 }
 
 /** Vérifie le code 6 chiffres et ouvre la session. */

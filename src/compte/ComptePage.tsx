@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import './compte.css';
 import { signOut, type Session } from '../lib/supabase';
 import { clearCompteLie, loadCompteLie, loadMonPrenom, saveMonPrenom, type CompteLie } from '../lib/db';
-import { createInvite, deleteAccount, ensureFoyer, leaveFoyer, loadFoyerInfo, type FoyerInfo } from '../lib/auth';
+import { createInvite, deleteAccount, ensureFoyer, leaveFoyer, loadFoyerInfo, savePrenom, type FoyerInfo } from '../lib/auth';
 import { downloadExport } from '../lib/exportData';
 import { isNative, shareText, webBaseUrl } from '../lib/platform';
 import { varianteSuppression, dependants } from './suppression';
@@ -134,6 +134,8 @@ export default function ComptePage({ session, onClose }: { session: Session | nu
   const [code, setCode] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState(false);
   const [confirmQuit, setConfirmQuit] = useState(false);
+  const [editPrenom, setEditPrenom] = useState(false);
+  const [prenomSaisi, setPrenomSaisi] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [showBusy, setShowBusy] = useState(false);
@@ -219,6 +221,24 @@ export default function ComptePage({ session, onClose }: { session: Session | nu
     }
     // Le compte n'existe plus : le mur doit se refermer immédiatement.
     window.location.reload();
+  };
+
+  // Le prénom sert à nommer la maison (« Maison de … ») et à dire qui perd l'accès
+  // à la suppression. `savePrenom` écrit la copie LOCALE d'abord : le geste réussit
+  // hors-ligne, et le foyer le recevra au prochain passage en ligne.
+  const enregistrerPrenom = async () => {
+    const v = prenomSaisi.trim();
+    if (busy || !v) return;
+    setErr('');
+    startBusy();
+    const { error } = await savePrenom(v);
+    setMonPrenom(v);
+    setInfo((i) => (i ? { ...i, membres: i.membres.map((m) => (m.moi ? { ...m, prenom: v } : m)) } : i));
+    endBusy();
+    if (error) {
+      setErr('Votre prénom est enregistré sur cet appareil. Il rejoindra le foyer dès le retour du réseau.');
+    }
+    setEditPrenom(false);
   };
 
   const quitter = async () => {
@@ -329,14 +349,27 @@ export default function ComptePage({ session, onClose }: { session: Session | nu
 
       <div className="seclabel">Votre foyer</div>
       <div className="cardw">
-        {membres.map((m) => (
-          <div className="mrow" key={m.userId}>
-            <span className="ma" aria-hidden>{(m.prenom ?? '?').slice(0, 1).toUpperCase()}</span>
-            <span className="mn">
-              {m.prenom ?? 'Sans prénom'} {m.moi && <span>(vous)</span>}
-            </span>
-          </div>
-        ))}
+        {membres.map((m) =>
+          /* 🔴 Retour device : un appareil DÉJÀ installé n'a jamais vu l'écran 2 (la
+             migration one-shot lui épargne la FTUE, à raison) — son prénom n'a donc
+             jamais été demandé, et rien ne permettait de le poser après. Sa propre
+             ligne est modifiable ; celles des AUTRES ne le sont pas (0014 : la policy
+             n'autorise que son propre prénom). */
+          m.moi ? (
+            <button className="mrow me" key={m.userId} onClick={() => { setErr(''); setPrenomSaisi(monPrenom ?? ''); setEditPrenom(true); }}>
+              <span className="ma" aria-hidden>{(m.prenom ?? monPrenom ?? '?').slice(0, 1).toUpperCase()}</span>
+              <span className="mn">
+                {m.prenom ?? monPrenom ?? <em>Ajouter votre prénom</em>} <span>(vous)</span>
+              </span>
+              <span className="cv" aria-hidden>›</span>
+            </button>
+          ) : (
+            <div className="mrow" key={m.userId}>
+              <span className="ma" aria-hidden>{(m.prenom ?? '?').slice(0, 1).toUpperCase()}</span>
+              <span className="mn">{m.prenom ?? 'Sans prénom'}</span>
+            </div>
+          ),
+        )}
         {code ? (
           <div className="coderow">
             <span className="ct">
@@ -367,6 +400,33 @@ export default function ComptePage({ session, onClose }: { session: Session | nu
         <button className="fl" onClick={() => setVue('avance')}>Avancé</button>
         <button className="fl dgr" onClick={() => { setErr(''); setConfirmDel(true); }}>Supprimer mon compte</button>
       </div>
+
+      {editPrenom && (
+        <>
+          <button className="cpdim" aria-label="Annuler" onClick={() => { if (!busy) setEditPrenom(false); }} />
+          <div className="cpsheet" role="dialog" aria-modal="true" aria-label="Votre prénom">
+            <h2>Votre prénom</h2>
+            <p>Il nomme votre maison pour ceux que vous invitez — « Maison de {prenomSaisi.trim() || '…'} ».</p>
+            <input
+              className="pinp"
+              type="text"
+              autoFocus
+              autoCapitalize="words"
+              maxLength={40}
+              placeholder="Amine"
+              value={prenomSaisi}
+              disabled={busy}
+              onChange={(e) => setPrenomSaisi(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') void enregistrerPrenom(); }}
+              aria-label="Votre prénom"
+            />
+            <button className={'pbtn' + (showBusy ? ' busy' : '')} onClick={() => void enregistrerPrenom()} disabled={busy || !prenomSaisi.trim()}>
+              {showBusy ? (<><span className="spin" />Enregistrement…</>) : 'Enregistrer'}
+            </button>
+            <button className="cbtn" onClick={() => setEditPrenom(false)} disabled={busy}>Annuler</button>
+          </div>
+        </>
+      )}
 
       {confirmDel && (
         <>

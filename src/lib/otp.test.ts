@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeOtp, isValidOtp, isValidEmail, normalizeInviteCode, isValidInviteCode } from './otp';
+import { causeOtp } from './auth';
 
 describe('otp', () => {
   it('normalizeOtp ne garde que les chiffres, max 6', () => {
@@ -36,5 +37,24 @@ describe('code d’invitation — 10 signes, alphabet sans ambiguïté', () => {
     expect(isValidInviteCode('ABCDEFGHJK')).toBe(true);
     expect(isValidInviteCode('ABCDEF')).toBe(false);  // 6 = le code de la maquette, pas le vrai
     expect(isValidInviteCode('ABCDEFGHI0')).toBe(false); // I et 0 hors alphabet
+  });
+});
+
+describe('causeOtp — un plafond de débit n’est pas une panne de réseau', () => {
+  it('reconnaît le 429 de Supabase', () => {
+    expect(causeOtp({ status: 429, message: 'Too Many Requests' })).toBe('debit');
+  });
+
+  it('reconnaît le message « only request this after N seconds »', () => {
+    expect(causeOtp({ message: 'For security purposes, you can only request this after 54 seconds' })).toBe('debit');
+  });
+
+  it('reconnaît « email rate limit exceeded »', () => {
+    expect(causeOtp({ message: 'Email rate limit exceeded' })).toBe('debit');
+  });
+
+  it('tout le reste est traité comme un problème de réseau', () => {
+    expect(causeOtp({ message: 'Failed to fetch' })).toBe('reseau');
+    expect(causeOtp({})).toBe('reseau');
   });
 });

@@ -81,11 +81,17 @@ export default function Entrer({ onDone }: { onDone: () => void }) {
     }
     setErr('');
     startBusy();
-    const { error } = await sendOtp(email.trim());
+    const { error, cause } = await sendOtp(email.trim());
     endBusy();
     if (error) {
       // Jamais le message brut de Supabase (« Failed to fetch ») : une phrase française.
-      return setErr('L’envoi n’a pas abouti. Vérifiez votre connexion, puis réessayez.');
+      // Mais on ne dit pas « vérifiez votre connexion » quand c'est un plafond de
+      // débit — ce conseil enverrait chercher le problème là où il n'est pas.
+      return setErr(
+        cause === 'debit'
+          ? 'Un code vient déjà d’être demandé. Attendez une minute, puis réessayez.'
+          : 'L’envoi n’a pas abouti. Vérifiez votre connexion, puis réessayez.',
+      );
     }
     setCode('');
     setStep('code');
@@ -277,9 +283,14 @@ export default function Entrer({ onDone }: { onDone: () => void }) {
       {showBusy ? (
         <div className="checking"><span className="spin dark" />Vérification…</div>
       ) : (
-        <button className="resend" onClick={() => void send()} disabled={busy}>
-          Renvoyer le code
-        </button>
+        <>
+          <button className="resend" onClick={() => void send()} disabled={busy}>
+            Renvoyer le code
+          </button>
+          {/* Retour device « pas de code reçu » : le premier endroit à regarder est
+              le dossier des indésirables — le dire ici évite d'attendre pour rien. */}
+          <div className="spam">Rien reçu ? Regardez dans vos indésirables.</div>
+        </>
       )}
       <div className="grow" />
     </div>

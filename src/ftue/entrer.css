@@ -26,7 +26,7 @@
 .en .grow { flex: 1; min-height: 8px; }
 
 .en .mark {
-  width: 46px; height: 46px; margin-top: 56px; border-radius: 15px;
+  width: 46px; height: 46px; margin-top: calc(56px + env(safe-area-inset-top, 0px)); border-radius: 15px;
   background: var(--accent); color: #fff; flex: none;
   display: flex; align-items: center; justify-content: center;
 }
@@ -63,9 +63,10 @@
 @keyframes en-sp { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .en .spin { animation-duration: 2.4s; } }
 
-.en .fine { padding-bottom: 20px; font-size: 9.5px; font-weight: 500; line-height: 1.5; color: #c2b9aa; }
+.en .fine { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); font-size: 9.5px; font-weight: 500; line-height: 1.5; color: #c2b9aa; }
 
-.en .bkrow { padding-top: 20px; }
+/* Retour device : le chevron doit vivre SOUS la barre d'état, pas dessous. */
+.en .bkrow { padding-top: calc(20px + env(safe-area-inset-top, 0px)); }
 .en .bk {
   width: 31px; height: 31px; border-radius: 10px; background: #f2eee7; border: none;
   color: #8a8175; font-size: 16px; line-height: 1; cursor: pointer;
@@ -102,6 +103,7 @@
   font-family: inherit; font-size: 12px; font-weight: 700; color: var(--accent-ink); cursor: pointer;
 }
 .en .resend:disabled { color: #c2b9aa; cursor: default; }
+.en .spam { margin-top: 10px; font-size: 10.5px; font-weight: 500; color: #c2b9aa; }
 .en .checking {
   display: flex; align-items: center; justify-content: center; gap: 9px;
   margin-top: 20px; font-size: 12.5px; font-weight: 700; color: var(--muted);

@@ -85,7 +85,23 @@ if ((await page.locator('.cp .idrow .av').innerText()) !== 'S')
 await page.screenshot({ path: 'scripts/shot-compte-page.png' });
 console.log('T4 : page de compte hors-ligne — occupant nommé, sortie offerte, invitation inerte ✅');
 
-// 3bis) T4 : « Avancé » porte l'export ENTERRÉ et le replay de l'introduction.
+// 3bis) 🔴 Retour device : un appareil DÉJÀ installé n'a jamais vu l'écran 2, son
+//        prénom n'a donc jamais été demandé — et rien ne permettait de le poser
+//        après (« Sans prénom » à jamais). Sa propre ligne se modifie, et ça marche
+//        HORS-LIGNE (la copie locale s'écrit d'abord ; le foyer suivra au réseau).
+if (!(await page.locator('.cp .mrow.me').count()))
+  throw new Error('Retour device : la ligne « (vous) » doit être modifiable');
+await page.locator('.cp .mrow.me').click();
+await page.locator('.cp .cpsheet h2', { hasText: 'Votre prénom' }).waitFor({ timeout: 3000 });
+await page.locator('.cp .pinp').fill('Amine');
+await page.locator('.cp .pbtn').click();
+await page.locator('.cp .mrow.me .mn', { hasText: 'Amine' }).waitFor({ timeout: 5000 });
+if ((await page.locator('.cp .idrow .av').innerText()) !== 'A')
+  throw new Error('Retour device : la pastille doit suivre le prénom, pas l’e-mail');
+await page.screenshot({ path: 'scripts/shot-compte-prenom.png' });
+console.log('Retour device ③ : prénom posable depuis la page de compte, hors-ligne ✅');
+
+// 3ter) T4 : « Avancé » porte l'export ENTERRÉ et le replay de l'introduction.
 await page.locator('.cp .footlinks .fl', { hasText: 'Avancé' }).click();
 await page.getByText('Exporter mes données').waitFor({ timeout: 3000 });
 await page.getByText('Revoir l’introduction').waitFor({ timeout: 3000 });
@@ -93,7 +109,7 @@ await page.screenshot({ path: 'scripts/shot-compte-avance.png' });
 await page.locator('.cp .hd .bk').click();
 console.log('T4 : Avancé — export enterré + revoir l’introduction ✅');
 
-// 3ter) T4 : la suppression NE BRANDIT PAS de conséquences qu'elle ne connaît pas.
+// 3quater) T4 : la suppression NE BRANDIT PAS de conséquences qu'elle ne connaît pas.
 //        Foyer illisible (hors-ligne) → variante « inconnu » : aucun bloc rouge.
 await page.locator('.cp .footlinks .fl.dgr').click();
 await page.getByText('Supprimer votre compte ?').waitFor({ timeout: 3000 });
