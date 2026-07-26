@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Sheet } from '../ui/primitives';
 import { getSupabase, signOut, type Session } from '../lib/supabase';
-import { clearCompteLie, saveCompteLie } from '../lib/db';
+import { clearCompteLie, saveCompteLie, saveDernierCompte } from '../lib/db';
 import {
   sendOtp,
   verifyOtp,
@@ -147,7 +147,9 @@ export default function AccountSheet({
     // T1 : mémoriser LOCALEMENT que le compte est lié — c'est ce drapeau qui ouvre
     // l'app (jamais la session vivante, nulle hors-ligne après expiration du jeton).
     const { data } = (await getSupabase()?.auth.getSession()) ?? { data: { session: null } };
-    await saveCompteLie(data.session?.user?.id ?? '', data.session?.user?.email ?? email.trim());
+    const uid = data.session?.user?.id ?? '';
+    await saveCompteLie(uid, data.session?.user?.email ?? email.trim());
+    if (uid) await saveDernierCompte(uid); // mémoire du dernier propriétaire de l'appareil
     setBusy(false);
     // La session se met à jour globalement (onAuthStateChange) → vue « connecté ».
   };
@@ -184,8 +186,12 @@ export default function AccountSheet({
             className="mz-btn"
             onClick={async () => {
               await signOut();
-              await clearCompteLie(); // le mur se referme : le prochain boot demande le compte
-              onClose();
+              await clearCompteLie();
+              // 🔴 Retour device ① : `onClose()` ne refermait QUE la feuille — `Boot`
+              // avait déjà décidé `mode='app'` et n'était jamais réévalué, donc on
+              // restait DANS l'app, menus visibles, « déconnecté ». Il n'y a pas de
+              // « prochain boot » : on le provoque. Le mur se referme séance tenante.
+              window.location.reload();
             }}
           >
             Se déconnecter

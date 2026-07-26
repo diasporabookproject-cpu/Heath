@@ -131,6 +131,14 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot Identité & accès — CORRECTIFS device ① et ② (retour PO) — 2026-07-26
+Deux défauts rapportés au device, tous deux réels. Aucun n'était visible en CI.
+- **① « Déconnecté, mes menus restent affichés ».** Diagnostic : `Se déconnecter` appelait `signOut()` + `clearCompteLie()` puis **`onClose()` — qui ne referme que la FEUILLE**. `Boot` avait déjà décidé `mode='app'` et n'est jamais réévalué : il n'existait pas de « prochain boot » pour refermer le mur. **Corrigé** : la déconnexion **recharge**, le gate repasse, le mur se referme séance tenante.
+- **① bis — le trou derrière le trou.** Même corrigé, un SECOND défaut restait : après déconnexion, une AUTRE personne qui se connecte sur ce téléphone verrait le contenu du premier (le drapeau du mur est effacé → plus de mémoire de l'ancien propriétaire ; la purge par changement de FOYER de T2 n'agit qu'au cycle de sync, donc **jamais hors-ligne**). **Corrigé** par une mémoire qui SURVIT à la déconnexion (`dernierCompte`) et une décision pure testée (`doitPurgerPourNouveauCompte`) : **autre compte → purge locale avant d'ouvrir l'app** · **même compte qui revient → on garde** (purger là détruirait des modifications hors-ligne non poussées sans rien protéger) · **premier compte → on garde** (option A). Comparaison purement locale : **protège aussi hors-ligne**.
+- **② Le code d'invitation collé dans le champ e-mail.** L'invité reçoit un code, ouvre l'app, et le premier écran demande un e-mail **sans dire que le code vient après** — il colle donc le code, et reçoit « Cette adresse ne semble pas valide » (capture PO). **Corrigé** : l'écran **reconnaît un code d'invitation** (`isValidInviteCode`) et répond « On dirait un code d'invitation. Entrez d'abord votre e-mail : le code vous sera demandé juste après. »
+- **Ce que je NE peux PAS prouver en CI** : le geste de déconnexion lui-même (il faut une session réelle ; le smoke n'a que `compteLie`). La décision de purge est testée unitairement (4 cas), le reste attend le device.
+- Portes : typecheck · **245 tests** (+4) · build · **3 smokes**.
+
 ### Lot Identité & accès — T3 : fonder ou rejoindre (écran 2 + bifurcation) — 2026-07-26
 Le compte est posé (T1), la fusion est morte (T2) : reste **le foyer**. Écran 2 livré, sur les briques serveur de la fenêtre.
 - **Écran 2 `Foyer.tsx`** — 4 états : *le choix* (« Créons votre maison ») · *saisir le code* · *« C'est bien cette maison ? »* (via `preview_invite`) · *l'arrivée du membre* (« Vous voilà chez Amine »). Même grammaire que l'Écran 1 (motif d'erreur unique, bouton à taille constante, rien sous 300 ms).

@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import './entrer.css';
 import { sendOtp, verifyOtp } from '../lib/auth';
 import { getSupabase } from '../lib/supabase';
-import { isValidEmail, isValidOtp, normalizeOtp } from '../lib/otp';
-import { saveCompteLie } from '../lib/db';
+import { isValidEmail, isValidOtp, normalizeOtp, isValidInviteCode, normalizeInviteCode } from '../lib/otp';
+import { loadDernierCompte, purgeLocalDocs, saveCompteLie, saveDernierCompte, clearSyncState } from '../lib/db';
+import { doitPurgerPourNouveauCompte } from './compte';
 
 /**
  * ÉCRAN 1 — « Entrer » (lot Identité & accès, T1).
@@ -62,7 +63,16 @@ export default function Entrer({ onDone }: { onDone: () => void }) {
   useEffect(() => () => { if (busyTimer.current) clearTimeout(busyTimer.current); }, []);
 
   const send = async () => {
-    if (busy || !isValidEmail(email)) return setErr('Cette adresse ne semble pas valide.');
+    if (busy) return;
+    if (!isValidEmail(email)) {
+      // 🔴 Retour device ② : l'invité reçoit un CODE et le colle ici — le premier
+      // écran demande un e-mail sans dire que le code vient après. On reconnaît le
+      // code au lieu de répondre « adresse invalide », qui ne l'aide en rien.
+      if (isValidInviteCode(normalizeInviteCode(email))) {
+        return setErr('On dirait un code d’invitation. Entrez d’abord votre e-mail : le code vous sera demandé juste après.');
+      }
+      return setErr('Cette adresse ne semble pas valide.');
+    }
     setErr('');
     startBusy();
     const { error } = await sendOtp(email.trim());
@@ -89,7 +99,16 @@ export default function Entrer({ onDone }: { onDone: () => void }) {
     // Session fraîche : lecture LOCALE (getSession ne touche pas le réseau ici).
     const { data } = (await getSupabase()?.auth.getSession()) ?? { data: { session: null } };
     const user = data.session?.user;
+    // 🔴 Retour device ① : si cet appareil appartenait à QUELQU'UN D'AUTRE, sa copie
+    // locale part AVANT d'ouvrir l'app. Comparaison purement locale — elle protège
+    // donc aussi hors-ligne, là où la purge par changement de foyer (T2) attend un
+    // cycle de sync. Même utilisateur qui revient : on garde (rien n'a été exposé).
+    if (doitPurgerPourNouveauCompte(await loadDernierCompte(), user?.id ?? '')) {
+      await purgeLocalDocs();
+      await clearSyncState();
+    }
     await saveCompteLie(user?.id ?? '', user?.email ?? email.trim());
+    if (user?.id) await saveDernierCompte(user.id);
     endBusy();
     onDone();
   };

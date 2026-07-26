@@ -150,6 +150,7 @@ const SEED_VERSION = 4;
 const FTUE_DONE_KEY = 'ftueDone';
 const ROLES_ACTIFS_KEY = 'rolesActifs';
 const COMPTE_LIE_KEY = 'compteLie';
+const DERNIER_COMPTE_KEY = 'dernierCompte';
 
 /** Identité liée à CET appareil (lot Identité & accès, T1). */
 export interface CompteLie {
@@ -186,6 +187,26 @@ export async function saveCompteLie(userId: string, email: string): Promise<void
 export async function clearCompteLie(): Promise<void> {
   const db = await getDB();
   await db.delete('meta', COMPTE_LIE_KEY);
+}
+
+/**
+ * Dernier compte ayant ouvert CET appareil — SURVIT à la déconnexion (contrairement
+ * à `compteLie`, qui est le drapeau du mur). Sert à une seule question, posée à la
+ * connexion : « est-ce le même utilisateur qu'avant ? »
+ *
+ * Sans lui, quelqu'un qui se déconnecte puis laisse une AUTRE personne se connecter
+ * sur le même téléphone verrait le contenu du premier (le drapeau du mur est effacé,
+ * donc on aurait perdu la mémoire de qui c'était). Comparaison LOCALE : elle marche
+ * hors-ligne, là où la purge par changement de FOYER (T2) attend un cycle de sync.
+ */
+export async function loadDernierCompte(): Promise<string | null> {
+  const db = await getDB();
+  return ((await db.get('meta', DERNIER_COMPTE_KEY)) as string | undefined) ?? null;
+}
+
+export async function saveDernierCompte(userId: string): Promise<void> {
+  const db = await getDB();
+  await db.put('meta', userId, DERNIER_COMPTE_KEY);
 }
 
 /**
