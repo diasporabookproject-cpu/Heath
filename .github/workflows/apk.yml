@@ -7,7 +7,7 @@ name: APK Android (debug)
 on:
   workflow_dispatch:
   push:
-    branches: [claude/jolly-wozniak-s83str]
+    branches: [lot-identite-v1]
 
 jobs:
   apk:

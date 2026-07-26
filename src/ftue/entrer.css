@@ -1,0 +1,108 @@
+/* Écran 1 « Entrer » — lot Identité & accès T1.
+   Repris au pixel de docs/maquettes/identite-ecrans-compiles.html (§1 Entrer)
+   + la grammaire des états de docs/maquettes/identite-page-morte-chargements.html. */
+
+.en {
+  --paper: #faf8f5;
+  --ink2: #1c1815;
+  --muted: #9b948b;
+  --line: #f0ebe3;
+  --accent: #d9622f;
+  --accent-ink: #c25528;
+  --danger: #b4453a;
+
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  padding: 0 18px;
+  background: var(--paper);
+  color: #2a2420;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  overflow-y: auto;
+}
+.en * { box-sizing: border-box; }
+.en .grow { flex: 1; min-height: 8px; }
+
+.en .mark {
+  width: 46px; height: 46px; margin-top: 56px; border-radius: 15px;
+  background: var(--accent); color: #fff; flex: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.en h1 { margin-top: 20px; font-size: 26px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.13; color: var(--ink2); }
+.en .sub { margin-top: 8px; font-size: 12.5px; font-weight: 500; line-height: 1.55; color: var(--muted); }
+
+.en .inp {
+  width: 100%; margin-top: 24px; padding: 14px 15px;
+  background: #fff; border: 1px solid var(--line); border-radius: 13px;
+  font-family: inherit; font-size: 14px; font-weight: 500; color: var(--ink2);
+}
+.en .inp::placeholder { color: #c2b9aa; }
+.en .inp:focus { outline: none; border-color: #e3c3ae; box-shadow: 0 0 0 3px rgba(217, 98, 47, 0.08); }
+/* Verrouillé pendant l'appel : lisible, jamais grisé au point de disparaître. */
+.en .inp:disabled { background: #f6f2ec; color: #b0a898; -webkit-text-fill-color: #b0a898; opacity: 1; }
+
+/* Le bouton garde EXACTEMENT sa taille — seul le libellé change. */
+.en .cta {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; margin-top: 9px; padding: 14px;
+  background: var(--accent); color: #fff; border: none; border-radius: 999px;
+  font-family: inherit; font-size: 14.5px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 7px 18px rgba(217, 98, 47, 0.24);
+}
+.en .cta.busy { background: #e8a683; box-shadow: none; cursor: default; }
+.en .cta:disabled:not(.busy) { background: #e5ded4; color: #a89e8f; box-shadow: none; cursor: default; }
+
+.en .spin {
+  width: 16px; height: 16px; flex: none; border-radius: 50%;
+  border: 2.2px solid rgba(255, 255, 255, 0.45); border-top-color: #fff;
+  animation: en-sp 0.8s linear infinite;
+}
+.en .spin.dark { border: 2.2px solid #e0d9cd; border-top-color: var(--accent); }
+@keyframes en-sp { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .en .spin { animation-duration: 2.4s; } }
+
+.en .fine { padding-bottom: 20px; font-size: 9.5px; font-weight: 500; line-height: 1.5; color: #c2b9aa; }
+
+.en .bkrow { padding-top: 20px; }
+.en .bk {
+  width: 31px; height: 31px; border-radius: 10px; background: #f2eee7; border: none;
+  color: #8a8175; font-size: 16px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.en h2 { margin-top: 24px; font-size: 25px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.15; color: var(--ink2); }
+.en .cs { margin-top: 8px; font-size: 12.5px; font-weight: 500; color: var(--muted); }
+.en .cs b { color: var(--ink2); font-weight: 700; }
+
+/* Les 6 cases : un champ unique invisible par-dessus (une seule cible de saisie). */
+.en .codewrap { position: relative; margin-top: 22px; }
+.en .boxes { display: flex; gap: 7px; }
+.en .box {
+  flex: 1; aspect-ratio: 1 / 1.15; background: #fff; border: 1px solid var(--line); border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; font-weight: 800; color: var(--ink2);
+}
+.en .box.cur { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217, 98, 47, 0.1); }
+.en .box.err { border-color: #e6b6ae; background: #fdf7f6; color: var(--danger); }
+.en .box.lock { background: #f6f2ec; color: #b0a898; border-color: #eae3d9; }
+.en .codeinput {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; border: none; background: none; font-size: 16px; /* 16px : pas de zoom iOS */
+  letter-spacing: 2em; cursor: text;
+}
+
+/* Motif d'erreur UNIQUE : cases en rouge + une ligne. Trois textes, un dessin. */
+.en .errline { display: flex; align-items: flex-start; gap: 7px; margin-top: 16px; }
+.en .errline svg { flex: none; margin-top: 1px; color: var(--danger); }
+.en .errline p { font-size: 11.5px; font-weight: 600; line-height: 1.5; color: var(--danger); }
+
+.en .resend {
+  margin-top: 18px; padding: 0; background: none; border: none;
+  font-family: inherit; font-size: 12px; font-weight: 700; color: var(--accent-ink); cursor: pointer;
+}
+.en .resend:disabled { color: #c2b9aa; cursor: default; }
+.en .checking {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  margin-top: 20px; font-size: 12.5px; font-weight: 700; color: var(--muted);
+}

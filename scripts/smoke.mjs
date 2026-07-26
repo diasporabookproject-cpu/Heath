@@ -32,7 +32,9 @@ await page.goto(BASE, { waitUntil: 'networkidle' });
 // PROPREMENT : visite (le gate a créé la base), pose des méta (ftueDone + rôles
 // activés) puis RELOAD — écrire avant le boot serait une course, écrire-puis-recharger
 // est déterministe. Zéro backdoor dans le code produit.
-await page.getByText('Manzil vous aide', { exact: false }).waitFor({ timeout: 10000 });
+// T1 (Identité & accès) : le compte est requis — un appareil vierge voit d'abord
+// l'Écran 1. On pose `compteLie` avec les autres méta (même patron, zéro backdoor).
+await page.getByText('Bienvenue', { exact: false }).waitFor({ timeout: 10000 });
 await page.evaluate(
   () =>
     new Promise((resolve, reject) => {
@@ -40,6 +42,7 @@ await page.evaluate(
       req.onsuccess = () => {
         const db = req.result;
         const tx = db.transaction('meta', 'readwrite');
+        tx.objectStore('meta').put({ userId: 'smoke', email: 'smoke@exemple.com', at: Date.now() }, 'compteLie');
         tx.objectStore('meta').put(true, 'ftueDone');
         tx.objectStore('meta').put(['cuisine', 'nounou'], 'rolesActifs');
         tx.oncomplete = () => { db.close(); resolve(); };
@@ -49,7 +52,24 @@ await page.evaluate(
     }),
 );
 await page.reload({ waitUntil: 'networkidle' });
-console.log('FTUE court-circuitée (méta posées + reload) ✅');
+console.log('Mur franchi + FTUE court-circuitée (méta posées + reload) ✅');
+
+// 🔴 T1 — LA PREUVE HORS-LIGNE (exigence PO). Le compte est requis ; si le gate
+// dépendait de la session vivante, un rafraîchissement de jeton raté sans réseau
+// mettrait l'utilisateur DEHORS, avec ses données sur son téléphone, et se
+// reconnecter exige le réseau. On coupe le réseau POUR DE VRAI et on recharge.
+await page.context().setOffline(true);
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.getByText('Votre foyer').waitFor({ timeout: 15000 });
+if (await page.locator('.en').count())
+  throw new Error('RÉGRESSION BLOQUANTE : hors-ligne, l’app remet le mur du compte');
+if (await page.getByText('Bienvenue chez vous', { exact: false }).count())
+  throw new Error('RÉGRESSION BLOQUANTE : hors-ligne, l’Écran 1 réapparaît');
+await page.screenshot({ path: 'scripts/shot-offline-hub.png' });
+await page.context().setOffline(false);
+await page.reload({ waitUntil: 'networkidle' });
+await page.getByText('Votre foyer').waitFor({ timeout: 10000 });
+console.log('T1 : HORS-LIGNE, l’app s’ouvre — le mur ne se referme pas sans réseau ✅');
 
 // 0) Hub Maison (B1 DA v2) : entrer dans la page Cuisine depuis le héros « La Cuisine ».
 await page.getByText('Votre foyer').waitFor({ timeout: 10000 });

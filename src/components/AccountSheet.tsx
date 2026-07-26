@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Sheet } from '../ui/primitives';
-import { signOut, type Session } from '../lib/supabase';
+import { getSupabase, signOut, type Session } from '../lib/supabase';
+import { clearCompteLie, saveCompteLie } from '../lib/db';
 import {
   sendOtp,
   verifyOtp,
@@ -143,6 +144,10 @@ export default function AccountSheet({
       return;
     }
     await ensureFoyer(); // crée le foyer à la 1ʳᵉ connexion
+    // T1 : mémoriser LOCALEMENT que le compte est lié — c'est ce drapeau qui ouvre
+    // l'app (jamais la session vivante, nulle hors-ligne après expiration du jeton).
+    const { data } = (await getSupabase()?.auth.getSession()) ?? { data: { session: null } };
+    await saveCompteLie(data.session?.user?.id ?? '', data.session?.user?.email ?? email.trim());
     setBusy(false);
     // La session se met à jour globalement (onAuthStateChange) → vue « connecté ».
   };
@@ -179,6 +184,7 @@ export default function AccountSheet({
             className="mz-btn"
             onClick={async () => {
               await signOut();
+              await clearCompteLie(); // le mur se referme : le prochain boot demande le compte
               onClose();
             }}
           >
@@ -314,9 +320,8 @@ export default function AccountSheet({
             {busy ? 'Envoi…' : 'Recevoir mon code'}
           </button>
         </div>
-        <button className="mz-quiet" onClick={onClose}>
-          Plus tard — je continue sans compte
-        </button>
+        {/* Lot Identité & accès T1 : « Plus tard — je continue sans compte » est MORT.
+            Le compte est requis ; l'app n'a plus de mode sans compte. */}
         <button className="mz-quiet" onClick={() => setReplay(true)}>
           Revoir l’introduction
         </button>

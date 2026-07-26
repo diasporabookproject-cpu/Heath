@@ -27,7 +27,37 @@ page.on('pageerror', (e) => { if (!IGNORE.test(e.message)) errors.push('pageerro
 
 await page.goto(BASE, { waitUntil: 'networkidle' });
 
-// 1) #entry — le gate montre la FTUE sur stockage vierge (pas le hub).
+/** Lot Identité & accès T1 : le compte est REQUIS — le gate montre l'Écran 1 avant
+ * tout. On pose le drapeau LOCAL `compteLie` (comme `ftueDone` : méta IDB + reload,
+ * zéro backdoor dans le code produit), puis la FTUE reprend sa place. */
+const lierCompte = () =>
+  page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        const req = indexedDB.open('menu-semaine');
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction('meta', 'readwrite');
+          tx.objectStore('meta').put({ userId: 'smoke', email: 'smoke@exemple.com', at: Date.now() }, 'compteLie');
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = () => reject(tx.error);
+        };
+        req.onerror = () => reject(req.error);
+      }),
+  );
+
+// 0) T1 — LE MUR : sur stockage vierge, l'app demande le compte AVANT la FTUE.
+await page.getByText('Bienvenue', { exact: false }).waitFor({ timeout: 10000 });
+if (!(await page.locator('.en .cta', { hasText: 'Continuer' }).count()))
+  throw new Error('T1 : l’Écran 1 (compte) doit précéder la FTUE sur un appareil vierge');
+if (await page.getByText('sans compte', { exact: false }).count())
+  throw new Error('T1 : aucune échappatoire « sans compte » ne doit subsister');
+await page.screenshot({ path: 'scripts/shot-entrer-email.png' });
+console.log('T1 : le mur — compte demandé avant la FTUE, aucune échappatoire ✅');
+await lierCompte();
+await page.reload({ waitUntil: 'networkidle' });
+
+// 1) #entry — le gate montre la FTUE une fois le compte lié (pas le hub).
 await page.getByText('Manzil vous aide', { exact: false }).waitFor({ timeout: 10000 });
 await page.getByRole('button', { name: 'Rejoindre un foyer existant' }).waitFor({ timeout: 3000 });
 console.log('FTUE #entry (gate pré-boot actif) ✅');
@@ -91,7 +121,7 @@ console.log('ftueDone posé — plus de FTUE au reload ✅');
 const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const page2 = await ctx2.newPage();
 await page2.goto(BASE, { waitUntil: 'networkidle' });
-await page2.getByText('Manzil vous aide', { exact: false }).waitFor({ timeout: 10000 }); // vierge → FTUE (base créée)
+await page2.getByText('Bienvenue', { exact: false }).waitFor({ timeout: 10000 }); // vierge → LE MUR (base créée)
 await page2.evaluate(
   () =>
     new Promise((resolve, reject) => {
@@ -99,6 +129,10 @@ await page2.evaluate(
       req.onsuccess = () => {
         const db = req.result;
         const tx = db.transaction('meta', 'readwrite');
+        // T1 : l'appareil « existant » a AUSSI un compte lié (le mur passe avant
+        // la migration — un appareil peuplé sans compte voit l'Écran 1, prouvé
+        // par gate.test.ts « même un appareil DÉJÀ PEUPLÉ passe par le compte »).
+        tx.objectStore('meta').put({ userId: 'smoke', email: 'smoke@exemple.com', at: Date.now() }, 'compteLie');
         tx.objectStore('meta').put(4, 'seedVersion'); // appareil « existant » simulé
         tx.objectStore('meta').delete('ftueDone');
         tx.oncomplete = () => { db.close(); resolve(); };

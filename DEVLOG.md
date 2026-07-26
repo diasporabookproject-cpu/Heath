@@ -51,6 +51,8 @@ des instructions claires pour la cuisinière. Voir `BRIEF_PRODUIT.md`.
 
 > Format : décision · pourquoi · statut.
 
+33. **Le foyer est adossé à un TITULAIRE, il ne lui survit pas** *(lot Identité & accès, Phase 1 — remplace `0008_owner_transfer`)*. **Décision.** Quand le fondateur supprime son compte, le foyer et tous ses dépendants s'arrêtent : membres retirés, pages partagées mortes. `dispose_foyer_for_deletion` est réécrite (cascade au lieu de transfert) ; **`0009_ack_owner_notice`, `checkOwnerNotice`/`ackOwnerNotice` (`auth.ts:169-192`) et le bandeau d'héritage (`App.tsx`) meurent avec.** **Pourquoi.** `0008` (AS-2 Fiche 2) posait la doctrine inverse — un foyer partagé est un bien commun qui survit à son fondateur, la propriété étant transférée au plus ancien membre. Le PO tranche l'autre doctrine, en connaissance de la conséquence : **le titulaire du compte est le payeur**, le foyer est adossé à lui, c'est le modèle du forfait familial. La contestation (« le fondateur détruit les données d'un tiers ») a été posée et **assumée** ; la mitigation est à l'écran : l'avertissement nomme les dépendants (« Sofia perd l'accès ») et **propose l'export juste avant** — le seul endroit où l'export n'est pas enterré. **Portée, à ne pas déborder :** cette règle couvre **la suppression VOLONTAIRE du compte**, pas un futur défaut de paiement. Le churn devra **suspendre, jamais détruire** — ne pas coder la règle comme si elle couvrait les deux cas. ✅ Actée, migration à passer en fenêtre.
+
 1. **React + Vite + TS, local-first, PWA** — simple à maintenir/faire évoluer, offline natif. ✅ Acté.
 2. **IndexedDB (idb) comme source de vérité**, pas localStorage — données binaires (audio) + volume. ✅
 3. **Hébergement GitHub Pages via Actions** (au lieu de Vercel initialement envisagé) — auto-suffisant avec l'accès dépôt, lien persistant. ✅ Base `/Heath/` (nom exact du dépôt, casse importante).
@@ -128,6 +130,17 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 ---
 
 ## Journal des sessions
+
+### Lot Identité & accès — T1 : LE MUR (compte requis) + preuve hors-ligne — 2026-07-26
+Première tranche codée du lot : **le compte est requis dès le premier lancement**. L'invariant « l'auth n'est JAMAIS bloquante » (`auth.ts:6-7`) est mort. Maquettes de référence committées à l'étape 0 (`docs/maquettes/identite-*.html`).
+- **Le drapeau `compteLie`** (`db.ts`, méta locale à côté de `ftueDone`) : posé au premier `verifyOtp` réussi, effacé à la déconnexion et à la suppression de compte. **C'est LUI qui ouvre l'app** — jamais la session vivante.
+- **Le gate** : décision extraite en logique PURE (`ftue/gate.ts`, `gateMode`) et **testée** (`gate.test.ts`, 10 tests) ; `Boot.tsx` ne fait plus que les lectures. Ordre : jeton d'espace → **pas de compte → Écran 1** → `ftueDone` → migration one-shot → FTUE.
+- **Écran 1 « Entrer »** (`ftue/Entrer.tsx` + `entrer.css`) au pixel de la maquette : e-mail → 6 cases → **un seul motif d'erreur** (cases rouges + une ligne), vouvoiement, **grammaire des chargements respectée** (bouton à taille constante, champ verrouillé mais lisible, **rien ne s'affiche sous 300 ms**). Validation **au 6ᵉ chiffre**, sans bouton. Aucun message brut de Supabase : « L'envoi n'a pas abouti. Vérifiez votre connexion, puis réessayez. »
+- **Échappatoires supprimées** : « Plus tard — je continue sans compte » (`AccountSheet.tsx:318`) n'existe plus, et le smoke le vérifie.
+- **🔴 LA PREUVE HORS-LIGNE (exigence PO)** : le smoke Cuisine **coupe le réseau pour de vrai** (`context.setOffline(true)`) et recharge — l'app s'ouvre sur le hub, l'Écran 1 ne réapparaît pas (capture `shot-offline-hub.png`). Deux gardes explicites échouent le smoke si le mur revient. Complété côté unitaire par gate.test.ts (« hors-ligne n'est pas déconnecté »). **La régression bloquante redoutée n'existe pas.**
+- **« Hors-ligne » ≠ « déconnecté » aussi dans l'en-tête** : l'affordance compte suit désormais `compteLie` et non la session (`App.tsx`) — sinon elle proposerait « Connexion » à quelqu'un qui a juste perdu le réseau.
+- **3 smokes ré-ancrés** : Cuisine et Comptes posent `compteLie` avec les autres méta ; **le smoke FTUE teste d'abord LE MUR** (appareil vierge → Écran 1, zéro échappatoire) puis lie le compte et reprend sa traversée. Le smoke Comptes change de prémisse : « sans compte » devient **« compte lié, session absente »** — exactement le cas du métro.
+- Portes : typecheck · **238 tests** (+10) · build · **3 smokes** · captures. **STOP T1.**
 
 ### Lot Identité & accès (Phase 1 — compte requis) — READ-BACK, étape ① — 2026-07-25
 Nouveau lot instruit par `DECISION_IDENTITE_ACCES.md` (v2) : **le compte devient requis dès le premier lancement** — l'invariant « compte différé, jamais imposé » (`auth.ts:6-7`) meurt. Read-back + inventaire livrés dans **`READBACK_IDENTITE_ACCES.md`** ; **aucun code** (processus : ① read-back → ② validation PO → ③ inventaire à l'agent UI → ④ implémentation).

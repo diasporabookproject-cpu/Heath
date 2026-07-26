@@ -14,7 +14,7 @@ import { supabaseEnabled } from './lib/supabase';
 import { checkOwnerNotice, ackOwnerNotice } from './lib/auth';
 import { isNative, onBackButton, minimizeApp } from './lib/platform';
 import { closeTopSheet } from './ui/primitives';
-import { loadRolesActifs, saveRolesActifs, type RoleActif } from './lib/db';
+import { loadCompteLie, loadRolesActifs, saveRolesActifs, type RoleActif } from './lib/db';
 import { useSession } from './lib/useSession';
 import { useSync, type AdoptRequest } from './lib/sync/useSync';
 import { downloadExport } from './lib/exportData';
@@ -38,6 +38,15 @@ export default function App() {
   // (personne = contexte) : la page ouvre sa feuille d'envoi pré-sélectionnée.
   const [shareFor, setShareFor] = useState<string | null>(null);
   const { session } = useSession();
+  // T1 (Identité & accès) : « hors-ligne » n'est PAS « déconnecté ». La session
+  // vivante est nulle hors-ligne dès que le jeton d'accès a expiré ; l'affordance
+  // compte doit suivre le COMPTE LIÉ (drapeau local), sinon l'en-tête proposerait
+  // de « se connecter » à quelqu'un qui l'est déjà et n'a qu'un problème de réseau.
+  const [compteLie, setCompteLie] = useState(false);
+  useEffect(() => {
+    void loadCompteLie().then((c) => setCompteLie(!!c));
+  }, [session]);
+  const connected = !!session || compteLie;
   // Rituel d'adoption (Q1) : quand le foyer rejoint a déjà du contenu cloud, la
   // fusion exige un consentement explicite (jamais silencieuse) + export préalable.
   const [adoptReq, setAdoptReq] = useState<AdoptRequest | null>(null);
@@ -132,7 +141,7 @@ export default function App() {
         ) : (
           <CuisineView
             showAccount={supabaseEnabled}
-            connected={!!session}
+            connected={connected}
             onOpenAccount={() => setAccountOpen(true)}
             onBack={back}
             initialShareToken={shareFor ?? undefined}
@@ -142,7 +151,7 @@ export default function App() {
       ) : screen === 'nounou' ? (
         <NounouView
           showAccount={supabaseEnabled}
-          connected={!!session}
+          connected={connected}
           onOpenAccount={() => setAccountOpen(true)}
           onBack={back}
           initialShareToken={shareFor ?? undefined}
@@ -160,9 +169,9 @@ export default function App() {
                 className="account-btn"
                 onClick={() => setAccountOpen(true)}
                 aria-label="Compte et synchro"
-                title={session ? `Connecté : ${session.user.email}` : 'Se connecter'}
+                title={connected ? 'Compte et synchro' : 'Se connecter'}
               >
-                {session ? '☁︎' : '☁︎ Connexion'}
+                {connected ? '☁︎' : '☁︎ Connexion'}
               </button>
             ) : (
               <span style={{ width: 64 }} />

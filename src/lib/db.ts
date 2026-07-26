@@ -149,6 +149,44 @@ const SEED_VERSION = 4;
 // ── FTUE (F4) — méta LOCALES à l'appareil (le store `meta` n'est pas synchronisé) ──
 const FTUE_DONE_KEY = 'ftueDone';
 const ROLES_ACTIFS_KEY = 'rolesActifs';
+const COMPTE_LIE_KEY = 'compteLie';
+
+/** Identité liée à CET appareil (lot Identité & accès, T1). */
+export interface CompteLie {
+  userId: string;
+  email: string;
+  /** Horodatage de la liaison (diagnostic ; jamais affiché). */
+  at: number;
+}
+
+/**
+ * 🔴 LE DRAPEAU DU MUR (T1). Le compte est requis, mais le gate NE PEUT PAS porter
+ * sur la session VIVANTE : hors-ligne, `getSession()` renvoie `null` dès que le jeton
+ * d'accès a expiré (1 h par défaut) parce que le rafraîchissement ne joint pas le
+ * serveur — l'utilisateur serait mis DEHORS avec ses données sur son téléphone, et
+ * se reconnecter exige le réseau. On mémorise donc LOCALEMENT qu'un compte a été lié
+ * une fois, et c'est CE drapeau qui ouvre l'app.
+ *
+ * La session vivante reste la condition des seules opérations RÉSEAU (sync,
+ * publication, IA) — toutes déjà best-effort. Elle revient d'elle-même au retour du
+ * réseau (le jeton de rafraîchissement n'est PAS détruit par un échec réseau).
+ *
+ * Effacé à la déconnexion et à la suppression de compte : le mur se referme.
+ */
+export async function loadCompteLie(): Promise<CompteLie | null> {
+  const db = await getDB();
+  return ((await db.get('meta', COMPTE_LIE_KEY)) as CompteLie | undefined) ?? null;
+}
+
+export async function saveCompteLie(userId: string, email: string): Promise<void> {
+  const db = await getDB();
+  await db.put('meta', { userId, email, at: Date.now() } satisfies CompteLie, COMPTE_LIE_KEY);
+}
+
+export async function clearCompteLie(): Promise<void> {
+  const db = await getDB();
+  await db.delete('meta', COMPTE_LIE_KEY);
+}
 
 /** Rôles dont la carte est posée sur le hub (activés via FTUE ou « ＋ Une page pour… »). */
 export type RoleActif = 'cuisine' | 'nounou';

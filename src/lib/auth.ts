@@ -1,5 +1,5 @@
 import { getSupabase } from './supabase';
-import { clearSyncState } from './db';
+import { clearCompteLie, clearSyncState } from './db';
 import { webBaseUrl } from './platform';
 
 // Auth OTP par e-mail (code 6 chiffres) + foyer paresseux + suppression de compte.
@@ -206,6 +206,7 @@ export async function deleteAccount(): Promise<{ error?: string }> {
   if (error) return { error: await fnError(error) };
   invalidateFoyerCache();
   await clearSyncState();
+  await clearCompteLie(); // T1 : plus de compte lié → le prochain boot repasse par l'Écran 1
   await supa.auth.signOut();
   return {};
 }
