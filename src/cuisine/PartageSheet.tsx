@@ -149,12 +149,17 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
         await shareText(digest, `Page de ${selected.nom}`);
         toast('Publié ✓');
       } else {
+        // 🔴 Sans numéro, le web COPIAIT en silence — et le bouton dit maintenant
+        // « Partager sur WhatsApp ». Un libellé doit être vrai : on ouvre donc
+        // WhatsApp SANS destinataire (`wa.me/?text=`), qui propose de choisir le
+        // contact, avec le message déjà écrit. Le presse-papiers reste le filet.
         try {
           await navigator.clipboard.writeText(digest);
         } catch {
           /* quota / mode privé : on ignore */
         }
-        toast('Publié ✓ — message copié (pas de numéro)');
+        window.open(`https://wa.me/?text=${encodeURIComponent(digest)}`, '_blank');
+        toast('Publié ✓ — choisissez le contact dans WhatsApp');
       }
     } catch (e) {
       toast((e as Error).message);
@@ -251,7 +256,10 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   return (
     <>
       <div className={'cz-overlay' + (shown ? ' show' : '')} onClick={busy ? undefined : onClose} />
-      <div className={'cz-sheet' + (shown ? ' show' : '')} role="dialog" aria-modal="true">
+      {/* `ck-sheet` : la maquette du partage a sa propre coquille (titre 18/800, croix
+          sobre, corps à 20px). On la porte ICI seulement — restyler `.cz-sheethead`
+          globalement toucherait toutes les feuilles du produit, Nounou compris. */}
+      <div className={'cz-sheet ck-sheet' + (shown ? ' show' : '')} role="dialog" aria-modal="true">
         <div className="cz-handle" />
         <div className="cz-sheethead">
           <div className="ttl">
@@ -368,7 +376,7 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
                       <path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-2.8.8.8-2.7-.2-.3A8 8 0 0 1 12 4z" />
                     </svg>
                   )}
-                  {busy ? 'Envoi…' : hasPhone ? 'Envoyer sur WhatsApp' : 'Publier + copier le message'}
+                  {busy ? 'Envoi…' : 'Partager sur WhatsApp'}
                 </button>
               </div>
 
@@ -461,7 +469,7 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
               <div className="ck-footlinks">
                 <button className="ck-flink" onClick={openPreview} disabled={busy}>
                   <IconOeil size={14} />
-                  Voir sa page
+                  Aperçu de sa page
                 </button>
                 <button className="ck-flink" onClick={copyLink}>
                   <IconCopy size={14} />

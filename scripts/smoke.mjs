@@ -459,7 +459,7 @@ await shareSheet.getByPlaceholder('Ajouter une tâche…').fill('Arroser les pla
 await shareSheet.locator('.ck-clacc .addrow .go').click();
 await shareSheet.locator('.ck-clacc .crow', { hasText: 'Arroser les plantes' }).waitFor({ timeout: 3000 });
 console.log('T3 : checklist activée, tâche libre ajoutée (registre neutre) ✅');
-await shareSheet.getByText('Voir sa page').click(); // la carte QR a laissé place à deux liens (T1 partage)
+await shareSheet.getByText('Aperçu de sa page').click(); // la carte QR a laissé place à deux liens (T1 partage)
 await page.locator('.cz-preview-overlay').waitFor({ timeout: 8000 });
 await page.locator('.ck-qrblock svg').waitFor({ timeout: 5000 }); // T1 : QR permanent dans l'aperçu
 // T3 : la page (aperçu, darija d'abord) montre la TÂCHE EN FRANÇAIS (décision ③)
@@ -499,7 +499,7 @@ await page.getByText('Pour quel repas ?').waitFor({ timeout: 5000 });
 await page.getByText('Prochain repas', { exact: true }).waitFor({ timeout: 3000 }); // défaut marqué
 await page.locator('.cz-sheet.show', { hasText: 'Pour quel repas ?' }).locator('.cz-pick').first().click(); // UN tap
 await page.getByText('Ajoutée au repas — à vous d’envoyer').waitFor({ timeout: 5000 });
-await page.getByText('Voir sa page').waitFor({ timeout: 5000 }); // n'existe qu'en mode envoi, personne choisie // feuille d'envoi ouverte (T1)
+await page.getByText('Aperçu de sa page').waitFor({ timeout: 5000 }); // n'existe qu'en mode envoi, personne choisie // feuille d'envoi ouverte (T1)
 await page.locator('.cz-overlay.show').first().click({ position: { x: 8, y: 8 } }).catch(() => {});
 await page.waitForTimeout(400);
 console.log('F6.1 (D1) : Partager = posée au prochain repas, puis feuille d’envoi ✅');

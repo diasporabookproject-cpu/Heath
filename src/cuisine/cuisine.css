@@ -922,7 +922,13 @@
 /* Le nom de langue n'est plus une pastille : une ligne grise, le mot en accent. */
 .ck-langpill { display: block; margin-top: 1px; font-size: 11.5px; font-weight: 600; color: var(--muted); }
 .ck-langpill b { color: var(--accent-ink); font-weight: 700; }
-.ck-msgcard { background: var(--surface); border-radius: 20px; padding: 13px 13px 14px; box-shadow: 0 8px 24px rgba(30, 25, 20, 0.08), 0 1px 0 rgba(0, 0, 0, 0.02); }
+.ck-sheet .cz-sheethead { padding: 6px 20px 16px; }
+.ck-sheet .cz-sheethead .ttl { font-family: var(--font-body); font-size: 18px; font-weight: 800; letter-spacing: -0.025em; }
+.ck-sheet .cz-x { width: 30px; height: 30px; border-radius: 10px; border: none; background: #f3efe8; color: #a49c90; font-size: 14px; }
+.ck-sheet .cz-sheetbody { padding: 0 20px calc(20px + env(safe-area-inset-bottom, 0px)); }
+.ck-sheet .cz-handle { background: #e3ddd3; margin: 12px auto 8px; }
+
+.ck-msgcard { background: var(--surface); border-radius: 20px; padding: 14px; box-shadow: 0 8px 24px rgba(30, 25, 20, 0.08); }
 .ck-msgcard .mtop { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; margin-bottom: 9px; }
 .ck-msgcard .mtop svg { color: var(--accent); }
 /* La bulle : le digest EXISTANT (DigestBlock), habillé WhatsApp — fonction intacte. */
@@ -931,10 +937,10 @@
 .ck-msgcard .mz-digest textarea { background: #eef8e9; border: 1px solid #d9ecd2; border-radius: 15px; border-bottom-left-radius: 5px; padding: 12px 14px; font-size: 13.5px; line-height: 1.55; color: #28331f; font-weight: 600; }
 .ck-wabtn { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; background: #2fbe64; color: #fff; border: none; border-radius: 14px; padding: 14px; font-size: 15px; font-weight: 800; box-shadow: 0 6px 16px rgba(47, 190, 100, 0.26); margin-top: 12px; cursor: pointer; font-family: var(--font-body); }
 .ck-wabtn:disabled { opacity: 0.65; }
-.ck-tierbreak { height: 1px; background: linear-gradient(90deg, transparent, var(--line) 20%, var(--line) 80%, transparent); margin: 18px 4px 16px; }
-.ck-optcard { background: var(--surface-2); border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
+.ck-tierbreak { height: 1px; background: linear-gradient(90deg, transparent, var(--line) 20%, var(--line) 80%, transparent); margin: 20px 4px 16px; }
+.ck-optcard { background: #faf7f2; border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
 .ck-optcard .head { display: flex; align-items: flex-start; gap: 11px; padding: 13px 14px; width: 100%; background: none; border: none; cursor: pointer; text-align: left; font-family: var(--font-body); }
-.ck-optcard .oi { width: 40px; height: 40px; border-radius: 11px; background: var(--surface); display: flex; align-items: center; justify-content: center; color: var(--accent); flex: none; margin-top: 1px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+.ck-optcard .oi { width: 38px; height: 38px; border-radius: 11px; background: #fff; display: flex; align-items: center; justify-content: center; color: var(--accent); flex: none; margin-top: 1px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
 .ck-optcard .ct { flex: 1; }
 .ck-optcard .ct b { font-size: 14px; font-weight: 800; display: block; letter-spacing: -0.01em; color: var(--ink); }
 .ck-optcard .ct i { font-size: 11px; font-style: normal; color: var(--muted); font-weight: 500; line-height: 1.45; display: block; margin-top: 2px; }
@@ -1005,7 +1011,7 @@
 .ck-msgcard .mlab { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; }
 .ck-msgcard .mlab svg { color: var(--accent); }
 .ck-langtog { display: flex; background: #f2eee7; border-radius: 9px; padding: 2px; }
-.ck-langtog button { font-size: 10.5px; font-weight: 700; padding: 4px 9px; border-radius: 7px; color: #a49c90; border: none; background: none; cursor: pointer; font-family: var(--font-body); }
+.ck-langtog button { font-size: 10.5px; font-weight: 700; padding: 4px 10px; border-radius: 7px; color: #a49c90; border: none; background: none; cursor: pointer; font-family: var(--font-body); }
 .ck-langtog button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
 .ck-langtog button.ar { font-family: 'Noto Naskh Arabic', serif; }
 .ck-bubble.ar { direction: rtl; text-align: right; border-bottom-left-radius: 15px; border-bottom-right-radius: 5px; }
@@ -1015,7 +1021,7 @@
 .ck-bubble.ar::after { left: auto; right: -6px; border-left: none; border-right: 1px solid #d9ecd2; border-bottom-left-radius: 0; border-bottom-right-radius: 3px; }
 
 /* Le pied de la feuille : deux liens discrets, à la place de la carte QR. */
-.ck-footlinks { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0px)); }
+.ck-footlinks { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 16px 0 calc(6px + env(safe-area-inset-bottom, 0px)); }
 .ck-flink {
   display: flex; align-items: center; justify-content: center; gap: 7px;
   padding: 10px 0; width: 100%; border: none; background: none; cursor: pointer;
