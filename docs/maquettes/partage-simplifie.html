@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partage — noms de langue en français</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --paper:#faf8f5; --card:#ffffff; --ink2:#1c1815; --ink:#2a2420; --muted:#9b948b; --line:#f0ebe3;
+    --accent:#d9622f; --accent-ink:#c25528; --tile:#f7e3d7;
+    --wa:#2fbe64; --wabub:#eef8e9; --wabub-line:#d9ecd2; --wa-ink:#3f6b46;
+    --ui:'Plus Jakarta Sans',system-ui,sans-serif; --ar:'Noto Naskh Arabic',serif;
+  }
+  body { font-family:var(--ui); background:#cfcabf; color:var(--ink); padding:34px 24px; display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; justify-content:center; }
+  .col { display:flex; flex-direction:column; align-items:center; }
+  .cap { font-size:12px; color:#332e28; text-align:center; margin-bottom:9px; font-weight:800; } .cap b{color:var(--accent-ink)} .cap span{color:#7c756a;font-weight:600;display:block;font-size:9.5px;margin-top:2px}
+
+  .phone { width:300px; height:648px; background:var(--paper); border:1px solid rgba(0,0,0,.1); border-radius:32px; overflow:hidden; box-shadow:0 16px 40px rgba(20,22,30,.18); display:flex; flex-direction:column; flex:none; position:relative; }
+  .peek { flex:none; height:40px; background:var(--paper); opacity:.4; }
+  .dim { position:absolute; inset:0; background:rgba(24,20,16,.3); z-index:1; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; top:32px; background:var(--paper); border-radius:26px 26px 0 0; z-index:2; box-shadow:0 -8px 30px rgba(0,0,0,.14); display:flex; flex-direction:column; }
+  .handle { width:38px; height:4px; border-radius:2px; background:#e3ddd3; margin:12px auto 8px; flex:none; }
+  .shead { display:flex; align-items:center; padding:6px 20px 16px; flex:none; }
+  .shead .t { flex:1; font-size:18px; font-weight:800; letter-spacing:-.025em; color:var(--ink2); }
+  .sx { width:30px; height:30px; border-radius:10px; background:#f3efe8; display:flex; align-items:center; justify-content:center; color:#a49c90; font-size:14px; flex:none; }
+  .body { padding:0 20px 20px; flex:1; display:flex; flex-direction:column; }
+  svg { display:block; }
+  .grow { flex:1; }
+
+  .recip { display:flex; align-items:center; gap:11px; margin-bottom:18px; }
+  .recip .ava { width:42px; height:42px; border-radius:14px; background:var(--tile); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; flex:none; }
+  .recip .ri { flex:1; } .recip .ri .n { font-size:16px; font-weight:800; color:var(--ink2); letter-spacing:-.01em; }
+  .recip .ri .l { font-size:11.5px; color:var(--muted); font-weight:600; margin-top:1px; } .recip .ri .l b{color:var(--accent-ink);font-weight:700}
+  .recip .chg { font-size:12.5px; font-weight:700; color:var(--accent-ink); flex:none; }
+
+  .msgcard { background:var(--card); border-radius:20px; padding:14px; box-shadow:0 8px 24px rgba(30,25,20,.08); }
+  .mtop { display:flex; align-items:center; margin-bottom:11px; }
+  .mtop .ml { flex:1; font-size:12px; font-weight:800; color:var(--ink2); }
+  .lt { display:flex; background:#f2eee7; border-radius:9px; padding:2px; }
+  .lt span { font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:7px; color:#a49c90; } .lt span.on { background:#fff; color:var(--ink2); box-shadow:0 1px 2px rgba(0,0,0,.08); }
+  .bub { position:relative; background:var(--wabub); border:1px solid var(--wabub-line); border-radius:15px; border-bottom-left-radius:5px; padding:13px 14px; font-size:14px; line-height:1.55; color:#28331f; font-weight:600; }
+  .bub::after { content:''; position:absolute; left:-6px; bottom:6px; width:12px; height:12px; background:var(--wabub); border-left:1px solid var(--wabub-line); border-bottom:1px solid var(--wabub-line); transform:rotate(45deg); border-bottom-left-radius:3px; }
+  .bub.rtl { direction:rtl; text-align:right; font-family:var(--ar); font-size:15.5px; line-height:1.8; border-bottom-left-radius:15px; border-bottom-right-radius:5px; }
+  .bub.rtl::after { left:auto; right:-6px; border-left:none; border-bottom:1px solid var(--wabub-line); border-right:1px solid var(--wabub-line); border-bottom-left-radius:0; border-bottom-right-radius:3px; }
+  .lkchip { display:inline-flex; align-items:center; gap:6px; margin-top:10px; background:rgba(255,255,255,.8); border:1px solid var(--wabub-line); border-radius:9px; padding:6px 10px; font-size:12px; font-weight:700; color:var(--wa-ink); }
+  .lkchip svg{width:12px;height:12px} .lkchip.ar{font-family:var(--ar);font-size:12.5px}
+  .wabtn { display:flex; align-items:center; justify-content:center; gap:9px; width:100%; background:var(--wa); color:#fff; border:none; border-radius:14px; padding:14px; font-size:15px; font-weight:800; box-shadow:0 6px 16px rgba(47,190,100,.26); margin-top:12px; } .wabtn svg{width:18px;height:18px}
+
+  .tierbreak { height:1px; background:linear-gradient(90deg,transparent,var(--line) 20%,var(--line) 80%,transparent); margin:20px 4px 16px; }
+  .clrow { display:flex; align-items:flex-start; gap:11px; background:#faf7f2; border-radius:14px; padding:13px 14px; }
+  .clrow .oi { width:38px; height:38px; border-radius:11px; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--accent); flex:none; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .clrow .ct { flex:1; } .clrow .ct b { font-size:14px; font-weight:800; color:var(--ink2); display:block; letter-spacing:-.01em; } .clrow .ct i { font-size:11px; font-style:normal; color:var(--muted); font-weight:500; line-height:1.45; display:block; margin-top:2px; }
+  .sw { width:44px; height:26px; border-radius:14px; background:#e0d9cd; position:relative; flex:none; margin-top:3px; } .sw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .copylink { display:flex; align-items:center; justify-content:center; gap:7px; padding:16px 0 6px; font-size:12.5px; font-weight:700; color:#a89e8f; } .copylink svg{width:13px;height:13px}
+
+  .side { max-width:280px; background:#faf8f5; border-radius:16px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+  .side h2 { font-size:15px; font-weight:800; margin-bottom:10px; }
+  .side .d { margin-bottom:12px; } .side .dt { font-size:12.5px; font-weight:800; color:var(--accent-ink); margin-bottom:3px; } .side .dd2 { font-size:11.5px; line-height:1.5; color:#4a443c; }
+  .side .bad { color:#b4453a; text-decoration:line-through; } .side .good { color:#3f7d4a; font-weight:700; }
+  .side .q { background:#fdecdf; border:1px solid #f0c9ab; border-radius:11px; padding:11px 13px; font-size:11.5px; line-height:1.55; color:#7a4020; margin-top:12px; } .side .q b{color:#5a2c10}
+</style>
+</head>
+<body>
+
+  <!-- FR -->
+  <div class="col">
+    <div class="cap"><b>Défaut · Français</b><span>interface et message en français</span></div>
+    <div class="phone">
+      <div class="peek"></div><div class="dim"></div>
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="shead"><span class="t">Partager avec B</span><span class="sx">✕</span></div>
+        <div class="body">
+          <div class="recip">
+            <span class="ava">B</span>
+            <span class="ri"><div class="n">B</div><div class="l">Reçoit en <b>darija</b></div></span>
+            <span class="chg">Changer</span>
+          </div>
+
+          <div class="msgcard">
+            <div class="mtop"><span class="ml">Message</span><span class="lt"><span class="on">Français</span><span>Darija</span></span></div>
+            <div class="bub">
+              Bonjour B 👋<br>Le menu est prêt, il est ici 👇
+              <span class="lkchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg> Sa page</span>
+            </div>
+            <button class="wabtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-2.8.8.8-2.7-.2-.3A8 8 0 0 1 12 4z"/></svg> Envoyer sur WhatsApp</button>
+          </div>
+
+          <div class="tierbreak"></div>
+          <div class="clrow">
+            <span class="oi"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+            <span class="ct"><b>Activer la checklist</b><i>B pourra confirmer que les tâches sont accomplies.</i></span>
+            <span class="sw"></span>
+          </div>
+          <div class="grow"></div>
+          <div class="copylink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copier le lien</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Darija -->
+  <div class="col">
+    <div class="cap"><b>Bascule · Darija</b><span>seul le message change de langue</span></div>
+    <div class="phone">
+      <div class="peek"></div><div class="dim"></div>
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="shead"><span class="t">Partager avec B</span><span class="sx">✕</span></div>
+        <div class="body">
+          <div class="recip">
+            <span class="ava">B</span>
+            <span class="ri"><div class="n">B</div><div class="l">Reçoit en <b>darija</b></div></span>
+            <span class="chg">Changer</span>
+          </div>
+
+          <div class="msgcard">
+            <div class="mtop"><span class="ml">Message</span><span class="lt"><span>Français</span><span class="on">Darija</span></span></div>
+            <div class="bub rtl">
+              سلام B 👋<br>المنيو ديالك واجد، شوفيه هنا 👇
+              <span class="lkchip ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg> الصفحة ديالها</span>
+            </div>
+            <button class="wabtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-2.8.8.8-2.7-.2-.3A8 8 0 0 1 12 4z"/></svg> Envoyer sur WhatsApp</button>
+          </div>
+
+          <div class="tierbreak"></div>
+          <div class="clrow">
+            <span class="oi"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+            <span class="ct"><b>Activer la checklist</b><i>B pourra confirmer que les tâches sont accomplies.</i></span>
+            <span class="sw"></span>
+          </div>
+          <div class="grow"></div>
+          <div class="copylink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copier le lien</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="side">
+    <h2>La règle</h2>
+    <div class="d"><div class="dt">Interface = toujours français</div><div class="dd2">Les noms de langue s'écrivent <b>en français</b> sur vos écrans :<br><span class="bad">Reçoit en الدارجة</span> → <span class="good">Reçoit en darija</span><br><span class="bad">toggle الدارجة</span> → <span class="good">toggle Darija</span></div></div>
+    <div class="d"><div class="dt">Arabe = seulement le contenu</div><div class="dd2">L'écriture arabe n'apparaît que <b>dans la bulle</b> — c'est ce que B recevra. Même en bascule, l'interface autour <b>ne bouge pas</b> : titre, toggle, checklist, bouton restent en français.</div></div>
+    <div class="d"><div class="dt">Le catalogue, côté vous</div><div class="dd2">Français · Darija · Arabe · Anglais. Quatre mots français, jamais quatre écritures.</div></div>
+    <div class="q"><b>Une question plus lourde, pour vos entretiens terrain :</b> la darija <b>écrite en caractères arabes</b> est-elle lisible par la personne qui la reçoit ? La darija est une langue d'abord orale, et sa transcription arabe n'est pas standardisée. Si la lecture coince, la vraie réponse n'est pas une autre écriture — c'est la <b>voix</b>, que le produit porte déjà. À vérifier avant d'investir davantage dans la traduction écrite.</div>
+  </div>
+
+</body>
+</html>

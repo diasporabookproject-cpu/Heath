@@ -4,7 +4,7 @@ on:
   push:
     # Déploiement de la prod uniquement. La refonte Bento→Manzil a été fusionnée ici
     # (merge --no-ff, 2026-07-05) ; retour arrière trivial via le tag `pre-bento`.
-    branches: [claude/jolly-wozniak-s83str]
+    branches: [lot-partage-simple-v1]
   workflow_dispatch:
 
 permissions:

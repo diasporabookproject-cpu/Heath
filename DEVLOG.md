@@ -131,6 +131,14 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### OUVERTURE — lot « Simplification de l'écran de partage » — 2026-08-01
+Premier geste du lot, **avant toute ligne de code**, conformément à la règle n°2 posée ce matin : branche `lot-partage-simple-v1`, **les DEUX workflows repointés dessus** dans ce commit, maquette committée (`docs/maquettes/partage-simplifie.html`).
+- **La prod est doublement figée** : la branche de prod ne bouge pas (rollback trivial), et même les pushes du lot ne publieront rien **sans approbation** — la mesure du PO transforme le patron « prévue déployée » en **opt-in**. L'URL de prod continue de servir le dernier build approuvé tant que le PO n'approuve pas.
+- **Read-back livré et validé**, six décisions PO : ① noms de langue en lettres latines (argument d'usage : choisir la langue de son destinataire sans lire l'arabe) · ② le QR SEUL déménage, l'aperçu et le retour des coches restent · ③ bulle figée + puce « Sa page » · ④ l'accordéon checklist reste · ⑤ règle de langue sur TOUT le chrome employeur · ⑥ Nounou non (sauf la langue), volet « Sécuriser » supprimé.
+- **🔴 Le point dur, mesuré** : cet écran porte **44 ancrages de smoke bloquants**, le plus gardé du produit. Deux cassent avec ② — `smoke.mjs:434` (le texte « Accès permanent » ouvre l'aperçu) et `smoke.mjs:474` (le même texte prouve l'arrivée depuis une fiche recette). Ils seront ré-ancrés sur « Voir sa page ». La décision ④ en préserve 13 autres tels quels.
+- **Deux décisions PO RENVERSÉES, assumées** : la « bulle éditable » de L3-1b (`DEVLOG.md:385`) devient figée ; le volet « Sécuriser » de F4-bis fiche B (`DEVLOG.md:789`, copie validée + re-testé device) est supprimé — depuis T1, « pas de session » ne veut plus dire « pas de compte » mais « pas de réseau », et on répondait à une panne réseau en demandant un code par e-mail.
+- **Honnêteté de méthode** : l'inventaire (5 lectures + re-preuve adversariale) a rendu **78 vérifications confirmées, 3 corrigées sur des comptages, 26 jamais exécutées** (limite de session). J'avais annoncé au PO « tout est re-prouvé » alors que la phase tournait encore — **c'était faux**. Les affirmations porteuses ont été re-vérifiées à la main depuis (couplage QR↔aperçu, emplacements de langue, structure du jumeau, déclencheur du volet, `types.ts:412`). Le read-back tient ; la phrase sur la méthode était plus large que la méthode.
+
 ### 🔒 La prod est gardée — la dernière mesure posée par le PO — 2026-08-01
 **« C'est fait pour la protection GitHub »** : l'approbation requise est en place sur l'environnement `github-pages`.
 - **Les quatre chemins vers la prod sont fermés** : ① approbation humaine (PO, réglages) · ② portes partagées, smokes inclus (`portes.yml`) · ③ job `garde` (réf ≠ branche désignée → refus) · ④ `portes.test.ts` (lot en vol non repointé → CI rouge). La règle vit dans `CLAUDE.md`.
