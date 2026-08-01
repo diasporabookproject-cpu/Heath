@@ -131,6 +131,15 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage simplifié — T4 : la mort du volet « Sécuriser » — 2026-08-01
+Décision PO ⑥. Le dernier morceau, et le plus court — un nettoyage que **T1 du lot Identité aurait dû emporter**.
+- **Pourquoi il devait mourir** : le volet datait d'avant le mur. « Pas de session » voulait alors dire « pas de compte », et proposer d'en créer un dans la foulée de l'envoi était **juste** (F4-bis fiche B, copie validée, re-testé device — `DEVLOG:789`). **Depuis T1, tout le monde a un compte** : « pas de session » veut dire, presque toujours, **pas de réseau**. On répondait donc à une panne de connexion en demandant un code par e-mail… qui ne peut pas arriver sans réseau. **Le geste tournait en rond.**
+- **Remplacé par une phrase vraie** : « Pas de connexion — la page n'a pas pu être publiée. Réessayez dès que le réseau revient. » Dans **les deux feuilles** (Cuisine et Nounou portaient le même volet).
+- **`src/components/SecuriserVolet.tsx` supprimé** — ses deux seuls appelants étaient ces feuilles. Plus aucune trace dans le dépôt.
+- **Deux commentaires périmés retirés au passage** : ils décrivaient encore « le volet inline (création de compte transparente) » comme vivant. C'est exactement le défaut que le PO m'avait fait nettoyer à T2 du lot Identité — la machinerie morte décrite comme vive. Une suppression qui laisse ses commentaires n'est pas finie.
+- **Porte de smoke** : hors session, taper « Partager sur WhatsApp » doit afficher la phrase **et** n'ouvrir **aucun champ e-mail**. Les deux assertions comptent : la première prouve le remplaçant, la seconde prouve que le volet ne peut pas revenir par une autre porte.
+- Portes : typecheck · **278 tests** · build · **3 smokes**.
+
 ### Lot partage simplifié — T3 : la langue française dans tout le chrome — 2026-08-01
 Décision PO ⑤ : la règle vaut pour **tout le chrome employeur**, pas seulement l'écran de partage.
 - **La SOURCE d'abord** : `NOUNOU_LANGS` (`types.ts`) écrivait `الدارجة` / `العربية` — c'est elle qui alimentait le partage Nounou et le titre de la feuille de traduction. Devenue `Français · Darija · Arabe · Anglais` : **quatre mots français**, comme la maquette le demande. `English` est passé à `Anglais` au passage — le catalogue ne mélange plus les langues d'écriture.

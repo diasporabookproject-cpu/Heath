@@ -20,7 +20,6 @@ import {
 import { readChecks, countDone } from '../lib/espace-checks';
 import { isNative, shareText } from '../lib/platform';
 import { getSupabase, supabaseEnabled } from '../lib/supabase';
-import SecuriserVolet from '../components/SecuriserVolet';
 import { todayKey } from './dates';
 import { buildCuisineGreeting, corpsSansLien } from '../maison/digest';
 import type { Destinataire, SecuriteFiche } from '../types';
@@ -60,8 +59,6 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   const [previewDone, setPreviewDone] = useState<number | null>(null);
   const [previewOpen, setPreviewOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // F4-bis fiche B : volet « Sécuriser » inline (création de compte transparente).
-  const [securiser, setSecuriser] = useState(false);
   // T1 (maquette) : le message est un mot court ; sa LANGUE se choisit (toggle),
   // défaut = la langue de lecture de la personne. Le détail vit sur la page.
   const [msgLang, setMsgLang] = useState<'fr' | 'dr'>('fr');
@@ -122,14 +119,15 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
 
   const send = async () => {
     if (!selected) return;
-    // F4-bis fiche B (Lecture 1) : sans session, l'envoi ne casse plus le geste par
-    // un toast « Connecte-toi ailleurs » — la feuille bascule sur le volet
-    // « Sécuriser » (e-mail + code), puis l'envoi REPART TOUT SEUL (état intact).
-    // Garde LIVE (pas l'état React) : au retour du volet, la session vient d'être
-    // ouverte — un état pas encore propagé ne doit pas re-déclencher le volet.
+    // 🔴 T4 : le volet « Sécuriser » (e-mail + code) est MORT. Il datait d'avant le
+    // mur : « pas de session » voulait alors dire « pas de compte », et proposer d'en
+    // créer un était juste. Depuis T1 du lot Identité, TOUT LE MONDE a un compte —
+    // « pas de session » veut dire, presque toujours, PAS DE RÉSEAU. On répondait donc
+    // à une panne de connexion en demandant un code par e-mail… qui ne peut pas
+    // arriver sans réseau. Le geste tournait en rond. On le dit, c'est tout.
     if (supabaseEnabled) {
       const live = await getSupabase()?.auth.getSession();
-      if (!live?.data.session) return setSecuriser(true);
+      if (!live?.data.session) return toast('Pas de connexion — la page n’a pas pu être publiée. Réessayez dès que le réseau revient.');
     }
     setBusy(true);
     try {
@@ -273,15 +271,7 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
           </button>
         </div>
         <div className="cz-sheetbody">
-          {securiser ? (
-            <SecuriserVolet
-              onDone={() => {
-                setSecuriser(false);
-                void send(); // reprend l'envoi exactement où il s'était arrêté
-              }}
-              onCancel={() => setSecuriser(false)}
-            />
-          ) : mode === 'edit' && editing ? (
+          {mode === 'edit' && editing ? (
             <EditForm
               editing={editing}
               setEditing={setEditing}

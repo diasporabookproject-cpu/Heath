@@ -132,6 +132,18 @@ await page.getByText('Nouvelle personne').waitFor({ timeout: 5000 }); // 0 desti
 await page.locator('.cz-inp').first().fill('Testouya');
 await page.getByRole('button', { name: 'Enregistrer' }).click();
 await page.getByText('Partager avec Testouya').waitFor({ timeout: 5000 }); // titre feuille v2 (T1 lot partage)
+// T4 (partage simplifié) — LA MORT DU VOLET « SÉCURISER ». Hors session, taper
+// « Partager » basculait sur un volet e-mail + code : depuis le mur (T1 Identité),
+// « pas de session » veut dire PAS DE RÉSEAU, et un code par e-mail ne peut pas
+// arriver sans réseau. On répond maintenant par une phrase vraie.
+await page.getByText('Partager sur WhatsApp').click();
+await page.getByText('Pas de connexion', { exact: false }).waitFor({ timeout: 5000 });
+if (await page.getByText('Sécurise', { exact: false }).count())
+  throw new Error('T4 : le volet « Sécuriser » ne doit plus exister');
+if (await page.locator('.cz-inp[type="email"]').count())
+  throw new Error('T4 : aucun champ e-mail ne doit s’ouvrir sur une panne de réseau');
+console.log('T4 : hors réseau, « Partager » dit la vérité — plus de volet e-mail ✅');
+
 await page.getByRole('button', { name: 'Changer' }).click();
 await page.getByRole('button', { name: 'Révoquer' }).click();
 await page.getByText('Connectez-vous pour retirer Testouya', { exact: false }).waitFor({ timeout: 5000 });

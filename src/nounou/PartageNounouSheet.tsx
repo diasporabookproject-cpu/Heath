@@ -6,7 +6,6 @@ import { qrSvg } from '../lib/qr';
 import { publishNounouEspace } from './partage';
 import { buildEspaceUrl, lastEspaceOpen, revokeEspace } from '../lib/espace';
 import { getSupabase, supabaseEnabled } from '../lib/supabase';
-import SecuriserVolet from '../components/SecuriserVolet';
 import { buildNounouDigest, type NounouScope } from '../maison/digest';
 import { DigestBlock, type ScopeOption } from '../ui/DigestBlock';
 import { rappelLabel } from '../lib/rappel';
@@ -56,8 +55,6 @@ export default function PartageNounouSheet({
   const [qr, setQr] = useState<string | null>(null);
   const [lastOpen, setLastOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // F4-bis fiche B : volet « Sécuriser » inline (création de compte transparente).
-  const [securiser, setSecuriser] = useState(false);
 
   const dest = useMemo<NounouDest | undefined>(
     () => doc.destinataires.find((d) => d.id === selId),
@@ -139,12 +136,12 @@ export default function PartageNounouSheet({
   const send = async () => {
     if (!dest) return;
     if (!supabaseEnabled) return toast('Connexion indisponible.');
-    // F4-bis fiche B (Lecture 1) : sans session → volet « Sécuriser » inline (plus
-    // de renvoi vers le nuage), puis l'envoi repart tout seul. Garde LIVE (cf.
-    // PartageSheet — l'état `connected` peut ne pas être encore propagé au retour).
+    // T4 (lot partage simplifié) : même raison qu'en Cuisine — depuis le mur, « pas
+    // de session » veut dire « pas de réseau », pas « pas de compte ». Le volet
+    // « Sécuriser » demandait un code par e-mail à quelqu'un hors-ligne.
     {
       const live = await getSupabase()?.auth.getSession();
-      if (!live?.data.session) return setSecuriser(true);
+      if (!live?.data.session) return toast('Pas de connexion — la page n’a pas pu être publiée. Réessayez dès que le réseau revient.');
     }
     if (isEmptyDigest && !confirmEmpty) return setConfirmEmpty(true); // confirmation portée vide
     setBusy(true);
@@ -242,17 +239,6 @@ export default function PartageNounouSheet({
   return (
     <>
     <Sheet title="Partager la page" sub="Lecture seule, mise à jour en place" onClose={onClose}>
-      {securiser && (
-        <SecuriserVolet
-          onDone={() => {
-            setSecuriser(false);
-            void send(); // reprend l'envoi exactement où il s'était arrêté
-          }}
-          onCancel={() => setSecuriser(false)}
-        />
-      )}
-      {!securiser && (
-        <>
       {/* Sélecteur de destinataire */}
       {doc.destinataires.length > 0 && (
         <div className="nz-destsel">
@@ -452,8 +438,6 @@ export default function PartageNounouSheet({
             <span className="dot" />
             {lastOpen ? `Ouvert ${timeAgo(lastOpen)} · mise à jour en place` : 'Pas encore ouvert'}
           </div>
-        </>
-      )}
         </>
       )}
     </Sheet>
