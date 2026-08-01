@@ -18,12 +18,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # 🔴 LE CHEMIN MANUEL, FERMÉ (audit du 31/07, second chemin — confirmé ouvert par le
+  # PO : l'environnement `github-pages` n'a AUCUNE politique de branches). Sans cette
+  # garde, `workflow_dispatch` publie N'IMPORTE QUELLE branche sur l'URL de prod, d'un
+  # clic dans l'interface. On exige donc que la réf demandée soit EXACTEMENT celle que
+  # ce workflow désigne — lue dans le fichier, jamais écrite en dur : pendant un lot,
+  # le déclencheur pointe la branche de lot (« prévue déployée »), et la garde suit.
+  # Ce qu'elle ne remplace PAS : l'approbation humaine (réglages du dépôt, mesure 3).
+  garde:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: La réf publiée doit être celle que ce workflow désigne
+        run: |
+          CIBLE=$(grep -oE 'branches: \[[^]]*\]' .github/workflows/deploy.yml | head -1 | sed -E 's/.*\[(.*)\]/\1/' | tr -d " '\"")
+          echo "Réf demandée : ${{ github.ref_name }} · branche désignée : $CIBLE"
+          if [ "${{ github.ref_name }}" != "$CIBLE" ]; then
+            echo "::error::Publication refusée : « ${{ github.ref_name }} » n'est pas la branche que deploy.yml désigne (« $CIBLE »). Repointez le déclencheur, ou lancez depuis la bonne branche."
+            exit 1
+          fi
+
   # 🔴 GARDE-FOU BLOQUANT (E1 + audit du 31/07) : aucun déploiement si les types, les
   # tests OU LES PARCOURS cassent. Les portes sont définies dans `portes.yml` et
   # partagées avec `ci.yml` — la prod ne peut donc plus être gardée moins sévèrement
   # qu'une branche de travail, et il n'existe pas deux copies qui dérivent.
   # Avant : `typecheck` + `test` seulement ; les 3 smokes ne gardaient pas la prod.
   portes:
+    needs: garde
     uses: ./.github/workflows/portes.yml
 
   build:

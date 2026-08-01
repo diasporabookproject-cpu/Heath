@@ -103,6 +103,17 @@ describe('portes de déploiement — le pointage des workflows', () => {
     }
   });
 
+  it('le chemin MANUEL est gardé (workflow_dispatch ne peut pas publier une autre branche)', () => {
+    // Confirmé par le PO le 01/08 : l'environnement `github-pages` n'a AUCUNE politique
+    // de branches — un `workflow_dispatch` depuis n'importe quelle réf publierait donc
+    // sur l'URL de prod. Le job `garde` compare la réf demandée à la branche que
+    // `deploy.yml` désigne, et tout le reste en dépend.
+    const deploy = readFileSync('.github/workflows/deploy.yml', 'utf8');
+    expect(deploy).toMatch(/^\s{2}garde:/m);
+    expect(deploy, 'les portes doivent dépendre de la garde').toMatch(/portes:\s*\n\s*needs: garde/);
+    expect(deploy, 'la garde doit comparer github.ref_name à la branche désignée').toContain('github.ref_name');
+  });
+
   it('la porte de déploiement passe par les portes PARTAGÉES (smokes inclus)', () => {
     // Régression gardée : `deploy.yml` a longtemps porté sa propre copie réduite
     // (`typecheck` + `test`), sans les parcours. Si quelqu'un la réintroduit, ce test
