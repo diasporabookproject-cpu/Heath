@@ -141,6 +141,22 @@ if (await page.getByText('ne donne plus rien', { exact: false }).count()) {
 await page.getByText('Testouya').first().waitFor({ timeout: 5000 }); // conservée dans la liste
 console.log('Revoke honnête déconnecté : refus franc, personne conservée ✅');
 
+// 6) T2 (partage simplifié) — LE QR A DÉMÉNAGÉ, et il n'a pas disparu en route.
+// Il vit maintenant dans Compte → Avancé → « Accès permanent », une entrée PAR
+// PERSONNE (il encode SON lien permanent). Joué ici parce que « Testouya » vient
+// d'être créée — et hors-ligne, puisque la liste des personnes est locale.
+await page.locator('.cz-overlay.show').first().click({ position: { x: 8, y: 8 } }); // refermer la feuille de partage
+await page.waitForTimeout(350);
+await page.getByLabel('Compte').first().click();
+await page.locator('.cp .footlinks .fl', { hasText: 'Avancé' }).click();
+await page.getByText('Accès permanent (QR)').click();
+await page.locator('.cp .row', { hasText: 'Testouya' }).click();
+await page.locator('.cp .qrwrap .q svg').waitFor({ timeout: 8000 });
+if (!(await page.locator('.cp .qrwrap').getByText('ne change jamais', { exact: false }).count()))
+  throw new Error('T2 : le QR doit dire que le lien est permanent');
+await page.screenshot({ path: 'scripts/shot-qr-avance.png' });
+console.log('T2 : le QR a déménagé dans Compte → Avancé, une entrée par personne ✅');
+
 console.log(errors.length ? 'ERREURS:\n' + errors.join('\n') : 'Aucune erreur console/page ✅');
 await browser.close();
 if (errors.length) process.exit(1);

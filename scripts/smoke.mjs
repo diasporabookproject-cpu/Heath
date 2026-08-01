@@ -461,7 +461,8 @@ await shareSheet.locator('.ck-clacc .crow', { hasText: 'Arroser les plantes' }).
 console.log('T3 : checklist activée, tâche libre ajoutée (registre neutre) ✅');
 await shareSheet.getByText('Aperçu de sa page').click(); // la carte QR a laissé place à deux liens (T1 partage)
 await page.locator('.cz-preview-overlay').waitFor({ timeout: 8000 });
-await page.locator('.ck-qrblock svg').waitFor({ timeout: 5000 }); // T1 : QR permanent dans l'aperçu
+// (Le QR a quitté l'aperçu en T2 : il vit dans Compte → Avancé → Accès permanent,
+//  gardé par le smoke Comptes. L'aperçu, lui, ne montre plus que la page.)
 // T3 : la page (aperçu, darija d'abord) montre la TÂCHE EN FRANÇAIS (décision ③)
 await page.locator('.cz-preview-overlay').getByText('Arroser les plantes').waitFor({ timeout: 5000 });
 if (!(await page.locator('.cz-preview-overlay .ck-check').count()))

@@ -131,6 +131,16 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage simplifié — T2 : le QR déménage — 2026-08-01
+Décision PO ② : « on l'enlève de cette page mais on ne supprime pas la fonctionnalité ». Il n'a donc pas disparu, il a changé d'adresse.
+- **Nouvelle adresse** : `Compte → Avancé → Accès permanent (QR)`. **Une entrée par personne**, parce que le QR encode SON lien permanent — « Avancé » ne connaît personne, il fallait donc désigner qui avant d'afficher quoi que ce soit. Liste des destinataires → tap → le code + la phrase qui dit ce qu'il vaut (« le lien ne change jamais ») + « Copier le lien ».
+- **Emplacement PROVISOIRE et assumé**, écrit dans le code : A7 décidera où vivent durablement les personnes. Ce n'est pas la bonne maison du QR, c'est une maison qui existe déjà.
+- **L'écran hors-ligne, gratuitement** : la liste des personnes est locale (IndexedDB) et `qrSvg` génère sans réseau — la page entière fonctionne sans connexion, comme le reste de la page de compte. Le smoke le joue d'ailleurs **hors session**.
+- **Retiré de l'aperçu** : le bloc `.ck-qrblock`, l'état `qr` et l'import `qrSvg` quittent `PartageSheet`. L'aperçu ne montre plus que la page — ce qu'il est censé être.
+- **L'ancrage de smoke a suivi le QR, il n'a pas été supprimé** : `smoke.mjs:436` (`.ck-qrblock svg` dans l'aperçu) devient une porte du smoke Comptes qui traverse tout le nouveau chemin (Compte → Avancé → Accès permanent → Testouya → le SVG rendu + la phrase de permanence). **Une fonctionnalité qui déménage emmène sa preuve.**
+  - *Le smoke a d'abord échoué : la feuille de partage restait ouverte et recouvrait l'en-tête. Refermée par le voile avant d'ouvrir le compte.*
+- Portes : typecheck · **274 tests** · build · **3 smokes** · capture `shot-qr-avance`.
+
 ### Lot partage simplifié — T1 : l'écran — 2026-08-01
 La feuille d'envoi Cuisine passe à la maquette. Quatre changements, tous décidés au read-back.
 - **La langue s'écrit en français** (4 endroits de `PartageSheet`) : « Reçoit en **darija** », toggle « Français | Darija », chip du formulaire, tag de la liste. **Il ne reste plus une seule lettre arabe dans cet écran** — l'argument du PO n'est pas cosmétique : le nom en lettres latines sert à **choisir** la langue de son destinataire quand on ne lit pas l'arabe.

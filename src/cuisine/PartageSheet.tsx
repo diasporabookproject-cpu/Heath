@@ -23,7 +23,6 @@ import { getSupabase, supabaseEnabled } from '../lib/supabase';
 import SecuriserVolet from '../components/SecuriserVolet';
 import { todayKey } from './dates';
 import { buildCuisineGreeting, corpsSansLien } from '../maison/digest';
-import { qrSvg } from '../lib/qr';
 import type { Destinataire, SecuriteFiche } from '../types';
 import EspaceCuisine from './EspaceCuisine';
 import { IconLoader, IconCheck, IconCopy, IconLien, IconOeil } from './icons';
@@ -57,7 +56,6 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   // T3 : brouillon du champ « Ajouter une tâche » (validé → tasks du destinataire).
   const [taskDraft, setTaskDraft] = useState('');
   // T1 (lot partage) : le QR de l'accès permanent, rendu dans l'aperçu.
-  const [qr, setQr] = useState<string | null>(null);
   // T4 : résumé de l'état côté employeur (coches faites + dernier accès), dans l'aperçu.
   const [previewDone, setPreviewDone] = useState<number | null>(null);
   const [previewOpen, setPreviewOpen] = useState<string | null>(null);
@@ -173,7 +171,6 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
     setBusy(true);
     try {
       // Le QR encode le LIEN PERMANENT (le jeton) — il ne change jamais (F1).
-      setQr(await qrSvg(buildEspaceUrl(selected.token)).catch(() => null));
       setPreview(await previewEspace(selected, SEED_CONFIG, week, byId, persons));
       // T4 : l'état RÉEL — chargé APRÈS l'ouverture, jamais bloquant (le réseau
       // ne doit pas retarder l'aperçu ; le résumé se remplit quand il résout).
@@ -501,15 +498,6 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
             </button>
           </div>
           <div className="cz-preview-body">
-            {qr && (
-              <div className="ck-qrblock">
-                <div className="q" dangerouslySetInnerHTML={{ __html: qr }} />
-                <div className="t">
-                  <b>Accès permanent</b>
-                  À coller sur le frigo — le lien ne change jamais.
-                </div>
-              </div>
-            )}
             <EspaceCuisine espace={preview} viewChecksToken={selected?.token} />
           </div>
         </div>

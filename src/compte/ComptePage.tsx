@@ -4,6 +4,10 @@ import { signOut, type Session } from '../lib/supabase';
 import { clearCompteLie, loadCompteLie, loadMonPrenom, saveMonPrenom, type CompteLie } from '../lib/db';
 import { createInvite, deleteAccount, ensureFoyer, leaveFoyer, loadFoyerInfo, savePrenom, type FoyerInfo } from '../lib/auth';
 import { downloadExport } from '../lib/exportData';
+import { loadDestinataires } from '../lib/db';
+import { buildEspaceUrl } from '../lib/espace';
+import { qrSvg } from '../lib/qr';
+import type { Destinataire } from '../types';
 import { isNative, shareText, webBaseUrl } from '../lib/platform';
 import { varianteSuppression, dependants } from './suppression';
 import Ftue from '../ftue/Ftue';
@@ -104,6 +108,25 @@ const IconSortieFoyer = () => (
   </svg>
 );
 
+/** Mini-motif de QR — l'icône de la ligne « Accès permanent » (reprise du lot partage). */
+const IconQr = () => (
+  <svg width="17" height="17" viewBox="0 0 100 100" aria-hidden>
+    <g fill="currentColor">
+      <rect x="0" y="0" width="30" height="30" /><rect x="7" y="7" width="16" height="16" fill="#fff" /><rect x="12" y="12" width="6" height="6" />
+      <rect x="70" y="0" width="30" height="30" /><rect x="77" y="7" width="16" height="16" fill="#fff" /><rect x="82" y="12" width="6" height="6" />
+      <rect x="0" y="70" width="30" height="30" /><rect x="7" y="77" width="16" height="16" fill="#fff" /><rect x="12" y="82" width="6" height="6" />
+      <rect x="44" y="8" width="7" height="7" /><rect x="58" y="44" width="7" height="7" /><rect x="44" y="58" width="7" height="7" /><rect x="72" y="72" width="7" height="7" />
+    </g>
+  </svg>
+);
+
+const IconCopie = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+  </svg>
+);
+
 const IconAlerte = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <circle cx="12" cy="12" r="9" />
@@ -127,7 +150,14 @@ export function messageInvitation(code: string, lien: string): string {
 }
 
 export default function ComptePage({ session, onClose }: { session: Session | null; onClose: () => void }) {
-  const [vue, setVue] = useState<'page' | 'avance'>('page');
+  const [vue, setVue] = useState<'page' | 'avance' | 'qr'>('page');
+  // T2 (partage simplifié) : le QR a quitté l'écran de partage — il vit ici. Il y a
+  // un QR PAR PERSONNE (il encode SON lien permanent), d'où la liste : « Avancé » ne
+  // connaît personne, il faut donc désigner qui avant d'afficher quoi que ce soit.
+  // Emplacement PROVISOIRE, assumé — A7 décidera où vivent durablement les personnes.
+  const [dests, setDests] = useState<Destinataire[]>([]);
+  const [qrPour, setQrPour] = useState<Destinataire | null>(null);
+  const [qrSvgTxt, setQrSvgTxt] = useState<string | null>(null);
   const [compte, setCompte] = useState<CompteLie | null>(null);
   const [monPrenom, setMonPrenom] = useState<string | null>(null);
   const [info, setInfo] = useState<FoyerInfo | null>(null);
@@ -241,6 +271,26 @@ export default function ComptePage({ session, onClose }: { session: Session | nu
     setEditPrenom(false);
   };
 
+  // La liste des personnes est LOCALE (IndexedDB) : cet écran marche hors-ligne,
+  // comme le reste de la page de compte.
+  useEffect(() => {
+    if (vue === 'qr') void loadDestinataires().then(setDests);
+  }, [vue]);
+
+  useEffect(() => {
+    if (!qrPour) return setQrSvgTxt(null);
+    void qrSvg(buildEspaceUrl(qrPour.token)).then(setQrSvgTxt).catch(() => setQrSvgTxt(null));
+  }, [qrPour?.token]);
+
+  const copierLien = async (d: Destinataire) => {
+    try {
+      await navigator.clipboard.writeText(buildEspaceUrl(d.token));
+      setErr('');
+    } catch {
+      setErr('Le lien n’a pas pu être copié.');
+    }
+  };
+
   const quitter = async () => {
     if (busy) return;
     setErr('');
@@ -279,6 +329,14 @@ export default function ComptePage({ session, onClose }: { session: Session | nu
           <button className="row" onClick={() => void downloadExport()}>
             <span className="ic"><IconExport /></span>
             <span className="rt"><b>Exporter mes données</b><i>Un fichier à conserver</i></span>
+            <span className="cv" aria-hidden>›</span>
+          </button>
+          <button className="row" onClick={() => { setErr(''); setQrPour(null); setVue('qr'); }}>
+            <span className="ic"><IconQr /></span>
+            <span className="rt">
+              <b>Accès permanent (QR)</b>
+              <i>Le code à coller sur le frigo — un par personne, il ne change jamais</i>
+            </span>
             <span className="cv" aria-hidden>›</span>
           </button>
           <button className="row" onClick={() => setReplay(true)}>
@@ -321,6 +379,63 @@ export default function ComptePage({ session, onClose }: { session: Session | nu
             </div>
           </>
         )}
+      </div>
+    );
+  }
+
+  // ── Accès permanent (QR) — déménagé de l'écran de partage (T2) ────────────
+  if (vue === 'qr') {
+    return (
+      <div className="cp">
+        <div className="hd">
+          <button
+            className="bk"
+            aria-label={qrPour ? 'Revenir à la liste' : 'Revenir à Avancé'}
+            onClick={() => (qrPour ? setQrPour(null) : setVue('avance'))}
+          >
+            ‹
+          </button>
+          <span className="ti">{qrPour ? qrPour.nom : 'Accès permanent'}</span>
+        </div>
+
+        {qrPour ? (
+          <>
+            <div className="qrwrap">
+              {qrSvgTxt ? (
+                <div className="q" dangerouslySetInnerHTML={{ __html: qrSvgTxt }} />
+              ) : (
+                <div className="q vide"><span className="spin dark" /></div>
+              )}
+              <p className="t">
+                À coller sur le frigo. <b>Le lien ne change jamais</b> — même quand le
+                menu change, {qrPour.nom} retrouve sa page en scannant.
+              </p>
+            </div>
+            <button className="pbtn" onClick={() => void copierLien(qrPour)}>
+              <IconCopie /> Copier le lien
+            </button>
+          </>
+        ) : dests.length ? (
+          <div className="cardw">
+            {dests.map((d) => (
+              <button className="row" key={d.id} onClick={() => setQrPour(d)}>
+                <span className="ma" aria-hidden>{(d.nom || '?').slice(0, 1).toUpperCase()}</span>
+                <span className="rt">
+                  <b>{d.nom}</b>
+                  <i>{d.role}</i>
+                </span>
+                <span className="cv" aria-hidden>›</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="vide">
+            Personne à qui donner un accès pour l’instant. Ajoutez quelqu’un depuis
+            « Partager » sur une page, et son QR apparaîtra ici.
+          </p>
+        )}
+        {err && <div className="errline" role="alert"><IconAlerte /><p>{err}</p></div>}
+        <div className="grow" />
       </div>
     );
   }
