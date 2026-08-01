@@ -92,7 +92,7 @@ export default function SecuriteView() {
                   <div className="lib-item__name">{f.titre || '(sans titre)'}</div>
                   <div className="lib-item__sub">
                     {f.statut}
-                    {f.titre_ar ? ' · الدارجة ✓' : ' · darija manquante'}
+                    {f.titre_ar ? ' · darija ✓' : ' · darija manquante'}
                   </div>
                 </button>
                 {f.statut !== 'Validé' ? (

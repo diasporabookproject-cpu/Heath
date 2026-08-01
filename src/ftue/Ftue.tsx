@@ -25,11 +25,15 @@ export interface PersonNaming {
   prenom: string;
   langue: NounouLangue; // fr | dr | ar | en
 }
-const LANGS: { code: NounouLangue; label: string; ar?: boolean }[] = [
-  { code: 'dr', label: 'الدارجة', ar: true },
+// ⚠️ Catalogue DUPLIQUÉ de `NOUNOU_LANGS` (types.ts) — D5 dit « une liste fermée ».
+// La déduplication est au backlog qualité ; ici on aligne au moins le registre :
+// les noms de langue s'écrivent en français (décision PO). Le drapeau `ar` (police
+// arabe sur la puce) n'a plus lieu d'être : les libellés sont en lettres latines.
+const LANGS: { code: NounouLangue; label: string }[] = [
+  { code: 'dr', label: 'Darija' },
   { code: 'fr', label: 'Français' },
-  { code: 'ar', label: 'العربية', ar: true },
-  { code: 'en', label: 'English' },
+  { code: 'ar', label: 'Arabe' },
+  { code: 'en', label: 'Anglais' },
 ];
 const langLabel = (c: NounouLangue) => LANGS.find((l) => l.code === c)?.label ?? c;
 
@@ -380,7 +384,7 @@ export default function Ftue({ demo = false, onDone }: { demo?: boolean; onDone:
               {LANGS.map((l) => (
                 <button
                   key={l.code}
-                  className={'lchip' + (l.ar ? ' ar' : '') + (nameLang === l.code ? ' sel' : '')}
+                  className={'lchip' + (nameLang === l.code ? ' sel' : '')}
                   onClick={() => setNameLang(l.code)}
                 >
                   {l.label}

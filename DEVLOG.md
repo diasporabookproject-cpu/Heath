@@ -131,6 +131,16 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage simplifié — T3 : la langue française dans tout le chrome — 2026-08-01
+Décision PO ⑤ : la règle vaut pour **tout le chrome employeur**, pas seulement l'écran de partage.
+- **La SOURCE d'abord** : `NOUNOU_LANGS` (`types.ts`) écrivait `الدارجة` / `العربية` — c'est elle qui alimentait le partage Nounou et le titre de la feuille de traduction. Devenue `Français · Darija · Arabe · Anglais` : **quatre mots français**, comme la maquette le demande. `English` est passé à `Anglais` au passage — le catalogue ne mélange plus les langues d'écriture.
+- **Le second catalogue, celui de la FTUE** (`Ftue.tsx:28`), est **dupliqué** alors que D5 dit « une liste fermée ». Francisé lui aussi ; son drapeau `ar` (police arabe sur la puce) est retiré — il n'a plus de sens pour un libellé latin. **La déduplication reste au backlog**, comme annoncé au read-back : ce n'est pas ce lot.
+- **Sécurité** : `· الدارجة ✓` → `· darija ✓` — la ligne d'état mélangeait les deux écritures dans la même phrase.
+- **Nounou** : la puce de langue ne prend plus la police arabe pour un mot français. `rtl` reste ce qu'il est — **la vérité du RENDU**, pas du nom.
+- **🔴 LA PORTE** (`langue-chrome.test.ts`, 4 cas, mutation-testée) : aucun nom arabe dans le catalogue source · aucun dans celui de la FTUE · **les deux catalogues doivent s'ACCORDER** (la duplication peut vivre, pas dériver — deux noms différents pour la même langue selon l'écran serait pire que l'arabe) · et franciser le NOM n'a pas francisé le RENDU (`dr`/`ar` restent RTL, sinon la page de la cuisinière casse).
+- **CE QUI RESTE EN ARABE, nommé plutôt que subi** — le test le documente : le **contenu du personnel** (page reçue, labels, page morte, message envoyé, puce de la bulle) · les **libellés des champs de saisie arabe** (fiche recette, Sécurité), hors portée par votre décision · le **logotype « Manzil · منزل »**, une marque et non un libellé · `MzDemo`, vitrine hors prod.
+- Portes : typecheck · **278 tests** (+4) · build · **3 smokes**.
+
 ### Lot partage simplifié — T2 : le QR déménage — 2026-08-01
 Décision PO ② : « on l'enlève de cette page mais on ne supprime pas la fonctionnalité ». Il n'a donc pas disparu, il a changé d'adresse.
 - **Nouvelle adresse** : `Compte → Avancé → Accès permanent (QR)`. **Une entrée par personne**, parce que le QR encode SON lien permanent — « Avancé » ne connaît personne, il fallait donc désigner qui avant d'afficher quoi que ce soit. Liste des destinataires → tap → le code + la phrase qui dit ce qu'il vaut (« le lien ne change jamais ») + « Copier le lien ».

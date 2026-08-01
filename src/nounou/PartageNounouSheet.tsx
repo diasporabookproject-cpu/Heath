@@ -327,7 +327,9 @@ export default function PartageNounouSheet({
             {NOUNOU_LANGS.map((l) => (
               <button
                 key={l.code}
-                className={'nz-langchip' + (l.rtl ? ' ar' : '')}
+                /* `rtl` reste la vérité du RENDU de la page, pas de son NOM : le
+                   libellé est français, il ne prend donc pas la police arabe. */
+                className="nz-langchip"
                 aria-pressed={dest.langue === l.code}
                 onClick={() => setLangue(l.code)}
               >

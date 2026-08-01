@@ -407,11 +407,18 @@ export interface NounouLangInfo {
   author?: boolean;
 }
 
+/**
+ * 🔴 Les noms de langue s'écrivent EN FRANÇAIS (décision PO, lot partage simplifié).
+ * Ce ne sont pas des étiquettes décoratives : elles servent à CHOISIR la langue de
+ * son destinataire — quelqu'un qui ne lit pas l'arabe doit pouvoir le faire. Quatre
+ * mots français, jamais quatre écritures. `rtl` reste la vérité technique du RENDU
+ * (la page reçue, elle, s'écrit bien en arabe).
+ */
 export const NOUNOU_LANGS: NounouLangInfo[] = [
   { code: 'fr', nom: 'Français', sub: "Langue d'auteur", rtl: false, author: true },
-  { code: 'dr', nom: 'الدارجة', sub: 'Marocain', rtl: true },
-  { code: 'ar', nom: 'العربية', sub: 'Arabe classique', rtl: true },
-  { code: 'en', nom: 'English', sub: 'À activer si besoin', rtl: false },
+  { code: 'dr', nom: 'Darija', sub: 'Marocain', rtl: true },
+  { code: 'ar', nom: 'Arabe', sub: 'Arabe classique', rtl: true },
+  { code: 'en', nom: 'Anglais', sub: 'À activer si besoin', rtl: false },
 ];
 
 /** Destinataire de la page Nounou : lien durable scopé (enfants, rôle, langue). */
