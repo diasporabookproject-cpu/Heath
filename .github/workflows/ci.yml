@@ -2,7 +2,9 @@ name: CI (qualité + smoke)
 
 # Leçon E1 portée EN CI : types + tests + build + parcours Playwright sur CHAQUE
 # push et PR (toutes branches) — attraper les régressions AVANT le merge/déploiement.
-# (deploy.yml garde son propre garde-fou bloquant pour la prod.)
+# Les portes elles-mêmes vivent dans `portes.yml` (UN SEUL endroit), appelé ici ET
+# par `deploy.yml` : c'est ce qui garantit que la prod n'est jamais gardée MOINS
+# sévèrement qu'une branche de travail (décalage trouvé par l'audit du 31/07).
 on:
   push:
   pull_request:
@@ -13,52 +15,5 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  qualite:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run test
-
-  smoke:
-    needs: qualite
-    runs-on: ubuntu-latest
-    env:
-      # base /Heath/ pour LE BUILD ET LE PREVIEW : sinon le preview sert en base '/'
-      # et /Heath/assets/* tombe sur le fallback SPA (text/html) → l'app ne démarre pas.
-      BASE_PATH: /Heath/
-      BASE_URL: http://localhost:4173/Heath/
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      # Build web réel : a besoin des VITE_SUPABASE_* (clés PUBLIQUES par design ;
-      # jamais de secret) — supabaseEnabled=true pour que l'écran Compte s'affiche.
-      - run: npm run build
-        env:
-          VITE_SUPABASE_URL: https://pqeilsuqglmrvijndrwa.supabase.co
-          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Gvhm9PdeleoilZGoeFiAtg_mGATsr1v
-      # Playwright global (le script a un fallback vers `npm root -g`), version alignée
-      # sur l'environnement de dev ; le navigateur est téléchargé pour cette version.
-      - run: npm i -g playwright@1.56.1
-      - run: npx playwright install --with-deps chromium
-      - name: Preview + smokes
-        run: |
-          npx vite preview --port 4173 &
-          PREV=$!
-          for i in $(seq 1 30); do
-            curl -sf "$BASE_URL" >/dev/null && break || sleep 1
-          done
-          set -e
-          npm run smoke                         # parcours Cuisine (produit)
-          node scripts/smoke-comptes.mjs        # parcours Compte DÉCONNECTÉ (invariant sans-compte)
-          node scripts/smoke-ftue.mjs           # traversée FTUE réelle (F4 : gate + peuplement + rôles)
-          kill $PREV 2>/dev/null || true
+  portes:
+    uses: ./.github/workflows/portes.yml

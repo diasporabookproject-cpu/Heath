@@ -18,21 +18,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Garde-fou qualité BLOQUANT (E1) : aucun déploiement si types ou tests cassent.
-  quality:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run test
+  # 🔴 GARDE-FOU BLOQUANT (E1 + audit du 31/07) : aucun déploiement si les types, les
+  # tests OU LES PARCOURS cassent. Les portes sont définies dans `portes.yml` et
+  # partagées avec `ci.yml` — la prod ne peut donc plus être gardée moins sévèrement
+  # qu'une branche de travail, et il n'existe pas deux copies qui dérivent.
+  # Avant : `typecheck` + `test` seulement ; les 3 smokes ne gardaient pas la prod.
+  portes:
+    uses: ./.github/workflows/portes.yml
 
   build:
-    needs: quality
+    needs: portes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

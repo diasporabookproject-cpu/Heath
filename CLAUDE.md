@@ -17,11 +17,33 @@ d'ORIGINE (« Menu de la semaine », historique).
 - **Frontière** : `ETAT.md` = décidé et planifié · backlog qualité (`DEVLOG.md`) = trouvé,
   pas encore décidé. Sens unique backlog → ETAT quand une décision planifie.
 
+## Règle n°2 — ouvrir un lot : geler la prod AVANT d'écrire une ligne
+🔴 **Le premier geste d'un lot, avant tout code** : brancher `lot-<nom>-v1` depuis la
+prod, puis **repointer les DEUX workflows** (`deploy.yml` *et* `apk.yml`) sur cette
+branche, dans le commit d'ouverture. La prod reste **figée** pendant tout le lot ; elle
+ne bouge qu'au **GO de clôture** du PO — moment où les deux workflows repartent sur la
+branche de prod.
+
+- **Ne JAMAIS supposer le déclencheur de `deploy.yml` : l'ouvrir et le lire.** La
+  branche de prod est aussi la branche par défaut du dépôt **et** la branche désignée
+  des sessions — rien dans son nom ne dit qu'elle publie. Lot Identité (26/07) : le lot
+  entier est parti en prod cinq jours avant son GO parce que `apk.yml` a été lu (il
+  nommait bien la branche de lot) et `deploy.yml` supposé.
+- La règle est **portée par une porte**, pas par la mémoire : `src/lib/portes.test.ts`
+  échoue quand un lot en vol n'a pas ses workflows repointés, ou quand les deux
+  workflows visent des branches différentes. Un test rouge y est une consigne, pas un bug.
+- Les **portes de CI et de déploiement sont les MÊMES** (`.github/workflows/portes.yml`,
+  appelé par `ci.yml` et `deploy.yml`) : typecheck · tests · build · **3 smokes**. Ne
+  jamais recréer une copie réduite dans `deploy.yml` — la prod ne doit jamais être gardée
+  moins sévèrement qu'une branche de travail.
+- **Fenêtre serveur** (migration, edge) : protocole AS-2 complet, jeton jetable, **rien
+  ne part sans le GO explicite du PO** — cf. `RUNBOOK_ENVIRONNEMENTS.md`.
+
 ## Conventions
 - **Langue de l'UI : français** (darija en lettres arabes pour la vue Cuisinière).
 - **Local-first** : IndexedDB = source de vérité (`src/lib/db.ts`), migrations via `SEED_VERSION`.
 - **Tests** : logique métier couverte par Vitest (`npm run test`) ; parcours bout-en-bout via **3 smokes Playwright** (Cuisine `npm run smoke` · Comptes `node scripts/smoke-comptes.mjs` · FTUE `node scripts/smoke-ftue.mjs`) — tous en CI. Lancer `npm run typecheck` avant de committer.
-- **Déploiement** : push sur la branche par défaut → GitHub Actions → Pages. Vérifier le run, puis l'URL de prod.
+- **Déploiement** : push sur la branche par défaut → GitHub Actions → Pages. Vérifier le run, puis **le bundle réellement servi** (pas le commit : c'est ce contrôle qui a attrapé un tutoiement resté en prod à la clôture du lot Identité). Cf. règle n°2 pour le gel de la prod pendant un lot.
 - **Secrets** : ne jamais committer la clé Supabase `secret`/`service_role`. La `publishable` (publique) et l'URL vivent dans `.github/workflows/deploy.yml`.
 - Ne pas « normaliser » les mesures à la cuillère (càc/càs) ; le calcium doit rester visible partout.
 
