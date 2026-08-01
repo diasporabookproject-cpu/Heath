@@ -131,6 +131,12 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### 🔒 La prod est gardée — la dernière mesure posée par le PO — 2026-08-01
+**« C'est fait pour la protection GitHub »** : l'approbation requise est en place sur l'environnement `github-pages`.
+- **Les quatre chemins vers la prod sont fermés** : ① approbation humaine (PO, réglages) · ② portes partagées, smokes inclus (`portes.yml`) · ③ job `garde` (réf ≠ branche désignée → refus) · ④ `portes.test.ts` (lot en vol non repointé → CI rouge). La règle vit dans `CLAUDE.md`.
+- **Ce que seule la mesure du PO apporte** : les trois miennes empêchent de publier *la mauvaise chose* ou *depuis le mauvais endroit* ; **aucune ne peut exiger qu'un humain dise oui**. C'est précisément la classe de l'incident du 26/07 — un push techniquement correct, sur la bonne branche, avec des portes vertes, et personne pour l'autoriser.
+- **Conséquence de rituel** : chaque déploiement attend maintenant un clic. À intégrer aux clôtures de lot — « poussé » ne veut plus dire « en ligne » ; il faut **approuver, puis vérifier le bundle servi**.
+
 ### Le chemin manuel, fermé — et une inférence fausse corrigée — 2026-08-01
 Retour PO à ma demande de vérification : **« no restriction sur deployment branches »**.
 - **J'avais tort, l'audit avait raison.** J'avais écarté `workflow_dispatch` comme « second chemin » en inférant une politique de branches à partir d'une note de **juillet** (l'épisode Bento, où déployer la prévue avait exigé d'autoriser `refonte/*` dans l'environnement). Cette politique n'existe plus. **Un réglage de dépôt se fait vérifier ; il ne s'infère pas d'une trace historique** — surtout pour écarter un risque signalé par quelqu'un d'autre.
