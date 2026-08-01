@@ -1,5 +1,5 @@
 # ÉTAT — Manzil
-**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 26 juillet 2026 (lot Identité & accès Phase 1 — T1→T6 livrés, `lot-identite-v1`, attend le device test avant merge)**
+**Photo de l'état réel · réécrite à chaque clôture de tranche/lot · dernière touche : 1ᵉʳ août 2026 (CLÔTURE du lot Identité & accès Phase 1 — en prod, les deux workflows repointés)**
 
 > **Rôle.** *Où on en est* (rapide). Le *quoi* (lent) = `PROJET_MAISON_OS.md` (côté PO). Le *journal* (append-only, détaillé) = `DEVLOG.md`.
 > **Rituel d'ouverture de thread : « Contexte = `PROJET_MAISON_OS.md` + `ETAT.md` ».**
@@ -9,8 +9,9 @@
 
 ## 🔵 En vol
 
-**Lot Identité & accès — Phase 1 « le compte requis » : CODE COMPLET (T1→T6), branche `lot-identite-v1`.**
-Il ne reste QUE le **device test du PO** puis le merge. Les deux workflows (Pages + APK) pointent sur la branche du lot.
+**Rien en vol.** Prochain : au choix du PO — revue éditoriale du Fonds de départ (file n°1) · lot A7 (file n°2).
+
+**Lot Identité & accès — Phase 1 « le compte requis » : CLOS le 01/08 — EN PROD.** Les deux workflows (Pages + APK) repointés sur la branche de prod. ⚠️ **Particularité de ce lot** : la branche de travail était la branche de PROD elle-même (pas de merge séparé) — le lot est donc parti en prod à chaque push, avant le GO de clôture. À l'avenir : travailler sur une branche de lot distincte, comme les 3 lots précédents.
 **L'invariant « compte différé, jamais imposé » est mort** : l'app demande le compte au premier lancement (Écran 1), le foyer vient ensuite (Écran 2). Réf : `READBACK_IDENTITE_ACCES.md` · `PASSATION_UI_IDENTITE_ACCES.md` · maquettes `docs/maquettes/identite-*.html` · ADR 33.
 - **T1 le mur** — Écran 1 (`ftue/Entrer.tsx`), aucune échappatoire. Le gate (`ftue/gate.ts`, pur, testé) porte le **drapeau LOCAL `compteLie`**, jamais la session vivante : hors-ligne, `getSession()` est nulle dès le jeton expiré — s'y fier enfermerait l'utilisateur dehors avec ses données sur son téléphone. Rattrapage du drapeau depuis une session existante (appareils déjà connectés).
 - **T2 la mort de la fusion** — `adopt()`, `planAdopt`, `dropLocal`, la dédup de packs, la feuille « Fusionner nos maisons » et `sendMagicLink` : **supprimés**. Règle qui remplace : `foyerTransition` — `first-attach`/`same` → cycle normal · **`switch` → purge LOCALE + pull seul**. Purge prouvée **strictement locale** (`foyer-switch.test.ts` : `['select:docs']` et rien d'autre ; test mutation-testé).
@@ -20,12 +21,9 @@ Il ne reste QUE le **device test du PO** puis le merge. Les deux workflows (Page
 - **T6 vouvoiement** — 73 remplacements, 31 fichiers, chaînes exactes. **Restent au tutoiement, volontairement** : les messages ENVOYÉS (voix de l'employeur vers son personnel / son co-parent) · les pages REÇUES · les commentaires.
 - **Serveur** : `0012` (renversement de `0008`, ADR 33) · `0013` (`preview_invite`) · `0014` (`membres.prenom`) · edge `invite` TTL 24 h — **en prod**, parité de clôture 0 écart, jeton révoqué. Re-vérifié le 26/07 à la clé publique seule (fonction présente, `owner_notice` absente, `prenom` présente).
 - **Correctifs device (retour PO sur le lot complet)** : **zones sûres** posées sur les 3 couches plein écran du lot (la barre d'état recouvrait le chevron, la barre de navigation « Supprimer mon compte » — deux actions inatteignables) · le **bouton retour Android** ferme la page de compte (elle n'est pas dans la pile des feuilles) · **le prénom se pose depuis la page de compte** : un appareil déjà installé ne voit jamais l'écran 2, son prénom n'était donc jamais demandé ni rattrapable. « Pas de code reçu par mail » : **non reproduit au re-test PO, clos sans cause établie** — l'écran nomme désormais le plafond de débit si le cas revient.
-- **À décider (PO)** : **nommer le foyer** librement. Le nom est aujourd'hui **dérivé** du prénom du titulaire (« Maison de Amine ») — donc réparé sans serveur. Un nom libre = colonne `foyers.nom` + migration + fenêtre prod.
-- **Portes** : typecheck · **265 tests** · build web+natif · **3 smokes** · captures.
+- **Portes** : typecheck · **265 tests** · build web+natif · **3 smokes** · captures. **Prod vérifiée** au bundle servi (page de compte, 4ᵉ variante de suppression, page morte fr+darija, tutoiement absent) — la vérification a d'ailleurs **attrapé un angle mort de T6** : les descriptions de collections vivent en JSON de données, hors du balayage TS/TSX. Corrigées.
 - **⚠️ Reste bloqué** : le **message d'invitation** attend `manzil.ma` — le lien envoyé est l'URL web réelle de l'app en attendant (un seul endroit : `messageInvitation`).
 - **Hors périmètre Phase 1** : Google/Apple (Phase 2) · l'invitation par lien profond.
-
-**Prochain après le merge** : au choix du PO — revue éditoriale du Fonds de départ (file n°1) · lot A7 (file n°2).
 
 **Lot Refonte de la mise en page Cuisine (Option B, DA v2) : CLOS le 25/07** — mergé au défaut (`lot-cuisine-refonte-v1`, merge --no-ff), **les deux workflows repointés au défaut**. La maquette est adoptée **en entier** ; référence versionnée : `docs/maquettes/maquette-cuisine-finetune.html`.
 - **T1 vue jour** — les 4 cartes de moment égales → **carte-repas HÉROS** (le **prochain repas à servir**, `hero.ts`/`pickHeroKey` testé ; dégradé + emoji Fluent par défaut, **vraie photo du plat si elle existe** via `PlatPhoto`, miroir exact de `FichePhoto`) + « le reste de la journée » en tuiles ; jour vide → **invitation** (disque, « Copier une journée », 4 moments tuilés). Nom de plat en **serif `'Fraunces'` EXPLICITE**.
@@ -80,6 +78,8 @@ Il ne reste QUE le **device test du PO** puis le merge. Les deux workflows (Page
 
 ## ⚠️ Ouvert — à trancher
 
+- **Nommer le foyer librement** *(lot Identité & accès, laissé ouvert à la clôture)* — le nom est **dérivé** du prénom du titulaire (« Maison de Amine ») et se répare donc sans serveur depuis la page de compte. Un nom **libre** demande une colonne `foyers.nom` → migration + fenêtre prod. Rien ne presse : aucun parcours n'est cassé.
+- **« Quitter ce foyer » (Avancé, membre seulement)** — écart à la maquette assumé à T4 : sans cette porte, qui a rejoint le mauvais foyer devrait **supprimer son compte** pour en sortir. À garder, déplacer ou retirer.
 - **D4 + D10 contre le modèle** — un rôle sans écran dédié (Chauffeur/Entretien/Famille) ne doit voir que « La maison ». Or `PersonneKind = 'cuisine'|'nounou'` et le `menu` est **inconditionnel** dans `publishEspace` : un Chauffeur recevrait le menu, ou pire le planning des enfants. → 3ᵉ sorte ou payload conditionnel (≈ un pas vers l'option 2). **À trancher dans la spec A7.**
 - **Vocabulaire banni proposé par l'UI** — `PartageSheet.ROLES` (« Cuisinière »… + défaut de création rapide), idem FTUE. → **A7/D2** (neutralité, liste ouverte + « Autre… »).
 - **Le code de l'arabe standard SUR LE FIL** — `'ar'` dans les payloads `espaces` v:1 = darija, pour toujours (compat perpétuelle). L'élargissement D5 (4 langues Cuisine) devra porter le MSA sous un autre contrat : **proposition = `v: 2`** (champ existant) où `langue` adopte le vocabulaire catalogue ; lecteurs gardent l'interprétation v:1. **À valider avant D5 — que l'élargissement ne le découvre pas.**

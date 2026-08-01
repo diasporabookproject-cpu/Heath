@@ -2,12 +2,13 @@ name: APK Android (debug)
 
 # C1 (coquille) : build l'APK debug et l'attache en ARTIFACT — la distribution
 # multi-appareils d'Amine (onglet Actions → run → Artifacts → app-debug).
-# Déclenchement : push sur la BRANCHE DE LOT ACTIVE (mettre à jour à chaque
-# nouveau lot touchant le natif) + manuel (workflow_dispatch).
+# Déclenchement : push sur la branche de PROD (repointé à la clôture du lot
+# Identité & accès) — à faire pointer sur la branche de lot au premier geste d'un
+# nouveau lot touchant le natif + manuel (workflow_dispatch).
 on:
   workflow_dispatch:
   push:
-    branches: [lot-identite-v1]
+    branches: [claude/jolly-wozniak-s83str]
 
 jobs:
   apk:
