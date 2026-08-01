@@ -90,6 +90,22 @@ export const IconCopy = (p: P) => (
   </Svg>
 );
 
+/** Œil — « Voir sa page » (l'aperçu + le retour des coches, lot partage simplifié). */
+export const IconOeil = (p: P) => (
+  <Svg {...p}>
+    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
+    <circle cx="12" cy="12" r="3" />
+  </Svg>
+);
+
+/** Maillon de chaîne — la puce « Sa page » dans la bulle du message (maquette partage). */
+export const IconLien = (p: P) => (
+  <Svg {...p}>
+    <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5" />
+    <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5" />
+  </Svg>
+);
+
 export const IconLock = (p: P) => (
   <Svg {...p}>
     <rect x="3" y="11" width="18" height="11" rx="2" />

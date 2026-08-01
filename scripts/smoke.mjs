@@ -423,6 +423,34 @@ if (await shareSheet.locator('input').count()) {
   if (/elle cochera/i.test(feuille))
     throw new Error('T3 : genre présumé (« elle cochera ») — le registre doit rester neutre');
 }
+// T1 (partage simplifié) — LA RÈGLE DE LA MAQUETTE : l'interface est TOUJOURS en
+// français ; l'écriture arabe n'apparaît que dans le CONTENU (la bulle, la page).
+// Le nom de langue en lettres latines sert à CHOISIR : quelqu'un qui ne lit pas
+// l'arabe doit pouvoir désigner la langue de son destinataire (décision PO ①).
+const pill = await shareSheet.locator('.ck-langpill').innerText();
+if (!/darija/.test(pill) || /[\u0600-\u06FF]/.test(pill))
+  throw new Error(`T1 : le nom de langue s'écrit en lettres latines (lu : ${pill})`);
+const tog = (await shareSheet.locator('.ck-langtog button').allInnerTexts()).join('|');
+if (tog !== 'Français|Darija') throw new Error(`T1 : toggle attendu « Français|Darija » (lu : ${tog})`);
+// La recomposition du message passe par un effet React : on ATTEND l'état, on ne
+// lit pas à l'instant du clic (première écriture de cette porte : elle lisait trop tôt).
+const bulleDevient = async (re, quoi) => {
+  for (let i = 0; i < 25; i++) {
+    if (re.test(await shareSheet.locator('.ck-bubble .txt').innerText())) return;
+    await page.waitForTimeout(120);
+  }
+  throw new Error(`T1 : ${quoi} (lu : ${await shareSheet.locator('.ck-bubble .txt').innerText()})`);
+};
+await shareSheet.locator('.ck-langtog button', { hasText: 'Français' }).click();
+await bulleDevient(/Bonjour/, 'en français, la bulle doit passer en français');
+await shareSheet.locator('.ck-langtog button', { hasText: 'Darija' }).click();
+await bulleDevient(/[\u0600-\u06FF]/, 'en darija, la bulle doit passer en arabe (le CONTENU change)');
+if ((await shareSheet.locator('.ck-langpill').innerText()) !== pill)
+  throw new Error('T1 : la bascule ne doit changer QUE le message, pas l’interface');
+if (await shareSheet.locator('.ck-bubble textarea').count())
+  throw new Error('T1 : la bulle est figée — plus de champ de saisie (décision PO ③)');
+console.log('T1 partage : interface en français, seul le message bascule, bulle figée ✅');
+
 await shareSheet.locator('.ck-sw').click(); // activer la checklist
 await shareSheet.locator('.ck-clacc').waitFor({ timeout: 5000 });
 await shareSheet.getByText('à cocher', { exact: false }).waitFor({ timeout: 3000 }); // tag neutre
@@ -431,7 +459,7 @@ await shareSheet.getByPlaceholder('Ajouter une tâche…').fill('Arroser les pla
 await shareSheet.locator('.ck-clacc .addrow .go').click();
 await shareSheet.locator('.ck-clacc .crow', { hasText: 'Arroser les plantes' }).waitFor({ timeout: 3000 });
 console.log('T3 : checklist activée, tâche libre ajoutée (registre neutre) ✅');
-await shareSheet.getByText('Accès permanent', { exact: false }).click();
+await shareSheet.getByText('Voir sa page').click(); // la carte QR a laissé place à deux liens (T1 partage)
 await page.locator('.cz-preview-overlay').waitFor({ timeout: 8000 });
 await page.locator('.ck-qrblock svg').waitFor({ timeout: 5000 }); // T1 : QR permanent dans l'aperçu
 // T3 : la page (aperçu, darija d'abord) montre la TÂCHE EN FRANÇAIS (décision ③)
@@ -471,7 +499,7 @@ await page.getByText('Pour quel repas ?').waitFor({ timeout: 5000 });
 await page.getByText('Prochain repas', { exact: true }).waitFor({ timeout: 3000 }); // défaut marqué
 await page.locator('.cz-sheet.show', { hasText: 'Pour quel repas ?' }).locator('.cz-pick').first().click(); // UN tap
 await page.getByText('Ajoutée au repas — à vous d’envoyer').waitFor({ timeout: 5000 });
-await page.getByText('Accès permanent', { exact: false }).waitFor({ timeout: 5000 }); // feuille d'envoi ouverte (T1)
+await page.getByText('Voir sa page').waitFor({ timeout: 5000 }); // n'existe qu'en mode envoi, personne choisie // feuille d'envoi ouverte (T1)
 await page.locator('.cz-overlay.show').first().click({ position: { x: 8, y: 8 } }).catch(() => {});
 await page.waitForTimeout(400);
 console.log('F6.1 (D1) : Partager = posée au prochain repas, puis feuille d’envoi ✅');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCuisineDigest, buildCuisineGreeting, buildNounouDigest } from './digest';
+import { buildCuisineDigest, buildCuisineGreeting, buildNounouDigest, corpsSansLien } from './digest';
 import type { NounouDoc, Recipe, WeekMenu } from '../types';
 
 const recipe = (id: string, nom: string): Recipe => ({
@@ -111,5 +111,35 @@ describe('buildCuisineGreeting (T1 lot partage — message court maquette)', () 
     const g = buildCuisineGreeting({ prenom: 'Fatima', link: 'L', lang: 'dr' });
     expect(g).toContain('سلام Fatima');
     expect(g).toContain('L');
+  });
+});
+
+describe('corpsSansLien — l’écran cache le lien, l’envoi le garde (T1 partage simplifié)', () => {
+  const lien = 'https://exemple.github.io/Heath/#e=abc123';
+
+  it('retire le lien de l’AFFICHAGE, garde le reste du mot', () => {
+    const envoye = buildCuisineGreeting({ prenom: 'Fatima', link: lien, lang: 'fr' });
+    const affiche = corpsSansLien(envoye, lien);
+    expect(affiche).toContain('Bonjour Fatima');
+    expect(affiche).toContain('il est ici');
+    expect(affiche).not.toContain(lien);
+  });
+
+  it('🔴 le message ENVOYÉ, lui, garde le lien — sinon la page est inatteignable', () => {
+    const envoye = buildCuisineGreeting({ prenom: 'Fatima', link: lien, lang: 'fr' });
+    expect(envoye).toContain(lien); // c'est CETTE chaîne qui part sur WhatsApp
+    corpsSansLien(envoye, lien); // l'affichage ne mute pas la source (fonction pure)
+    expect(envoye).toContain(lien);
+  });
+
+  it('vaut aussi en darija', () => {
+    const envoye = buildCuisineGreeting({ prenom: 'Fatima', link: lien, lang: 'dr' });
+    expect(corpsSansLien(envoye, lien)).toContain('سلام Fatima');
+    expect(corpsSansLien(envoye, lien)).not.toContain(lien);
+  });
+
+  it('ne coupe rien d’autre : lien absent ou vide → message intact', () => {
+    expect(corpsSansLien('Bonjour', '')).toBe('Bonjour');
+    expect(corpsSansLien('Bonjour', 'https://autre.test/')).toBe('Bonjour');
   });
 });

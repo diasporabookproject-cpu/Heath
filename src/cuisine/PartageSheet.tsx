@@ -22,11 +22,11 @@ import { isNative, shareText } from '../lib/platform';
 import { getSupabase, supabaseEnabled } from '../lib/supabase';
 import SecuriserVolet from '../components/SecuriserVolet';
 import { todayKey } from './dates';
-import { buildCuisineGreeting } from '../maison/digest';
+import { buildCuisineGreeting, corpsSansLien } from '../maison/digest';
 import { qrSvg } from '../lib/qr';
 import type { Destinataire, SecuriteFiche } from '../types';
 import EspaceCuisine from './EspaceCuisine';
-import { IconLoader, IconCheck, IconCopy } from './icons';
+import { IconLoader, IconCheck, IconCopy, IconLien, IconOeil } from './icons';
 
 // Registre neutre (lot partage T1) : le métier, jamais le genre présumé.
 const ROLES = ['Cuisine', 'Ménage', 'Nounou', 'Autre'];
@@ -95,8 +95,8 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
 
   const selected = dests.find((d) => d.id === selId) ?? null;
 
-  // Message recomposé quand la personne ou la langue du message change.
-  // (L'édition manuelle prime ensuite : elle écrit directement `digest`.)
+  // Message recomposé quand la personne ou la langue du message change. Depuis la
+  // décision ③ il n'est plus éditable : `digest` n'a qu'une source, ce constructeur.
   useEffect(() => {
     if (!selected) return setDigest('');
     setMsgLang(selected.langue === 'dr' ? 'dr' : 'fr');
@@ -118,6 +118,9 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
   }
 
   const hasPhone = digits(selected?.tel).length > 0;
+  // Affichage de la bulle : le message envoyé, moins le lien (retiré par sa valeur
+  // exacte — aucune heuristique, donc aucun risque de couper autre chose).
+  const corpsMessage = selected ? corpsSansLien(digest, buildEspaceUrl(selected.token)) : '';
 
   const send = async () => {
     if (!selected) return;
@@ -311,9 +314,12 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
                 <div className="ck-ava">{selected.nom.charAt(0).toUpperCase() || '?'}</div>
                 <div className="ck-ri">
                   <div className="n">{selected.nom}</div>
+                  {/* Décision PO ① : le nom de langue s'écrit en FRANÇAIS. Ce libellé
+                      sert à CHOISIR la langue de son destinataire — quelqu'un qui ne lit
+                      pas l'arabe doit pouvoir le faire. L'écriture arabe reste au CONTENU
+                      (la bulle, la page reçue), jamais au chrome. */}
                   <span className="ck-langpill">
-                    Reçoit en{' '}
-                    {selected.langue === 'dr' ? <span className="ar">الدارجة</span> : 'français'}
+                    Reçoit en <b>{selected.langue === 'dr' ? 'darija' : 'français'}</b>
                   </span>
                 </div>
                 <button className="ck-ch" onClick={() => setMode('list')}>
@@ -335,18 +341,24 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
                     <button className={msgLang === 'fr' ? 'on' : ''} onClick={() => setMsgLang('fr')}>
                       Français
                     </button>
-                    <button className={'ar' + (msgLang === 'dr' ? ' on' : '')} onClick={() => setMsgLang('dr')}>
-                      الدارجة
+                    <button className={msgLang === 'dr' ? 'on' : ''} onClick={() => setMsgLang('dr')}>
+                      Darija
                     </button>
                   </span>
                 </div>
+                {/* Décision PO ③ : la bulle est FIGÉE. Le message n'est plus un digest
+                    de plats mais un bonjour de deux lignes — il n'y a plus rien à éditer
+                    (renversement assumé de « bulle éditable », L3-1b / DEVLOG:385).
+                    🔴 Le lien est remplacé À L'ÉCRAN par une puce, mais le texte
+                    RÉELLEMENT ENVOYÉ (`digest`) garde l'URL en clair : WhatsApp en a
+                    besoin, et les deux dérivent de la même chaîne — ils ne peuvent pas
+                    diverger. */}
                 <div className={'ck-bubble' + (msgLang === 'dr' ? ' ar' : '')}>
-                  <textarea
-                    value={digest}
-                    onChange={(e) => setDigest(e.target.value)}
-                    rows={4}
-                    aria-label="Message à envoyer (modifiable)"
-                  />
+                  <p className="txt">{corpsMessage}</p>
+                  <span className="ck-lkchip">
+                    <IconLien size={12} />
+                    {msgLang === 'dr' ? 'الصفحة ديالها' : 'Sa page'}
+                  </span>
                 </div>
                 <button className="ck-wabtn" onClick={send} disabled={busy}>
                   {busy ? (
@@ -441,34 +453,17 @@ export default function PartageSheet({ onClose, toast, initialToken }: Props) {
                 )}
               </div>
 
-              <div className="ck-optcard">
-                <button className="head" onClick={openPreview} disabled={busy}>
-                  <span className="oi qr">
-                    <svg viewBox="0 0 100 100" width="40" height="40">
-                      <g fill="currentColor">
-                        <rect x="0" y="0" width="30" height="30" />
-                        <rect x="7" y="7" width="16" height="16" fill="#fff" />
-                        <rect x="12" y="12" width="6" height="6" />
-                        <rect x="70" y="0" width="30" height="30" />
-                        <rect x="77" y="7" width="16" height="16" fill="#fff" />
-                        <rect x="82" y="12" width="6" height="6" />
-                        <rect x="0" y="70" width="30" height="30" />
-                        <rect x="7" y="77" width="16" height="16" fill="#fff" />
-                        <rect x="12" y="82" width="6" height="6" />
-                        <rect x="44" y="8" width="7" height="7" />
-                        <rect x="58" y="44" width="7" height="7" />
-                        <rect x="44" y="58" width="7" height="7" />
-                        <rect x="72" y="72" width="7" height="7" />
-                      </g>
-                    </svg>
-                  </span>
-                  <span className="ct">
-                    <b>Accès permanent</b>
-                    <i>Générer un QR code à coller sur le frigo — il ne change jamais.</i>
-                  </span>
-                  <span className="chev">›</span>
+              {/* Décision PO ② : la CARTE « Accès permanent » disparaît — mais rien
+                  de ce qu'elle ouvrait ne meurt. Elle était la SEULE porte vers trois
+                  choses : le QR (qui déménage en T2), l'aperçu de la page, et le retour
+                  des coches (« 3 cochés · vu 14h32 », la moitié B du lot Partage).
+                  Deux liens discrets la remplacent, comme la maquette. */}
+              <div className="ck-footlinks">
+                <button className="ck-flink" onClick={openPreview} disabled={busy}>
+                  <IconOeil size={14} />
+                  Voir sa page
                 </button>
-                <button className="qrcopy" onClick={copyLink}>
+                <button className="ck-flink" onClick={copyLink}>
                   <IconCopy size={14} />
                   Copier le lien
                 </button>
@@ -571,7 +566,7 @@ function EditForm({
             Français
           </button>
           <button className="cz-dchip" aria-pressed={editing.langue === 'dr'} onClick={() => setEditing({ ...editing, langue: 'dr' })}>
-            الدارجة
+            Darija
           </button>
         </div>
       </div>
@@ -643,7 +638,7 @@ function ListView({
               {d.nom}
             </span>
             <span className="cz-tag">{d.role}</span>
-            <span className="cz-tag">{d.langue === 'dr' ? 'الدارجة' : 'FR'}</span>
+            <span className="cz-tag">{d.langue === 'dr' ? 'Darija' : 'Français'}</span>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button className="cz-dchip" onClick={() => onPick(d.id)}>

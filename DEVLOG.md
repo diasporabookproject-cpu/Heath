@@ -131,6 +131,19 @@ planifie (elle est alors retirée d'ici, avec mention datée).
 
 ## Journal des sessions
 
+### Lot partage simplifié — T1 : l'écran — 2026-08-01
+La feuille d'envoi Cuisine passe à la maquette. Quatre changements, tous décidés au read-back.
+- **La langue s'écrit en français** (4 endroits de `PartageSheet`) : « Reçoit en **darija** », toggle « Français | Darija », chip du formulaire, tag de la liste. **Il ne reste plus une seule lettre arabe dans cet écran** — l'argument du PO n'est pas cosmétique : le nom en lettres latines sert à **choisir** la langue de son destinataire quand on ne lit pas l'arabe.
+- **La bulle est FIGÉE + puce « Sa page »** (renversement assumé de « bulle éditable », `DEVLOG:385`). Le message n'est plus un digest de plats mais un bonjour de deux lignes — il n'y avait plus rien à éditer.
+  - **🔴 L'invariant risqué de la tranche, verrouillé** : l'écran cache le lien, **le message ENVOYÉ le garde**. Sans lui, la page devient inatteignable. `corpsSansLien` extraite dans `digest.ts` (pure, 4 tests) — elle retire le lien **par sa valeur exacte**, aucune heuristique, donc rien d'autre ne peut être coupé ; un test vérifie explicitement que la chaîne qui part sur WhatsApp contient toujours l'URL.
+- **La carte « Accès permanent » laisse place à deux liens discrets** : « Voir sa page » et « Copier le lien ». Rien de ce qu'elle ouvrait ne meurt — l'aperçu et le retour des coches passent par le premier ; le QR déménage en T2.
+- **L'accordéon checklist est conservé** (décision PO ④) : ses 13 ancrages de smoke sont intacts.
+- **Passe pixel** : la ligne destinataire n'est plus une carte (elle vit à même le papier, comme la maquette), la langue n'est plus une pastille mais une phrase grise dont le mot est en accent, « Changer » passe en terracotta. Ergot de la bulle à droite en darija.
+- **Les 2 ancrages de smoke annoncés cassés ont été déplacés** sur « Voir sa page » (`smoke.mjs:434` l'ouverture de l'aperçu · `:474` la preuve d'arrivée depuis une fiche recette).
+- **Nouvelle porte de smoke — la règle de la maquette** : le nom de langue est en lettres latines, le toggle dit « Français|Darija », **la bascule ne change QUE le message** (l'interface est relue après coup et doit être identique), et la bulle n'a plus de champ de saisie. *Première écriture fautive : elle lisait la bulle à l'instant du clic, avant le re-rendu React — remplacée par une attente d'état.*
+- **Non changé, volontairement** : le message s'ouvre dans la **langue de lecture** de la personne (décision T1 du lot Partage). La maquette montre deux colonnes pour illustrer le toggle, elle ne prescrit pas le défaut.
+- Portes : typecheck · **274 tests** (+4) · build · **3 smokes** · captures `shot-partage-fr/dr`.
+
 ### OUVERTURE — lot « Simplification de l'écran de partage » — 2026-08-01
 Premier geste du lot, **avant toute ligne de code**, conformément à la règle n°2 posée ce matin : branche `lot-partage-simple-v1`, **les DEUX workflows repointés dessus** dans ce commit, maquette committée (`docs/maquettes/partage-simplifie.html`).
 - **La prod est doublement figée** : la branche de prod ne bouge pas (rollback trivial), et même les pushes du lot ne publieront rien **sans approbation** — la mesure du PO transforme le patron « prévue déployée » en **opt-in**. L'URL de prod continue de servir le dernier build approuvé tant que le PO n'approuve pas.

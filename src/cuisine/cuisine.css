@@ -735,7 +735,6 @@
 .ck-offline { font-size: 11px; color: #f4d7c7; white-space: nowrap; }
 .ck-langtog { display: flex; background: rgba(255, 255, 255, 0.12); border-radius: 9px; padding: 3px; gap: 2px; }
 .ck-langtog button { border: none; background: transparent; color: rgba(244, 241, 233, 0.7); font-weight: 600; font-size: 12.5px; padding: 6px 10px; border-radius: 7px; cursor: pointer; font-family: var(--font-body); }
-.ck-langtog button.ar { font-family: 'Noto Naskh Arabic', serif; }
 .ck-langtog button[aria-selected='true'] { background: #fff; color: var(--petrol); }
 
 .ck-body { padding: 20px 16px calc(40px + env(safe-area-inset-bottom, 0px)); background: #efe9df; min-height: calc(100dvh - 64px); }
@@ -801,15 +800,17 @@
 
 /* ===== Envoi du menu (FC9) ===== */
 .ck-send { padding: 8px 2px 4px; }
-.ck-send .ck-recip { margin-bottom: 14px; }
+.ck-send .ck-recip { margin-bottom: 18px; }
 .ck-send h1 { font-family: var(--font-display); font-size: 23px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 18px; line-height: 1.2; }
-.ck-recip { display: flex; align-items: center; gap: 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 15px; padding: 14px; box-shadow: var(--shadow); }
-.ck-ava { width: 46px; height: 46px; border-radius: 15px; background: #f7e3d7; color: var(--accent-ink); display: grid; place-items: center; font-family: var(--font-body); font-weight: 800; font-size: 20px; flex: none; }
+/* Maquette « partage simplifié » : la ligne destinataire vit à même le papier —
+   pas de carte, pas d'ombre. Elle nomme, elle ne cadre pas. */
+.ck-recip { display: flex; align-items: center; gap: 11px; background: none; border: none; border-radius: 0; padding: 0; box-shadow: none; }
+.ck-ava { width: 42px; height: 42px; border-radius: 14px; background: #f7e3d7; color: var(--accent-ink); display: grid; place-items: center; font-family: var(--font-body); font-weight: 800; font-size: 18px; flex: none; }
 .ck-ri { flex: 1; min-width: 0; }
-.ck-ri .n { font-weight: 600; font-size: 16px; }
+.ck-ri .n { font-weight: 800; font-size: 16px; letter-spacing: -0.01em; color: var(--ink); }
 .ck-ri .r { font-size: 12.5px; color: var(--muted); margin-top: 1px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .ck-ri .r .lang { color: var(--petrol-ink); background: var(--petrol-tint); padding: 2px 8px; border-radius: 20px; font-size: 12px; }
-.ck-ch { background: none; border: none; color: var(--petrol); font-weight: 600; font-size: 13px; cursor: pointer; font-family: var(--font-body); flex: none; }
+.ck-ch { background: none; border: none; color: var(--accent-ink); font-weight: 700; font-size: 12.5px; cursor: pointer; font-family: var(--font-body); flex: none; }
 .ck-summary { background: var(--surface); border: 1px solid var(--line); border-radius: 15px; padding: 16px; margin-top: 14px; box-shadow: var(--shadow); }
 .ck-summary .big { font-size: 15px; line-height: 1.5; }
 .ck-summary .big b { font-weight: 600; }
@@ -918,8 +919,9 @@
 .cz-copyresume { font-size: 11.5px; color: var(--muted); font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* ---- T1 lot partage · feuille d'envoi v2 (maquette labels) ---- */
-.ck-langpill { display: inline-flex; align-items: center; gap: 4px; background: #f4ece2; border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; color: var(--accent-ink); margin-top: 4px; }
-.ck-langpill .ar { font-family: 'Noto Naskh Arabic', serif; }
+/* Le nom de langue n'est plus une pastille : une ligne grise, le mot en accent. */
+.ck-langpill { display: block; margin-top: 1px; font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.ck-langpill b { color: var(--accent-ink); font-weight: 700; }
 .ck-msgcard { background: var(--surface); border-radius: 20px; padding: 13px 13px 14px; box-shadow: 0 8px 24px rgba(30, 25, 20, 0.08), 0 1px 0 rgba(0, 0, 0, 0.02); }
 .ck-msgcard .mtop { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; margin-bottom: 9px; }
 .ck-msgcard .mtop svg { color: var(--accent); }
@@ -988,7 +990,15 @@
 /* La bulle : le digest préretempli, éditable, habillé WhatsApp (queue incluse). */
 .ck-bubble { position: relative; background: #eef8e9; border: 1px solid #d9ecd2; border-radius: 15px; border-bottom-left-radius: 5px; padding: 4px 4px 4px 6px; }
 .ck-bubble::after { content: ''; position: absolute; left: -6px; bottom: 7px; width: 12px; height: 12px; background: #eef8e9; border-left: 1px solid #d9ecd2; border-bottom: 1px solid #d9ecd2; transform: rotate(45deg); border-bottom-left-radius: 3px; }
-.ck-bubble textarea { width: 100%; background: none; border: none; resize: none; font-family: var(--font-body); font-size: 13.5px; line-height: 1.55; color: #28331f; font-weight: 600; padding: 9px 10px; outline: none; }
+/* La bulle est FIGÉE (décision PO ③) : plus de champ, un texte + une puce de lien. */
+.ck-bubble { padding: 13px 14px; }
+.ck-bubble .txt { font-family: var(--font-body); font-size: 14px; line-height: 1.55; color: #28331f; font-weight: 600; white-space: pre-line; }
+.ck-lkchip {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.8); border: 1px solid #d9ecd2; border-radius: 9px;
+  font-size: 12px; font-weight: 700; color: #3f6b46;
+}
+.ck-lkchip svg { flex: none; }
 
 /* ---- T1 avenant 2 · message = mot court + toggle langue (maquette exacte) ---- */
 .ck-msgcard .mtop { justify-content: space-between; }
@@ -998,7 +1008,20 @@
 .ck-langtog button { font-size: 10.5px; font-weight: 700; padding: 4px 9px; border-radius: 7px; color: #a49c90; border: none; background: none; cursor: pointer; font-family: var(--font-body); }
 .ck-langtog button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
 .ck-langtog button.ar { font-family: 'Noto Naskh Arabic', serif; }
-.ck-bubble.ar textarea { direction: rtl; text-align: right; font-family: 'Noto Naskh Arabic', serif; }
+.ck-bubble.ar { direction: rtl; text-align: right; border-bottom-left-radius: 15px; border-bottom-right-radius: 5px; }
+.ck-bubble.ar .txt { font-family: 'Noto Naskh Arabic', serif; font-size: 15.5px; line-height: 1.8; }
+.ck-bubble.ar .ck-lkchip { font-family: 'Noto Naskh Arabic', serif; font-size: 12.5px; }
+/* L'ergot suit le sens de lecture : à gauche en français, à droite en darija. */
+.ck-bubble.ar::after { left: auto; right: -6px; border-left: none; border-right: 1px solid #d9ecd2; border-bottom-left-radius: 0; border-bottom-right-radius: 3px; }
+
+/* Le pied de la feuille : deux liens discrets, à la place de la carte QR. */
+.ck-footlinks { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0px)); }
+.ck-flink {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px 0; width: 100%; border: none; background: none; cursor: pointer;
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 700; color: #a89e8f;
+}
+.ck-flink:disabled { opacity: 0.5; cursor: default; }
 .ck-optcard .oi.qr { padding: 4px; color: var(--ink); }
 .ck-optcard .oi.qr svg { width: 100%; height: 100%; }
 .ck-optcard .qrcopy svg { flex: none; }

@@ -68,6 +68,19 @@ export function buildCuisineGreeting(opts: { prenom: string; link: string; lang:
   return `Bonjour ${prenom} 👋\nLe menu est prêt, il est ici 👇\n${link}`;
 }
 
+/**
+ * Le corps AFFICHÉ dans la bulle = le message envoyé, MOINS son lien (T1, lot partage
+ * simplifié : la maquette remplace l'URL par une puce « Sa page »).
+ *
+ * 🔴 L'invariant que cette fonction protège : le message **envoyé** garde le lien.
+ * L'écran et WhatsApp dérivent de la MÊME chaîne — ici on n'en retire qu'une copie
+ * pour l'affichage, par sa valeur exacte (aucune heuristique, donc rien d'autre ne
+ * peut être coupé). Un lien absent du texte envoyé rendrait la page inatteignable.
+ */
+export function corpsSansLien(message: string, lien: string): string {
+  return lien ? message.replace(lien, '').trimEnd() : message.trimEnd();
+}
+
 export function buildCuisineDigest(opts: {
   prenom: string;
   scope: CuisineScope;
